@@ -1,26 +1,26 @@
 syntax = "proto3";
 
-option go_package = "pkg/ibc/types";
-
-// State defines if a connection is in one of the following states:
-// INIT, TRYOPEN, OPEN or UNINITIALIZED.
-enum State {
-    // Default State
-    STATE_UNINITIALIZED_UNSPECIFIED = 0;
-    // A connection end has just started the opening handshake.
-    STATE_INIT = 1;
-    // A connection end has acknowledged the handshake step on the counterparty
-    // chain.
-    STATE_TRYOPEN = 2;
-    // A connection end has completed the handshake.
-    STATE_OPEN = 3;
-}
+option go_package = "pkg/ibc/connection";
 
 // ConnectionEnd defines a stateful object on a chain connected to another
 // separate one.
 // NOTE: there must only be 2 defined ConnectionEnds to establish
 // a connection between two chains.
 message ConnectionEnd {
+    // State defines if a connection is in one of the following states:
+    // INIT, TRYOPEN, OPEN or UNINITIALIZED.
+    enum State {
+        // Default State
+        STATE_UNINITIALIZED_UNSPECIFIED = 0;
+        // A connection end has just started the opening handshake.
+        STATE_INIT = 1;
+        // A connection end has acknowledged the handshake step on the counterparty
+        // chain.
+        STATE_TRYOPEN = 2;
+        // A connection end has completed the handshake.
+        STATE_OPEN = 3;
+    }
+
     // client associated with this connection.
     string client_id = 1;
     // IBC version which can be utilised to determine encodings or protocols for
