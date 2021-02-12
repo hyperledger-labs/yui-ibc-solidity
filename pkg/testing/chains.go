@@ -16,7 +16,8 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
-	ibctypes "github.com/datachainlab/ibc-solidity/pkg/ibc/types"
+	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
+
 	"github.com/datachainlab/ibc-solidity/pkg/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -108,12 +109,12 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 	return []byte(DefaultPrefix)
 }
 
-func (chain *Chain) GetClientState(clientID string) *ibctypes.ClientState {
+func (chain *Chain) GetClientState(clientID string) *clienttypes.ClientState {
 	ctx := context.Background()
 	cs, found, err := chain.ProvableStore.GetClientState(chain.CallOpts(ctx), clientID)
 	require.NoError(chain.t, err)
 	require.True(chain.t, found)
-	return (*ibctypes.ClientState)(&cs)
+	return (*clienttypes.ClientState)(&cs)
 }
 
 func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (*contract.ContractState, error) {
@@ -158,12 +159,12 @@ func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, coun
 }
 
 func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain) MsgCreateClient {
-	clientState := &ibctypes.ClientState{
+	clientState := &clienttypes.ClientState{
 		ChainId:              counterparty.ChainIDString(),
 		ProvableStoreAddress: counterparty.provableStoreAddress.Bytes(),
 		LatestHeight:         counterparty.LastHeader().Base.Number.Uint64(),
 	}
-	consensusState := &ibctypes.ConsensusState{
+	consensusState := &clienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Base.Time,
 		Root:       counterparty.LastHeader().Base.Root.Bytes(),
 		Validators: counterparty.LastValidators(),

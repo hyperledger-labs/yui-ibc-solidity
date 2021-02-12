@@ -9,7 +9,7 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/consts"
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
-	ibctypes "github.com/datachainlab/ibc-solidity/pkg/ibc/types"
+	connectiontypes "github.com/datachainlab/ibc-solidity/pkg/ibc/connection"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 	"github.com/gogo/protobuf/proto"
 
@@ -65,17 +65,17 @@ func (suite *ContractTestSuite) TestConnection() {
 	suite.Require().True(found)
 	suite.Equal(connEnd.Versions[0], actual.Versions[0])
 
-	connEndPB := &ibctypes.ConnectionEnd{
+	connEndPB := &connectiontypes.ConnectionEnd{
 		ClientId: "client",
-		Versions: []*ibctypes.Version{
+		Versions: []*connectiontypes.Version{
 			{Identifier: "id", Features: []string{"a", "b"}},
 		},
 		// State: ibctypes.State_STATE_INIT,
 		// DelayPeriod: 2,
-		Counterparty: &ibctypes.Counterparty{
+		Counterparty: &connectiontypes.Counterparty{
 			// ClientId:     "cpclient",
 			// ConnectionId: "cpconnection",
-			Prefix: &ibctypes.MerklePrefix{
+			Prefix: &connectiontypes.MerklePrefix{
 				// KeyPrefix: []byte("ibc"),
 			},
 		},
@@ -91,7 +91,7 @@ func (suite *ContractTestSuite) TestConnection() {
 	suite.Require().True(found)
 	suite.Equal(expectedBytes, actualBytes)
 
-	var ret ibctypes.ConnectionEnd
+	var ret connectiontypes.ConnectionEnd
 	suite.Require().NoError(proto.Unmarshal(actualBytes, &ret))
 	suite.True(proto.Equal(connEndPB, &ret))
 }

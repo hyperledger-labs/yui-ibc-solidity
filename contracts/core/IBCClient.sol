@@ -2,7 +2,6 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "./ProvableStore.sol";
-import "./types/Types.sol";
 import "./types/Client.sol";
 import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";

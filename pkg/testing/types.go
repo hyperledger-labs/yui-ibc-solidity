@@ -2,15 +2,15 @@ package testing
 
 import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
-	ibctypes "github.com/datachainlab/ibc-solidity/pkg/ibc/types"
+	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 )
 
 type MsgCreateClient struct {
-	ClientState    *ibctypes.ClientState
-	ConsensusState *ibctypes.ConsensusState
+	ClientState    *clienttypes.ClientState
+	ConsensusState *clienttypes.ConsensusState
 }
 
-func NewMsgCreateClient(clientState *ibctypes.ClientState, consensusState *ibctypes.ConsensusState) MsgCreateClient {
+func NewMsgCreateClient(clientState *clienttypes.ClientState, consensusState *clienttypes.ConsensusState) MsgCreateClient {
 	return MsgCreateClient{
 		ClientState:    clientState,
 		ConsensusState: consensusState,
