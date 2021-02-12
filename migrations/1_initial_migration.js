@@ -13,7 +13,7 @@ module.exports = function (deployer) {
   deployer.deploy(ProvableStore).then(function() {
     return deployer.deploy(IBCClient, ProvableStore.address).then(function() {
       return deployer.deploy(IBCConnection, ProvableStore.address, IBCClient.address).then(function() {
-        return deployer.deploy(IBCChannel, ProvableStore.address, IBCClient.address);
+        return deployer.deploy(IBCChannel, ProvableStore.address, IBCClient.address, IBCConnection.address);
       });
     });
   });
