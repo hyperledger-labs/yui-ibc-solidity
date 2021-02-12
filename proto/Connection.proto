@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+option go_package = "pkg/ibc/types";
+
+// State defines if a connection is in one of the following states:
+// INIT, TRYOPEN, OPEN or UNINITIALIZED.
+enum State {
+    // Default State
+    STATE_UNINITIALIZED_UNSPECIFIED = 0;
+    // A connection end has just started the opening handshake.
+    STATE_INIT = 1;
+    // A connection end has acknowledged the handshake step on the counterparty
+    // chain.
+    STATE_TRYOPEN = 2;
+    // A connection end has completed the handshake.
+    STATE_OPEN = 3;
+}
+
+// ConnectionEnd defines a stateful object on a chain connected to another
+// separate one.
+// NOTE: there must only be 2 defined ConnectionEnds to establish
+// a connection between two chains.
+message ConnectionEnd {
+    // client associated with this connection.
+    string client_id = 1;
+    // IBC version which can be utilised to determine encodings or protocols for
+    // channels or packets utilising this connection.
+    repeated Version versions = 2;
+    // current state of the connection end.
+    State state = 3;
+    // delay period that must pass before a consensus state can be used for packet-verification
+    // NOTE: delay period logic is only implemented by some clients.
+    uint64 delay_period = 4;
+    // counterparty chain associated with this connection.
+    Counterparty counterparty = 5;
+}
+
+// Counterparty defines the counterparty chain associated with a connection end.
+message Counterparty {
+    // identifies the client on the counterparty chain associated with a given
+    // connection.
+    string client_id = 1;
+    // identifies the connection end on the counterparty chain associated with a
+    // given connection.
+    string connection_id = 2;
+    // commitment merkle prefix of the counterparty chain.
+    MerklePrefix prefix = 3;
+}
+
+message MerklePrefix {
+    bytes key_prefix = 1;
+}
+
+// Version defines the versioning scheme used to negotiate the IBC verison in
+// the connection handshake.
+message Version {
+    // unique version identifier
+    string identifier = 1;
+    // list of features compatible with the specified identifier
+    repeated string features = 2;
+}
