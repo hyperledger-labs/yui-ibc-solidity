@@ -347,7 +347,7 @@ func (chain *Chain) ChannelOpenTry(
 	order channeltypes.Channel_Order,
 	connectionID string,
 ) error {
-	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.ID))
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.PortID, counterpartyCh.ID))
 	if err != nil {
 		return err
 	}
@@ -382,8 +382,8 @@ func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
 	return "0x" + hex.EncodeToString(key[:])
 }
 
-func (chain *Chain) ChannelStateCommitmentSlot(channelID string) string {
-	key, err := chain.ProvableStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), channelID)
+func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string {
+	key, err := chain.ProvableStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }

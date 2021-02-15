@@ -24,7 +24,7 @@ contract ProvableStore {
     mapping (string => bytes) clientStates;
     mapping (string => mapping(uint64 => bytes)) consensusStates;
     mapping (string => bytes) connections;
-    mapping (string => bytes) channels;
+    mapping (string => mapping(string => bytes)) channels;
     mapping (string => mapping(string => uint64)) nextSequenceSends;
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
@@ -44,8 +44,8 @@ contract ProvableStore {
         return keccak256(abi.encodePacked(connectionPrefix, connectionId));
     }
 
-    function channelCommitmentKey(string memory channelId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(channelPrefix, channelId));
+    function channelCommitmentKey(string memory portId, string memory channelId) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(channelPrefix, portId, "/", channelId));
     }
 
     // Slot calculator
@@ -62,8 +62,8 @@ contract ProvableStore {
         return keccak256(abi.encodePacked(connectionCommitmentKey(connectionId), commitmentSlot));
     }
 
-    function channelCommitmentSlot(string memory channelId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(channelCommitmentKey(channelId), commitmentSlot));
+    function channelCommitmentSlot(string memory portId, string memory channelId) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(channelCommitmentKey(portId, channelId), commitmentSlot));
     }
 
     /// Storage accessor ///
@@ -126,13 +126,13 @@ contract ProvableStore {
 
     // Channel
 
-    function setChannel(string memory channelId, Channel.Data memory channel) public {
-        channels[channelId] = Channel.encode(channel);
-        commitments[channelCommitmentKey(channelId)] = keccak256(channels[channelId]);
+    function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) public {
+        channels[portId][channelId] = Channel.encode(channel);
+        commitments[channelCommitmentKey(portId, channelId)] = keccak256(channels[portId][channelId]);
     }
 
-    function getChannel(string memory channelId) public view returns (Channel.Data memory channel, bool) {
-        bytes memory encoded = channels[channelId];
+    function getChannel(string memory portId, string memory channelId) public view returns (Channel.Data memory channel, bool) {
+        bytes memory encoded = channels[portId][channelId];
         if (encoded.length == 0) {
             return (channel, false);
         }
@@ -140,8 +140,8 @@ contract ProvableStore {
         return (channel, true);
     }
 
-    function hasChannel(string memory channelId) public view returns (bool) {
-        return channels[channelId].length != 0;
+    function hasChannel(string memory portId, string memory channelId) public view returns (bool) {
+        return channels[portId][channelId].length != 0;
     }
 
     // Packet sequence
