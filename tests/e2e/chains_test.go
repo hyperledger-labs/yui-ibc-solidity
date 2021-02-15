@@ -34,46 +34,46 @@ func (suite *ChainTestSuite) SetupTest() {
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
-func (suite *ChainTestSuite) TestClient() {
-	ctx := context.Background()
+// func (suite *ChainTestSuite) TestClient() {
+// 	ctx := context.Background()
 
-	chainA := suite.chainA
-	chainB := suite.chainB
+// 	chainA := suite.chainA
+// 	chainB := suite.chainB
 
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
+// 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
 
-	//// Update A ////
-	suite.coordinator.UpdateHeaders()
+// 	//// Update A ////
+// 	suite.coordinator.UpdateHeaders()
 
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA, ibctesting.BesuIBFT2Client))
+// 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA, ibctesting.BesuIBFT2Client))
 
-	//// Update B ////
-	suite.coordinator.UpdateHeaders()
+// 	//// Update B ////
+// 	suite.coordinator.UpdateHeaders()
 
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
-}
+// 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
+// }
 
-func (suite ChainTestSuite) TestStateVerificationFunction() {
-	ctx := context.Background()
+// func (suite ChainTestSuite) TestStateVerificationFunction() {
+// 	ctx := context.Background()
 
-	chainA := suite.chainA
-	chainB := suite.chainB
+// 	chainA := suite.chainA
+// 	chainB := suite.chainB
 
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
+// 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
 
-	suite.Require().True(chainA.VerifyClientState(clientA, chainB, clientB))
-	suite.Require().True(chainB.VerifyClientState(clientB, chainA, clientA))
-}
+// 	suite.Require().True(chainA.VerifyClientState(clientA, chainB, clientB))
+// 	suite.Require().True(chainB.VerifyClientState(clientB, chainA, clientA))
+// }
 
-func (suite ChainTestSuite) TestConnection() {
-	ctx := context.Background()
+// func (suite ChainTestSuite) TestConnection() {
+// 	ctx := context.Background()
 
-	chainA := suite.chainA
-	chainB := suite.chainB
+// 	chainA := suite.chainA
+// 	chainB := suite.chainB
 
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
-	suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-}
+// 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
+// 	suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+// }
 
 func (suite ChainTestSuite) TestChannel() {
 	ctx := context.Background()
