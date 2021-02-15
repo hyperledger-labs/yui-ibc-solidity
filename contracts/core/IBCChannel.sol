@@ -36,6 +36,13 @@ contract IBCChannel {
         uint64 proofHeight;
     }
 
+    struct MsgChannelOpenConfirm {
+        string portId;
+        string channelId;
+        bytes proofAck;
+        uint64 proofHeight;
+    }
+
     constructor(ProvableStore store, IBCClient ibcclient_, IBCConnection ibcconnection_) public {
         provableStore = store;
         ibcclient = ibcclient_;
@@ -72,7 +79,7 @@ contract IBCChannel {
         (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(msg_.channel.connection_hops[0]);
         require(found, "connection not found");
         require(connection.versions.length == 1, "single version must be negotiated on connection before opening channel");
-        require(msg_.channel.state == Channel.State.STATE_OPEN, "channel state must STATE_OPEN");
+        require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");
 
         // TODO verifySupportedFeature
 
@@ -111,9 +118,9 @@ contract IBCChannel {
         require(channel.state == Channel.State.STATE_INIT || channel.state == Channel.State.STATE_TRYOPEN, "invalid channel state");
 
         // TODO authenticates a port binding
+
         (connection, found) = provableStore.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
-
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         ChannelCounterparty.Data memory expectedCounterparty = ChannelCounterparty.Data({
@@ -131,6 +138,39 @@ contract IBCChannel {
         channel.state = Channel.State.STATE_OPEN;
         channel.version = msg_.counterpartyVersion;
         channel.counterparty.channel_id = msg_.counterpartyChannelId;
+        provableStore.setChannel(msg_.portId, msg_.channelId, channel);
+    }
+
+    function channelOpenConfirm(
+        MsgChannelOpenConfirm memory msg_
+    ) public {
+        Channel.Data memory channel;
+        ConnectionEnd.Data memory connection;
+        bool found;
+
+        (channel, found) = provableStore.getChannel(msg_.portId, msg_.channelId);
+        require(found, "channel not found");
+        require(channel.state == Channel.State.STATE_TRYOPEN, "channel state is not TRYOPEN");
+
+        // TODO authenticates a port binding
+
+        (connection, found) = provableStore.getConnection(channel.connection_hops[0]);
+        require(found, "connection not found");
+        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
+
+        ChannelCounterparty.Data memory expectedCounterparty = ChannelCounterparty.Data({
+            port_id: msg_.portId,
+            channel_id: msg_.channelId
+        });
+        Channel.Data memory expectedChannel = Channel.Data({
+            state: Channel.State.STATE_OPEN,
+            ordering: channel.ordering,
+            counterparty: expectedCounterparty,
+            connection_hops: getCounterpartyHops(channel),
+            version: channel.version
+        });
+        require(ibcconnection.verifyChannelState(connection, msg_.proofHeight, msg_.proofAck, channel.counterparty.port_id, channel.counterparty.channel_id, Channel.encode(expectedChannel)), "failed to verify channel state");
+        channel.state = Channel.State.STATE_OPEN;
         provableStore.setChannel(msg_.portId, msg_.channelId, channel);
     }
 

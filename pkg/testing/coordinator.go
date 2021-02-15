@@ -141,11 +141,11 @@ func (c *Coordinator) CreateChannel(
 	err = c.ChanOpenTry(ctx, chainB, chainA, channelB, channelA, connB, order)
 	require.NoError(c.t, err)
 
-	// err = coord.ChanOpenAck(chainA, chainB, channelA, channelB)
-	// require.NoError(coord.t, err)
+	err = c.ChanOpenAck(ctx, chainA, chainB, channelA, channelB)
+	require.NoError(c.t, err)
 
-	// err = coord.ChanOpenConfirm(chainB, chainA, channelB, channelA)
-	// require.NoError(coord.t, err)
+	err = c.ChanOpenConfirm(ctx, chainB, chainA, channelB, channelA)
+	require.NoError(c.t, err)
 
 	return channelA, channelB
 }
@@ -282,6 +282,8 @@ func (c *Coordinator) ChanOpenInit(
 	return sourceChannel, counterpartyChannel, err
 }
 
+// ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
+// code is executed on chain B).
 func (c *Coordinator) ChanOpenTry(
 	ctx context.Context,
 	source, counterparty *Chain,
@@ -300,6 +302,47 @@ func (c *Coordinator) ChanOpenTry(
 		ctx,
 		counterparty, source,
 		connection.CounterpartyClientID,
+		BesuIBFT2Client,
+	)
+}
+
+// ConnOpenAck relays acceptance of a connection open attempt from chain B back
+// to chain A (this code is executed on chain A).
+func (c *Coordinator) ChanOpenAck(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+) error {
+	if err := source.ChannelOpenAck(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		sourceChannel.CounterpartyClientID,
+		BesuIBFT2Client,
+	)
+}
+
+// ConnOpenConfirm confirms opening of a connection on chain A to chain B, after
+// which the connection is open on both chains (this code is executed on chain B).
+func (c *Coordinator) ChanOpenConfirm(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+) error {
+	if err := source.ChannelOpenConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		sourceChannel.CounterpartyClientID,
 		BesuIBFT2Client,
 	)
 }
