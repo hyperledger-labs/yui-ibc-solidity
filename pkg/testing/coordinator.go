@@ -138,8 +138,8 @@ func (c *Coordinator) CreateChannel(
 	channelA, channelB, err := c.ChanOpenInit(ctx, chainA, chainB, connA, connB, sourcePortID, counterpartyPortID, order)
 	require.NoError(c.t, err)
 
-	// err = coord.ChanOpenTry(chainB, chainA, channelB, channelA, connB, order)
-	// require.NoError(coord.t, err)
+	err = c.ChanOpenTry(ctx, chainB, chainA, channelB, channelA, connB, order)
+	require.NoError(c.t, err)
 
 	// err = coord.ChanOpenAck(chainA, chainB, channelA, channelB)
 	// require.NoError(coord.t, err)
@@ -270,5 +270,36 @@ func (c *Coordinator) ChanOpenInit(
 		return sourceChannel, counterpartyChannel, err
 	}
 
-	return sourceChannel, counterpartyChannel, nil
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	err := c.UpdateClient(
+		ctx,
+		counterparty, source,
+		counterpartyConnection.ClientID,
+		BesuIBFT2Client,
+	)
+	return sourceChannel, counterpartyChannel, err
+}
+
+func (c *Coordinator) ChanOpenTry(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+	connection *TestConnection,
+	order channeltypes.Channel_Order,
+) error {
+	// initialize channel on source
+	if err := source.ChannelOpenTry(ctx, counterparty, sourceChannel, counterpartyChannel, order, connection.ID); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		connection.CounterpartyClientID,
+		BesuIBFT2Client,
+	)
 }

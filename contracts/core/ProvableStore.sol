@@ -140,6 +140,10 @@ contract ProvableStore {
         return (channel, true);
     }
 
+    function hasChannel(string memory channelId) public view returns (bool) {
+        return channels[channelId].length != 0;
+    }
+
     // Packet sequence
 
     function setNextSequenceSend(string memory portId, string memory channelId, uint64 sequence) public {

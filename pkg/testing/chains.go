@@ -340,10 +340,50 @@ func (chain *Chain) ChannelOpenInit(
 	)
 }
 
+func (chain *Chain) ChannelOpenTry(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+	order channeltypes.Channel_Order,
+	connectionID string,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.ID))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenTry(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenTry{
+				ChannelId: ch.ID,
+				PortId:    ch.PortID,
+				Channel: ibcchannel.ChannelData{
+					State:    uint8(channeltypes.OPEN),
+					Ordering: uint8(order),
+					Counterparty: ibcchannel.ChannelCounterpartyData{
+						PortId:    counterpartyCh.PortID,
+						ChannelId: "",
+					},
+					ConnectionHops: []string{connectionID},
+					Version:        ch.Version,
+				},
+				ProofInit:   proof.Data,
+				ProofHeight: proof.Height,
+			},
+		),
+	)
+}
+
 // Slot calculator
 
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
 	key, err := chain.ProvableStore.ConnectionCommitmentSlot(chain.CallOpts(context.Background()), connectionID)
+	require.NoError(chain.t, err)
+	return "0x" + hex.EncodeToString(key[:])
+}
+
+func (chain *Chain) ChannelStateCommitmentSlot(channelID string) string {
+	key, err := chain.ProvableStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), channelID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }

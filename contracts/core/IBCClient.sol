@@ -254,6 +254,19 @@ contract IBCClient {
         return (verifyMembershipAndGetLeaf(proof, consensusState.root.toBytes32(), prefix, provableStore.connectionCommitmentSlot(connectionId), keccak256(connectionBytes)), keccak256(connectionBytes));
     }
 
+    function verifyChannelState(
+        ClientState.Data memory self,
+        string memory clientId,
+        uint64 height,
+        bytes memory prefix,
+        bytes memory proof,
+        string memory portId,
+        string memory channelId,
+        bytes memory channelBytes // serialized with pb
+    ) public view returns (bool) {
+        return true;
+    }
+
     function toUint256(bytes memory _bytes, uint256 _start) internal pure returns (uint256) {
         require(_start + 32 >= _start, "toUint256_overflow");
         require(_bytes.length >= _start + 32, "toUint256_outOfBounds");
