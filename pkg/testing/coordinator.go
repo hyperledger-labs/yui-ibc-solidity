@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	"github.com/stretchr/testify/require"
 )
 
@@ -123,6 +124,32 @@ func (c *Coordinator) CreateConnection(
 	return connA, connB
 }
 
+// CreateChannel constructs and executes channel handshake messages in order to create
+// OPEN channels on chainA and chainB. The function expects the channels to be successfully
+// opened otherwise testing will fail.
+func (c *Coordinator) CreateChannel(
+	ctx context.Context,
+	chainA, chainB *Chain,
+	connA, connB *TestConnection,
+	sourcePortID, counterpartyPortID string,
+	order channeltypes.Channel_Order,
+) (TestChannel, TestChannel) {
+
+	channelA, channelB, err := c.ChanOpenInit(ctx, chainA, chainB, connA, connB, sourcePortID, counterpartyPortID, order)
+	require.NoError(c.t, err)
+
+	// err = coord.ChanOpenTry(chainB, chainA, channelB, channelA, connB, order)
+	// require.NoError(coord.t, err)
+
+	// err = coord.ChanOpenAck(chainA, chainB, channelA, channelB)
+	// require.NoError(coord.t, err)
+
+	// err = coord.ChanOpenConfirm(chainB, chainA, channelB, channelA)
+	// require.NoError(coord.t, err)
+
+	return channelA, channelB
+}
+
 // ConnOpenInit initializes a connection on the source chain with the state INIT
 // using the OpenInit handshake call.
 //
@@ -222,4 +249,26 @@ func (c *Coordinator) ConnOpenConfirm(
 		counterpartyConnection.ClientID,
 		BesuIBFT2Client,
 	)
+}
+
+// ChanOpenInit initializes a channel on the source chain with the state INIT
+// using the OpenInit handshake call.
+//
+// NOTE: The counterparty testing channel will be created even if it is not created in the
+// application state.
+func (c *Coordinator) ChanOpenInit(
+	ctx context.Context,
+	source, counterparty *Chain,
+	connection, counterpartyConnection *TestConnection,
+	sourcePortID, counterpartyPortID string,
+	order channeltypes.Channel_Order,
+) (TestChannel, TestChannel, error) {
+	sourceChannel := source.AddTestChannel(connection, sourcePortID)
+	counterpartyChannel := counterparty.AddTestChannel(counterpartyConnection, counterpartyPortID)
+
+	if err := source.ChannelOpenInit(ctx, sourceChannel, counterpartyChannel, order, connection.ID); err != nil {
+		return sourceChannel, counterpartyChannel, err
+	}
+
+	return sourceChannel, counterpartyChannel, nil
 }

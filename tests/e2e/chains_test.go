@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
+	"github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 	testchain0 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain0"
 	testchain1 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain1"
@@ -72,6 +73,17 @@ func (suite ChainTestSuite) TestConnection() {
 
 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
 	suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+}
+
+func (suite ChainTestSuite) TestChannel() {
+	ctx := context.Background()
+
+	chainA := suite.chainA
+	chainB := suite.chainB
+
+	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
+	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+	_, _ = suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channel.UNORDERED)
 }
 
 func TestChainTestSuite(t *testing.T) {
