@@ -239,12 +239,6 @@ contract IBCConnection {
         return client.verifyConnectionState(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, connectionId, ConnectionEnd.encode(counterpartyConnection));
     }
 
-    function verifyConnectionStateAndGet(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory connectionId, ConnectionEnd.Data memory counterpartyConnection) public view returns (bytes32, bytes32) {
-        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
-        require(found, "clientState not found");
-        return client.verifyConnectionStateAndGet(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, connectionId, ConnectionEnd.encode(counterpartyConnection));
-    }
-
     function verifyClientState(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, ClientState.Data memory clientState) internal view returns (bool) {
         (ClientState.Data memory targetClient, bool found) = provableStore.getClientState(connection.client_id);
         require(found, "clientState not found");
