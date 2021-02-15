@@ -8,6 +8,7 @@ const (
 	ProvableStoreAddress = "<%= ProvableStoreAddress; %>"
 	IBCClientAddress     = "<%= IBCClientAddress; %>"
 	IBCConnectionAddress = "<%= IBCConnectionAddress; %>"
+	IBCChannelAddress = "<%= IBCChannelAddress; %>"
 )
 
 type contractConfig struct{}
@@ -24,4 +25,8 @@ func (contractConfig) GetIBCClientAddress() common.Address {
 
 func (contractConfig) GetIBCConnectionAddress() common.Address {
 	return common.HexToAddress(IBCConnectionAddress)
+}
+
+func (contractConfig) GetIBCChannelAddress() common.Address {
+	return common.HexToAddress(IBCChannelAddress)
 }

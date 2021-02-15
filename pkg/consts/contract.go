@@ -5,9 +5,10 @@ import (
 )
 
 const (
-	ProvableStoreAddress = "0xdD5109D05Ac357E446992a60E64764041A0E8529"
-	IBCClientAddress     = "0x361552A65C96621003C62C5971b910a1fdC9ba78"
-	IBCConnectionAddress = "0x9eBF3956EE45B2b9F1fC85FB8990ce6be52F47a6"
+	ProvableStoreAddress = "0x3379866A055CF3725775e8d6876be4877e1a7D89"
+	IBCClientAddress     = "0xf68230F013AbBc6c2330cdE2Fa2dF84e2417B4a0"
+	IBCConnectionAddress = "0xa954B862442936E35B579EB475CE82768389D301"
+	IBCChannelAddress = "0x4efa02d32DDDf9856222331ABEFf1a09248FeB87"
 )
 
 type contractConfig struct{}
@@ -24,4 +25,8 @@ func (contractConfig) GetIBCClientAddress() common.Address {
 
 func (contractConfig) GetIBCConnectionAddress() common.Address {
 	return common.HexToAddress(IBCConnectionAddress)
+}
+
+func (contractConfig) GetIBCChannelAddress() common.Address {
+	return common.HexToAddress(IBCChannelAddress)
 }

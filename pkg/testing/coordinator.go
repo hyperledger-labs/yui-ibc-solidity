@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	"github.com/stretchr/testify/require"
 )
 
@@ -123,6 +124,32 @@ func (c *Coordinator) CreateConnection(
 	return connA, connB
 }
 
+// CreateChannel constructs and executes channel handshake messages in order to create
+// OPEN channels on chainA and chainB. The function expects the channels to be successfully
+// opened otherwise testing will fail.
+func (c *Coordinator) CreateChannel(
+	ctx context.Context,
+	chainA, chainB *Chain,
+	connA, connB *TestConnection,
+	sourcePortID, counterpartyPortID string,
+	order channeltypes.Channel_Order,
+) (TestChannel, TestChannel) {
+
+	channelA, channelB, err := c.ChanOpenInit(ctx, chainA, chainB, connA, connB, sourcePortID, counterpartyPortID, order)
+	require.NoError(c.t, err)
+
+	err = c.ChanOpenTry(ctx, chainB, chainA, channelB, channelA, connB, order)
+	require.NoError(c.t, err)
+
+	err = c.ChanOpenAck(ctx, chainA, chainB, channelA, channelB)
+	require.NoError(c.t, err)
+
+	err = c.ChanOpenConfirm(ctx, chainB, chainA, channelB, channelA)
+	require.NoError(c.t, err)
+
+	return channelA, channelB
+}
+
 // ConnOpenInit initializes a connection on the source chain with the state INIT
 // using the OpenInit handshake call.
 //
@@ -220,6 +247,102 @@ func (c *Coordinator) ConnOpenConfirm(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
+		BesuIBFT2Client,
+	)
+}
+
+// ChanOpenInit initializes a channel on the source chain with the state INIT
+// using the OpenInit handshake call.
+//
+// NOTE: The counterparty testing channel will be created even if it is not created in the
+// application state.
+func (c *Coordinator) ChanOpenInit(
+	ctx context.Context,
+	source, counterparty *Chain,
+	connection, counterpartyConnection *TestConnection,
+	sourcePortID, counterpartyPortID string,
+	order channeltypes.Channel_Order,
+) (TestChannel, TestChannel, error) {
+	sourceChannel := source.AddTestChannel(connection, sourcePortID)
+	counterpartyChannel := counterparty.AddTestChannel(counterpartyConnection, counterpartyPortID)
+
+	if err := source.ChannelOpenInit(ctx, sourceChannel, counterpartyChannel, order, connection.ID); err != nil {
+		return sourceChannel, counterpartyChannel, err
+	}
+
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	err := c.UpdateClient(
+		ctx,
+		counterparty, source,
+		counterpartyConnection.ClientID,
+		BesuIBFT2Client,
+	)
+	return sourceChannel, counterpartyChannel, err
+}
+
+// ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
+// code is executed on chain B).
+func (c *Coordinator) ChanOpenTry(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+	connection *TestConnection,
+	order channeltypes.Channel_Order,
+) error {
+	// initialize channel on source
+	if err := source.ChannelOpenTry(ctx, counterparty, sourceChannel, counterpartyChannel, order, connection.ID); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		connection.CounterpartyClientID,
+		BesuIBFT2Client,
+	)
+}
+
+// ConnOpenAck relays acceptance of a connection open attempt from chain B back
+// to chain A (this code is executed on chain A).
+func (c *Coordinator) ChanOpenAck(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+) error {
+	if err := source.ChannelOpenAck(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		sourceChannel.CounterpartyClientID,
+		BesuIBFT2Client,
+	)
+}
+
+// ConnOpenConfirm confirms opening of a connection on chain A to chain B, after
+// which the connection is open on both chains (this code is executed on chain B).
+func (c *Coordinator) ChanOpenConfirm(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+) error {
+	if err := source.ChannelOpenConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		sourceChannel.CounterpartyClientID,
 		BesuIBFT2Client,
 	)
 }

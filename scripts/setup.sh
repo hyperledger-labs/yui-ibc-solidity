@@ -14,6 +14,7 @@ function after_common() {
     srcs=(
         "IBCClient"
         "IBCConnection"
+        "IBCChannel"
         "ProvableStore"
     )
     if [ -n "$NO_GEN_CODE" ]; then

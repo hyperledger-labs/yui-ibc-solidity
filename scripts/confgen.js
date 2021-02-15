@@ -1,6 +1,7 @@
 var ProvableStore = artifacts.require("./ProvableStore.sol");
 var IBCClient = artifacts.require("./IBCClient.sol");
 var IBCConnection = artifacts.require("./IBCConnection.sol");
+var IBCChannel = artifacts.require("./IBCChannel.sol");
 
 var fs = require("fs");
 var ejs = require("ejs");
@@ -30,7 +31,8 @@ module.exports = function(callback) {
     ejs.renderFile(item[1], {
       ProvableStoreAddress: ProvableStore.address,
       IBCClientAddress: IBCClient.address,
-      IBCConnectionAddress: IBCConnection.address
+      IBCConnectionAddress: IBCConnection.address,
+      IBCChannelAddress: IBCChannel.address
     }, null, function(err, str){
         if (err) {
           throw err;

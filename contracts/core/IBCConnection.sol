@@ -86,7 +86,7 @@ contract IBCConnection {
         connection = ConnectionEnd.Data({
             client_id: clientId,
             versions: versions,
-            state: CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_INIT,
+            state: ConnectionEnd.State.STATE_INIT,
             delay_period: delayPeriod,
             counterparty: counterparty
         });
@@ -110,7 +110,7 @@ contract IBCConnection {
         ConnectionEnd.Data memory connection = ConnectionEnd.Data({
             client_id: msg_.clientId,
             versions: versions,
-            state: CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_TRYOPEN,
+            state: ConnectionEnd.State.STATE_TRYOPEN,
             delay_period: msg_.delayPeriod,
             counterparty: msg_.counterparty
         });
@@ -118,7 +118,7 @@ contract IBCConnection {
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: msg_.counterparty.client_id,
             versions: msg_.counterpartyVersions,
-            state: CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_INIT,
+            state: ConnectionEnd.State.STATE_INIT,
             delay_period: msg_.delayPeriod,
             counterparty: Counterparty.Data({
                 client_id: msg_.clientId,
@@ -145,11 +145,11 @@ contract IBCConnection {
         (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(msg_.connectionId);
         require(found, "connection not found");
 
-        if (connection.state != CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_INIT && connection.state != CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_TRYOPEN) {
+        if (connection.state != ConnectionEnd.State.STATE_INIT && connection.state != ConnectionEnd.State.STATE_TRYOPEN) {
             revert("connection state is not INIT or TRYOPEN");
-        } else if (connection.state == CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_INIT && !isSupportedVersion(msg_.version)) {
+        } else if (connection.state == ConnectionEnd.State.STATE_INIT && !isSupportedVersion(msg_.version)) {
             revert("connection state is in INIT but the provided version is not supported");
-        } else if (connection.state == CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_TRYOPEN && (connection.versions.length != 1 || !isEqualVersion(connection.versions[0], msg_.version))) {
+        } else if (connection.state == ConnectionEnd.State.STATE_TRYOPEN && (connection.versions.length != 1 || !isEqualVersion(connection.versions[0], msg_.version))) {
             revert("connection state is in TRYOPEN but the provided version is not set in the previous connection versions"); 
         }
 
@@ -167,14 +167,14 @@ contract IBCConnection {
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: connection.counterparty.client_id,
             versions: getVersionArray(msg_.version),
-            state: CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_TRYOPEN,
+            state: ConnectionEnd.State.STATE_TRYOPEN,
             delay_period: connection.delay_period,
             counterparty: expectedCounterparty
         });
 
         require(verifyConnectionState(connection, msg_.proofHeight, msg_.proofTry, msg_.counterpartyConnectionID, expectedConnection), "failed to verify connection state");
 
-        connection.state = CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_OPEN;
+        connection.state = ConnectionEnd.State.STATE_OPEN;
         connection.versions = expectedConnection.versions;
         connection.counterparty.connection_id = msg_.counterpartyConnectionID;
         provableStore.setConnection(msg_.connectionId, connection);
@@ -186,7 +186,7 @@ contract IBCConnection {
         (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(msg_.connectionId);
         require(found, "connection not found");
 
-        require(connection.state == CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_TRYOPEN, "connection state is not TRYOPEN");
+        require(connection.state == ConnectionEnd.State.STATE_TRYOPEN, "connection state is not TRYOPEN");
 
         Counterparty.Data memory expectedCounterparty = Counterparty.Data({
             client_id: connection.client_id,
@@ -197,13 +197,14 @@ contract IBCConnection {
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: connection.counterparty.client_id,
             versions: connection.versions,
-            state: CONNECTION_PROTO_GLOBAL_ENUMS.State.STATE_OPEN,
+            state: ConnectionEnd.State.STATE_OPEN,
             delay_period: connection.delay_period,
             counterparty: expectedCounterparty
         });
 
         require(verifyConnectionState(connection, msg_.proofHeight, msg_.proofAck, connection.counterparty.connection_id, expectedConnection), "failed to verify connection state");
 
+        connection.state = ConnectionEnd.State.STATE_OPEN;
         provableStore.setConnection(msg_.connectionId, connection);
     }
 
@@ -238,12 +239,6 @@ contract IBCConnection {
         return client.verifyConnectionState(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, connectionId, ConnectionEnd.encode(counterpartyConnection));
     }
 
-    function verifyConnectionStateAndGet(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory connectionId, ConnectionEnd.Data memory counterpartyConnection) public view returns (bytes32, bytes32) {
-        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
-        require(found, "clientState not found");
-        return client.verifyConnectionStateAndGet(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, connectionId, ConnectionEnd.encode(counterpartyConnection));
-    }
-
     function verifyClientState(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, ClientState.Data memory clientState) internal view returns (bool) {
         (ClientState.Data memory targetClient, bool found) = provableStore.getClientState(connection.client_id);
         require(found, "clientState not found");
@@ -254,5 +249,11 @@ contract IBCConnection {
         (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
         require(found, "clientState not found");
         return client.verifyClientConsensusState(clientState, connection.client_id, height, connection.counterparty.client_id, consensusHeight, connection.counterparty.prefix.key_prefix, proof, ConsensusState.encode(consensusState));
+    }
+
+    function verifyChannelState(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, bytes memory channelBytes) public view returns (bool) {
+        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
+        require(found, "clientState not found");
+        return client.verifyChannelState(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, channelBytes);
     }
 }
