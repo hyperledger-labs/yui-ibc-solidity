@@ -5,12 +5,65 @@ import "./GoogleProtobufAny.sol";
 
 library ConnectionEnd {
 
+  //enum definition
+  // Solidity enum definitions
+  enum State {
+    STATE_UNINITIALIZED_UNSPECIFIED,
+    STATE_INIT,
+    STATE_TRYOPEN,
+    STATE_OPEN
+  }
+
+
+  // Solidity enum encoder
+  function encode_State(State x) internal pure returns (int64) {
+    
+    if (x == State.STATE_UNINITIALIZED_UNSPECIFIED) {
+      return 0;
+    }
+
+    if (x == State.STATE_INIT) {
+      return 1;
+    }
+
+    if (x == State.STATE_TRYOPEN) {
+      return 2;
+    }
+
+    if (x == State.STATE_OPEN) {
+      return 3;
+    }
+    revert();
+  }
+
+
+  // Solidity enum decoder
+  function decode_State(int64 x) internal pure returns (State) {
+    
+    if (x == 0) {
+      return State.STATE_UNINITIALIZED_UNSPECIFIED;
+    }
+
+    if (x == 1) {
+      return State.STATE_INIT;
+    }
+
+    if (x == 2) {
+      return State.STATE_TRYOPEN;
+    }
+
+    if (x == 3) {
+      return State.STATE_OPEN;
+    }
+    revert();
+  }
+
 
   //struct definition
   struct Data {
     string client_id;
     Version.Data[] versions;
-    CONNECTION_PROTO_GLOBAL_ENUMS.State state;
+    ConnectionEnd.State state;
     uint64 delay_period;
     Counterparty.Data counterparty;
   }
@@ -222,7 +275,7 @@ library ConnectionEnd {
      * if `r` is NULL, then only counting the number of fields.
      */
     (int64 tmp, uint256 sz) = ProtoBufRuntime._decode_enum(p, bs);
-    CONNECTION_PROTO_GLOBAL_ENUMS.State x = CONNECTION_PROTO_GLOBAL_ENUMS.decode_State(tmp);
+    ConnectionEnd.State x = decode_State(tmp);
     if (isNil(r)) {
       counters[3] += 1;
     } else {
@@ -385,7 +438,7 @@ library ConnectionEnd {
       pointer,
       bs
     );
-    int64 _enum_state = CONNECTION_PROTO_GLOBAL_ENUMS.encode_State(r.state);
+    int64 _enum_state = encode_State(r.state);
     pointer += ProtoBufRuntime._encode_enum(_enum_state, pointer, bs);
     }
     if (r.delay_period != 0) {
@@ -453,7 +506,7 @@ library ConnectionEnd {
     for(i = 0; i < r.versions.length; i++) {
       e += 1 + ProtoBufRuntime._sz_lendelim(Version._estimate(r.versions[i]));
     }
-    e += 1 + ProtoBufRuntime._sz_enum(CONNECTION_PROTO_GLOBAL_ENUMS.encode_State(r.state));
+    e += 1 + ProtoBufRuntime._sz_enum(encode_State(r.state));
     e += 1 + ProtoBufRuntime._sz_uint64(r.delay_period);
     e += 1 + ProtoBufRuntime._sz_lendelim(Counterparty._estimate(r.counterparty));
     return e;
@@ -1516,61 +1569,3 @@ library Version {
   }
 }
 //library Version
-
-library CONNECTION_PROTO_GLOBAL_ENUMS {
-
-  //enum definition
-  // Solidity enum definitions
-  enum State {
-    STATE_UNINITIALIZED_UNSPECIFIED,
-    STATE_INIT,
-    STATE_TRYOPEN,
-    STATE_OPEN
-  }
-
-
-  // Solidity enum encoder
-  function encode_State(State x) internal pure returns (int64) {
-    
-    if (x == State.STATE_UNINITIALIZED_UNSPECIFIED) {
-      return 0;
-    }
-
-    if (x == State.STATE_INIT) {
-      return 1;
-    }
-
-    if (x == State.STATE_TRYOPEN) {
-      return 2;
-    }
-
-    if (x == State.STATE_OPEN) {
-      return 3;
-    }
-    revert();
-  }
-
-
-  // Solidity enum decoder
-  function decode_State(int64 x) internal pure returns (State) {
-    
-    if (x == 0) {
-      return State.STATE_UNINITIALIZED_UNSPECIFIED;
-    }
-
-    if (x == 1) {
-      return State.STATE_INIT;
-    }
-
-    if (x == 2) {
-      return State.STATE_TRYOPEN;
-    }
-
-    if (x == 3) {
-      return State.STATE_OPEN;
-    }
-    revert();
-  }
-
-}
-//library CONNECTION_PROTO_GLOBAL_ENUMS

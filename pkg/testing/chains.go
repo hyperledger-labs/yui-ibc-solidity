@@ -13,10 +13,13 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/chains"
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcchannel"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
-	ibctypes "github.com/datachainlab/ibc-solidity/pkg/ibc/types"
+	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
+	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
+
 	"github.com/datachainlab/ibc-solidity/pkg/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -29,6 +32,7 @@ const (
 	DefaultChannelVersion        = "ics20-1"
 	DefaultDelayPeriod    uint64 = 0
 	DefaultPrefix                = "ibc"
+	TransferPort                 = "transfer"
 )
 
 type Chain struct {
@@ -37,6 +41,7 @@ type Chain struct {
 	client        contract.Client
 	IBCClient     ibcclient.Ibcclient
 	IBCConnection ibcconnection.Ibcconnection
+	IBCChannel    ibcchannel.Ibcchannel
 	ProvableStore provablestore.Provablestore
 
 	chainID              int64
@@ -56,6 +61,7 @@ type ContractConfig interface {
 	GetProvableStoreAddress() common.Address
 	GetIBCClientAddress() common.Address
 	GetIBCConnectionAddress() common.Address
+	GetIBCChannelAddress() common.Address
 }
 
 func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string) *Chain {
@@ -64,6 +70,10 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 	ibcConnection, err := ibcconnection.NewIbcconnection(config.GetIBCConnectionAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	ibcChannel, err := ibcchannel.NewIbcchannel(config.GetIBCChannelAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -77,7 +87,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, ProvableStore: *provableStore, chainID: chainID, provableStoreAddress: config.GetProvableStoreAddress(), key0: key0}
+	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, chainID: chainID, provableStoreAddress: config.GetProvableStoreAddress(), key0: key0}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -108,12 +118,12 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 	return []byte(DefaultPrefix)
 }
 
-func (chain *Chain) GetClientState(clientID string) *ibctypes.ClientState {
+func (chain *Chain) GetClientState(clientID string) *clienttypes.ClientState {
 	ctx := context.Background()
 	cs, found, err := chain.ProvableStore.GetClientState(chain.CallOpts(ctx), clientID)
 	require.NoError(chain.t, err)
 	require.True(chain.t, found)
-	return (*ibctypes.ClientState)(&cs)
+	return (*clienttypes.ClientState)(&cs)
 }
 
 func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (*contract.ContractState, error) {
@@ -158,12 +168,12 @@ func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, coun
 }
 
 func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain) MsgCreateClient {
-	clientState := &ibctypes.ClientState{
+	clientState := &clienttypes.ClientState{
 		ChainId:              counterparty.ChainIDString(),
 		ProvableStoreAddress: counterparty.provableStoreAddress.Bytes(),
 		LatestHeight:         counterparty.LastHeader().Base.Number.Uint64(),
 	}
-	consensusState := &ibctypes.ConsensusState{
+	consensusState := &clienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Base.Time,
 		Root:       counterparty.LastHeader().Base.Root.Bytes(),
 		Validators: counterparty.LastValidators(),
@@ -303,10 +313,124 @@ func (chain *Chain) ConnectionOpenConfirm(
 	)
 }
 
+func (chain *Chain) ChannelOpenInit(
+	ctx context.Context,
+	ch, counterparty TestChannel,
+	order channeltypes.Channel_Order,
+	connectionID string,
+) error {
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenInit(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenInit{
+				ChannelId: ch.ID,
+				PortId:    ch.PortID,
+				Channel: ibcchannel.ChannelData{
+					State:    uint8(channeltypes.INIT),
+					Ordering: uint8(order),
+					Counterparty: ibcchannel.ChannelCounterpartyData{
+						PortId:    counterparty.PortID,
+						ChannelId: "",
+					},
+					ConnectionHops: []string{connectionID},
+					Version:        ch.Version,
+				},
+			},
+		),
+	)
+}
+
+func (chain *Chain) ChannelOpenTry(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+	order channeltypes.Channel_Order,
+	connectionID string,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.PortID, counterpartyCh.ID))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenTry(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenTry{
+				PortId:    ch.PortID,
+				ChannelId: ch.ID,
+				Channel: ibcchannel.ChannelData{
+					State:    uint8(channeltypes.TRYOPEN),
+					Ordering: uint8(order),
+					Counterparty: ibcchannel.ChannelCounterpartyData{
+						PortId:    counterpartyCh.PortID,
+						ChannelId: counterpartyCh.ID,
+					},
+					ConnectionHops: []string{connectionID},
+					Version:        ch.Version,
+				},
+				CounterpartyVersion: counterpartyCh.Version,
+				ProofInit:           proof.Data,
+				ProofHeight:         proof.Height,
+			},
+		),
+	)
+}
+
+func (chain *Chain) ChannelOpenAck(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.PortID, counterpartyCh.ID))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenAck(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenAck{
+				PortId:                ch.PortID,
+				ChannelId:             ch.ID,
+				CounterpartyVersion:   counterpartyCh.Version,
+				CounterpartyChannelId: counterpartyCh.ID,
+				ProofTry:              proof.Data,
+				ProofHeight:           proof.Height,
+			},
+		),
+	)
+}
+
+func (chain *Chain) ChannelOpenConfirm(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.PortID, counterpartyCh.ID))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenConfirm(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenConfirm{
+				PortId:      ch.PortID,
+				ChannelId:   ch.ID,
+				ProofAck:    proof.Data,
+				ProofHeight: proof.Height,
+			},
+		),
+	)
+}
+
 // Slot calculator
 
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
 	key, err := chain.ProvableStore.ConnectionCommitmentSlot(chain.CallOpts(context.Background()), connectionID)
+	require.NoError(chain.t, err)
+	return "0x" + hex.EncodeToString(key[:])
+}
+
+func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string {
+	key, err := chain.ProvableStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
@@ -392,5 +516,32 @@ func (chain *Chain) ConstructNextTestConnection(clientID, counterpartyClientID s
 		ClientID:             clientID,
 		NextChannelVersion:   DefaultChannelVersion,
 		CounterpartyClientID: counterpartyClientID,
+	}
+}
+
+// AddTestChannel appends a new TestChannel which contains references to the port and channel ID
+// used for channel creation and interaction. See 'NextTestChannel' for channel ID naming format.
+func (chain *Chain) AddTestChannel(conn *TestConnection, portID string) TestChannel {
+	channel := chain.NextTestChannel(conn, portID)
+	conn.Channels = append(conn.Channels, channel)
+	return channel
+}
+
+// NextTestChannel returns the next test channel to be created on this connection, but does not
+// add it to the list of created channels. This function is expected to be used when the caller
+// has not created the associated channel in app state, but would still like to refer to the
+// non-existent channel usually to test for its non-existence.
+//
+// channel ID format: <connectionid>-chan<channel-index>
+//
+// The port is passed in by the caller.
+func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestChannel {
+	channelID := fmt.Sprintf("channel-%v", time.Now().Unix())
+	return TestChannel{
+		PortID:               portID,
+		ID:                   channelID,
+		ClientID:             conn.ClientID,
+		CounterpartyClientID: conn.CounterpartyClientID,
+		Version:              conn.NextChannelVersion,
 	}
 }

@@ -2,7 +2,6 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "./ProvableStore.sol";
-import "./types/Types.sol";
 import "./types/Client.sol";
 import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";
@@ -160,19 +159,6 @@ contract IBCClient {
         return expectedValue == dataHash.toRLPItem().toBytes().toBytes32();
     }
 
-    function verifyMembershipAndGetLeaf(
-        bytes memory proof,
-        bytes32 root,
-        bytes memory prefix,
-        bytes32 slot,
-        bytes32 ignore0
-    ) public view returns (bytes32) {
-        uint256 slotNum = toUint256(abi.encodePacked(slot), 0);
-        bytes32 path = keccak256(abi.encodePacked(slotNum));
-        bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
-        return dataHash.toRLPItem().toBytes().toBytes32();
-    }
-
     function validateArgs(ClientState.Data memory cs, uint64 height, bytes memory prefix, bytes memory proof) internal view returns (bool) {
         if (cs.latest_height < height) {
             return false;
@@ -238,21 +224,22 @@ contract IBCClient {
         return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.connectionCommitmentSlot(connectionId), keccak256(connectionBytes));
     }
 
-    function verifyConnectionStateAndGet(
+    function verifyChannelState(
         ClientState.Data memory self,
         string memory clientId,
         uint64 height,
         bytes memory prefix,
         bytes memory proof,
-        string memory connectionId,
-        bytes memory connectionBytes // serialized with pb
-    ) public view returns (bytes32, bytes32) {
+        string memory portId,
+        string memory channelId,
+        bytes memory channelBytes // serialized with pb
+    ) public view returns (bool) {
         if (!validateArgs(self, height, prefix, proof)) {
             revert("fail");
         }
         (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
-        return (verifyMembershipAndGetLeaf(proof, consensusState.root.toBytes32(), prefix, provableStore.connectionCommitmentSlot(connectionId), keccak256(connectionBytes)), keccak256(connectionBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.channelCommitmentSlot(portId, channelId), keccak256(channelBytes));
     }
 
     function toUint256(bytes memory _bytes, uint256 _start) internal pure returns (uint256) {
