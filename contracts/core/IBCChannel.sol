@@ -18,6 +18,15 @@ contract IBCChannel {
         Channel.Data channel;
     }
 
+    struct MsgChannelOpenTry {
+        string channelId;
+        string portId;
+        Channel.Data channel;
+        string counterpartyVersion;
+        bytes proofInit;
+        uint64 proofHeight;
+    }
+
     constructor(ProvableStore store, IBCClient ibcclient_, IBCConnection ibcconnection_) public {
         provableStore = store;
         ibcclient = ibcclient_;
@@ -27,10 +36,12 @@ contract IBCChannel {
     function channelOpenInit(
         MsgChannelOpenInit memory msg_
     ) public returns (string memory) {
+        require(!provableStore.hasChannel(msg_.channelId), "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(msg_.channel.connection_hops[0]);
         require(found, "connection not found");
         require(connection.versions.length == 1, "single version must be negotiated on connection before opening channel");
+        require(msg_.channel.state == Channel.State.STATE_INIT, "channel state must STATE_INIT");
 
         // TODO verifySupportedFeature
 
@@ -42,6 +53,50 @@ contract IBCChannel {
         provableStore.setNextSequenceAck(msg_.portId, msg_.channelId, 1);
 
         return msg_.channelId;
+    }
+
+    function channelOpenTry(
+        MsgChannelOpenTry memory msg_
+    ) public returns (string memory) {
+        require(!provableStore.hasChannel(msg_.channelId), "channel already exists");
+        require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
+        (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(msg_.channel.connection_hops[0]);
+        require(found, "connection not found");
+        require(connection.versions.length == 1, "single version must be negotiated on connection before opening channel");
+        require(msg_.channel.state == Channel.State.STATE_OPEN, "channel state must STATE_OPEN");
+
+        // TODO verifySupportedFeature
+
+        // TODO authenticates a port binding
+
+        ChannelCounterparty.Data memory expectedCounterparty = ChannelCounterparty.Data({
+            port_id: msg_.portId,
+            channel_id: ""
+        });
+        Channel.Data memory expectedChannel = Channel.Data({
+            state: Channel.State.STATE_INIT,
+            ordering: msg_.channel.ordering,
+            counterparty: expectedCounterparty,
+            connection_hops: getCounterpartyHops(msg_.channel),
+            version: msg_.counterpartyVersion
+        });
+        require(ibcconnection.verifyChannelState(connection, msg_.proofHeight, msg_.proofInit, msg_.channel.counterparty.port_id, msg_.channel.counterparty.channel_id, Channel.encode(expectedChannel)));
+
+        provableStore.setChannel(msg_.channelId, msg_.channel);
+        provableStore.setNextSequenceSend(msg_.portId, msg_.channelId, 1);
+        provableStore.setNextSequenceRecv(msg_.portId, msg_.channelId, 1);
+        provableStore.setNextSequenceAck(msg_.portId, msg_.channelId, 1);        
+
+        return msg_.channelId;
+    }
+
+    function getCounterpartyHops(Channel.Data memory channel) internal view returns (string[] memory hops) {
+        require(channel.connection_hops.length == 1, "connection_hops length must be 1");
+        (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(channel.connection_hops[0]);
+        require(found, "connection not found");
+        hops = new string[](1);
+        hops[0] = connection.counterparty.connection_id;
+        return hops;
     }
 
 }
