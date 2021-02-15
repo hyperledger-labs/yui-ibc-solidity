@@ -355,20 +355,21 @@ func (chain *Chain) ChannelOpenTry(
 		chain.IBCChannel.ChannelOpenTry(
 			chain.TxOpts(ctx),
 			ibcchannel.IBCChannelMsgChannelOpenTry{
-				ChannelId: ch.ID,
 				PortId:    ch.PortID,
+				ChannelId: ch.ID,
 				Channel: ibcchannel.ChannelData{
 					State:    uint8(channeltypes.TRYOPEN),
 					Ordering: uint8(order),
 					Counterparty: ibcchannel.ChannelCounterpartyData{
 						PortId:    counterpartyCh.PortID,
-						ChannelId: "",
+						ChannelId: counterpartyCh.ID,
 					},
 					ConnectionHops: []string{connectionID},
 					Version:        ch.Version,
 				},
-				ProofInit:   proof.Data,
-				ProofHeight: proof.Height,
+				CounterpartyVersion: counterpartyCh.Version,
+				ProofInit:           proof.Data,
+				ProofHeight:         proof.Height,
 			},
 		),
 	)
