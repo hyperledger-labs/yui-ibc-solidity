@@ -13,9 +13,11 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/chains"
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcchannel"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
+	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 
 	"github.com/datachainlab/ibc-solidity/pkg/wallet"
@@ -30,6 +32,7 @@ const (
 	DefaultChannelVersion        = "ics20-1"
 	DefaultDelayPeriod    uint64 = 0
 	DefaultPrefix                = "ibc"
+	TransferPort                 = "transfer"
 )
 
 type Chain struct {
@@ -38,6 +41,7 @@ type Chain struct {
 	client        contract.Client
 	IBCClient     ibcclient.Ibcclient
 	IBCConnection ibcconnection.Ibcconnection
+	IBCChannel    ibcchannel.Ibcchannel
 	ProvableStore provablestore.Provablestore
 
 	chainID              int64
@@ -57,6 +61,7 @@ type ContractConfig interface {
 	GetProvableStoreAddress() common.Address
 	GetIBCClientAddress() common.Address
 	GetIBCConnectionAddress() common.Address
+	GetIBCChannelAddress() common.Address
 }
 
 func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string) *Chain {
@@ -65,6 +70,10 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 	ibcConnection, err := ibcconnection.NewIbcconnection(config.GetIBCConnectionAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	ibcChannel, err := ibcchannel.NewIbcchannel(config.GetIBCChannelAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -78,7 +87,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, ProvableStore: *provableStore, chainID: chainID, provableStoreAddress: config.GetProvableStoreAddress(), key0: key0}
+	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, chainID: chainID, provableStoreAddress: config.GetProvableStoreAddress(), key0: key0}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -304,6 +313,33 @@ func (chain *Chain) ConnectionOpenConfirm(
 	)
 }
 
+func (chain *Chain) ChannelOpenInit(
+	ctx context.Context,
+	ch, counterparty TestChannel,
+	order channeltypes.Channel_Order,
+	connectionID string,
+) error {
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenInit(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenInit{
+				ChannelId: ch.ID,
+				PortId:    ch.PortID,
+				Channel: ibcchannel.ChannelData{
+					State:    uint8(channeltypes.INIT),
+					Ordering: uint8(order),
+					Counterparty: ibcchannel.ChannelCounterpartyData{
+						PortId:    counterparty.PortID,
+						ChannelId: "",
+					},
+					ConnectionHops: []string{connectionID},
+					Version:        ch.Version,
+				},
+			},
+		),
+	)
+}
+
 // Slot calculator
 
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
@@ -393,5 +429,32 @@ func (chain *Chain) ConstructNextTestConnection(clientID, counterpartyClientID s
 		ClientID:             clientID,
 		NextChannelVersion:   DefaultChannelVersion,
 		CounterpartyClientID: counterpartyClientID,
+	}
+}
+
+// AddTestChannel appends a new TestChannel which contains references to the port and channel ID
+// used for channel creation and interaction. See 'NextTestChannel' for channel ID naming format.
+func (chain *Chain) AddTestChannel(conn *TestConnection, portID string) TestChannel {
+	channel := chain.NextTestChannel(conn, portID)
+	conn.Channels = append(conn.Channels, channel)
+	return channel
+}
+
+// NextTestChannel returns the next test channel to be created on this connection, but does not
+// add it to the list of created channels. This function is expected to be used when the caller
+// has not created the associated channel in app state, but would still like to refer to the
+// non-existent channel usually to test for its non-existence.
+//
+// channel ID format: <connectionid>-chan<channel-index>
+//
+// The port is passed in by the caller.
+func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestChannel {
+	channelID := fmt.Sprintf("channel-%v", time.Now().Unix())
+	return TestChannel{
+		PortID:               portID,
+		ID:                   channelID,
+		ClientID:             conn.ClientID,
+		CounterpartyClientID: conn.CounterpartyClientID,
+		Version:              conn.NextChannelVersion,
 	}
 }

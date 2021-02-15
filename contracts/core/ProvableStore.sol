@@ -3,6 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./types/Client.sol";
 import "./types/Connection.sol";
+import "./types/Channel.sol";
 
 contract ProvableStore {
     // Commitments
@@ -13,6 +14,7 @@ contract ProvableStore {
     string constant clientPrefix = "client/";
     string constant consensusStatePrefix = "consensus/";
     string constant connectionPrefix = "connection/";
+    string constant channelPrefix = "channel/";
 
     // TODO provides ACL
     address[] internal allowedAccessors;
@@ -22,6 +24,11 @@ contract ProvableStore {
     mapping (string => bytes) clientStates;
     mapping (string => mapping(uint64 => bytes)) consensusStates;
     mapping (string => bytes) connections;
+    mapping (string => bytes) channels;
+    mapping (string => mapping(string => uint64)) nextSequenceSends;
+    mapping (string => mapping(string => uint64)) nextSequenceRecvs;
+    mapping (string => mapping(string => uint64)) nextSequenceAcks;
+
 
     // Commitment key generator
 
@@ -37,6 +44,10 @@ contract ProvableStore {
         return keccak256(abi.encodePacked(connectionPrefix, connectionId));
     }
 
+    function channelCommitmentKey(string memory channelId) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(channelPrefix, channelId));
+    }
+
     // Slot calculator
 
     function clientStateCommitmentSlot(string memory clientId) public pure returns (bytes32) {
@@ -49,6 +60,10 @@ contract ProvableStore {
 
     function connectionCommitmentSlot(string memory connectionId) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(connectionCommitmentKey(connectionId), commitmentSlot));
+    }
+
+    function channelCommitmentSlot(string memory channelId) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(channelCommitmentKey(channelId), commitmentSlot));
     }
 
     /// Storage accessor ///
@@ -107,6 +122,36 @@ contract ProvableStore {
         }
         connection = ConnectionEnd.decode(encoded);
         return (connection, true);
+    }
+
+    // Channel
+
+    function setChannel(string memory channelId, Channel.Data memory channel) public {
+        channels[channelId] = Channel.encode(channel);
+        commitments[channelCommitmentKey(channelId)] = keccak256(channels[channelId]);
+    }
+
+    function getChannel(string memory channelId) public view returns (Channel.Data memory channel, bool) {
+        bytes memory encoded = channels[channelId];
+        if (encoded.length == 0) {
+            return (channel, false);
+        }
+        channel = Channel.decode(encoded);
+        return (channel, true);
+    }
+
+    // Packet sequence
+
+    function setNextSequenceSend(string memory portId, string memory channelId, uint64 sequence) public {
+        nextSequenceSends[portId][channelId] = sequence;
+    }
+
+    function setNextSequenceRecv(string memory portId, string memory channelId, uint64 sequence) public {
+        nextSequenceRecvs[portId][channelId] = sequence;
+    }
+
+    function setNextSequenceAck(string memory portId, string memory channelId, uint64 sequence) public {
+        nextSequenceAcks[portId][channelId] = sequence;
     }
 
     // Debug
