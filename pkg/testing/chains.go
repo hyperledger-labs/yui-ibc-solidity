@@ -358,7 +358,7 @@ func (chain *Chain) ChannelOpenTry(
 				ChannelId: ch.ID,
 				PortId:    ch.PortID,
 				Channel: ibcchannel.ChannelData{
-					State:    uint8(channeltypes.OPEN),
+					State:    uint8(channeltypes.TRYOPEN),
 					Ordering: uint8(order),
 					Counterparty: ibcchannel.ChannelCounterpartyData{
 						PortId:    counterpartyCh.PortID,
@@ -368,6 +368,52 @@ func (chain *Chain) ChannelOpenTry(
 					Version:        ch.Version,
 				},
 				ProofInit:   proof.Data,
+				ProofHeight: proof.Height,
+			},
+		),
+	)
+}
+
+func (chain *Chain) ChannelOpenAck(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.PortID, counterpartyCh.ID))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenAck(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenAck{
+				PortId:                ch.PortID,
+				ChannelId:             ch.ID,
+				CounterpartyVersion:   counterpartyCh.Version,
+				CounterpartyChannelId: counterpartyCh.ID,
+				ProofTry:              proof.Data,
+				ProofHeight:           proof.Height,
+			},
+		),
+	)
+}
+
+func (chain *Chain) ChannelOpenConfirm(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.PortID, counterpartyCh.ID))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.ChannelOpenConfirm(
+			chain.TxOpts(ctx),
+			ibcchannel.IBCChannelMsgChannelOpenConfirm{
+				PortId:      ch.PortID,
+				ChannelId:   ch.ID,
+				ProofAck:    proof.Data,
 				ProofHeight: proof.Height,
 			},
 		),

@@ -204,6 +204,7 @@ contract IBCConnection {
 
         require(verifyConnectionState(connection, msg_.proofHeight, msg_.proofAck, connection.counterparty.connection_id, expectedConnection), "failed to verify connection state");
 
+        connection.state = ConnectionEnd.State.STATE_OPEN;
         provableStore.setConnection(msg_.connectionId, connection);
     }
 
