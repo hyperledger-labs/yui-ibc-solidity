@@ -346,3 +346,24 @@ func (c *Coordinator) ChanOpenConfirm(
 		BesuIBFT2Client,
 	)
 }
+
+// SendPacket sends a packet through the channel keeper on the source chain and updates the
+// counterparty client for the source chain.
+func (c *Coordinator) SendPacket(
+	ctx context.Context,
+	source, counterparty *Chain,
+	packet channeltypes.Packet,
+	counterpartyClientID string,
+) error {
+	if err := source.SendPacket(ctx, packet); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		counterpartyClientID, BesuIBFT2Client,
+	)
+}

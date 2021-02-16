@@ -62,6 +62,14 @@ contract IBCClient {
         provableStore.setConsensusState(clientId, height, consensusState);
     }
 
+    function getTimestampAtHeight(string memory clientId, uint64 height) public view returns (uint64, bool) {
+        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        if (!found) {
+            return (0, false);
+        }
+        return (consensusState.timestamp, true);
+    }
+
     /* Internal functions */
 
     function checkHeaderAndUpdateState(string memory clientId, ClientState.Data memory clientState, Header memory header) internal returns (ClientState.Data memory, ConsensusState.Data memory, uint64) {

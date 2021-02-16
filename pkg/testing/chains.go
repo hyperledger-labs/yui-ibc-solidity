@@ -421,6 +421,27 @@ func (chain *Chain) ChannelOpenConfirm(
 	)
 }
 
+func (chain *Chain) SendPacket(
+	ctx context.Context,
+	packet channeltypes.Packet,
+) error {
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.SendPacket(
+			chain.TxOpts(ctx),
+			ibcchannel.PacketData{
+				Sequence:           packet.Sequence,
+				SourcePort:         packet.SourcePort,
+				SourceChannel:      packet.SourceChannel,
+				DestinationPort:    packet.DestinationPort,
+				DestinationChannel: packet.DestinationChannel,
+				Data:               packet.Data,
+				TimeoutHeight:      ibcchannel.HeightData(packet.TimeoutHeight),
+				TimeoutTimestamp:   packet.TimeoutTimestamp,
+			},
+		),
+	)
+}
+
 // Slot calculator
 
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
