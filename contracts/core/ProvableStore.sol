@@ -185,9 +185,8 @@ contract ProvableStore {
 
     function makePacketCommitment(Packet.Data memory packet) public view returns (bytes32) {
         bytes32 dataHash = sha256(packet.data);
-        // return sha256(timeoutTimestamp, timeoutHeight.revision_number, timeoutHeight.revision_height, dataHash);
-        // revert("not implemented error");
-        return dataHash;
+        // TODO serialize uint64 to bytes(big-endian)
+        return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, dataHash));
     }
 
     // Debug

@@ -232,7 +232,8 @@ contract IBCChannel {
         require(packet.timeout_timestamp == 0 || block.timestamp < packet.timeout_timestamp, "block timestamp >= packet timeout timestamp");
 
         bytes32 commitment = provableStore.makePacketCommitment(packet);
-        // TODO verify packet commitment
+        require(ibcconnection.verifyPacketCommitment(connection, proofHeight, proof, packet.source_port, packet.source_channel, packet.sequence, commitment), "failed to verify packet commitment");
+
         // TODO create a packet receipt and update recv-sequence
     }
 
