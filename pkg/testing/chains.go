@@ -428,18 +428,42 @@ func (chain *Chain) SendPacket(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCChannel.SendPacket(
 			chain.TxOpts(ctx),
-			ibcchannel.PacketData{
-				Sequence:           packet.Sequence,
-				SourcePort:         packet.SourcePort,
-				SourceChannel:      packet.SourceChannel,
-				DestinationPort:    packet.DestinationPort,
-				DestinationChannel: packet.DestinationChannel,
-				Data:               packet.Data,
-				TimeoutHeight:      ibcchannel.HeightData(packet.TimeoutHeight),
-				TimeoutTimestamp:   packet.TimeoutTimestamp,
-			},
+			packetToCallData(packet),
 		),
 	)
+}
+
+func (chain *Chain) RecvPacket(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+	packet channeltypes.Packet,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCChannel.RecvPacket(
+			chain.TxOpts(ctx),
+			packetToCallData(packet),
+			proof.Data,
+			proof.Height,
+		),
+	)
+}
+
+func packetToCallData(packet channeltypes.Packet) ibcchannel.PacketData {
+	return ibcchannel.PacketData{
+		Sequence:           packet.Sequence,
+		SourcePort:         packet.SourcePort,
+		SourceChannel:      packet.SourceChannel,
+		DestinationPort:    packet.DestinationPort,
+		DestinationChannel: packet.DestinationChannel,
+		Data:               packet.Data,
+		TimeoutHeight:      ibcchannel.HeightData(packet.TimeoutHeight),
+		TimeoutTimestamp:   packet.TimeoutTimestamp,
+	}
 }
 
 // Slot calculator
@@ -452,6 +476,12 @@ func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
 
 func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string {
 	key, err := chain.ProvableStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
+	require.NoError(chain.t, err)
+	return "0x" + hex.EncodeToString(key[:])
+}
+
+func (chain *Chain) PacketCommitmentSlot(portID, channelID string, sequence uint64) string {
+	key, err := chain.ProvableStore.PacketCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }

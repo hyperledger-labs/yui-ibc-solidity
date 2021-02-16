@@ -367,3 +367,23 @@ func (c *Coordinator) SendPacket(
 		counterpartyClientID, BesuIBFT2Client,
 	)
 }
+
+func (c *Coordinator) RecvPacket(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+	packet channeltypes.Packet,
+	counterpartyClientID string,
+) error {
+	if err := source.RecvPacket(ctx, counterparty, sourceChannel, counterpartyChannel, packet); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		counterpartyClientID, BesuIBFT2Client,
+	)
+}

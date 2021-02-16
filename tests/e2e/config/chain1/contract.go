@@ -5,10 +5,10 @@ import (
 )
 
 const (
-	ProvableStoreAddress = "0x964E727Fa15f3e7d80fBc7F1599F952EA8e6033d"
-	IBCClientAddress     = "0xBB927aEf683f0B1Fd2Ab651bEC6755FAc2aa640f"
-	IBCConnectionAddress = "0x20889941d4ed2D08AEd24B6470eE0b38a06EC89C"
-	IBCChannelAddress = "0xeeC744224f08b37E026458e4C7603577741CC93A"
+	ProvableStoreAddress = "0x98Bb2d64238474552ABe3181E31C9CC4eCAeBeA3"
+	IBCClientAddress     = "0x180B6C325525dB54C0DA871F1fd924a0bcf06397"
+	IBCConnectionAddress = "0xDf919000A9A2533Fb000866654ce06D565DDDb97"
+	IBCChannelAddress = "0xc0ba8346289ec43cd3f68E5EBf0a3169B1d14a2d"
 )
 
 type contractConfig struct{}
