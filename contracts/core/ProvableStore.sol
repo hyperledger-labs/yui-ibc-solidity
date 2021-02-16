@@ -150,12 +150,32 @@ contract ProvableStore {
         nextSequenceSends[portId][channelId] = sequence;
     }
 
+    function getNextSequenceSend(string memory portId, string memory channelId) public view returns (uint64) {
+        return nextSequenceSends[portId][channelId];
+    }
+
     function setNextSequenceRecv(string memory portId, string memory channelId, uint64 sequence) public {
         nextSequenceRecvs[portId][channelId] = sequence;
     }
 
+    function getNextSequenceRecv(string memory portId, string memory channelId) public view returns (uint64) {
+        return nextSequenceRecvs[portId][channelId];
+    }
+
     function setNextSequenceAck(string memory portId, string memory channelId, uint64 sequence) public {
         nextSequenceAcks[portId][channelId] = sequence;
+    }
+
+    function getNextSequenceAck(string memory portId, string memory channelId) public view returns (uint64) {
+        return nextSequenceAcks[portId][channelId];
+    }
+
+    // Commitment maker
+
+    function makePacketCommitment(Packet.Data memory packet) public view returns (bytes32) {
+        bytes32 dataHash = sha256(packet.data);
+        // return sha256(timeoutTimestamp, timeoutHeight.revision_number, timeoutHeight.revision_height, dataHash);
+        revert("not implemented error");
     }
 
     // Debug
