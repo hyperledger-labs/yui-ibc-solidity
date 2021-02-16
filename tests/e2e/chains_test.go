@@ -47,6 +47,7 @@ func (suite ChainTestSuite) TestChannel() {
 	// TODO give a dynamic height
 	packet := channeltypes.NewPacket([]byte("data"), 1, chanB.PortID, chanB.ID, chanA.PortID, chanA.ID, channeltypes.Height{0, 1000000}, 0)
 	suite.Require().NoError(suite.coordinator.SendPacket(ctx, chainA, chainB, packet, chanA.CounterpartyClientID))
+	suite.Require().NoError(suite.coordinator.RecvPacket(ctx, chainB, chainA, chanB, chanA, packet, chanB.CounterpartyClientID))
 }
 
 func TestChainTestSuite(t *testing.T) {
