@@ -45,7 +45,7 @@ type PacketData struct {
 }
 
 // SimpletokenmoduleABI is the input ABI used to generate the binding from.
-const SimpletokenmoduleABI = "[{\"inputs\":[{\"internalType\":\"contractIBCRoutingModule\",\"name\":\"ibcRoutingModule_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"onRecvPacket\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const SimpletokenmoduleABI = "[{\"inputs\":[{\"internalType\":\"contractProvableStore\",\"name\":\"store_\",\"type\":\"address\"},{\"internalType\":\"contractIBCRoutingModule\",\"name\":\"ibcRoutingModule_\",\"type\":\"address\"},{\"internalType\":\"contractIBCChannel\",\"name\":\"ibcChannel_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"sourcePort\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"sourceChannel\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timeoutHeight\",\"type\":\"uint64\"}],\"name\":\"crossTransfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"onRecvPacket\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // Simpletokenmodule is an auto generated Go binding around an Ethereum contract.
 type Simpletokenmodule struct {
@@ -218,6 +218,27 @@ func (_Simpletokenmodule *SimpletokenmoduleSession) BalanceOf(account common.Add
 // Solidity: function balanceOf(address account) view returns(uint256)
 func (_Simpletokenmodule *SimpletokenmoduleCallerSession) BalanceOf(account common.Address) (*big.Int, error) {
 	return _Simpletokenmodule.Contract.BalanceOf(&_Simpletokenmodule.CallOpts, account)
+}
+
+// CrossTransfer is a paid mutator transaction binding the contract method 0x3e011797.
+//
+// Solidity: function crossTransfer(string sourcePort, string sourceChannel, address recipient, uint64 amount, uint64 timeoutHeight) returns()
+func (_Simpletokenmodule *SimpletokenmoduleTransactor) CrossTransfer(opts *bind.TransactOpts, sourcePort string, sourceChannel string, recipient common.Address, amount uint64, timeoutHeight uint64) (*types.Transaction, error) {
+	return _Simpletokenmodule.contract.Transact(opts, "crossTransfer", sourcePort, sourceChannel, recipient, amount, timeoutHeight)
+}
+
+// CrossTransfer is a paid mutator transaction binding the contract method 0x3e011797.
+//
+// Solidity: function crossTransfer(string sourcePort, string sourceChannel, address recipient, uint64 amount, uint64 timeoutHeight) returns()
+func (_Simpletokenmodule *SimpletokenmoduleSession) CrossTransfer(sourcePort string, sourceChannel string, recipient common.Address, amount uint64, timeoutHeight uint64) (*types.Transaction, error) {
+	return _Simpletokenmodule.Contract.CrossTransfer(&_Simpletokenmodule.TransactOpts, sourcePort, sourceChannel, recipient, amount, timeoutHeight)
+}
+
+// CrossTransfer is a paid mutator transaction binding the contract method 0x3e011797.
+//
+// Solidity: function crossTransfer(string sourcePort, string sourceChannel, address recipient, uint64 amount, uint64 timeoutHeight) returns()
+func (_Simpletokenmodule *SimpletokenmoduleTransactorSession) CrossTransfer(sourcePort string, sourceChannel string, recipient common.Address, amount uint64, timeoutHeight uint64) (*types.Transaction, error) {
+	return _Simpletokenmodule.Contract.CrossTransfer(&_Simpletokenmodule.TransactOpts, sourcePort, sourceChannel, recipient, amount, timeoutHeight)
 }
 
 // OnRecvPacket is a paid mutator transaction binding the contract method 0x5550b656.
