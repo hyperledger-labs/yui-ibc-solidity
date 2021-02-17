@@ -62,6 +62,14 @@ contract IBCClient {
         provableStore.setConsensusState(clientId, height, consensusState);
     }
 
+    function getTimestampAtHeight(string memory clientId, uint64 height) public view returns (uint64, bool) {
+        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        if (!found) {
+            return (0, false);
+        }
+        return (consensusState.timestamp, true);
+    }
+
     /* Internal functions */
 
     function checkHeaderAndUpdateState(string memory clientId, ClientState.Data memory clientState, Header memory header) internal returns (ClientState.Data memory, ConsensusState.Data memory, uint64) {
@@ -240,6 +248,25 @@ contract IBCClient {
         (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
         return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.channelCommitmentSlot(portId, channelId), keccak256(channelBytes));
+    }
+
+    function verifyPacketCommitment(
+        ClientState.Data memory self,
+        string memory clientId,
+        uint64 height,
+        bytes memory prefix,
+        bytes memory proof,
+        string memory portId,
+        string memory channelId,
+        uint64 sequence,
+        bytes32 commitmentBytes
+    ) public view returns (bool) {
+        if (!validateArgs(self, height, prefix, proof)) {
+            revert("fail");
+        }
+        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        require(found, "consensusState not found");
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
     }
 
     function toUint256(bytes memory _bytes, uint256 _start) internal pure returns (uint256) {

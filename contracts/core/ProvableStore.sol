@@ -15,6 +15,7 @@ contract ProvableStore {
     string constant consensusStatePrefix = "consensus/";
     string constant connectionPrefix = "connection/";
     string constant channelPrefix = "channel/";
+    string constant packetPrefix = "packet/";
 
     // TODO provides ACL
     address[] internal allowedAccessors;
@@ -48,6 +49,10 @@ contract ProvableStore {
         return keccak256(abi.encodePacked(channelPrefix, portId, "/", channelId));
     }
 
+    function packetCommitmentKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(packetPrefix, portId, "/", channelId, "/", sequence));
+    }
+
     // Slot calculator
 
     function clientStateCommitmentSlot(string memory clientId) public pure returns (bytes32) {
@@ -64,6 +69,10 @@ contract ProvableStore {
 
     function channelCommitmentSlot(string memory portId, string memory channelId) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(channelCommitmentKey(portId, channelId), commitmentSlot));
+    }
+
+    function packetCommitmentSlot(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(packetCommitmentKey(portId, channelId, sequence), commitmentSlot));
     }
 
     /// Storage accessor ///
@@ -144,18 +153,40 @@ contract ProvableStore {
         return channels[portId][channelId].length != 0;
     }
 
-    // Packet sequence
+    // Packet
 
     function setNextSequenceSend(string memory portId, string memory channelId, uint64 sequence) public {
         nextSequenceSends[portId][channelId] = sequence;
+    }
+
+    function getNextSequenceSend(string memory portId, string memory channelId) public view returns (uint64) {
+        return nextSequenceSends[portId][channelId];
     }
 
     function setNextSequenceRecv(string memory portId, string memory channelId, uint64 sequence) public {
         nextSequenceRecvs[portId][channelId] = sequence;
     }
 
+    function getNextSequenceRecv(string memory portId, string memory channelId) public view returns (uint64) {
+        return nextSequenceRecvs[portId][channelId];
+    }
+
     function setNextSequenceAck(string memory portId, string memory channelId, uint64 sequence) public {
         nextSequenceAcks[portId][channelId] = sequence;
+    }
+
+    function getNextSequenceAck(string memory portId, string memory channelId) public view returns (uint64) {
+        return nextSequenceAcks[portId][channelId];
+    }
+
+    function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) public {
+        commitments[packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
+    }
+
+    function makePacketCommitment(Packet.Data memory packet) public view returns (bytes32) {
+        bytes32 dataHash = sha256(packet.data);
+        // TODO serialize uint64 to bytes(big-endian)
+        return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, dataHash));
     }
 
     // Debug
