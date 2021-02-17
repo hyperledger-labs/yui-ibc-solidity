@@ -29,6 +29,7 @@ contract ProvableStore {
     mapping (string => mapping(string => uint64)) nextSequenceSends;
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
+    mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
     // TODO remove this storage variable in production. see details `function setPacket`
     mapping (string => mapping(string => mapping(uint64 => bytes))) packets;
 
@@ -201,6 +202,14 @@ contract ProvableStore {
         bytes32 dataHash = sha256(packet.data);
         // TODO serialize uint64 to bytes(big-endian)
         return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, dataHash));
+    }
+
+    function setPacketReceipt(string memory portId, string memory channelId, uint64 sequence) public {
+        packetReceipts[portId][channelId][sequence] = true;
+    }
+
+    function hasPacketReceipt(string memory portId, string memory channelId, uint64 sequence) public view returns (bool) {
+        return packetReceipts[portId][channelId][sequence];
     }
 
     // Debug
