@@ -265,6 +265,10 @@ contract IBCChannel {
         provableStore.setPacketAcknowledgement(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
     }
 
+    function acknowledgePacket(Packet.Data memory, bytes memory acknowledgement, bytes memory proof, uint64 proofHeight) public {
+        // TODO implements
+    }
+
     function getCounterpartyHops(Channel.Data memory channel) internal view returns (string[] memory hops) {
         require(channel.connection_hops.length == 1, "connection_hops length must be 1");
         (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(channel.connection_hops[0]);

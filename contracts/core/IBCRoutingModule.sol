@@ -42,6 +42,13 @@ contract IBCRoutingModule {
         uint64 proofHeight;
     }
 
+    struct PacketAcknowledgement {
+        Packet.Data packet;
+        bytes acknowledgement;
+        bytes proof;
+        uint64 proofHeight;
+    }
+
     function handlePacketRecv(PacketRecv memory datagram) public returns (bytes memory) {
         (Module memory module, bool found) = lookupModule(datagram.packet.destination_port);
         require(found, "module not found");
@@ -50,6 +57,13 @@ contract IBCRoutingModule {
         if (acknowledgement.length > 0) {
             ibcchannel.writeAcknowledgement(datagram.packet, acknowledgement);
         }
+    }
+
+    function handlePacketAcknowledgement(PacketAcknowledgement memory datagram) public {
+        (Module memory module, bool found) = lookupModule(datagram.packet.source_port);
+        require(found, "module not found");
+        module.callbacks.onAcknowledgementPacket(datagram.packet, datagram.acknowledgement);
+        ibcchannel.acknowledgePacket(datagram.packet, datagram.acknowledgement, datagram.proof, datagram.proofHeight);
     }
 
     // WARNING: This function **must be** removed in production
@@ -62,4 +76,5 @@ contract IBCRoutingModule {
 
 interface CallbacksI {
     function onRecvPacket(Packet.Data calldata) external returns(bytes memory);
+    function onAcknowledgementPacket(Packet.Data calldata, bytes calldata acknowledgement) external;
 }
