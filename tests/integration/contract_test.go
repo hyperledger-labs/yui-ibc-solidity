@@ -8,6 +8,7 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/consts"
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcroutingmodule"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
 	connectiontypes "github.com/datachainlab/ibc-solidity/pkg/ibc/connection"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
@@ -94,6 +95,37 @@ func (suite *ContractTestSuite) TestConnection() {
 	var ret connectiontypes.ConnectionEnd
 	suite.Require().NoError(proto.Unmarshal(actualBytes, &ret))
 	suite.True(proto.Equal(connEndPB, &ret))
+}
+
+func (suite *ContractTestSuite) TestHandlePacketRecv() {
+	ctx := context.Background()
+
+	portId := fmt.Sprintf("port-%v", time.Now().Unix())
+	suite.T().Log(portId, suite.chain.ContractConfig.GetSimpleTokenModuleAddress())
+
+	suite.Require().NoError(
+		suite.chain.WaitIfNoError(ctx)(
+			suite.chain.IBCRoutingModule.BindPort(
+				suite.chain.TxOpts(ctx),
+				portId,
+				suite.chain.ContractConfig.GetSimpleTokenModuleAddress(),
+			),
+		),
+	)
+	data := []byte("data0")
+	suite.Require().NoError(
+		suite.chain.WaitIfNoError(ctx)(
+			suite.chain.IBCRoutingModule.HandlePacketRecvWithoutVerification(
+				suite.chain.TxOpts(ctx),
+				ibcroutingmodule.IBCRoutingModulePacketRecv{
+					Packet: ibcroutingmodule.PacketData{
+						DestinationPort: portId,
+						Data:            data,
+					},
+				},
+			),
+		),
+	)
 }
 
 func TestContractTestSuite(t *testing.T) {

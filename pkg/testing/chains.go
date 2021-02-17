@@ -16,7 +16,9 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcchannel"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcroutingmodule"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletokenmodule"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 
@@ -38,14 +40,20 @@ const (
 type Chain struct {
 	t *testing.T
 
-	client        contract.Client
-	IBCClient     ibcclient.Ibcclient
-	IBCConnection ibcconnection.Ibcconnection
-	IBCChannel    ibcchannel.Ibcchannel
-	ProvableStore provablestore.Provablestore
+	// Core Modules
+	client           contract.Client
+	IBCClient        ibcclient.Ibcclient
+	IBCConnection    ibcconnection.Ibcconnection
+	IBCChannel       ibcchannel.Ibcchannel
+	IBCRoutingModule ibcroutingmodule.Ibcroutingmodule
+	ProvableStore    provablestore.Provablestore
 
-	chainID              int64
-	provableStoreAddress common.Address
+	// App Modules
+	SimpletokenModule simpletokenmodule.Simpletokenmodule
+
+	chainID int64
+
+	ContractConfig ContractConfig
 
 	key0 *ecdsa.PrivateKey
 
@@ -62,6 +70,8 @@ type ContractConfig interface {
 	GetIBCClientAddress() common.Address
 	GetIBCConnectionAddress() common.Address
 	GetIBCChannelAddress() common.Address
+	GetIBCRoutingModuleAddress() common.Address
+	GetSimpleTokenModuleAddress() common.Address
 }
 
 func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string) *Chain {
@@ -81,13 +91,21 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
+	ibcRoutingModule, err := ibcroutingmodule.NewIbcroutingmodule(config.GetIBCRoutingModuleAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	simpletokenModule, err := simpletokenmodule.NewSimpletokenmodule(config.GetSimpleTokenModuleAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
 
 	key0, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(mnemonicPhrase, "m/44'/60'/0'/0/0")
 	if err != nil {
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, chainID: chainID, provableStoreAddress: config.GetProvableStoreAddress(), key0: key0}
+	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, IBCRoutingModule: *ibcRoutingModule, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -130,7 +148,7 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 	height := counterparty.GetClientState(counterpartyClientID).LatestHeight
 	return chain.client.GetContractState(
 		context.Background(),
-		chain.provableStoreAddress,
+		chain.ContractConfig.GetProvableStoreAddress(),
 		storageKeys,
 		big.NewInt(int64(height)),
 	)
@@ -170,7 +188,7 @@ func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, coun
 func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain) MsgCreateClient {
 	clientState := &clienttypes.ClientState{
 		ChainId:              counterparty.ChainIDString(),
-		ProvableStoreAddress: counterparty.provableStoreAddress.Bytes(),
+		ProvableStoreAddress: counterparty.ContractConfig.GetProvableStoreAddress().Bytes(),
 		LatestHeight:         counterparty.LastHeader().Base.Number.Uint64(),
 	}
 	consensusState := &clienttypes.ConsensusState{
@@ -196,7 +214,7 @@ func (chain *Chain) UpdateHeader() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		state, err := chain.client.GetContractState(ctx, chain.provableStoreAddress, nil, nil)
+		state, err := chain.client.GetContractState(ctx, chain.ContractConfig.GetProvableStoreAddress(), nil, nil)
 		if err != nil {
 			panic(err)
 		}
