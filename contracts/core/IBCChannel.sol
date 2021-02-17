@@ -236,7 +236,16 @@ contract IBCChannel {
         bytes32 commitment = provableStore.makePacketCommitment(packet);
         require(ibcconnection.verifyPacketCommitment(connection, proofHeight, proof, packet.source_port, packet.source_channel, packet.sequence, commitment), "failed to verify packet commitment");
 
-        // TODO create a packet receipt and update recv-sequence
+        if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
+            require(!provableStore.hasPacketReceipt(packet.destination_port, packet.destination_channel, packet.sequence), "packet sequence already has been received");
+            provableStore.setPacketReceipt(packet.destination_port, packet.destination_channel, packet.sequence);
+        } else if (channel.ordering == Channel.Order.ORDER_ORDERED) {
+            uint64 nextSequenceRecv = provableStore.getNextSequenceRecv(packet.destination_port, packet.destination_channel);
+            require(nextSequenceRecv > 0 && nextSequenceRecv == packet.sequence, "packet sequence ≠ next receive sequence");
+            provableStore.setNextSequenceRecv(packet.destination_port, packet.destination_channel, nextSequenceRecv+1);
+        } else {
+            revert("unknown ordering type");
+        }
     }
 
     function getCounterpartyHops(Channel.Data memory channel) internal view returns (string[] memory hops) {
