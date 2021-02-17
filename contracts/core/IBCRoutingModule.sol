@@ -47,7 +47,9 @@ contract IBCRoutingModule {
         require(found, "module not found");
         bytes memory acknowledgement = module.callbacks.onRecvPacket(datagram.packet);
         ibcchannel.recvPacket(datagram.packet, datagram.proof, datagram.proofHeight);
-        // TODO write an acknowledgement
+        if (acknowledgement.length > 0) {
+            ibcchannel.writeAcknowledgement(datagram.packet, acknowledgement);
+        }
     }
 
     // WARNING: This function **must be** removed in production

@@ -16,6 +16,7 @@ contract ProvableStore {
     string constant connectionPrefix = "connection/";
     string constant channelPrefix = "channel/";
     string constant packetPrefix = "packet/";
+    string constant packetAckPrefix = "acks/";
 
     // TODO provides ACL
     address[] internal allowedAccessors;
@@ -56,6 +57,10 @@ contract ProvableStore {
         return keccak256(abi.encodePacked(packetPrefix, portId, "/", channelId, "/", sequence));
     }
 
+    function packetAcknowledgementKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(packetAckPrefix, portId, "/", channelId, "/", sequence));
+    }
+
     // Slot calculator
 
     function clientStateCommitmentSlot(string memory clientId) public pure returns (bytes32) {
@@ -76,6 +81,10 @@ contract ProvableStore {
 
     function packetCommitmentSlot(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(packetCommitmentKey(portId, channelId, sequence), commitmentSlot));
+    }
+
+    function packetAcknowledgementSlot(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(packetAcknowledgementKey(portId, channelId, sequence), commitmentSlot));
     }
 
     /// Storage accessor ///
@@ -202,6 +211,15 @@ contract ProvableStore {
         bytes32 dataHash = sha256(packet.data);
         // TODO serialize uint64 to bytes(big-endian)
         return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, dataHash));
+    }
+
+    function setPacketAcknowledgement(string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) public {
+        commitments[packetAcknowledgementKey(portId, channelId, sequence)] = sha256(acknowledgement);
+    }
+
+    function getPacketAcknowledgement(string memory portId, string memory channelId, uint64 sequence) public view returns (bytes32, bool) {
+        bytes32 commitment = commitments[packetAcknowledgementKey(portId, channelId, sequence)];
+        return (commitment, commitment != bytes32(0));
     }
 
     function setPacketReceipt(string memory portId, string memory channelId, uint64 sequence) public {

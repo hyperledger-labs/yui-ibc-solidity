@@ -248,6 +248,23 @@ contract IBCChannel {
         }
     }
 
+    // WriteAcknowledgement writes the packet execution acknowledgement to the state,
+    // which will be verified by the counterparty chain using AcknowledgePacket.
+    function writeAcknowledgement(Packet.Data memory packet, bytes memory acknowledgement) public {
+        Channel.Data memory channel;
+        bytes32 ackHash;
+        bool found;
+        (channel, found) = provableStore.getChannel(packet.destination_port, packet.destination_channel);
+        require(found, "channel not found");
+        require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
+
+        (ackHash, found) = provableStore.getPacketAcknowledgement(packet.destination_port, packet.destination_channel, packet.sequence);
+        require(!found, "acknowledgement for packet already exists");
+
+        require(acknowledgement.length > 0, "acknowledgement cannot be empty");
+        provableStore.setPacketAcknowledgement(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
+    }
+
     function getCounterpartyHops(Channel.Data memory channel) internal view returns (string[] memory hops) {
         require(channel.connection_hops.length == 1, "connection_hops length must be 1");
         (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(channel.connection_hops[0]);
