@@ -29,6 +29,8 @@ contract ProvableStore {
     mapping (string => mapping(string => uint64)) nextSequenceSends;
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
+    // TODO remove this storage variable in production. see details `function setPacket`
+    mapping (string => mapping(string => mapping(uint64 => bytes))) packets;
 
 
     // Commitment key generator
@@ -179,8 +181,20 @@ contract ProvableStore {
         return nextSequenceAcks[portId][channelId];
     }
 
+    // TODO remove this function in production
+    // NOTE: A packet doesn't need to be stored in storage, but this will help development
+    function setPacket(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) internal {
+        packets[portId][channelId][sequence] = Packet.encode(packet);
+    }
+
+    // TODO remove this function in production
+    function getPacket(string memory portId, string memory channelId, uint64 sequence) public view returns (Packet.Data memory) {
+        return Packet.decode(packets[portId][channelId][sequence]);
+    }
+
     function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) public {
         commitments[packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
+        setPacket(portId, channelId, sequence, packet);
     }
 
     function makePacketCommitment(Packet.Data memory packet) public view returns (bytes32) {

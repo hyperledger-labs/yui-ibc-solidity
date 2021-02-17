@@ -208,6 +208,8 @@ contract IBCChannel {
         nextSequenceSend++;
         provableStore.setNextSequenceSend(packet.source_port, packet.source_channel, nextSequenceSend);
         provableStore.setPacketCommitment(packet.source_port, packet.source_channel, packet.sequence, packet);
+
+        // TODO emit an event that includes a packet
     }
 
     function recvPacket(Packet.Data memory packet, bytes memory proof, uint64 proofHeight) public {

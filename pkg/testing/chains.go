@@ -63,6 +63,7 @@ type Chain struct {
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
 	Connections []*TestConnection // track connectionID's created for this chain
+	IBCID       uint64
 }
 
 type ContractConfig interface {
@@ -74,7 +75,7 @@ type ContractConfig interface {
 	GetSimpleTokenModuleAddress() common.Address
 }
 
-func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string) *Chain {
+func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
 	ibcClient, err := ibcclient.NewIbcclient(config.GetIBCClientAddress(), client)
 	if err != nil {
 		t.Error(err)
@@ -105,7 +106,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, IBCRoutingModule: *ibcRoutingModule, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0}
+	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, IBCRoutingModule: *ibcRoutingModule, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -471,6 +472,37 @@ func (chain *Chain) RecvPacket(
 	)
 }
 
+func (chain *Chain) HandlePacketRecv(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+	packet channeltypes.Packet,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCRoutingModule.HandlePacketRecv(
+			chain.TxOpts(ctx),
+			ibcroutingmodule.IBCRoutingModulePacketRecv{
+				Packet: ibcroutingmodule.PacketData{
+					Sequence:           packet.Sequence,
+					SourcePort:         packet.SourcePort,
+					SourceChannel:      packet.SourceChannel,
+					DestinationPort:    packet.DestinationPort,
+					DestinationChannel: packet.DestinationChannel,
+					Data:               packet.Data,
+					TimeoutHeight:      ibcroutingmodule.HeightData(packet.TimeoutHeight),
+					TimeoutTimestamp:   packet.TimeoutTimestamp,
+				},
+				Proof:       proof.Data,
+				ProofHeight: proof.Height,
+			},
+		),
+	)
+}
+
 func packetToCallData(packet channeltypes.Packet) ibcchannel.PacketData {
 	return ibcchannel.PacketData{
 		Sequence:           packet.Sequence,
@@ -561,7 +593,7 @@ func (chain *Chain) WaitIfNoError(ctx context.Context) func(tx *gethtypes.Transa
 // NewClientID appends a new clientID string in the format:
 // ClientFor<counterparty-chain-id><index>
 func (chain *Chain) NewClientID(clientType string) string {
-	clientID := fmt.Sprintf("%s-%s-%v", clientType, strconv.Itoa(len(chain.ClientIDs)), time.Now().Unix())
+	clientID := fmt.Sprintf("%s-%s-%v", clientType, strconv.Itoa(len(chain.ClientIDs)), chain.IBCID)
 	chain.ClientIDs = append(chain.ClientIDs, clientID)
 	return clientID
 }
@@ -579,7 +611,7 @@ func (chain *Chain) AddTestConnection(clientID, counterpartyClientID string) *Te
 // created given a clientID and counterparty clientID. The connection id
 // format: <chainID>-conn<index>
 func (chain *Chain) ConstructNextTestConnection(clientID, counterpartyClientID string) *TestConnection {
-	connectionID := fmt.Sprintf("connection-%v-%v", uint64(len(chain.Connections)), time.Now().Unix())
+	connectionID := fmt.Sprintf("connection-%v-%v", uint64(len(chain.Connections)), chain.IBCID)
 	return &TestConnection{
 		ID:                   connectionID,
 		ClientID:             clientID,
@@ -605,7 +637,7 @@ func (chain *Chain) AddTestChannel(conn *TestConnection, portID string) TestChan
 //
 // The port is passed in by the caller.
 func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestChannel {
-	channelID := fmt.Sprintf("channel-%v", time.Now().Unix())
+	channelID := fmt.Sprintf("channel-%v", chain.IBCID)
 	return TestChannel{
 		PortID:               portID,
 		ID:                   channelID,
