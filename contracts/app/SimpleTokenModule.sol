@@ -27,7 +27,7 @@ contract SimpleTokenModule {
         store = store_;
         ibcChannel = ibcChannel_;
         ibcRoutingModule = ibcRoutingModule_;
-        ibcRoutingModule.bindPort("bank", address(this));
+        ibcRoutingModule.bindPort("transfer", address(this));
 
         _balances[msg.sender] = 10000;
     }
@@ -66,6 +66,7 @@ contract SimpleTokenModule {
             timeout_timestamp: 0
         });
         ibcChannel.sendPacket(packet);
+        burn(msg.sender, amount);
     }
 
     /// Internal functions ///
@@ -80,6 +81,12 @@ contract SimpleTokenModule {
 
     function mint(address recipient, uint256 amount) internal {
         _balances[recipient] += amount;
+    }
+
+    function burn(address sender, uint256 amount) internal {
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "burn amount exceeds balance");
+        _balances[sender] = senderBalance - amount;
     }
 
     /// Module implementations ///
