@@ -100,18 +100,8 @@ func (suite *ContractTestSuite) TestConnection() {
 func (suite *ContractTestSuite) TestHandlePacketRecv() {
 	ctx := context.Background()
 
-	portId := fmt.Sprintf("port-%v", time.Now().Unix())
+	portId := "bank"
 	suite.T().Log(portId, suite.chain.ContractConfig.GetSimpleTokenModuleAddress())
-
-	suite.Require().NoError(
-		suite.chain.WaitIfNoError(ctx)(
-			suite.chain.IBCRoutingModule.BindPort(
-				suite.chain.TxOpts(ctx),
-				portId,
-				suite.chain.ContractConfig.GetSimpleTokenModuleAddress(),
-			),
-		),
-	)
 	data := []byte("data0")
 	suite.Require().NoError(
 		suite.chain.WaitIfNoError(ctx)(

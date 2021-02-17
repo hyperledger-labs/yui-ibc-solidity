@@ -2,22 +2,24 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "../core/types/Channel.sol";
+import "../core/IBCRoutingModule.sol";
 
 contract SimpleTokenModule {
+    /// Storages ///
+
     // Token storages
     mapping (address => uint256) _balances;
 
     // Module storages
-    address ibcRoutingModuleAddress;
+    IBCRoutingModule ibcRoutingModule;
 
-    constructor(address ibcRoutingModuleAddress_) public {
-        ibcRoutingModuleAddress = ibcRoutingModuleAddress_;
+    /// Constructor ///
+
+    constructor(IBCRoutingModule ibcRoutingModule_) public {
+        ibcRoutingModule = ibcRoutingModule_;
+        ibcRoutingModule.bindPort("bank", address(this));
+
         _balances[msg.sender] = 10000;
-    }
-
-    modifier onlyRoutingModule (){
-        require(msg.sender == ibcRoutingModuleAddress);
-        _;
     }
 
     /// Token implementations ///
@@ -35,6 +37,11 @@ contract SimpleTokenModule {
     }
 
     /// Module implementations ///
+
+    modifier onlyRoutingModule (){
+        require(msg.sender == address(ibcRoutingModule));
+        _;
+    }
 
     function onRecvPacket(Packet.Data calldata packet) onlyRoutingModule external returns (bytes memory) {
         // TODO implements
