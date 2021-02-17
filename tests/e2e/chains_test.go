@@ -6,6 +6,7 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
 	"github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
+	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 	testchain0 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain0"
 	testchain1 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain1"
@@ -34,47 +35,6 @@ func (suite *ChainTestSuite) SetupTest() {
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
-// func (suite *ChainTestSuite) TestClient() {
-// 	ctx := context.Background()
-
-// 	chainA := suite.chainA
-// 	chainB := suite.chainB
-
-// 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
-
-// 	//// Update A ////
-// 	suite.coordinator.UpdateHeaders()
-
-// 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA, ibctesting.BesuIBFT2Client))
-
-// 	//// Update B ////
-// 	suite.coordinator.UpdateHeaders()
-
-// 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
-// }
-
-// func (suite ChainTestSuite) TestStateVerificationFunction() {
-// 	ctx := context.Background()
-
-// 	chainA := suite.chainA
-// 	chainB := suite.chainB
-
-// 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
-
-// 	suite.Require().True(chainA.VerifyClientState(clientA, chainB, clientB))
-// 	suite.Require().True(chainB.VerifyClientState(clientB, chainA, clientA))
-// }
-
-// func (suite ChainTestSuite) TestConnection() {
-// 	ctx := context.Background()
-
-// 	chainA := suite.chainA
-// 	chainB := suite.chainB
-
-// 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
-// 	suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-// }
-
 func (suite ChainTestSuite) TestChannel() {
 	ctx := context.Background()
 
@@ -83,7 +43,11 @@ func (suite ChainTestSuite) TestChannel() {
 
 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
 	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	_, _ = suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channel.UNORDERED)
+	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channel.UNORDERED)
+	// TODO give a dynamic height
+	packet := channeltypes.NewPacket([]byte("data"), 1, chanB.PortID, chanB.ID, chanA.PortID, chanA.ID, channeltypes.Height{0, 1000000}, 0)
+	suite.Require().NoError(suite.coordinator.SendPacket(ctx, chainA, chainB, packet, chanA.CounterpartyClientID))
+	suite.Require().NoError(suite.coordinator.RecvPacket(ctx, chainB, chainA, chanB, chanA, packet, chanB.CounterpartyClientID))
 }
 
 func TestChainTestSuite(t *testing.T) {

@@ -256,4 +256,10 @@ contract IBCConnection {
         require(found, "clientState not found");
         return client.verifyChannelState(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, channelBytes);
     }
+
+    function verifyPacketCommitment(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes32 commitmentBytes) public view returns (bool) {
+        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
+        require(found, "clientState not found");
+        return client.verifyPacketCommitment(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, commitmentBytes);
+    }
 }
