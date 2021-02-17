@@ -29,10 +29,10 @@ func (suite *ContractTestSuite) SetupTest() {
 	chainClient, err := contract.CreateClient("http://127.0.0.1:8545")
 	suite.Require().NoError(err)
 
-	suite.chain = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase)
+	suite.chain = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
 }
 
-func (suite *ContractTestSuite) TestConnection() {
+func (suite *ContractTestSuite) TestConnectionSerialization() {
 	ctx := context.Background()
 	connectionID := fmt.Sprintf("connection-%v", time.Now().Unix())
 	connEnd := provablestore.ConnectionEndData{
