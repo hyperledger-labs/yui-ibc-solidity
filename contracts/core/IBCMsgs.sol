@@ -10,6 +10,26 @@ IBCMsgs defines Datagrams in ics-026.
 */
 library IBCMsgs {
 
+    /// Client ///
+
+    struct MsgCreateClient {
+        string clientId;
+        ClientState.Data clientState;
+        ConsensusState.Data consensusState;
+    }
+
+    struct MsgUpdateClient {
+        string clientId;
+        Header header;
+    }
+
+    struct Header {
+        bytes besuHeaderRLPBytes;
+        bytes[] seals;
+        uint64 trustedHeight;
+        bytes accountStateProof;
+    }
+
     /// Connection handshake ///
 
     struct MsgConnectionOpenInit {
