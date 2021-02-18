@@ -1,7 +1,7 @@
 // Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
 
-package ibcroutingmodule
+package ibchandler
 
 import (
 	"math/big"
@@ -32,22 +32,22 @@ type HeightData struct {
 	RevisionHeight uint64
 }
 
-// IBCRoutingModuleModule is an auto generated low-level Go binding around an user-defined struct.
-type IBCRoutingModuleModule struct {
+// IBCHandlerModule is an auto generated low-level Go binding around an user-defined struct.
+type IBCHandlerModule struct {
 	Callbacks common.Address
 	Exists    bool
 }
 
-// IBCRoutingModulePacketAcknowledgement is an auto generated low-level Go binding around an user-defined struct.
-type IBCRoutingModulePacketAcknowledgement struct {
+// IBCHandlerPacketAcknowledgement is an auto generated low-level Go binding around an user-defined struct.
+type IBCHandlerPacketAcknowledgement struct {
 	Packet          PacketData
 	Acknowledgement []byte
 	Proof           []byte
 	ProofHeight     uint64
 }
 
-// IBCRoutingModulePacketRecv is an auto generated low-level Go binding around an user-defined struct.
-type IBCRoutingModulePacketRecv struct {
+// IBCHandlerPacketRecv is an auto generated low-level Go binding around an user-defined struct.
+type IBCHandlerPacketRecv struct {
 	Packet      PacketData
 	Proof       []byte
 	ProofHeight uint64
@@ -66,7 +66,7 @@ type PacketData struct {
 }
 
 // IbcroutingmoduleABI is the input ABI used to generate the binding from.
-const IbcroutingmoduleABI = "[{\"inputs\":[{\"internalType\":\"contractProvableStore\",\"name\":\"store\",\"type\":\"address\"},{\"internalType\":\"contractIBCChannel\",\"name\":\"ibcchannel_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"moduleAddress\",\"type\":\"address\"}],\"name\":\"bindPort\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"}],\"name\":\"lookupModule\",\"outputs\":[{\"components\":[{\"internalType\":\"contractCallbacksI\",\"name\":\"callbacks\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"internalType\":\"structIBCRoutingModule.Module\",\"name\":\"module\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"found\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"proofHeight\",\"type\":\"uint64\"}],\"internalType\":\"structIBCRoutingModule.PacketRecv\",\"name\":\"datagram\",\"type\":\"tuple\"}],\"name\":\"handlePacketRecv\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"proofHeight\",\"type\":\"uint64\"}],\"internalType\":\"structIBCRoutingModule.PacketAcknowledgement\",\"name\":\"datagram\",\"type\":\"tuple\"}],\"name\":\"handlePacketAcknowledgement\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"proofHeight\",\"type\":\"uint64\"}],\"internalType\":\"structIBCRoutingModule.PacketRecv\",\"name\":\"datagram\",\"type\":\"tuple\"}],\"name\":\"handlePacketRecvWithoutVerification\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const IbcroutingmoduleABI = "[{\"inputs\":[{\"internalType\":\"contractProvableStore\",\"name\":\"store\",\"type\":\"address\"},{\"internalType\":\"contractIBCChannel\",\"name\":\"ibcchannel_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"moduleAddress\",\"type\":\"address\"}],\"name\":\"bindPort\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"}],\"name\":\"lookupModule\",\"outputs\":[{\"components\":[{\"internalType\":\"contractCallbacksI\",\"name\":\"callbacks\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"internalType\":\"structIBCHandler.Module\",\"name\":\"module\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"found\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"proofHeight\",\"type\":\"uint64\"}],\"internalType\":\"structIBCHandler.PacketRecv\",\"name\":\"datagram\",\"type\":\"tuple\"}],\"name\":\"handlePacketRecv\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"proofHeight\",\"type\":\"uint64\"}],\"internalType\":\"structIBCHandler.PacketAcknowledgement\",\"name\":\"datagram\",\"type\":\"tuple\"}],\"name\":\"handlePacketAcknowledgement\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"uint64\",\"name\":\"proofHeight\",\"type\":\"uint64\"}],\"internalType\":\"structIBCHandler.PacketRecv\",\"name\":\"datagram\",\"type\":\"tuple\"}],\"name\":\"handlePacketRecvWithoutVerification\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // Ibcroutingmodule is an auto generated Go binding around an Ethereum contract.
 type Ibcroutingmodule struct {
@@ -214,21 +214,21 @@ func (_Ibcroutingmodule *IbcroutingmoduleTransactorRaw) Transact(opts *bind.Tran
 //
 // Solidity: function lookupModule(string portId) view returns((address,bool) module, bool found)
 func (_Ibcroutingmodule *IbcroutingmoduleCaller) LookupModule(opts *bind.CallOpts, portId string) (struct {
-	Module IBCRoutingModuleModule
+	Module IBCHandlerModule
 	Found  bool
 }, error) {
 	var out []interface{}
 	err := _Ibcroutingmodule.contract.Call(opts, &out, "lookupModule", portId)
 
 	outstruct := new(struct {
-		Module IBCRoutingModuleModule
+		Module IBCHandlerModule
 		Found  bool
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
-	outstruct.Module = out[0].(IBCRoutingModuleModule)
+	outstruct.Module = out[0].(IBCHandlerModule)
 	outstruct.Found = out[1].(bool)
 
 	return *outstruct, err
@@ -239,7 +239,7 @@ func (_Ibcroutingmodule *IbcroutingmoduleCaller) LookupModule(opts *bind.CallOpt
 //
 // Solidity: function lookupModule(string portId) view returns((address,bool) module, bool found)
 func (_Ibcroutingmodule *IbcroutingmoduleSession) LookupModule(portId string) (struct {
-	Module IBCRoutingModuleModule
+	Module IBCHandlerModule
 	Found  bool
 }, error) {
 	return _Ibcroutingmodule.Contract.LookupModule(&_Ibcroutingmodule.CallOpts, portId)
@@ -249,7 +249,7 @@ func (_Ibcroutingmodule *IbcroutingmoduleSession) LookupModule(portId string) (s
 //
 // Solidity: function lookupModule(string portId) view returns((address,bool) module, bool found)
 func (_Ibcroutingmodule *IbcroutingmoduleCallerSession) LookupModule(portId string) (struct {
-	Module IBCRoutingModuleModule
+	Module IBCHandlerModule
 	Found  bool
 }, error) {
 	return _Ibcroutingmodule.Contract.LookupModule(&_Ibcroutingmodule.CallOpts, portId)
@@ -279,62 +279,62 @@ func (_Ibcroutingmodule *IbcroutingmoduleTransactorSession) BindPort(portId stri
 // HandlePacketAcknowledgement is a paid mutator transaction binding the contract method 0x7b566424.
 //
 // Solidity: function handlePacketAcknowledgement(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,bytes,uint64) datagram) returns()
-func (_Ibcroutingmodule *IbcroutingmoduleTransactor) HandlePacketAcknowledgement(opts *bind.TransactOpts, datagram IBCRoutingModulePacketAcknowledgement) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleTransactor) HandlePacketAcknowledgement(opts *bind.TransactOpts, datagram IBCHandlerPacketAcknowledgement) (*types.Transaction, error) {
 	return _Ibcroutingmodule.contract.Transact(opts, "handlePacketAcknowledgement", datagram)
 }
 
 // HandlePacketAcknowledgement is a paid mutator transaction binding the contract method 0x7b566424.
 //
 // Solidity: function handlePacketAcknowledgement(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,bytes,uint64) datagram) returns()
-func (_Ibcroutingmodule *IbcroutingmoduleSession) HandlePacketAcknowledgement(datagram IBCRoutingModulePacketAcknowledgement) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleSession) HandlePacketAcknowledgement(datagram IBCHandlerPacketAcknowledgement) (*types.Transaction, error) {
 	return _Ibcroutingmodule.Contract.HandlePacketAcknowledgement(&_Ibcroutingmodule.TransactOpts, datagram)
 }
 
 // HandlePacketAcknowledgement is a paid mutator transaction binding the contract method 0x7b566424.
 //
 // Solidity: function handlePacketAcknowledgement(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,bytes,uint64) datagram) returns()
-func (_Ibcroutingmodule *IbcroutingmoduleTransactorSession) HandlePacketAcknowledgement(datagram IBCRoutingModulePacketAcknowledgement) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleTransactorSession) HandlePacketAcknowledgement(datagram IBCHandlerPacketAcknowledgement) (*types.Transaction, error) {
 	return _Ibcroutingmodule.Contract.HandlePacketAcknowledgement(&_Ibcroutingmodule.TransactOpts, datagram)
 }
 
 // HandlePacketRecv is a paid mutator transaction binding the contract method 0xad1ad8fe.
 //
 // Solidity: function handlePacketRecv(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,uint64) datagram) returns(bytes)
-func (_Ibcroutingmodule *IbcroutingmoduleTransactor) HandlePacketRecv(opts *bind.TransactOpts, datagram IBCRoutingModulePacketRecv) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleTransactor) HandlePacketRecv(opts *bind.TransactOpts, datagram IBCHandlerPacketRecv) (*types.Transaction, error) {
 	return _Ibcroutingmodule.contract.Transact(opts, "handlePacketRecv", datagram)
 }
 
 // HandlePacketRecv is a paid mutator transaction binding the contract method 0xad1ad8fe.
 //
 // Solidity: function handlePacketRecv(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,uint64) datagram) returns(bytes)
-func (_Ibcroutingmodule *IbcroutingmoduleSession) HandlePacketRecv(datagram IBCRoutingModulePacketRecv) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleSession) HandlePacketRecv(datagram IBCHandlerPacketRecv) (*types.Transaction, error) {
 	return _Ibcroutingmodule.Contract.HandlePacketRecv(&_Ibcroutingmodule.TransactOpts, datagram)
 }
 
 // HandlePacketRecv is a paid mutator transaction binding the contract method 0xad1ad8fe.
 //
 // Solidity: function handlePacketRecv(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,uint64) datagram) returns(bytes)
-func (_Ibcroutingmodule *IbcroutingmoduleTransactorSession) HandlePacketRecv(datagram IBCRoutingModulePacketRecv) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleTransactorSession) HandlePacketRecv(datagram IBCHandlerPacketRecv) (*types.Transaction, error) {
 	return _Ibcroutingmodule.Contract.HandlePacketRecv(&_Ibcroutingmodule.TransactOpts, datagram)
 }
 
 // HandlePacketRecvWithoutVerification is a paid mutator transaction binding the contract method 0x9ee76fac.
 //
 // Solidity: function handlePacketRecvWithoutVerification(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,uint64) datagram) returns(bytes)
-func (_Ibcroutingmodule *IbcroutingmoduleTransactor) HandlePacketRecvWithoutVerification(opts *bind.TransactOpts, datagram IBCRoutingModulePacketRecv) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleTransactor) HandlePacketRecvWithoutVerification(opts *bind.TransactOpts, datagram IBCHandlerPacketRecv) (*types.Transaction, error) {
 	return _Ibcroutingmodule.contract.Transact(opts, "handlePacketRecvWithoutVerification", datagram)
 }
 
 // HandlePacketRecvWithoutVerification is a paid mutator transaction binding the contract method 0x9ee76fac.
 //
 // Solidity: function handlePacketRecvWithoutVerification(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,uint64) datagram) returns(bytes)
-func (_Ibcroutingmodule *IbcroutingmoduleSession) HandlePacketRecvWithoutVerification(datagram IBCRoutingModulePacketRecv) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleSession) HandlePacketRecvWithoutVerification(datagram IBCHandlerPacketRecv) (*types.Transaction, error) {
 	return _Ibcroutingmodule.Contract.HandlePacketRecvWithoutVerification(&_Ibcroutingmodule.TransactOpts, datagram)
 }
 
 // HandlePacketRecvWithoutVerification is a paid mutator transaction binding the contract method 0x9ee76fac.
 //
 // Solidity: function handlePacketRecvWithoutVerification(((uint64,string,string,string,string,bytes,(uint64,uint64),uint64),bytes,uint64) datagram) returns(bytes)
-func (_Ibcroutingmodule *IbcroutingmoduleTransactorSession) HandlePacketRecvWithoutVerification(datagram IBCRoutingModulePacketRecv) (*types.Transaction, error) {
+func (_Ibcroutingmodule *IbcroutingmoduleTransactorSession) HandlePacketRecvWithoutVerification(datagram IBCHandlerPacketRecv) (*types.Transaction, error) {
 	return _Ibcroutingmodule.Contract.HandlePacketRecvWithoutVerification(&_Ibcroutingmodule.TransactOpts, datagram)
 }

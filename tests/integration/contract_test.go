@@ -8,7 +8,7 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/consts"
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcroutingmodule"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
 	connectiontypes "github.com/datachainlab/ibc-solidity/pkg/ibc/connection"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
@@ -105,10 +105,10 @@ func (suite *ContractTestSuite) TestHandlePacketRecv() {
 	data := []byte("data0")
 	suite.Require().NoError(
 		suite.chain.WaitIfNoError(ctx)(
-			suite.chain.IBCRoutingModule.HandlePacketRecvWithoutVerification(
+			suite.chain.IBCHandler.HandlePacketRecvWithoutVerification(
 				suite.chain.TxOpts(ctx),
-				ibcroutingmodule.IBCRoutingModulePacketRecv{
-					Packet: ibcroutingmodule.PacketData{
+				ibchandler.IBCHandlerPacketRecv{
+					Packet: ibchandler.PacketData{
 						DestinationPort: portId,
 						Data:            data,
 					},
