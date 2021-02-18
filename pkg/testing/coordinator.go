@@ -393,7 +393,6 @@ func (c *Coordinator) HandlePacketRecv(
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
 	packet channeltypes.Packet,
-	counterpartyClientID string,
 ) error {
 	if err := source.HandlePacketRecv(ctx, counterparty, sourceChannel, counterpartyChannel, packet); err != nil {
 		return err
@@ -404,7 +403,7 @@ func (c *Coordinator) HandlePacketRecv(
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
-		counterpartyClientID, BesuIBFT2Client,
+		counterpartyChannel.ClientID, BesuIBFT2Client,
 	)
 }
 
@@ -414,7 +413,6 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 	sourceChannel, counterpartyChannel TestChannel,
 	packet channeltypes.Packet,
 	acknowledgement []byte,
-	counterpartyClientID string,
 ) error {
 	if err := source.HandlePacketAcknowledgement(ctx, counterparty, sourceChannel, counterpartyChannel, packet, acknowledgement); err != nil {
 		return err
@@ -425,6 +423,6 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
-		counterpartyClientID, BesuIBFT2Client,
+		counterpartyChannel.ClientID, BesuIBFT2Client,
 	)
 }

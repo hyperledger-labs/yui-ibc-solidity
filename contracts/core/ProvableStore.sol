@@ -207,6 +207,10 @@ contract ProvableStore {
         setPacket(portId, channelId, sequence, packet);
     }
 
+    function deletePacketCommitment(string memory portId, string memory channelId, uint64 sequence) public {
+        delete commitments[packetCommitmentKey(portId, channelId, sequence)];
+    }
+
     function getPacketCommitment(string memory portId, string memory channelId, uint64 sequence) public returns (bytes32, bool) {
         bytes32 commitment = commitments[packetCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));

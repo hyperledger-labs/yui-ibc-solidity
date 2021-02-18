@@ -465,9 +465,11 @@ func (chain *Chain) RecvPacket(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCChannel.RecvPacket(
 			chain.TxOpts(ctx),
-			packetToCallData(packet),
-			proof.Data,
-			proof.Height,
+			ibcchannel.IBCMsgsMsgPacketRecv{
+				Packet:      packetToCallData(packet),
+				Proof:       proof.Data,
+				ProofHeight: proof.Height,
+			},
 		),
 	)
 }
@@ -510,7 +512,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	packet channeltypes.Packet,
 	acknowledgement []byte,
 ) error {
-	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketAcknowledgementCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence))
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketAcknowledgementCommitmentSlot(packet.DestinationPort, packet.DestinationChannel, packet.Sequence))
 	if err != nil {
 		return err
 	}

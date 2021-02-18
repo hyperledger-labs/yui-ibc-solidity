@@ -7,6 +7,7 @@ import "./types/Client.sol";
 import "./ProvableStore.sol";
 import "./IBCClient.sol";
 import "./IBCConnection.sol";
+import "./IBCMsgs.sol";
 
 contract IBCChannel {
     using strings for *;
@@ -212,37 +213,37 @@ contract IBCChannel {
         // TODO emit an event that includes a packet
     }
 
-    function recvPacket(Packet.Data memory packet, bytes memory proof, uint64 proofHeight) public {
+    function recvPacket(IBCMsgs.MsgPacketRecv memory msg_) public {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         bool found;
-        (channel, found) = provableStore.getChannel(packet.destination_port, packet.destination_channel);
+        (channel, found) = provableStore.getChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
         require(found, "channel not found");
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
         // TODO
         // Authenticate capability to ensure caller has authority to receive packet on this channel
 
-        require(packet.source_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet source port doesn't match the counterparty's port");
-        require(packet.source_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet source channel doesn't match the counterparty's channel");
+        require(msg_.packet.source_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet source port doesn't match the counterparty's port");
+        require(msg_.packet.source_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet source channel doesn't match the counterparty's channel");
 
         (connection, found) = provableStore.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
-        require(packet.timeout_height.revision_height == 0 || block.number < packet.timeout_height.revision_height, "block height >= packet timeout height");
-        require(packet.timeout_timestamp == 0 || block.timestamp < packet.timeout_timestamp, "block timestamp >= packet timeout timestamp");
+        require(msg_.packet.timeout_height.revision_height == 0 || block.number < msg_.packet.timeout_height.revision_height, "block height >= packet timeout height");
+        require(msg_.packet.timeout_timestamp == 0 || block.timestamp < msg_.packet.timeout_timestamp, "block timestamp >= packet timeout timestamp");
 
-        bytes32 commitment = provableStore.makePacketCommitment(packet);
-        require(ibcconnection.verifyPacketCommitment(connection, proofHeight, proof, packet.source_port, packet.source_channel, packet.sequence, commitment), "failed to verify packet commitment");
+        bytes32 commitment = provableStore.makePacketCommitment(msg_.packet);
+        require(ibcconnection.verifyPacketCommitment(connection, msg_.proofHeight, msg_.proof, msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence, commitment), "failed to verify packet commitment");
 
         if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
-            require(!provableStore.hasPacketReceipt(packet.destination_port, packet.destination_channel, packet.sequence), "packet sequence already has been received");
-            provableStore.setPacketReceipt(packet.destination_port, packet.destination_channel, packet.sequence);
+            require(!provableStore.hasPacketReceipt(msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence), "packet sequence already has been received");
+            provableStore.setPacketReceipt(msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence);
         } else if (channel.ordering == Channel.Order.ORDER_ORDERED) {
-            uint64 nextSequenceRecv = provableStore.getNextSequenceRecv(packet.destination_port, packet.destination_channel);
-            require(nextSequenceRecv > 0 && nextSequenceRecv == packet.sequence, "packet sequence ≠ next receive sequence");
-            provableStore.setNextSequenceRecv(packet.destination_port, packet.destination_channel, nextSequenceRecv+1);
+            uint64 nextSequenceRecv = provableStore.getNextSequenceRecv(msg_.packet.destination_port, msg_.packet.destination_channel);
+            require(nextSequenceRecv > 0 && nextSequenceRecv == msg_.packet.sequence, "packet sequence ≠ next receive sequence");
+            provableStore.setNextSequenceRecv(msg_.packet.destination_port, msg_.packet.destination_channel, nextSequenceRecv+1);
         } else {
             revert("unknown ordering type");
         }
@@ -265,30 +266,39 @@ contract IBCChannel {
         provableStore.setPacketAcknowledgementCommitment(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
     }
 
-    function acknowledgePacket(Packet.Data memory packet, bytes memory acknowledgement, bytes memory proof, uint64 proofHeight) public {
+    function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement memory msg_) public {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
-        // bytes32 commitment;
+        bytes32 commitment;
+        uint64 nextSequenceAck;
         bool found;
-        (channel, found) = provableStore.getChannel(packet.source_port, packet.source_channel);
+        (channel, found) = provableStore.getChannel(msg_.packet.source_port, msg_.packet.source_channel);
         require(found, "channel not found");
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
-        require(packet.destination_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet destination port doesn't match the counterparty's port");
-        require(packet.destination_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet destination channel doesn't match the counterparty's channel");
+        require(msg_.packet.destination_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet destination port doesn't match the counterparty's port");
+        require(msg_.packet.destination_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet destination channel doesn't match the counterparty's channel");
 
         (connection, found) = provableStore.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
-        // (commitment, found) = provableStore.getPacketCommitment(packet.source_port, packet.source_channel, packet.sequence);
-        // require(found, "packet commitment not found");
+        (commitment, found) = provableStore.getPacketCommitment(msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence);
+        require(found, "packet commitment not found");
 
-        // require(commitment == provableStore.makePacketCommitment(packet), "commitment bytes are not equal");
+        require(commitment == provableStore.makePacketCommitment(msg_.packet), "commitment bytes are not equal");
 
-        // require(ibcconnection.verifyPacketAcknowledgement(connection, proofHeight, proof, packet.source_port, packet.source_channel, packet.sequence, provableStore.makePacketAcknowledgementCommitment(acknowledgement)), "failed to verify packet commitment");
+        require(ibcconnection.verifyPacketAcknowledgement(connection, msg_.proofHeight, msg_.proof, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, provableStore.makePacketAcknowledgementCommitment(msg_.acknowledgement)), "failed to verify packet acknowledgement commitment");
 
-        // TODO implements
+        if (channel.ordering == Channel.Order.ORDER_ORDERED) {
+            nextSequenceAck = provableStore.getNextSequenceAck(msg_.packet.source_port, msg_.packet.source_channel);
+            require(nextSequenceAck == 0, "sequence ack not found");
+            require(msg_.packet.sequence == nextSequenceAck, "packet sequence ≠ next ack sequence");
+            nextSequenceAck++;
+            provableStore.setNextSequenceAck(msg_.packet.source_port, msg_.packet.source_channel, nextSequenceAck);
+        }
+
+        provableStore.deletePacketCommitment(msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence);
     }
 
     function getCounterpartyHops(Channel.Data memory channel) internal view returns (string[] memory hops) {

@@ -68,9 +68,8 @@ func (suite ChainTestSuite) TestChannel() {
 
 	packet, err := chainA.ProvableStore.GetPacket(chainA.CallOpts(ctx), chanA.PortID, chanA.ID, 1)
 	suite.Require().NoError(err)
-	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA,
-		channel.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp),
-		chanB.CounterpartyClientID))
+	transferPacket := channel.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
+	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, transferPacket))
 
 	postBalanceA, err := chainA.SimpletokenModule.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
 	suite.Require().NoError(err)
@@ -80,7 +79,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().EqualValues(balanceB.Uint64()+100, postBalanceB.Uint64())
 
-	// TODO call HandlePacketAcknowledgement function with acknowledgement
+	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, transferPacket, []byte{1}))
 }
 
 func TestChainTestSuite(t *testing.T) {
