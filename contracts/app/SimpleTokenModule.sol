@@ -101,4 +101,8 @@ contract SimpleTokenModule {
         mint(data.receiver.toAddress(), data.amount);
         return packet.data;
     }
+
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external {
+        // if acknowledgement indicates an error, refund the tokens to sender
+    }
 }
