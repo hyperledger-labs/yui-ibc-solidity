@@ -2,6 +2,7 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "./IBCStore.sol";
+import "./IBCMsgs.sol";
 import "./types/Client.sol";
 import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";
@@ -22,15 +23,8 @@ contract IBCClient {
         ibcStore = s;
     }
 
-    struct Header {
-        bytes besuHeaderRLPBytes;
-        bytes[] seals;
-        uint64 trustedHeight;
-        bytes accountStateProof;
-    }
-
     struct ParsedBesuHeader {
-        Header base;
+        IBCMsgs.Header base;
         uint64 height;
         bytes32 stateRoot;
         uint64 time;
@@ -49,30 +43,30 @@ contract IBCClient {
     /**
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
-    function createClient(string memory clientId, ClientState.Data memory clientState, ConsensusState.Data memory consensusState) public {
-        require(!ibcStore.hasClientState(clientId));
+    function createClient(IBCMsgs.MsgCreateClient memory msg_) public {
+        require(!ibcStore.hasClientState(msg_.clientId));
 
-        ibcStore.setClientState(clientId, clientState);
-        ibcStore.setConsensusState(clientId, clientState.latest_height, consensusState);
+        ibcStore.setClientState(msg_.clientId, msg_.clientState);
+        ibcStore.setConsensusState(msg_.clientId, msg_.clientState.latest_height, msg_.consensusState);
     }
 
     /**
      * @dev updateClient updates the consensus state and the state root from a provided header
      */
-    function updateClient(string memory clientId, Header memory header) public {
+    function updateClient(IBCMsgs.MsgUpdateClient memory msg_) public {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         uint64 height;
         bool found;
     
-        (clientState, found) = ibcStore.getClientState(clientId);
+        (clientState, found) = ibcStore.getClientState(msg_.clientId);
         require(found, "clientState not found");
 
-        (clientState, consensusState, height) = checkHeaderAndUpdateState(clientId, clientState, header);
+        (clientState, consensusState, height) = checkHeaderAndUpdateState(msg_.clientId, clientState, msg_.header);
     
         //// persist states ////
-        ibcStore.setClientState(clientId, clientState);
-        ibcStore.setConsensusState(clientId, height, consensusState);
+        ibcStore.setClientState(msg_.clientId, clientState);
+        ibcStore.setConsensusState(msg_.clientId, height, consensusState);
     }
 
     /**
@@ -91,7 +85,7 @@ contract IBCClient {
     /**
      * @dev checkHeaderAndUpdateState checks if the provided header is valid
      */
-    function checkHeaderAndUpdateState(string memory clientId, ClientState.Data memory clientState, Header memory header) internal view returns (ClientState.Data memory, ConsensusState.Data memory, uint64) {
+    function checkHeaderAndUpdateState(string memory clientId, ClientState.Data memory clientState, IBCMsgs.Header memory header) internal view returns (ClientState.Data memory, ConsensusState.Data memory, uint64) {
         (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, header.trustedHeight);
         require(found, "consensusState not found");
 
@@ -180,7 +174,7 @@ contract IBCClient {
         return bytes32(accountRLP.toRLPItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
     }
 
-    function parseBesuHeader(Header memory header) internal pure returns (ParsedBesuHeader memory) {
+    function parseBesuHeader(IBCMsgs.Header memory header) internal pure returns (ParsedBesuHeader memory) {
         ParsedBesuHeader memory parsedHeader;
 
         parsedHeader.base = header;

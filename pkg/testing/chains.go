@@ -190,29 +190,36 @@ func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, coun
 	return ok
 }
 
-func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain) MsgCreateClient {
-	clientState := &clienttypes.ClientState{
+func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgCreateClient {
+	clientState := ibchandler.ClientStateData{
 		ChainId:         counterparty.ChainIDString(),
-		IBCStoreAddress: counterparty.ContractConfig.GetIBCStoreAddress().Bytes(),
+		IbcStoreAddress: counterparty.ContractConfig.GetIBCStoreAddress().Bytes(),
 		LatestHeight:    counterparty.LastHeader().Base.Number.Uint64(),
 	}
-	consensusState := &clienttypes.ConsensusState{
+	consensusState := ibchandler.ConsensusStateData{
 		Timestamp:  counterparty.LastHeader().Base.Time,
 		Root:       counterparty.LastHeader().Base.Root.Bytes(),
 		Validators: counterparty.LastValidators(),
 	}
-	return NewMsgCreateClient(clientState, consensusState)
+	return ibchandler.IBCMsgsMsgCreateClient{
+		ClientId:       clientID,
+		ClientState:    clientState,
+		ConsensusState: consensusState,
+	}
 }
 
-func (chain *Chain) ConstructMsgUpdateClient(counterparty *Chain, clientID string) MsgUpdateClient {
+func (chain *Chain) ConstructMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
 	trustedHeight := chain.GetClientState(clientID).LatestHeight
-	var header = ibcclient.IBCClientHeader{
+	var header = ibchandler.IBCMsgsHeader{
 		BesuHeaderRLPBytes: counterparty.LastContractState.SealingHeaderRLP(),
 		Seals:              counterparty.LastContractState.CommitSeals,
 		TrustedHeight:      trustedHeight,
 		AccountStateProof:  counterparty.LastContractState.AccountProofRLP(),
 	}
-	return NewMsgUpdateClient(header)
+	return ibchandler.IBCMsgsMsgUpdateClient{
+		ClientId: clientID,
+		Header:   header,
+	}
 }
 
 func (chain *Chain) UpdateHeader() {
@@ -233,16 +240,16 @@ func (chain *Chain) UpdateHeader() {
 }
 
 func (chain *Chain) CreateBesuClient(ctx context.Context, counterparty *Chain, clientID string) error {
-	msg := chain.ConstructMsgCreateClient(counterparty)
+	msg := chain.ConstructMsgCreateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCClient.CreateClient(chain.TxOpts(ctx), clientID, msg.ClientStateData(), msg.ConsensusStateData()),
+		chain.IBCHandler.CreateClient(chain.TxOpts(ctx), msg),
 	)
 }
 
 func (chain *Chain) UpdateBesuClient(ctx context.Context, counterparty *Chain, clientID string) error {
 	msg := chain.ConstructMsgUpdateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCClient.UpdateClient(chain.TxOpts(ctx), clientID, msg.Header),
+		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx), msg),
 	)
 }
 
