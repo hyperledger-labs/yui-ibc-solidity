@@ -1,5 +1,5 @@
 const Migrations = artifacts.require("Migrations");
-const ProvableStore = artifacts.require("ProvableStore");
+const IBCStore = artifacts.require("IBCStore");
 const IBCClient = artifacts.require("IBCClient");
 const IBCConnection = artifacts.require("IBCConnection");
 const IBCChannel = artifacts.require("IBCChannel");
@@ -16,12 +16,12 @@ module.exports = function (deployer) {
   deployer.deploy(IBCMsgs).then(function() {
     return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler]);
   });
-  deployer.deploy(ProvableStore).then(function() {
-    return deployer.deploy(IBCClient, ProvableStore.address).then(function() {
-      return deployer.deploy(IBCConnection, ProvableStore.address, IBCClient.address).then(function() {
-        return deployer.deploy(IBCChannel, ProvableStore.address, IBCClient.address, IBCConnection.address).then(function() {
-          return deployer.deploy(IBCHandler, ProvableStore.address, IBCChannel.address).then(function() {
-            return deployer.deploy(SimpleTokenModule, ProvableStore.address, IBCHandler.address, IBCChannel.address);
+  deployer.deploy(IBCStore).then(function() {
+    return deployer.deploy(IBCClient, IBCStore.address).then(function() {
+      return deployer.deploy(IBCConnection, IBCStore.address, IBCClient.address).then(function() {
+        return deployer.deploy(IBCChannel, IBCStore.address, IBCClient.address, IBCConnection.address).then(function() {
+          return deployer.deploy(IBCHandler, IBCStore.address, IBCChannel.address).then(function() {
+            return deployer.deploy(SimpleTokenModule, IBCStore.address, IBCHandler.address, IBCChannel.address);
           });
         });
       });

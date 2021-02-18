@@ -3,19 +3,19 @@ pragma experimental ABIEncoderV2;
 
 import "./IBCMsgs.sol";
 import "./IBCChannel.sol";
-import "./ProvableStore.sol";
+import "./IBCStore.sol";
 
 /*
 IBCHandler implements ics-025 and ics-026
 */
 contract IBCHandler {
-    ProvableStore provableStore;
+    IBCStore ibcStore;
     IBCChannel ibcchannel;
 
     mapping(string => Module) modules;
 
-    constructor(ProvableStore store, IBCChannel ibcchannel_) public {
-        provableStore = store;
+    constructor(IBCStore store, IBCChannel ibcchannel_) public {
+        ibcStore = store;
         ibcchannel = ibcchannel_;
     }
 

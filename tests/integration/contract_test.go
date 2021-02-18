@@ -8,7 +8,7 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/consts"
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcstore"
 	connectiontypes "github.com/datachainlab/ibc-solidity/pkg/ibc/connection"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 	"github.com/gogo/protobuf/proto"
@@ -34,22 +34,22 @@ func (suite *ContractTestSuite) SetupTest() {
 func (suite *ContractTestSuite) TestConnectionSerialization() {
 	ctx := context.Background()
 	connectionID := fmt.Sprintf("connection-%v", time.Now().Unix())
-	connEnd := provablestore.ConnectionEndData{
+	connEnd := ibcstore.ConnectionEndData{
 		ClientId: "client",
-		Versions: []provablestore.VersionData{
+		Versions: []ibcstore.VersionData{
 			{Identifier: "id", Features: []string{"a", "b"}},
 		},
 		// State: 1,
 		// DelayPeriod: 1,
-		// Counterparty: provablestore.CounterpartyData{
+		// Counterparty: ibcstore.CounterpartyData{
 		// 	// ClientId:     "cpclient",
 		// 	// ConnectionId: "cpconnection",
-		// 	// Prefix: provablestore.MerklePrefixData{
+		// 	// Prefix: ibcstore.MerklePrefixData{
 		// 	// 	// KeyPrefix: []byte("ibc"),
 		// 	// },
 		// },
 	}
-	tx, err := suite.chain.ProvableStore.SetConnection(
+	tx, err := suite.chain.IBCStore.SetConnection(
 		suite.chain.TxOpts(ctx),
 		connectionID,
 		connEnd,
@@ -57,7 +57,7 @@ func (suite *ContractTestSuite) TestConnectionSerialization() {
 	suite.Require().NoError(err)
 	suite.Require().NoError(suite.chain.WaitForReceiptAndGet(ctx, tx))
 
-	actual, found, err := suite.chain.ProvableStore.GetConnection(
+	actual, found, err := suite.chain.IBCStore.GetConnection(
 		suite.chain.CallOpts(ctx),
 		connectionID,
 	)
@@ -83,7 +83,7 @@ func (suite *ContractTestSuite) TestConnectionSerialization() {
 
 	expectedBytes, err := proto.Marshal(connEndPB)
 	suite.Require().NoError(err)
-	actualBytes, found, err := suite.chain.ProvableStore.GetConnectionBytes(
+	actualBytes, found, err := suite.chain.IBCStore.GetConnectionBytes(
 		suite.chain.CallOpts(ctx),
 		connectionID,
 	)

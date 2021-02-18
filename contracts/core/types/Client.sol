@@ -9,7 +9,7 @@ library ClientState {
   //struct definition
   struct Data {
     string chain_id;
-    bytes provable_store_address;
+    bytes ibc_store_address;
     uint64 latest_height;
   }
 
@@ -63,7 +63,7 @@ library ClientState {
         pointer += _read_chain_id(pointer, bs, r, counters);
       }
       else if (fieldId == 2) {
-        pointer += _read_provable_store_address(pointer, bs, r, counters);
+        pointer += _read_ibc_store_address(pointer, bs, r, counters);
       }
       else if (fieldId == 3) {
         pointer += _read_latest_height(pointer, bs, r, counters);
@@ -133,7 +133,7 @@ library ClientState {
    * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
-  function _read_provable_store_address(
+  function _read_ibc_store_address(
     uint256 p,
     bytes memory bs,
     Data memory r,
@@ -146,7 +146,7 @@ library ClientState {
     if (isNil(r)) {
       counters[2] += 1;
     } else {
-      r.provable_store_address = x;
+      r.ibc_store_address = x;
       if (counters[2] > 0) counters[2] -= 1;
     }
     return sz;
@@ -221,14 +221,14 @@ library ClientState {
     );
     pointer += ProtoBufRuntime._encode_string(r.chain_id, pointer, bs);
     }
-    if (r.provable_store_address.length != 0) {
+    if (r.ibc_store_address.length != 0) {
     pointer += ProtoBufRuntime._encode_key(
       2,
       ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_bytes(r.provable_store_address, pointer, bs);
+    pointer += ProtoBufRuntime._encode_bytes(r.ibc_store_address, pointer, bs);
     }
     if (r.latest_height != 0) {
     pointer += ProtoBufRuntime._encode_key(
@@ -283,7 +283,7 @@ library ClientState {
   ) internal pure returns (uint) {
     uint256 e;
     e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.chain_id).length);
-    e += 1 + ProtoBufRuntime._sz_lendelim(r.provable_store_address.length);
+    e += 1 + ProtoBufRuntime._sz_lendelim(r.ibc_store_address.length);
     e += 1 + ProtoBufRuntime._sz_uint64(r.latest_height);
     return e;
   }
@@ -297,7 +297,7 @@ library ClientState {
     return false;
   }
 
-  if (r.provable_store_address.length != 0) {
+  if (r.ibc_store_address.length != 0) {
     return false;
   }
 
@@ -317,7 +317,7 @@ library ClientState {
    */
   function store(Data memory input, Data storage output) internal {
     output.chain_id = input.chain_id;
-    output.provable_store_address = input.provable_store_address;
+    output.ibc_store_address = input.ibc_store_address;
     output.latest_height = input.latest_height;
 
   }

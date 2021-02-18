@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "../core/types/Channel.sol";
 import "../core/IBCHandler.sol";
 import "../core/IBCChannel.sol";
-import "../core/ProvableStore.sol";
+import "../core/IBCStore.sol";
 import "../core/types/App.sol";
 import "../lib/Bytes.sol";
 
@@ -19,11 +19,11 @@ contract SimpleTokenModule {
     // Module storages
     IBCHandler ibcHandler;
     IBCChannel ibcChannel;
-    ProvableStore store;
+    IBCStore store;
 
     /// Constructor ///
 
-    constructor(ProvableStore store_, IBCHandler ibcHandler_, IBCChannel ibcChannel_) public {
+    constructor(IBCStore store_, IBCHandler ibcHandler_, IBCChannel ibcChannel_) public {
         store = store_;
         ibcChannel = ibcChannel_;
         ibcHandler = ibcHandler_;

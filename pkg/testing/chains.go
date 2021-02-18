@@ -17,7 +17,7 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcstore"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletokenmodule"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
@@ -46,7 +46,7 @@ type Chain struct {
 	IBCConnection ibcconnection.Ibcconnection
 	IBCChannel    ibcchannel.Ibcchannel
 	IBCHandler    ibchandler.Ibchandler
-	ProvableStore provablestore.Provablestore
+	IBCStore      ibcstore.Ibcstore
 
 	// App Modules
 	SimpletokenModule simpletokenmodule.Simpletokenmodule
@@ -67,7 +67,7 @@ type Chain struct {
 }
 
 type ContractConfig interface {
-	GetProvableStoreAddress() common.Address
+	GetIBCStoreAddress() common.Address
 	GetIBCClientAddress() common.Address
 	GetIBCConnectionAddress() common.Address
 	GetIBCChannelAddress() common.Address
@@ -88,7 +88,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
-	provableStore, err := provablestore.NewProvablestore(config.GetProvableStoreAddress(), client)
+	ibcStore, err := ibcstore.NewIbcstore(config.GetIBCStoreAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -106,7 +106,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, IBCHandler: *ibcHandler, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
+	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, IBCStore: *ibcStore, IBCHandler: *ibcHandler, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -139,17 +139,21 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 
 func (chain *Chain) GetClientState(clientID string) *clienttypes.ClientState {
 	ctx := context.Background()
-	cs, found, err := chain.ProvableStore.GetClientState(chain.CallOpts(ctx), clientID)
+	cs, found, err := chain.IBCStore.GetClientState(chain.CallOpts(ctx), clientID)
 	require.NoError(chain.t, err)
 	require.True(chain.t, found)
-	return (*clienttypes.ClientState)(&cs)
+	return &clienttypes.ClientState{
+		ChainId:         cs.ChainId,
+		IBCStoreAddress: cs.IbcStoreAddress,
+		LatestHeight:    cs.LatestHeight,
+	}
 }
 
 func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (*contract.ContractState, error) {
 	height := counterparty.GetClientState(counterpartyClientID).LatestHeight
 	return chain.client.GetContractState(
 		context.Background(),
-		chain.ContractConfig.GetProvableStoreAddress(),
+		chain.ContractConfig.GetIBCStoreAddress(),
 		storageKeys,
 		big.NewInt(int64(height)),
 	)
@@ -158,7 +162,7 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, counterpartyClientID string) bool {
 	ctx := context.Background()
 
-	targetState, ok, err := counterparty.ProvableStore.GetClientState(counterparty.CallOpts(ctx), counterpartyClientID)
+	targetState, ok, err := counterparty.IBCStore.GetClientState(counterparty.CallOpts(ctx), counterpartyClientID)
 	require.NoError(chain.t, err)
 	require.True(chain.t, ok)
 
@@ -167,13 +171,13 @@ func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, coun
 
 	require.NoError(chain.t, chain.UpdateBesuClient(ctx, counterparty, clientID))
 
-	key, err := counterparty.ProvableStore.ClientStateCommitmentSlot(counterparty.CallOpts(ctx), counterpartyClientID)
+	key, err := counterparty.IBCStore.ClientStateCommitmentSlot(counterparty.CallOpts(ctx), counterpartyClientID)
 	require.NoError(chain.t, err)
 
 	proof, err := counterparty.QueryProof(chain, clientID, "0x"+hex.EncodeToString(key[:]))
 	require.NoError(chain.t, err)
 
-	clientState, found, err := chain.ProvableStore.GetClientState(chain.CallOpts(ctx), clientID)
+	clientState, found, err := chain.IBCStore.GetClientState(chain.CallOpts(ctx), clientID)
 	require.NoError(chain.t, err)
 	require.True(chain.t, found)
 
@@ -188,9 +192,9 @@ func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, coun
 
 func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain) MsgCreateClient {
 	clientState := &clienttypes.ClientState{
-		ChainId:              counterparty.ChainIDString(),
-		ProvableStoreAddress: counterparty.ContractConfig.GetProvableStoreAddress().Bytes(),
-		LatestHeight:         counterparty.LastHeader().Base.Number.Uint64(),
+		ChainId:         counterparty.ChainIDString(),
+		IBCStoreAddress: counterparty.ContractConfig.GetIBCStoreAddress().Bytes(),
+		LatestHeight:    counterparty.LastHeader().Base.Number.Uint64(),
 	}
 	consensusState := &clienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Base.Time,
@@ -215,7 +219,7 @@ func (chain *Chain) UpdateHeader() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		state, err := chain.client.GetContractState(ctx, chain.ContractConfig.GetProvableStoreAddress(), nil, nil)
+		state, err := chain.client.GetContractState(ctx, chain.ContractConfig.GetIBCStoreAddress(), nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -554,25 +558,25 @@ func packetToCallData(packet channeltypes.Packet) ibcchannel.PacketData {
 // Slot calculator
 
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
-	key, err := chain.ProvableStore.ConnectionCommitmentSlot(chain.CallOpts(context.Background()), connectionID)
+	key, err := chain.IBCStore.ConnectionCommitmentSlot(chain.CallOpts(context.Background()), connectionID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string {
-	key, err := chain.ProvableStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
+	key, err := chain.IBCStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) PacketCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.ProvableStore.PacketCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
+	key, err := chain.IBCStore.PacketCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) PacketAcknowledgementCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.ProvableStore.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
+	key, err := chain.IBCStore.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }

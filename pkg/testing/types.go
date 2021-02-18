@@ -19,9 +19,9 @@ func NewMsgCreateClient(clientState *clienttypes.ClientState, consensusState *cl
 
 func (msg MsgCreateClient) ClientStateData() ibcclient.ClientStateData {
 	return ibcclient.ClientStateData{
-		ChainId:              msg.ClientState.ChainId,
-		ProvableStoreAddress: msg.ClientState.ProvableStoreAddress,
-		LatestHeight:         msg.ClientState.LatestHeight,
+		ChainId:         msg.ClientState.ChainId,
+		IbcStoreAddress: msg.ClientState.IBCStoreAddress,
+		LatestHeight:    msg.ClientState.LatestHeight,
 	}
 }
 

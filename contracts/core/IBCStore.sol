@@ -5,7 +5,7 @@ import "./types/Client.sol";
 import "./types/Connection.sol";
 import "./types/Channel.sol";
 
-contract ProvableStore {
+contract IBCStore {
     // Commitments
     mapping (bytes32 => bytes32) commitments;
 
