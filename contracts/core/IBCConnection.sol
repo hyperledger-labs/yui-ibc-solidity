@@ -2,59 +2,28 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "./types/Connection.sol";
-import "./ProvableStore.sol";
+import "./IBCStore.sol";
 import "./IBCClient.sol";
+import "./IBCMsgs.sol";
 
 contract IBCConnection {
-    ProvableStore provableStore;
+    IBCStore ibcStore;
     IBCClient client;
 
     // types
-    struct MsgConnectionOpenTry {
-        string connectionId;
-        Counterparty.Data counterparty; // counterpartyConnectionIdentifier, counterpartyPrefix and counterpartyClientIdentifier
-        uint64 delayPeriod;
-        string clientId; // clientID of chainA
-        ClientState.Data clientState; // clientState that chainA has for chainB
-        Version.Data[] counterpartyVersions; // supported versions of chain A
-        bytes proofInit; // proof that chainA stored connectionEnd in state (on ConnOpenInit)
-        bytes proofClient; // proof that chainA stored a light client of chainB
-        bytes proofConsensus; // proof that chainA stored chainB's consensus state at consensus height
-        uint64 proofHeight; // height at which relayer constructs proof of A storing connectionEnd in state
-        uint64 consensusHeight; // latest height of chain B which chain A has stored in its chain B client
-    }
-
-    struct MsgConnectionOpenAck {
-        string connectionId;
-        ClientState.Data clientState; // client state for chainA on chainB
-        Version.Data version; // version that ChainB chose in ConnOpenTry
-        string counterpartyConnectionID;
-        bytes proofTry; // proof that connectionEnd was added to ChainB state in ConnOpenTry
-        bytes proofClient; // proof of client state on chainB for chainA
-        bytes proofConsensus; // proof that chainB has stored ConsensusState of chainA on its client
-        uint64 proofHeight; // height that relayer constructed proofTry
-        uint64 consensusHeight; // latest height of chainA that chainB has stored on its chainA client
-    }
-
-    struct MsgConnectionOpenConfirm {
-        string connectionId;
-        bytes proofAck;
-        uint64 proofHeight;
-    }
-
     struct ClientConnectionPaths {
         string[] paths;
     }
+
+    // storage
+    mapping(string => ClientConnectionPaths) clientConnectionPaths;
 
     // constant values
     Version.Data[] versions;
     string[] features;
     bytes commitmentPrefix;
 
-    // storage
-    mapping(string => ClientConnectionPaths) clientConnectionPaths;
-
-    constructor(ProvableStore store, IBCClient client_) public {
+    constructor(IBCStore store, IBCClient client_) public {
         // initialize
         commitmentPrefix = bytes("ibc");
         features.push("ORDER_ORDERED");
@@ -64,7 +33,7 @@ contract IBCConnection {
             features: features
         }));
 
-        provableStore = store;
+        ibcStore = store;
         client = client_;
     }
 
@@ -72,33 +41,28 @@ contract IBCConnection {
 
     // ConnOpenInit initialises a connection attempt on chain A. The generated connection identifier
     // is returned.
-    function connectionOpenInit(
-        string memory clientId,
-        string memory connectionId,
-        Counterparty.Data memory counterparty,
-        uint64 delayPeriod) public returns (string memory) {
- 
+    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit memory msg_) public returns (string memory) {
         ConnectionEnd.Data memory connection;
         bool found;
-        (connection, found) = provableStore.getConnection(connectionId);
+        (connection, found) = ibcStore.getConnection(msg_.connectionId);
         require(!found, "connection already exists");
 
         connection = ConnectionEnd.Data({
-            client_id: clientId,
+            client_id: msg_.clientId,
             versions: versions,
             state: ConnectionEnd.State.STATE_INIT,
-            delay_period: delayPeriod,
-            counterparty: counterparty
+            delay_period: msg_.delayPeriod,
+            counterparty: msg_.counterparty
         });
-        provableStore.setConnection(connectionId, connection);
-        addConnectionToClient(clientId, connectionId);
-        return connectionId;
+        ibcStore.setConnection(msg_.connectionId, connection);
+        addConnectionToClient(msg_.clientId, msg_.connectionId);
+        return msg_.connectionId;
     }
 
     // ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
     // code is executed on chain B).
     function connectionOpenTry(
-        MsgConnectionOpenTry memory msg_
+        IBCMsgs.MsgConnectionOpenTry memory msg_
     ) public returns (string memory) {
         require(msg_.consensusHeight < block.number, "consensus height is greater than or equal to the current block height");
         require(client.validateSelfClient(msg_.clientState), "failed to validate self client state");
@@ -134,15 +98,15 @@ contract IBCConnection {
         // require(verifyClientConsensusState(connection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState), "failed to verify consensusState");
 
         addConnectionToClient(msg_.clientId, msg_.connectionId);
-        provableStore.setConnection(msg_.connectionId, connection);
+        ibcStore.setConnection(msg_.connectionId, connection);
         return msg_.connectionId;
     }
 
     function connectionOpenAck(
-        MsgConnectionOpenAck memory msg_
+        IBCMsgs.MsgConnectionOpenAck memory msg_
     ) public {
         require(msg_.consensusHeight < block.number, "consensus height is greater than or equal to the current block height");
-        (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(msg_.connectionId);
+        (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.connectionId);
         require(found, "connection not found");
 
         if (connection.state != ConnectionEnd.State.STATE_INIT && connection.state != ConnectionEnd.State.STATE_TRYOPEN) {
@@ -177,13 +141,13 @@ contract IBCConnection {
         connection.state = ConnectionEnd.State.STATE_OPEN;
         connection.versions = expectedConnection.versions;
         connection.counterparty.connection_id = msg_.counterpartyConnectionID;
-        provableStore.setConnection(msg_.connectionId, connection);
+        ibcStore.setConnection(msg_.connectionId, connection);
     }
 
     function connectionOpenConfirm(
-        MsgConnectionOpenConfirm memory msg_
+        IBCMsgs.MsgConnectionOpenConfirm memory msg_
     ) public {
-        (ConnectionEnd.Data memory connection, bool found) = provableStore.getConnection(msg_.connectionId);
+        (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.connectionId);
         require(found, "connection not found");
 
         require(connection.state == ConnectionEnd.State.STATE_TRYOPEN, "connection state is not TRYOPEN");
@@ -205,7 +169,7 @@ contract IBCConnection {
         require(verifyConnectionState(connection, msg_.proofHeight, msg_.proofAck, connection.counterparty.connection_id, expectedConnection), "failed to verify connection state");
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
-        provableStore.setConnection(msg_.connectionId, connection);
+        ibcStore.setConnection(msg_.connectionId, connection);
     }
 
     function isSupportedVersion(Version.Data memory proposedVersion) internal view returns (bool) {
@@ -227,39 +191,45 @@ contract IBCConnection {
         string memory clientId,
         string memory connectionId
     ) internal {
-        require(provableStore.hasClientState(clientId), "client not found");
+        require(ibcStore.hasClientState(clientId), "client not found");
         clientConnectionPaths[clientId].paths.push(connectionId);
     }
 
     // Verification functions
 
     function verifyConnectionState(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory connectionId, ConnectionEnd.Data memory counterpartyConnection) public view returns (bool) {
-        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
+        (ClientState.Data memory clientState, bool found) = ibcStore.getClientState(connection.client_id);
         require(found, "clientState not found");
         return client.verifyConnectionState(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, connectionId, ConnectionEnd.encode(counterpartyConnection));
     }
 
     function verifyClientState(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, ClientState.Data memory clientState) internal view returns (bool) {
-        (ClientState.Data memory targetClient, bool found) = provableStore.getClientState(connection.client_id);
+        (ClientState.Data memory targetClient, bool found) = ibcStore.getClientState(connection.client_id);
         require(found, "clientState not found");
         return client.verifyClientState(targetClient, connection.client_id, height, connection.counterparty.prefix.key_prefix, connection.counterparty.client_id, proof, clientState);
     }
 
     function verifyClientConsensusState(ConnectionEnd.Data memory connection, uint64 height, uint64 consensusHeight, bytes memory proof, ConsensusState.Data memory consensusState) internal view returns (bool) {
-        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
+        (ClientState.Data memory clientState, bool found) = ibcStore.getClientState(connection.client_id);
         require(found, "clientState not found");
         return client.verifyClientConsensusState(clientState, connection.client_id, height, connection.counterparty.client_id, consensusHeight, connection.counterparty.prefix.key_prefix, proof, ConsensusState.encode(consensusState));
     }
 
     function verifyChannelState(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, bytes memory channelBytes) public view returns (bool) {
-        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
+        (ClientState.Data memory clientState, bool found) = ibcStore.getClientState(connection.client_id);
         require(found, "clientState not found");
         return client.verifyChannelState(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, channelBytes);
     }
 
     function verifyPacketCommitment(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes32 commitmentBytes) public view returns (bool) {
-        (ClientState.Data memory clientState, bool found) = provableStore.getClientState(connection.client_id);
+        (ClientState.Data memory clientState, bool found) = ibcStore.getClientState(connection.client_id);
         require(found, "clientState not found");
         return client.verifyPacketCommitment(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, commitmentBytes);
+    }
+
+    function verifyPacketAcknowledgement(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes32 ackCommitmentBytes) public view returns (bool) {
+        (ClientState.Data memory clientState, bool found) = ibcStore.getClientState(connection.client_id);
+        require(found, "clientState not found");
+        return client.verifyPacketAcknowledgement(clientState, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, ackCommitmentBytes);
     }
 }

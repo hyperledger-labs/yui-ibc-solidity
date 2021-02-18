@@ -4,7 +4,7 @@ option go_package = "pkg/ibc/client";
 
 message ClientState {
   string chain_id = 1;
-  bytes provable_store_address = 2;
+  bytes ibc_store_address = 2;
   uint64 latest_height = 3;
 }
 

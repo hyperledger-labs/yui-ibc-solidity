@@ -23,9 +23,9 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type ClientState struct {
-	ChainId              string `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	ProvableStoreAddress []byte `protobuf:"bytes,2,opt,name=provable_store_address,json=provableStoreAddress,proto3" json:"provable_store_address,omitempty"`
-	LatestHeight         uint64 `protobuf:"varint,3,opt,name=latest_height,json=latestHeight,proto3" json:"latest_height,omitempty"`
+	ChainId         string `protobuf:"bytes,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	IBCStoreAddress []byte `protobuf:"bytes,2,opt,name=ibc_store_address,json=ibcStoreAddress,proto3" json:"ibc_store_address,omitempty"`
+	LatestHeight    uint64 `protobuf:"varint,3,opt,name=latest_height,json=latestHeight,proto3" json:"latest_height,omitempty"`
 }
 
 func (m *ClientState) Reset()         { *m = ClientState{} }
@@ -68,9 +68,9 @@ func (m *ClientState) GetChainId() string {
 	return ""
 }
 
-func (m *ClientState) GetProvableStoreAddress() []byte {
+func (m *ClientState) GetIBCStoreAddress() []byte {
 	if m != nil {
-		return m.ProvableStoreAddress
+		return m.IBCStoreAddress
 	}
 	return nil
 }
@@ -195,10 +195,10 @@ func (m *ClientState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x18
 	}
-	if len(m.ProvableStoreAddress) > 0 {
-		i -= len(m.ProvableStoreAddress)
-		copy(dAtA[i:], m.ProvableStoreAddress)
-		i = encodeVarintClient(dAtA, i, uint64(len(m.ProvableStoreAddress)))
+	if len(m.IBCStoreAddress) > 0 {
+		i -= len(m.IBCStoreAddress)
+		copy(dAtA[i:], m.IBCStoreAddress)
+		i = encodeVarintClient(dAtA, i, uint64(len(m.IBCStoreAddress)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -277,7 +277,7 @@ func (m *ClientState) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovClient(uint64(l))
 	}
-	l = len(m.ProvableStoreAddress)
+	l = len(m.IBCStoreAddress)
 	if l > 0 {
 		n += 1 + l + sovClient(uint64(l))
 	}
@@ -378,7 +378,7 @@ func (m *ClientState) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProvableStoreAddress", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IBCStoreAddress", wireType)
 			}
 			var byteLen int
 			for shift := uint(0); ; shift += 7 {
@@ -405,9 +405,9 @@ func (m *ClientState) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ProvableStoreAddress = append(m.ProvableStoreAddress[:0], dAtA[iNdEx:postIndex]...)
-			if m.ProvableStoreAddress == nil {
-				m.ProvableStoreAddress = []byte{}
+			m.IBCStoreAddress = append(m.IBCStoreAddress[:0], dAtA[iNdEx:postIndex]...)
+			if m.IBCStoreAddress == nil {
+				m.IBCStoreAddress = []byte{}
 			}
 			iNdEx = postIndex
 		case 3:

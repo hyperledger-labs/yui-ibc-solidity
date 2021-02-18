@@ -15,7 +15,9 @@ function after_common() {
         "IBCClient"
         "IBCConnection"
         "IBCChannel"
-        "ProvableStore"
+        "IBCStore"
+        "IBCHandler"
+        "SimpleTokenModule"
     )
     if [ -n "$NO_GEN_CODE" ]; then
         return
