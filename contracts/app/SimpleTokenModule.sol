@@ -96,10 +96,12 @@ contract SimpleTokenModule {
         _;
     }
 
-    function onRecvPacket(Packet.Data calldata packet) onlyRoutingModule external returns (bytes memory) {
+    function onRecvPacket(Packet.Data calldata packet) onlyRoutingModule external returns (bytes memory acknowledgement) {
         FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
         mint(data.receiver.toAddress(), data.amount);
-        return packet.data;
+        acknowledgement = new bytes(1);
+        acknowledgement[0] = 0x01;
+        return acknowledgement;
     }
 
     function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external {

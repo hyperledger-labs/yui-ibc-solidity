@@ -258,16 +258,17 @@ contract IBCChannel {
         require(found, "channel not found");
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
-        (ackHash, found) = provableStore.getPacketAcknowledgement(packet.destination_port, packet.destination_channel, packet.sequence);
+        (ackHash, found) = provableStore.getPacketAcknowledgementCommitment(packet.destination_port, packet.destination_channel, packet.sequence);
         require(!found, "acknowledgement for packet already exists");
 
         require(acknowledgement.length > 0, "acknowledgement cannot be empty");
-        provableStore.setPacketAcknowledgement(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
+        provableStore.setPacketAcknowledgementCommitment(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
     }
 
     function acknowledgePacket(Packet.Data memory packet, bytes memory acknowledgement, bytes memory proof, uint64 proofHeight) public {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
+        // bytes32 commitment;
         bool found;
         (channel, found) = provableStore.getChannel(packet.source_port, packet.source_channel);
         require(found, "channel not found");
@@ -279,6 +280,13 @@ contract IBCChannel {
         (connection, found) = provableStore.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
+
+        // (commitment, found) = provableStore.getPacketCommitment(packet.source_port, packet.source_channel, packet.sequence);
+        // require(found, "packet commitment not found");
+
+        // require(commitment == provableStore.makePacketCommitment(packet), "commitment bytes are not equal");
+
+        // require(ibcconnection.verifyPacketAcknowledgement(connection, proofHeight, proof, packet.source_port, packet.source_channel, packet.sequence, provableStore.makePacketAcknowledgementCommitment(acknowledgement)), "failed to verify packet commitment");
 
         // TODO implements
     }

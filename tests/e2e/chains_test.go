@@ -79,6 +79,8 @@ func (suite ChainTestSuite) TestChannel() {
 	postBalanceB, err := chainB.SimpletokenModule.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From)
 	suite.Require().NoError(err)
 	suite.Require().EqualValues(balanceB.Uint64()+100, postBalanceB.Uint64())
+
+	// TODO call HandlePacketAcknowledgement function with acknowledgement
 }
 
 func TestChainTestSuite(t *testing.T) {
