@@ -250,14 +250,16 @@ func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain,
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCConnection.ConnectionOpenInit(
 			chain.TxOpts(ctx),
-			connection.ClientID,
-			connection.ID,
-			ibcconnection.CounterpartyData{
-				ClientId:     connection.CounterpartyClientID,
-				ConnectionId: "",
-				Prefix:       ibcconnection.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
+			ibcconnection.IBCMsgsMsgConnectionOpenInit{
+				ClientId:     connection.ClientID,
+				ConnectionId: connection.ID,
+				Counterparty: ibcconnection.CounterpartyData{
+					ClientId:     connection.CounterpartyClientID,
+					ConnectionId: "",
+					Prefix:       ibcconnection.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
+				},
+				DelayPeriod: DefaultDelayPeriod,
 			},
-			DefaultDelayPeriod,
 		),
 	)
 }
@@ -270,7 +272,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCConnection.ConnectionOpenTry(
 			chain.TxOpts(ctx),
-			ibcconnection.IBCConnectionMsgConnectionOpenTry{
+			ibcconnection.IBCMsgsMsgConnectionOpenTry{
 				ConnectionId: connection.ID,
 				Counterparty: ibcconnection.CounterpartyData{
 					ClientId:     counterpartyConnection.ClientID,
@@ -303,7 +305,7 @@ func (chain *Chain) ConnectionOpenAck(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCConnection.ConnectionOpenAck(
 			chain.TxOpts(ctx),
-			ibcconnection.IBCConnectionMsgConnectionOpenAck{
+			ibcconnection.IBCMsgsMsgConnectionOpenAck{
 				ConnectionId:             connection.ID,
 				CounterpartyConnectionID: counterpartyConnection.ID,
 				// clientState
@@ -327,7 +329,7 @@ func (chain *Chain) ConnectionOpenConfirm(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCConnection.ConnectionOpenConfirm(
 			chain.TxOpts(ctx),
-			ibcconnection.IBCConnectionMsgConnectionOpenConfirm{
+			ibcconnection.IBCMsgsMsgConnectionOpenConfirm{
 				ConnectionId: connection.ID,
 				ProofAck:     proof.Data,
 				ProofHeight:  proof.Height,
@@ -345,7 +347,7 @@ func (chain *Chain) ChannelOpenInit(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCChannel.ChannelOpenInit(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCChannelMsgChannelOpenInit{
+			ibcchannel.IBCMsgsMsgChannelOpenInit{
 				ChannelId: ch.ID,
 				PortId:    ch.PortID,
 				Channel: ibcchannel.ChannelData{
@@ -377,7 +379,7 @@ func (chain *Chain) ChannelOpenTry(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCChannel.ChannelOpenTry(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCChannelMsgChannelOpenTry{
+			ibcchannel.IBCMsgsMsgChannelOpenTry{
 				PortId:    ch.PortID,
 				ChannelId: ch.ID,
 				Channel: ibcchannel.ChannelData{
@@ -410,7 +412,7 @@ func (chain *Chain) ChannelOpenAck(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCChannel.ChannelOpenAck(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCChannelMsgChannelOpenAck{
+			ibcchannel.IBCMsgsMsgChannelOpenAck{
 				PortId:                ch.PortID,
 				ChannelId:             ch.ID,
 				CounterpartyVersion:   counterpartyCh.Version,
@@ -434,7 +436,7 @@ func (chain *Chain) ChannelOpenConfirm(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCChannel.ChannelOpenConfirm(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCChannelMsgChannelOpenConfirm{
+			ibcchannel.IBCMsgsMsgChannelOpenConfirm{
 				PortId:      ch.PortID,
 				ChannelId:   ch.ID,
 				ProofAck:    proof.Data,
