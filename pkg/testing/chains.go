@@ -593,7 +593,7 @@ func (chain *Chain) WaitIfNoError(ctx context.Context) func(tx *gethtypes.Transa
 // NewClientID appends a new clientID string in the format:
 // ClientFor<counterparty-chain-id><index>
 func (chain *Chain) NewClientID(clientType string) string {
-	clientID := fmt.Sprintf("%s-%s-%v", clientType, strconv.Itoa(len(chain.ClientIDs)), chain.IBCID)
+	clientID := fmt.Sprintf("%s-%s-%v-%v", clientType, strconv.Itoa(len(chain.ClientIDs)), chain.chainID, chain.IBCID)
 	chain.ClientIDs = append(chain.ClientIDs, clientID)
 	return clientID
 }
@@ -611,7 +611,7 @@ func (chain *Chain) AddTestConnection(clientID, counterpartyClientID string) *Te
 // created given a clientID and counterparty clientID. The connection id
 // format: <chainID>-conn<index>
 func (chain *Chain) ConstructNextTestConnection(clientID, counterpartyClientID string) *TestConnection {
-	connectionID := fmt.Sprintf("connection-%v-%v", uint64(len(chain.Connections)), chain.IBCID)
+	connectionID := fmt.Sprintf("connection-%v-%v-%v", uint64(len(chain.Connections)), chain.chainID, chain.IBCID)
 	return &TestConnection{
 		ID:                   connectionID,
 		ClientID:             clientID,
@@ -637,7 +637,7 @@ func (chain *Chain) AddTestChannel(conn *TestConnection, portID string) TestChan
 //
 // The port is passed in by the caller.
 func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestChannel {
-	channelID := fmt.Sprintf("channel-%v", chain.IBCID)
+	channelID := fmt.Sprintf("channel-%v-%v", chain.chainID, chain.IBCID)
 	return TestChannel{
 		PortID:               portID,
 		ID:                   channelID,

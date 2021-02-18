@@ -265,7 +265,21 @@ contract IBCChannel {
         provableStore.setPacketAcknowledgement(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
     }
 
-    function acknowledgePacket(Packet.Data memory, bytes memory acknowledgement, bytes memory proof, uint64 proofHeight) public {
+    function acknowledgePacket(Packet.Data memory packet, bytes memory acknowledgement, bytes memory proof, uint64 proofHeight) public {
+        Channel.Data memory channel;
+        ConnectionEnd.Data memory connection;
+        bool found;
+        (channel, found) = provableStore.getChannel(packet.source_port, packet.source_channel);
+        require(found, "channel not found");
+        require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
+
+        require(packet.destination_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet destination port doesn't match the counterparty's port");
+        require(packet.destination_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet destination channel doesn't match the counterparty's channel");
+
+        (connection, found) = provableStore.getConnection(channel.connection_hops[0]);
+        require(found, "connection not found");
+        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
+
         // TODO implements
     }
 
