@@ -269,6 +269,25 @@ contract IBCClient {
         return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
     }
 
+    function verifyPacketAcknowledgement(
+        ClientState.Data memory self,
+        string memory clientId,
+        uint64 height,
+        bytes memory prefix,
+        bytes memory proof,
+        string memory portId,
+        string memory channelId,
+        uint64 sequence,
+        bytes32 ackCommitmentBytes
+    ) public view returns (bool) {
+        if (!validateArgs(self, height, prefix, proof)) {
+            revert("fail");
+        }
+        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        require(found, "consensusState not found");
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
+    }
+
     function toUint256(bytes memory _bytes, uint256 _start) internal pure returns (uint256) {
         require(_start + 32 >= _start, "toUint256_overflow");
         require(_bytes.length >= _start + 32, "toUint256_outOfBounds");

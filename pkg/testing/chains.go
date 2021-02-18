@@ -503,6 +503,39 @@ func (chain *Chain) HandlePacketRecv(
 	)
 }
 
+func (chain *Chain) HandlePacketAcknowledgement(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+	packet channeltypes.Packet,
+	acknowledgement []byte,
+) error {
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketAcknowledgementCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence))
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCRoutingModule.HandlePacketAcknowledgement(
+			chain.TxOpts(ctx),
+			ibcroutingmodule.IBCRoutingModulePacketAcknowledgement{
+				Packet: ibcroutingmodule.PacketData{
+					Sequence:           packet.Sequence,
+					SourcePort:         packet.SourcePort,
+					SourceChannel:      packet.SourceChannel,
+					DestinationPort:    packet.DestinationPort,
+					DestinationChannel: packet.DestinationChannel,
+					Data:               packet.Data,
+					TimeoutHeight:      ibcroutingmodule.HeightData(packet.TimeoutHeight),
+					TimeoutTimestamp:   packet.TimeoutTimestamp,
+				},
+				Acknowledgement: acknowledgement,
+				Proof:           proof.Data,
+				ProofHeight:     proof.Height,
+			},
+		),
+	)
+}
+
 func packetToCallData(packet channeltypes.Packet) ibcchannel.PacketData {
 	return ibcchannel.PacketData{
 		Sequence:           packet.Sequence,
@@ -532,6 +565,12 @@ func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string 
 
 func (chain *Chain) PacketCommitmentSlot(portID, channelID string, sequence uint64) string {
 	key, err := chain.ProvableStore.PacketCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
+	require.NoError(chain.t, err)
+	return "0x" + hex.EncodeToString(key[:])
+}
+
+func (chain *Chain) PacketAcknowledgementCommitmentSlot(portID, channelID string, sequence uint64) string {
+	key, err := chain.ProvableStore.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
