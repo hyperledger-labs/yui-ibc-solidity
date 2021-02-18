@@ -16,7 +16,7 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcchannel"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcroutingmodule"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/provablestore"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletokenmodule"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
@@ -41,12 +41,12 @@ type Chain struct {
 	t *testing.T
 
 	// Core Modules
-	client           contract.Client
-	IBCClient        ibcclient.Ibcclient
-	IBCConnection    ibcconnection.Ibcconnection
-	IBCChannel       ibcchannel.Ibcchannel
-	IBCRoutingModule ibcroutingmodule.Ibcroutingmodule
-	ProvableStore    provablestore.Provablestore
+	client        contract.Client
+	IBCClient     ibcclient.Ibcclient
+	IBCConnection ibcconnection.Ibcconnection
+	IBCChannel    ibcchannel.Ibcchannel
+	IBCHandler    ibchandler.Ibchandler
+	ProvableStore provablestore.Provablestore
 
 	// App Modules
 	SimpletokenModule simpletokenmodule.Simpletokenmodule
@@ -71,7 +71,7 @@ type ContractConfig interface {
 	GetIBCClientAddress() common.Address
 	GetIBCConnectionAddress() common.Address
 	GetIBCChannelAddress() common.Address
-	GetIBCRoutingModuleAddress() common.Address
+	GetIBCHandlerAddress() common.Address
 	GetSimpleTokenModuleAddress() common.Address
 }
 
@@ -92,7 +92,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
-	ibcRoutingModule, err := ibcroutingmodule.NewIbcroutingmodule(config.GetIBCRoutingModuleAddress(), client)
+	ibcHandler, err := ibchandler.NewIbchandler(config.GetIBCHandlerAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -106,7 +106,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, IBCRoutingModule: *ibcRoutingModule, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
+	return &Chain{t: t, client: client, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, ProvableStore: *provableStore, IBCHandler: *ibcHandler, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -483,17 +483,17 @@ func (chain *Chain) HandlePacketRecv(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCRoutingModule.HandlePacketRecv(
+		chain.IBCHandler.HandlePacketRecv(
 			chain.TxOpts(ctx),
-			ibcroutingmodule.IBCRoutingModulePacketRecv{
-				Packet: ibcroutingmodule.PacketData{
+			ibchandler.IBCMsgsMsgPacketRecv{
+				Packet: ibchandler.PacketData{
 					Sequence:           packet.Sequence,
 					SourcePort:         packet.SourcePort,
 					SourceChannel:      packet.SourceChannel,
 					DestinationPort:    packet.DestinationPort,
 					DestinationChannel: packet.DestinationChannel,
 					Data:               packet.Data,
-					TimeoutHeight:      ibcroutingmodule.HeightData(packet.TimeoutHeight),
+					TimeoutHeight:      ibchandler.HeightData(packet.TimeoutHeight),
 					TimeoutTimestamp:   packet.TimeoutTimestamp,
 				},
 				Proof:       proof.Data,
@@ -515,17 +515,17 @@ func (chain *Chain) HandlePacketAcknowledgement(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCRoutingModule.HandlePacketAcknowledgement(
+		chain.IBCHandler.HandlePacketAcknowledgement(
 			chain.TxOpts(ctx),
-			ibcroutingmodule.IBCRoutingModulePacketAcknowledgement{
-				Packet: ibcroutingmodule.PacketData{
+			ibchandler.IBCMsgsMsgPacketAcknowledgement{
+				Packet: ibchandler.PacketData{
 					Sequence:           packet.Sequence,
 					SourcePort:         packet.SourcePort,
 					SourceChannel:      packet.SourceChannel,
 					DestinationPort:    packet.DestinationPort,
 					DestinationChannel: packet.DestinationChannel,
 					Data:               packet.Data,
-					TimeoutHeight:      ibcroutingmodule.HeightData(packet.TimeoutHeight),
+					TimeoutHeight:      ibchandler.HeightData(packet.TimeoutHeight),
 					TimeoutTimestamp:   packet.TimeoutTimestamp,
 				},
 				Acknowledgement: acknowledgement,

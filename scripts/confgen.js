@@ -2,7 +2,7 @@ var ProvableStore = artifacts.require("./ProvableStore.sol");
 var IBCClient = artifacts.require("./IBCClient.sol");
 var IBCConnection = artifacts.require("./IBCConnection.sol");
 var IBCChannel = artifacts.require("./IBCChannel.sol");
-var IBCRoutingModule = artifacts.require("IBCRoutingModule");
+var IBCHandler = artifacts.require("IBCHandler");
 var SimpleTokenModule = artifacts.require("SimpleTokenModule");
 
 var fs = require("fs");
@@ -35,7 +35,7 @@ module.exports = function(callback) {
       IBCClientAddress: IBCClient.address,
       IBCConnectionAddress: IBCConnection.address,
       IBCChannelAddress: IBCChannel.address,
-      IBCRoutingModuleAddress: IBCRoutingModule.address,
+      IBCHandlerAddress: IBCHandler.address,
       SimpleTokenModuleAddress: SimpleTokenModule.address
     }, null, function(err, str){
         if (err) {
