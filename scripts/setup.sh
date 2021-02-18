@@ -15,7 +15,7 @@ function after_common() {
         "IBCClient"
         "IBCConnection"
         "IBCChannel"
-        "ProvableStore"
+        "IBCStore"
         "IBCHandler"
         "SimpleTokenModule"
     )

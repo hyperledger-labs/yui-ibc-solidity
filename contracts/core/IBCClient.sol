@@ -1,7 +1,7 @@
 pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
-import "./ProvableStore.sol";
+import "./IBCStore.sol";
 import "./types/Client.sol";
 import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";
@@ -16,10 +16,10 @@ contract IBCClient {
 
     uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
-    ProvableStore provableStore;
+    IBCStore ibcStore;
 
-    constructor(ProvableStore s) public {
-        provableStore = s;
+    constructor(IBCStore s) public {
+        ibcStore = s;
     }
 
     struct Header {
@@ -40,10 +40,10 @@ contract IBCClient {
     /* Public functions */
 
     function createClient(string memory clientId, ClientState.Data memory clientState, ConsensusState.Data memory consensusState) public {
-        require(!provableStore.hasClientState(clientId));
+        require(!ibcStore.hasClientState(clientId));
 
-        provableStore.setClientState(clientId, clientState);
-        provableStore.setConsensusState(clientId, clientState.latest_height, consensusState);
+        ibcStore.setClientState(clientId, clientState);
+        ibcStore.setConsensusState(clientId, clientState.latest_height, consensusState);
     }
 
     function updateClient(string memory clientId, Header memory header) public {
@@ -52,18 +52,18 @@ contract IBCClient {
         uint64 height;
         bool found;
     
-        (clientState, found) = provableStore.getClientState(clientId);
+        (clientState, found) = ibcStore.getClientState(clientId);
         require(found, "clientState not found");
 
         (clientState, consensusState, height) = checkHeaderAndUpdateState(clientId, clientState, header);
     
         //// persist states ////
-        provableStore.setClientState(clientId, clientState);
-        provableStore.setConsensusState(clientId, height, consensusState);
+        ibcStore.setClientState(clientId, clientState);
+        ibcStore.setConsensusState(clientId, height, consensusState);
     }
 
     function getTimestampAtHeight(string memory clientId, uint64 height) public view returns (uint64, bool) {
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         if (!found) {
             return (0, false);
         }
@@ -73,7 +73,7 @@ contract IBCClient {
     /* Internal functions */
 
     function checkHeaderAndUpdateState(string memory clientId, ClientState.Data memory clientState, Header memory header) internal returns (ClientState.Data memory, ConsensusState.Data memory, uint64) {
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, header.trustedHeight);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, header.trustedHeight);
         require(found, "consensusState not found");
 
         //// check validity ////
@@ -85,7 +85,7 @@ contract IBCClient {
 
         (bytes[] memory validators, bool ok) = verifyHeader(parsedHeader);
         require(ok, "failed to verify the header");
-        bytes32 accountStorageRoot = verifyStorageProof(Bytes.toAddress(clientState.provable_store_address), parsedHeader.stateRoot, header.accountStateProof);
+        bytes32 accountStorageRoot = verifyStorageProof(Bytes.toAddress(clientState.ibc_store_address), parsedHeader.stateRoot, header.accountStateProof);
 
         //// update ////
         consensusState.timestamp = parsedHeader.time;
@@ -192,9 +192,9 @@ contract IBCClient {
         if (!validateArgs(self, height, prefix, proof)) {
             return false;
         }
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.clientStateCommitmentSlot(counterpartyClientIdentifier), keccak256(ClientState.encode(target)));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.clientStateCommitmentSlot(counterpartyClientIdentifier), keccak256(ClientState.encode(target)));
     }
 
     function verifyClientConsensusState(
@@ -210,9 +210,9 @@ contract IBCClient {
         if (!validateArgs(self, height, prefix, proof)) {
             return false;
         }
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.consensusStateCommitmentSlot(counterpartyClientIdentifier, consensusHeight), keccak256(consensusStateBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.consensusStateCommitmentSlot(counterpartyClientIdentifier, consensusHeight), keccak256(consensusStateBytes));
     }
 
     function verifyConnectionState(
@@ -227,9 +227,9 @@ contract IBCClient {
         if (!validateArgs(self, height, prefix, proof)) {
             return false;
         }
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.connectionCommitmentSlot(connectionId), keccak256(connectionBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.connectionCommitmentSlot(connectionId), keccak256(connectionBytes));
     }
 
     function verifyChannelState(
@@ -245,9 +245,9 @@ contract IBCClient {
         if (!validateArgs(self, height, prefix, proof)) {
             revert("fail");
         }
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.channelCommitmentSlot(portId, channelId), keccak256(channelBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.channelCommitmentSlot(portId, channelId), keccak256(channelBytes));
     }
 
     function verifyPacketCommitment(
@@ -264,9 +264,9 @@ contract IBCClient {
         if (!validateArgs(self, height, prefix, proof)) {
             revert("fail");
         }
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
     }
 
     function verifyPacketAcknowledgement(
@@ -283,9 +283,9 @@ contract IBCClient {
         if (!validateArgs(self, height, prefix, proof)) {
             revert("fail");
         }
-        (ConsensusState.Data memory consensusState, bool found) = provableStore.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         require(found, "consensusState not found");
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, provableStore.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
     }
 
     function toUint256(bytes memory _bytes, uint256 _start) internal pure returns (uint256) {

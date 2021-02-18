@@ -1,4 +1,4 @@
-var ProvableStore = artifacts.require("./ProvableStore.sol");
+var IBCStore = artifacts.require("./IBCStore.sol");
 var IBCClient = artifacts.require("./IBCClient.sol");
 var IBCConnection = artifacts.require("./IBCConnection.sol");
 var IBCChannel = artifacts.require("./IBCChannel.sol");
@@ -31,7 +31,7 @@ const targets = makePairs(process.env.CONF_TPL.split(":"));
 module.exports = function(callback) {
   targets.forEach(function(item) {
     ejs.renderFile(item[1], {
-      ProvableStoreAddress: ProvableStore.address,
+      IBCStoreAddress: IBCStore.address,
       IBCClientAddress: IBCClient.address,
       IBCConnectionAddress: IBCConnection.address,
       IBCChannelAddress: IBCChannel.address,
