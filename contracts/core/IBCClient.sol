@@ -37,8 +37,18 @@ contract IBCClient {
         RLP.RLPItem[] validators;
     }
 
+    struct Fraction {
+        uint64 numerator;
+        uint64 denominator;
+    }
+
+    Fraction defaultTrustLevel = Fraction({numerator: 1, denominator: 3});
+
     /* Public functions */
 
+    /**
+     * @dev createClient creates a new client state and populates it with a given consensus state
+     */
     function createClient(string memory clientId, ClientState.Data memory clientState, ConsensusState.Data memory consensusState) public {
         require(!ibcStore.hasClientState(clientId));
 
@@ -46,6 +56,9 @@ contract IBCClient {
         ibcStore.setConsensusState(clientId, clientState.latest_height, consensusState);
     }
 
+    /**
+     * @dev updateClient updates the consensus state and the state root from a provided header
+     */
     function updateClient(string memory clientId, Header memory header) public {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
@@ -62,6 +75,9 @@ contract IBCClient {
         ibcStore.setConsensusState(clientId, height, consensusState);
     }
 
+    /**
+     * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
+     */
     function getTimestampAtHeight(string memory clientId, uint64 height) public view returns (uint64, bool) {
         (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, height);
         if (!found) {
@@ -72,18 +88,17 @@ contract IBCClient {
 
     /* Internal functions */
 
-    function checkHeaderAndUpdateState(string memory clientId, ClientState.Data memory clientState, Header memory header) internal returns (ClientState.Data memory, ConsensusState.Data memory, uint64) {
+    /**
+     * @dev checkHeaderAndUpdateState checks if the provided header is valid
+     */
+    function checkHeaderAndUpdateState(string memory clientId, ClientState.Data memory clientState, Header memory header) internal view returns (ClientState.Data memory, ConsensusState.Data memory, uint64) {
         (ConsensusState.Data memory consensusState, bool found) = ibcStore.getConsensusState(clientId, header.trustedHeight);
         require(found, "consensusState not found");
 
         //// check validity ////
-        // TODO checkTrustedHeader
         ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
         require(parsedHeader.height > parsedHeader.base.trustedHeight, "header height ≤ consensus state height");
-
-        // TODO verify untrusted header with trusted validators
-
-        (bytes[] memory validators, bool ok) = verifyHeader(parsedHeader);
+        (bytes[] memory validators, bool ok) = verify(consensusState, parsedHeader);
         require(ok, "failed to verify the header");
         bytes32 accountStorageRoot = verifyStorageProof(Bytes.toAddress(clientState.ibc_store_address), parsedHeader.stateRoot, header.accountStateProof);
 
@@ -99,30 +114,73 @@ contract IBCClient {
         return (clientState, consensusState, parsedHeader.height);
     }
 
-    function verifyHeader(ParsedBesuHeader memory header) internal view returns (bytes[] memory, bool) {
-        bytes[] memory validators = new bytes[](header.validators.length);
-        bytes32 h = keccak256(header.base.besuHeaderRLPBytes);
-        uint8 success = 0;
-        bytes memory seal;
-        for (uint i = 0; i < header.base.seals.length; i++) {
-            validators[i] = header.validators[i].toBytes();
-            seal = header.base.seals[i];
-            if (seal.length == 0) {
-                continue;
-            }
-            require(validators[i].toAddress() == ECRecovery.recover(h, seal), "invalid address");
-            success++;
+    /**
+     * @dev verify verifies untrusted header
+     * @param consensusState consensusState corresponding to trusted height
+     * @param untrustedHeader untrusted header
+     */
+    function verify(ConsensusState.Data memory consensusState, ParsedBesuHeader memory untrustedHeader) internal view returns (bytes[] memory validators, bool ok) {
+        bytes32 blkHash = keccak256(untrustedHeader.base.besuHeaderRLPBytes);
+
+        if (!verifyCommitSealsTrusting(consensusState.validators, untrustedHeader.base.seals, blkHash, defaultTrustLevel)) {
+            return (validators, false);
         }
-        return (validators, success > header.validators.length * 2 / 3);
+
+        return verifyCommitSeals(untrustedHeader.validators, untrustedHeader.base.seals, blkHash);
     }
 
-    function verifyStorageProof(address account, bytes32 stateRoot, bytes memory accountStateProof) internal view returns (bytes32) {
+    /**
+     * @dev verifyCommitSealsTrusting verifies that trustLevel of the validator set signed this commit.
+     * @param trustedVals trusted validators
+     * @param seals commit seals for untrusted block header
+     * @param blkHash the hash of untrusted block
+     * @param trustLevel new header can be trusted if at least one correct validator signed it
+     */
+    function verifyCommitSealsTrusting(bytes[] memory trustedVals, bytes[] memory seals, bytes32 blkHash, Fraction memory trustLevel) internal pure returns (bool) {
+        uint8 success = 0;
+        bool[] memory marked = new bool[](trustedVals.length);
+        for (uint i = 0; i < seals.length; i++) {
+            if (seals[i].length == 0) {
+                continue;
+            }
+            address signer = ECRecovery.recover(blkHash, seals[i]);
+            for (uint j = 0; j < trustedVals.length; j++) {
+                if (!marked[j] && trustedVals[j].toAddress() == signer) {
+                    success++;
+                    marked[j] = true;
+                }
+            }
+        }
+        return success >= trustedVals.length * trustLevel.numerator / trustLevel.denominator;
+    }
+
+    /**
+     * @dev verifyCommitSeals verifies the seals with untrustedVals. The order of seals must match the order of untrustedVals.
+     * @param untrustedVals validators of untrusted block header
+     * @param seals commit seals for untrusted block header
+     * @param blkHash the hash of untrusted block
+     */
+    function verifyCommitSeals(RLP.RLPItem[] memory untrustedVals, bytes[] memory seals, bytes32 blkHash) internal pure returns (bytes[] memory, bool) {
+        bytes[] memory validators = new bytes[](untrustedVals.length);
+        uint8 success = 0;
+        for (uint i = 0; i < seals.length; i++) {
+            validators[i] = untrustedVals[i].toBytes();
+            if (seals[i].length == 0) {
+                continue;
+            } else if (validators[i].toAddress() == ECRecovery.recover(blkHash, seals[i])) {
+                success++;
+            }
+        }
+        return (validators, success > untrustedVals.length * 2 / 3);
+    }
+
+    function verifyStorageProof(address account, bytes32 stateRoot, bytes memory accountStateProof) internal pure returns (bytes32) {
         bytes32 proofPath = keccak256(abi.encodePacked(account));
         bytes memory accountRLP = accountStateProof.verify(stateRoot, proofPath); // reverts if proof is invalid
         return bytes32(accountRLP.toRLPItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
     }
 
-    function parseBesuHeader(Header memory header) internal view returns (ParsedBesuHeader memory) {
+    function parseBesuHeader(Header memory header) internal pure returns (ParsedBesuHeader memory) {
         ParsedBesuHeader memory parsedHeader;
 
         parsedHeader.base = header;
@@ -160,7 +218,7 @@ contract IBCClient {
         bytes memory prefix,
         bytes32 slot,
         bytes32 expectedValue
-    ) internal view returns (bool) {
+    ) internal pure returns (bool) {
         uint256 slotNum = toUint256(abi.encodePacked(slot), 0);
         bytes32 path = keccak256(abi.encodePacked(slotNum));
         bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
