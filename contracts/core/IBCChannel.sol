@@ -16,38 +16,6 @@ contract IBCChannel {
     IBCClient ibcclient;
     IBCConnection ibcconnection;
 
-    // types
-    struct MsgChannelOpenInit {
-        string portId;
-        string channelId;
-        Channel.Data channel;
-    }
-
-    struct MsgChannelOpenTry {
-        string portId;
-        string channelId;
-        Channel.Data channel;
-        string counterpartyVersion;
-        bytes proofInit;
-        uint64 proofHeight;
-    }
-
-    struct MsgChannelOpenAck {
-        string portId;
-        string channelId;
-        string counterpartyVersion;
-        string counterpartyChannelId;
-        bytes proofTry;
-        uint64 proofHeight;
-    }
-
-    struct MsgChannelOpenConfirm {
-        string portId;
-        string channelId;
-        bytes proofAck;
-        uint64 proofHeight;
-    }
-
     constructor(IBCStore store, IBCClient ibcclient_, IBCConnection ibcconnection_) public {
         ibcStore = store;
         ibcclient = ibcclient_;
@@ -55,7 +23,7 @@ contract IBCChannel {
     }
 
     function channelOpenInit(
-        MsgChannelOpenInit memory msg_
+        IBCMsgs.MsgChannelOpenInit memory msg_
     ) public returns (string memory) {
         require(!ibcStore.hasChannel(msg_.portId, msg_.channelId), "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
@@ -77,7 +45,7 @@ contract IBCChannel {
     }
 
     function channelOpenTry(
-        MsgChannelOpenTry memory msg_
+        IBCMsgs.MsgChannelOpenTry memory msg_
     ) public returns (string memory) {
         require(!ibcStore.hasChannel(msg_.portId, msg_.channelId), "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
@@ -112,7 +80,7 @@ contract IBCChannel {
     }
 
     function channelOpenAck(
-        MsgChannelOpenAck memory msg_
+        IBCMsgs.MsgChannelOpenAck memory msg_
     ) public {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
@@ -147,7 +115,7 @@ contract IBCChannel {
     }
 
     function channelOpenConfirm(
-        MsgChannelOpenConfirm memory msg_
+        IBCMsgs.MsgChannelOpenConfirm memory msg_
     ) public {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;

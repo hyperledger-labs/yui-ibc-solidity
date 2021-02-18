@@ -4,55 +4,24 @@ pragma experimental ABIEncoderV2;
 import "./types/Connection.sol";
 import "./IBCStore.sol";
 import "./IBCClient.sol";
+import "./IBCMsgs.sol";
 
 contract IBCConnection {
     IBCStore ibcStore;
     IBCClient client;
 
     // types
-    struct MsgConnectionOpenTry {
-        string connectionId;
-        Counterparty.Data counterparty; // counterpartyConnectionIdentifier, counterpartyPrefix and counterpartyClientIdentifier
-        uint64 delayPeriod;
-        string clientId; // clientID of chainA
-        ClientState.Data clientState; // clientState that chainA has for chainB
-        Version.Data[] counterpartyVersions; // supported versions of chain A
-        bytes proofInit; // proof that chainA stored connectionEnd in state (on ConnOpenInit)
-        bytes proofClient; // proof that chainA stored a light client of chainB
-        bytes proofConsensus; // proof that chainA stored chainB's consensus state at consensus height
-        uint64 proofHeight; // height at which relayer constructs proof of A storing connectionEnd in state
-        uint64 consensusHeight; // latest height of chain B which chain A has stored in its chain B client
-    }
-
-    struct MsgConnectionOpenAck {
-        string connectionId;
-        ClientState.Data clientState; // client state for chainA on chainB
-        Version.Data version; // version that ChainB chose in ConnOpenTry
-        string counterpartyConnectionID;
-        bytes proofTry; // proof that connectionEnd was added to ChainB state in ConnOpenTry
-        bytes proofClient; // proof of client state on chainB for chainA
-        bytes proofConsensus; // proof that chainB has stored ConsensusState of chainA on its client
-        uint64 proofHeight; // height that relayer constructed proofTry
-        uint64 consensusHeight; // latest height of chainA that chainB has stored on its chainA client
-    }
-
-    struct MsgConnectionOpenConfirm {
-        string connectionId;
-        bytes proofAck;
-        uint64 proofHeight;
-    }
-
     struct ClientConnectionPaths {
         string[] paths;
     }
+
+    // storage
+    mapping(string => ClientConnectionPaths) clientConnectionPaths;
 
     // constant values
     Version.Data[] versions;
     string[] features;
     bytes commitmentPrefix;
-
-    // storage
-    mapping(string => ClientConnectionPaths) clientConnectionPaths;
 
     constructor(IBCStore store, IBCClient client_) public {
         // initialize
@@ -72,33 +41,28 @@ contract IBCConnection {
 
     // ConnOpenInit initialises a connection attempt on chain A. The generated connection identifier
     // is returned.
-    function connectionOpenInit(
-        string memory clientId,
-        string memory connectionId,
-        Counterparty.Data memory counterparty,
-        uint64 delayPeriod) public returns (string memory) {
- 
+    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit memory msg_) public returns (string memory) {
         ConnectionEnd.Data memory connection;
         bool found;
-        (connection, found) = ibcStore.getConnection(connectionId);
+        (connection, found) = ibcStore.getConnection(msg_.connectionId);
         require(!found, "connection already exists");
 
         connection = ConnectionEnd.Data({
-            client_id: clientId,
+            client_id: msg_.clientId,
             versions: versions,
             state: ConnectionEnd.State.STATE_INIT,
-            delay_period: delayPeriod,
-            counterparty: counterparty
+            delay_period: msg_.delayPeriod,
+            counterparty: msg_.counterparty
         });
-        ibcStore.setConnection(connectionId, connection);
-        addConnectionToClient(clientId, connectionId);
-        return connectionId;
+        ibcStore.setConnection(msg_.connectionId, connection);
+        addConnectionToClient(msg_.clientId, msg_.connectionId);
+        return msg_.connectionId;
     }
 
     // ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
     // code is executed on chain B).
     function connectionOpenTry(
-        MsgConnectionOpenTry memory msg_
+        IBCMsgs.MsgConnectionOpenTry memory msg_
     ) public returns (string memory) {
         require(msg_.consensusHeight < block.number, "consensus height is greater than or equal to the current block height");
         require(client.validateSelfClient(msg_.clientState), "failed to validate self client state");
@@ -139,7 +103,7 @@ contract IBCConnection {
     }
 
     function connectionOpenAck(
-        MsgConnectionOpenAck memory msg_
+        IBCMsgs.MsgConnectionOpenAck memory msg_
     ) public {
         require(msg_.consensusHeight < block.number, "consensus height is greater than or equal to the current block height");
         (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.connectionId);
@@ -181,7 +145,7 @@ contract IBCConnection {
     }
 
     function connectionOpenConfirm(
-        MsgConnectionOpenConfirm memory msg_
+        IBCMsgs.MsgConnectionOpenConfirm memory msg_
     ) public {
         (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.connectionId);
         require(found, "connection not found");
