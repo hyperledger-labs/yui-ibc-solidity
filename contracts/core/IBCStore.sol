@@ -5,7 +5,7 @@ import "./types/Client.sol";
 import "./types/Connection.sol";
 import "./types/Channel.sol";
 
-contract ProvableStore {
+contract IBCStore {
     // Commitments
     mapping (bytes32 => bytes32) commitments;
 
@@ -16,6 +16,7 @@ contract ProvableStore {
     string constant connectionPrefix = "connection/";
     string constant channelPrefix = "channel/";
     string constant packetPrefix = "packet/";
+    string constant packetAckPrefix = "acks/";
 
     // TODO provides ACL
     address[] internal allowedAccessors;
@@ -29,6 +30,9 @@ contract ProvableStore {
     mapping (string => mapping(string => uint64)) nextSequenceSends;
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
+    mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
+    // TODO remove this storage variable in production. see details `function setPacket`
+    mapping (string => mapping(string => mapping(uint64 => bytes))) packets;
 
 
     // Commitment key generator
@@ -53,6 +57,10 @@ contract ProvableStore {
         return keccak256(abi.encodePacked(packetPrefix, portId, "/", channelId, "/", sequence));
     }
 
+    function packetAcknowledgementCommitmentKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(packetAckPrefix, portId, "/", channelId, "/", sequence));
+    }
+
     // Slot calculator
 
     function clientStateCommitmentSlot(string memory clientId) public pure returns (bytes32) {
@@ -73,6 +81,10 @@ contract ProvableStore {
 
     function packetCommitmentSlot(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(packetCommitmentKey(portId, channelId, sequence), commitmentSlot));
+    }
+
+    function packetAcknowledgementCommitmentSlot(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(packetAcknowledgementCommitmentKey(portId, channelId, sequence), commitmentSlot));
     }
 
     /// Storage accessor ///
@@ -179,14 +191,56 @@ contract ProvableStore {
         return nextSequenceAcks[portId][channelId];
     }
 
+    // TODO remove this function in production
+    // NOTE: A packet doesn't need to be stored in storage, but this will help development
+    function setPacket(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) internal {
+        packets[portId][channelId][sequence] = Packet.encode(packet);
+    }
+
+    // TODO remove this function in production
+    function getPacket(string memory portId, string memory channelId, uint64 sequence) public view returns (Packet.Data memory) {
+        return Packet.decode(packets[portId][channelId][sequence]);
+    }
+
     function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) public {
         commitments[packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
+        setPacket(portId, channelId, sequence, packet);
+    }
+
+    function deletePacketCommitment(string memory portId, string memory channelId, uint64 sequence) public {
+        delete commitments[packetCommitmentKey(portId, channelId, sequence)];
+    }
+
+    function getPacketCommitment(string memory portId, string memory channelId, uint64 sequence) public returns (bytes32, bool) {
+        bytes32 commitment = commitments[packetCommitmentKey(portId, channelId, sequence)];
+        return (commitment, commitment != bytes32(0));
     }
 
     function makePacketCommitment(Packet.Data memory packet) public view returns (bytes32) {
         bytes32 dataHash = sha256(packet.data);
         // TODO serialize uint64 to bytes(big-endian)
         return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, dataHash));
+    }
+
+    function setPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) public {
+        commitments[packetAcknowledgementCommitmentKey(portId, channelId, sequence)] = makePacketAcknowledgementCommitment(acknowledgement);
+    }
+
+    function getPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence) public view returns (bytes32, bool) {
+        bytes32 commitment = commitments[packetAcknowledgementCommitmentKey(portId, channelId, sequence)];
+        return (commitment, commitment != bytes32(0));
+    }
+
+    function makePacketAcknowledgementCommitment(bytes memory acknowledgement) public view returns (bytes32) {
+        return sha256(acknowledgement);
+    }
+
+    function setPacketReceipt(string memory portId, string memory channelId, uint64 sequence) public {
+        packetReceipts[portId][channelId][sequence] = true;
+    }
+
+    function hasPacketReceipt(string memory portId, string memory channelId, uint64 sequence) public view returns (bool) {
+        return packetReceipts[portId][channelId][sequence];
     }
 
     // Debug

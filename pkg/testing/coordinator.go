@@ -387,3 +387,42 @@ func (c *Coordinator) RecvPacket(
 		counterpartyClientID, BesuIBFT2Client,
 	)
 }
+
+func (c *Coordinator) HandlePacketRecv(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+	packet channeltypes.Packet,
+) error {
+	if err := source.HandlePacketRecv(ctx, counterparty, sourceChannel, counterpartyChannel, packet); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		counterpartyChannel.ClientID, BesuIBFT2Client,
+	)
+}
+
+func (c *Coordinator) HandlePacketAcknowledgement(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+	packet channeltypes.Packet,
+	acknowledgement []byte,
+) error {
+	if err := source.HandlePacketAcknowledgement(ctx, counterparty, sourceChannel, counterpartyChannel, packet, acknowledgement); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	// update source client on counterparty connection
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		counterpartyChannel.ClientID, BesuIBFT2Client,
+	)
+}
