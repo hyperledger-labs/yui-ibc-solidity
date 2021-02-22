@@ -20,7 +20,7 @@ module.exports = function (deployer) {
     return deployer.deploy(IBCClient, IBCStore.address).then(function() {
       return deployer.deploy(IBCConnection, IBCStore.address, IBCClient.address).then(function() {
         return deployer.deploy(IBCChannel, IBCStore.address, IBCClient.address, IBCConnection.address).then(function() {
-          return deployer.deploy(IBCHandler, IBCStore.address, IBCChannel.address).then(function() {
+          return deployer.deploy(IBCHandler, IBCStore.address, IBCClient.address, IBCChannel.address).then(function() {
             return deployer.deploy(SimpleTokenModule, IBCStore.address, IBCHandler.address, IBCChannel.address);
           });
         });

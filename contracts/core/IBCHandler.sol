@@ -2,6 +2,7 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "./IBCMsgs.sol";
+import "./IBCClient.sol";
 import "./IBCChannel.sol";
 import "./IBCStore.sol";
 
@@ -10,16 +11,30 @@ IBCHandler implements ics-025 and ics-026
 */
 contract IBCHandler {
     IBCStore ibcStore;
+    IBCClient ibcclient;
     IBCChannel ibcchannel;
 
     mapping(string => Module) modules;
 
-    constructor(IBCStore store, IBCChannel ibcchannel_) public {
+    constructor(IBCStore store, IBCClient ibcclient_, IBCChannel ibcchannel_) public {
         ibcStore = store;
+        ibcclient = ibcclient_;
         ibcchannel = ibcchannel_;
     }
 
     /// Msg(Datagram) handlers ///
+
+    /* Client */
+
+    function createClient(IBCMsgs.MsgCreateClient memory msg_) public {
+        ibcclient.createClient(msg_);
+    }
+
+    function updateClient(IBCMsgs.MsgUpdateClient memory msg_) public {
+        ibcclient.updateClient(msg_);
+    }
+
+    /* Packet */
 
     function handlePacketRecv(IBCMsgs.MsgPacketRecv memory msg_) public returns (bytes memory) {
         (Module memory module, bool found) = lookupModule(msg_.packet.destination_port);
