@@ -3,6 +3,7 @@
       "config": {
          "chainId": 3018,
          "muirglacierblock": 0,
+         "contractSizeLimit": 2147483647,
          "ibft2": {
            "blockperiodseconds": 2,
            "epochlength": 30000,

@@ -1,7 +1,6 @@
 pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
-import "./types/Client.sol";
 import "./types/Connection.sol";
 import "./types/Channel.sol";
 
@@ -23,6 +22,7 @@ contract IBCStore {
 
     // TODO use RLP instead of pb?
     // Store
+    mapping (string => string) clientTypes; // clientID => clientType
     mapping (string => bytes) clientStates;
     mapping (string => mapping(uint64 => bytes)) consensusStates;
     mapping (string => bytes) connections;
@@ -89,22 +89,31 @@ contract IBCStore {
 
     /// Storage accessor ///
 
-    // ClientState
+    // Client types
 
-    function setClientState(string memory clientId, ClientState.Data memory data) public {
-        bytes memory encoded = ClientState.encode(data);
-        clientStates[clientId] = encoded;
-        commitments[clientCommitmentKey(clientId)] = keccak256(encoded);
+    function setClientType(string memory clientId, string memory clientType) public {
+        require(bytes(clientTypes[clientId]).length == 0, "clientId already exists");
+        require(bytes(clientType).length > 0, "clientType must not be empty string");
+        clientTypes[clientId] = clientType;
     }
 
-    function getClientState(string memory clientId) public view returns (ClientState.Data memory, bool) {
-        bytes memory encoded = clientStates[clientId];
-        ClientState.Data memory memoryData;
-        if (encoded.length == 0) {
-            return (memoryData, false);
+    function getClientType(string memory clientId) public view returns (string memory) {
+        return clientTypes[clientId];
+    }
+
+    // ClientState
+
+    function setClientState(string memory clientId, bytes memory clientStateBytes) public {
+        clientStates[clientId] = clientStateBytes;
+        commitments[clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
+    }
+
+    function getClientState(string memory clientId) public view returns (bytes memory clientStateBytes, bool found) {
+        clientStateBytes = clientStates[clientId];
+        if (clientStateBytes.length == 0) {
+            return (clientStateBytes, false);
         }
-        memoryData = ClientState.decode(encoded);
-        return (memoryData, true);
+        return (clientStateBytes, true);
     }
 
     function hasClientState(string memory clientId) public view returns (bool) {
@@ -114,19 +123,17 @@ contract IBCStore {
 
     // ConsensusState
 
-    function setConsensusState(string memory clientId, uint64 height, ConsensusState.Data memory consensusState) public {
-        bytes memory encoded = ConsensusState.encode(consensusState);
-        consensusStates[clientId][height] = encoded;
-        commitments[consensusCommitmentKey(clientId, height)] = keccak256(encoded);
+    function setConsensusState(string memory clientId, uint64 height, bytes memory consensusStateBytes) public {
+        consensusStates[clientId][height] = consensusStateBytes;
+        commitments[consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
     }
 
-    function getConsensusState(string memory clientId, uint64 height) public view returns (ConsensusState.Data memory consensusState, bool) {
-        bytes memory encoded = consensusStates[clientId][height];
-        if (encoded.length == 0) {
-            return (consensusState, false);
+    function getConsensusState(string memory clientId, uint64 height) public view returns (bytes memory consensusStateBytes, bool found) {
+        consensusStateBytes = consensusStates[clientId][height];
+        if (consensusStateBytes.length == 0) {
+            return (consensusStateBytes, false);
         }
-        consensusState = ConsensusState.decode(encoded);
-        return (consensusState, true);
+        return (consensusStateBytes, true);
     }
 
     // Connection

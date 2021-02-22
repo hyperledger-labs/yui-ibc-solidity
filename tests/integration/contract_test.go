@@ -104,7 +104,7 @@ func (suite *ContractTestSuite) TestConnectionSerialization() {
 // 	data := []byte("data0")
 // 	suite.Require().NoError(
 // 		suite.chain.WaitIfNoError(ctx)(
-// 			suite.chain.IBCHandler.HandlePacketRecvWithoutVerification(
+// 			suite.chain.IBCModule.HandlePacketRecvWithoutVerification(
 // 				suite.chain.TxOpts(ctx),
 // 				ibchandler.IBCMsgsMsgPacketRecv{
 // 					Packet: ibchandler.PacketData{

@@ -2,6 +2,7 @@
     "genesis": {
       "config": {
          "chainId": 2018,
+         "contractSizeLimit": 2147483647,
          "muirglacierblock": 0,
          "ibft2": {
            "blockperiodseconds": 2,

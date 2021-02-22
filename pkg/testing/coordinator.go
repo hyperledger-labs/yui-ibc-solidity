@@ -73,7 +73,6 @@ func (c Coordinator) CreateClient(
 	switch clientType {
 	case BesuIBFT2Client:
 		err = source.CreateBesuClient(ctx, counterparty, clientID)
-
 	default:
 		err = fmt.Errorf("client type %s is not supported", clientType)
 	}
