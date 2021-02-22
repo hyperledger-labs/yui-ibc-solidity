@@ -1,9 +1,7 @@
 const Migrations = artifacts.require("Migrations");
 const IBCStore = artifacts.require("IBCStore");
-const IBCClient = artifacts.require("IBCClient");
-const IBCConnection = artifacts.require("IBCConnection");
-const IBCChannel = artifacts.require("IBCChannel");
-const IBCHandler = artifacts.require("IBCHandler");
+const IBFT2Client = artifacts.require("IBFT2Client");
+const IBCModule = artifacts.require("IBCModule");
 const IBCMsgs = artifacts.require("IBCMsgs");
 const SimpleTokenModule = artifacts.require("SimpleTokenModule");
 const Bytes = artifacts.require("Bytes");
@@ -11,19 +9,15 @@ const Bytes = artifacts.require("Bytes");
 module.exports = function (deployer) {
   deployer.deploy(Migrations);
   deployer.deploy(Bytes).then(function() {
-    return deployer.link(Bytes, [IBCClient, IBCConnection, IBCChannel, SimpleTokenModule]);
+    return deployer.link(Bytes, [IBCModule, IBFT2Client, SimpleTokenModule]);
   });
   deployer.deploy(IBCMsgs).then(function() {
-    return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler]);
+    return deployer.link(IBCMsgs, [IBCModule, IBFT2Client]);
   });
   deployer.deploy(IBCStore).then(function() {
-    return deployer.deploy(IBCClient, IBCStore.address).then(function() {
-      return deployer.deploy(IBCConnection, IBCStore.address, IBCClient.address).then(function() {
-        return deployer.deploy(IBCChannel, IBCStore.address, IBCClient.address, IBCConnection.address).then(function() {
-          return deployer.deploy(IBCHandler, IBCStore.address, IBCClient.address, IBCChannel.address).then(function() {
-            return deployer.deploy(SimpleTokenModule, IBCStore.address, IBCHandler.address, IBCChannel.address);
-          });
-        });
+    return deployer.deploy(IBFT2Client, IBCStore.address).then(function() {
+      return deployer.deploy(IBCModule, IBCStore.address, IBFT2Client.address).then(function() {
+        return deployer.deploy(SimpleTokenModule, IBCStore.address, IBCModule.address);
       });
     });
   });

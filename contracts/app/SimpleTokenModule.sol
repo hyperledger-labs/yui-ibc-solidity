@@ -2,7 +2,7 @@ pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
 import "../core/types/Channel.sol";
-import "../core/IBCHandler.sol";
+import "../core/IBCModule.sol";
 import "../core/IBCChannel.sol";
 import "../core/IBCStore.sol";
 import "../core/types/App.sol";
@@ -17,17 +17,15 @@ contract SimpleTokenModule {
     mapping (address => uint256) _balances;
 
     // Module storages
-    IBCHandler ibcHandler;
-    IBCChannel ibcChannel;
+    IBCModule ibcModule;
     IBCStore store;
 
     /// Constructor ///
 
-    constructor(IBCStore store_, IBCHandler ibcHandler_, IBCChannel ibcChannel_) public {
+    constructor(IBCStore store_, IBCModule ibcModule_) public {
         store = store_;
-        ibcChannel = ibcChannel_;
-        ibcHandler = ibcHandler_;
-        ibcHandler.bindPort("transfer", address(this));
+        ibcModule = ibcModule_;
+        ibcModule.bindPort("transfer", address(this));
 
         _balances[msg.sender] = 10000;
     }
@@ -65,7 +63,7 @@ contract SimpleTokenModule {
             timeout_height: Height.Data({revision_number: 0, revision_height: timeoutHeight}),
             timeout_timestamp: 0
         });
-        ibcChannel.sendPacket(packet);
+        ibcModule.sendPacket(packet);
         burn(msg.sender, amount);
     }
 
@@ -92,7 +90,7 @@ contract SimpleTokenModule {
     /// Module implementations ///
 
     modifier onlyRoutingModule (){
-        require(msg.sender == address(ibcHandler));
+        require(msg.sender == address(ibcModule));
         _;
     }
 

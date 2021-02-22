@@ -3,28 +3,16 @@ pragma experimental ABIEncoderV2;
 
 import "../lib/strings.sol";
 import "./types/Channel.sol";
-import "./types/Client.sol";
-import "./IBCStore.sol";
-import "./IBCClient.sol";
 import "./IBCConnection.sol";
 import "./IBCMsgs.sol";
+import "./IHandler.sol";
 
-contract IBCChannel {
+abstract contract IBCChannel is IHandler, IBCConnection {
     using strings for *;
-
-    IBCStore ibcStore;
-    IBCClient ibcclient;
-    IBCConnection ibcconnection;
-
-    constructor(IBCStore store, IBCClient ibcclient_, IBCConnection ibcconnection_) public {
-        ibcStore = store;
-        ibcclient = ibcclient_;
-        ibcconnection = ibcconnection_;
-    }
 
     function channelOpenInit(
         IBCMsgs.MsgChannelOpenInit memory msg_
-    ) public returns (string memory) {
+    ) public override returns (string memory) {
         require(!ibcStore.hasChannel(msg_.portId, msg_.channelId), "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.channel.connection_hops[0]);
@@ -46,7 +34,7 @@ contract IBCChannel {
 
     function channelOpenTry(
         IBCMsgs.MsgChannelOpenTry memory msg_
-    ) public returns (string memory) {
+    ) public override returns (string memory) {
         require(!ibcStore.hasChannel(msg_.portId, msg_.channelId), "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.channel.connection_hops[0]);
@@ -69,7 +57,7 @@ contract IBCChannel {
             connection_hops: getCounterpartyHops(msg_.channel),
             version: msg_.counterpartyVersion
         });
-        require(ibcconnection.verifyChannelState(connection, msg_.proofHeight, msg_.proofInit, msg_.channel.counterparty.port_id, msg_.channel.counterparty.channel_id, Channel.encode(expectedChannel)), "failed to verify channel state");
+        require(verifyChannelState(connection, msg_.proofHeight, msg_.proofInit, msg_.channel.counterparty.port_id, msg_.channel.counterparty.channel_id, Channel.encode(expectedChannel)), "failed to verify channel state");
 
         ibcStore.setChannel(msg_.portId, msg_.channelId, msg_.channel);
         ibcStore.setNextSequenceSend(msg_.portId, msg_.channelId, 1);
@@ -81,7 +69,7 @@ contract IBCChannel {
 
     function channelOpenAck(
         IBCMsgs.MsgChannelOpenAck memory msg_
-    ) public {
+    ) public override {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         bool found;
@@ -107,7 +95,7 @@ contract IBCChannel {
             connection_hops: getCounterpartyHops(channel),
             version: msg_.counterpartyVersion
         });
-        require(ibcconnection.verifyChannelState(connection, msg_.proofHeight, msg_.proofTry, channel.counterparty.port_id, msg_.counterpartyChannelId, Channel.encode(expectedChannel)), "failed to verify channel state");
+        require(verifyChannelState(connection, msg_.proofHeight, msg_.proofTry, channel.counterparty.port_id, msg_.counterpartyChannelId, Channel.encode(expectedChannel)), "failed to verify channel state");
         channel.state = Channel.State.STATE_OPEN;
         channel.version = msg_.counterpartyVersion;
         channel.counterparty.channel_id = msg_.counterpartyChannelId;
@@ -116,7 +104,7 @@ contract IBCChannel {
 
     function channelOpenConfirm(
         IBCMsgs.MsgChannelOpenConfirm memory msg_
-    ) public {
+    ) public override {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         bool found;
@@ -142,15 +130,16 @@ contract IBCChannel {
             connection_hops: getCounterpartyHops(channel),
             version: channel.version
         });
-        require(ibcconnection.verifyChannelState(connection, msg_.proofHeight, msg_.proofAck, channel.counterparty.port_id, channel.counterparty.channel_id, Channel.encode(expectedChannel)), "failed to verify channel state");
+        require(verifyChannelState(connection, msg_.proofHeight, msg_.proofAck, channel.counterparty.port_id, channel.counterparty.channel_id, Channel.encode(expectedChannel)), "failed to verify channel state");
         channel.state = Channel.State.STATE_OPEN;
         ibcStore.setChannel(msg_.portId, msg_.channelId, channel);
     }
 
-    function sendPacket(Packet.Data memory packet) public {
+    function sendPacket(Packet.Data memory packet) public override {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
-        ClientState.Data memory clientState;
+        IClient client;
+        uint64 latestHeight;
         uint64 latestTimestamp;
         uint64 nextSequenceSend;
         bool found;
@@ -162,11 +151,10 @@ contract IBCChannel {
         require(packet.destination_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet destination channel doesn't match the counterparty's channel");
         (connection, found) = ibcStore.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
-        (clientState, found) = ibcStore.getClientState(connection.client_id);
-        require(found, "clientState not found");
-
-        require(packet.timeout_height.revision_height == 0 || clientState.latest_height < packet.timeout_height.revision_height, "receiving chain block height >= packet timeout height");
-        (latestTimestamp, found) = ibcclient.getTimestampAtHeight(connection.client_id, clientState.latest_height);
+        client = getClient(connection.client_id);
+        (latestHeight, found) = client.getLatestHeight(connection.client_id);
+        require(packet.timeout_height.revision_height == 0 || latestHeight < packet.timeout_height.revision_height, "receiving chain block height >= packet timeout height");
+        (latestTimestamp, found) = getClient(connection.client_id).getTimestampAtHeight(connection.client_id, latestHeight);
         require(found, "consensusState not found");
         require(packet.timeout_timestamp == 0 || latestTimestamp < packet.timeout_timestamp, "receiving chain block timestamp >= packet timeout timestamp");
 
@@ -181,7 +169,7 @@ contract IBCChannel {
         // TODO emit an event that includes a packet
     }
 
-    function recvPacket(IBCMsgs.MsgPacketRecv memory msg_) public {
+    function _recvPacket(IBCMsgs.MsgPacketRecv memory msg_) internal {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         bool found;
@@ -203,7 +191,7 @@ contract IBCChannel {
         require(msg_.packet.timeout_timestamp == 0 || block.timestamp < msg_.packet.timeout_timestamp, "block timestamp >= packet timeout timestamp");
 
         bytes32 commitment = ibcStore.makePacketCommitment(msg_.packet);
-        require(ibcconnection.verifyPacketCommitment(connection, msg_.proofHeight, msg_.proof, msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence, commitment), "failed to verify packet commitment");
+        require(verifyPacketCommitment(connection, msg_.proofHeight, msg_.proof, msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence, commitment), "failed to verify packet commitment");
 
         if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
             require(!ibcStore.hasPacketReceipt(msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence), "packet sequence already has been received");
@@ -219,7 +207,7 @@ contract IBCChannel {
 
     // WriteAcknowledgement writes the packet execution acknowledgement to the state,
     // which will be verified by the counterparty chain using AcknowledgePacket.
-    function writeAcknowledgement(Packet.Data memory packet, bytes memory acknowledgement) public {
+    function writeAcknowledgement(Packet.Data memory packet, bytes memory acknowledgement) internal {
         Channel.Data memory channel;
         bytes32 ackHash;
         bool found;
@@ -234,7 +222,7 @@ contract IBCChannel {
         ibcStore.setPacketAcknowledgementCommitment(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
     }
 
-    function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement memory msg_) public {
+    function _acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement memory msg_) internal {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         bytes32 commitment;
@@ -256,7 +244,7 @@ contract IBCChannel {
 
         require(commitment == ibcStore.makePacketCommitment(msg_.packet), "commitment bytes are not equal");
 
-        require(ibcconnection.verifyPacketAcknowledgement(connection, msg_.proofHeight, msg_.proof, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, ibcStore.makePacketAcknowledgementCommitment(msg_.acknowledgement)), "failed to verify packet acknowledgement commitment");
+        require(verifyPacketAcknowledgement(connection, msg_.proofHeight, msg_.proof, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, ibcStore.makePacketAcknowledgementCommitment(msg_.acknowledgement)), "failed to verify packet acknowledgement commitment");
 
         if (channel.ordering == Channel.Order.ORDER_ORDERED) {
             nextSequenceAck = ibcStore.getNextSequenceAck(msg_.packet.source_port, msg_.packet.source_channel);
