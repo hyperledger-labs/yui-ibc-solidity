@@ -8,16 +8,13 @@ import "./IBCRoutingModule.sol";
 import "./IHandler.sol";
 import "./IBFT2Client.sol";
 
-/*
-IBCModule implements ics-025 and ics-026
-*/
 contract IBCModule is IHandler, IBCRoutingModule, IBCChannel {
 
     constructor(IBCStore store, IBFT2Client ibft2Client) IBCHost(store) public {
         registerClient("ibft2", ibft2Client);
     }
 
-    /* Packet Handler */
+    /// Packet Handler ///
 
     function recvPacket(IBCMsgs.MsgPacketRecv memory msg_) public override returns (bytes memory) {
         (Module memory module, bool found) = lookupModule(msg_.packet.destination_port);

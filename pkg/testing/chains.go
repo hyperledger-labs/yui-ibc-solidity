@@ -145,36 +145,19 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 	)
 }
 
-// func (chain *Chain) VerifyClientState(clientID string, counterparty *Chain, counterpartyClientID string) bool {
-// 	ctx := context.Background()
-
-// 	targetState, ok, err := counterparty.IBCStore.GetClientState(counterparty.CallOpts(ctx), counterpartyClientID)
-// 	require.NoError(chain.t, err)
-// 	require.True(chain.t, ok)
-
-// 	chain.UpdateHeader()
-// 	counterparty.UpdateHeader()
-
-// 	require.NoError(chain.t, chain.UpdateBesuClient(ctx, counterparty, clientID))
-
-// 	key, err := counterparty.IBCStore.ClientStateCommitmentSlot(counterparty.CallOpts(ctx), counterpartyClientID)
-// 	require.NoError(chain.t, err)
-
-// 	proof, err := counterparty.QueryProof(chain, clientID, "0x"+hex.EncodeToString(key[:]))
-// 	require.NoError(chain.t, err)
-
-// 	clientState, found, err := chain.IBCStore.GetClientState(chain.CallOpts(ctx), clientID)
-// 	require.NoError(chain.t, err)
-// 	require.True(chain.t, found)
-
-// 	ok, err = chain.IBCClient.VerifyClientState(
-// 		chain.CallOpts(ctx),
-// 		ibcclient.ClientStateData(clientState),
-// 		clientID, proof.Height, chain.GetCommitmentPrefix(), counterpartyClientID, proof.Data, ibcclient.ClientStateData(targetState),
-// 	)
-// 	require.NoError(chain.t, err)
-// 	return ok
-// }
+func (chain *Chain) Init() error {
+	ctx := context.Background()
+	initialized, err := chain.IBCStore.IsIBCModuleInitialized(chain.CallOpts(ctx))
+	if err != nil {
+		return err
+	}
+	if !initialized {
+		return chain.WaitIfNoError(ctx)(
+			chain.IBCStore.SetIBCModule(chain.TxOpts(ctx), chain.ContractConfig.GetIBCModuleAddress()),
+		)
+	}
+	return nil
+}
 
 func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID string) ibcmodule.IBCMsgsMsgCreateClient {
 	clientState := clienttypes.ClientState{
