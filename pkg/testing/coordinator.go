@@ -16,6 +16,7 @@ type Coordinator struct {
 
 func NewCoordinator(t *testing.T, chains ...*Chain) Coordinator {
 	for _, chain := range chains {
+		chain.Init()
 		chain.UpdateHeader()
 	}
 	return Coordinator{t: t, chains: chains}

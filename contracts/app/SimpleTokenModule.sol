@@ -89,12 +89,12 @@ contract SimpleTokenModule {
 
     /// Module implementations ///
 
-    modifier onlyRoutingModule (){
+    modifier onlyIBCModule (){
         require(msg.sender == address(ibcModule));
         _;
     }
 
-    function onRecvPacket(Packet.Data calldata packet) onlyRoutingModule external returns (bytes memory acknowledgement) {
+    function onRecvPacket(Packet.Data calldata packet) onlyIBCModule external returns (bytes memory acknowledgement) {
         FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
         mint(data.receiver.toAddress(), data.amount);
         acknowledgement = new bytes(1);
