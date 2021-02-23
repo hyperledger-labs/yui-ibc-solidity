@@ -102,7 +102,7 @@ contract SimpleTokenModule {
         return acknowledgement;
     }
 
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external {
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) onlyIBCModule external {
         // if acknowledgement indicates an error, refund the tokens to sender
     }
 }
