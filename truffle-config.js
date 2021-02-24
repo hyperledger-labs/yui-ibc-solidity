@@ -47,7 +47,7 @@ module.exports = {
      host: "127.0.0.1",     // Localhost (default: none)
      port: 8545,            // Standard Ethereum port (default: none)
      network_id: "*",       // Any network (default: none)
-     gas: 100000000,
+    //  gas: 100000000,
      provider: () =>
       new HDWalletProvider(mnemonic, "http://localhost:8545", 0, 10)
     },
@@ -55,7 +55,7 @@ module.exports = {
       host: "127.0.0.1",     // Localhost (default: none)
       port: 8645,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
-      gas: 100000000,
+      // gas: 100000000,
       provider: () =>
        new HDWalletProvider(mnemonic, "http://localhost:8645", 0, 10)
      },
@@ -63,7 +63,7 @@ module.exports = {
       host: "127.0.0.1",     // Localhost (default: none)
       port: 8745,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
-      gas: 100000000,
+      // gas: 100000000,
       provider: () =>
        new HDWalletProvider(mnemonic, "http://localhost:8745", 0, 10)
      }
@@ -87,5 +87,9 @@ module.exports = {
       //  evmVersion: "byzantium"
       }
     }
-  }
+  },
+
+  plugins: [
+    'truffle-contract-size'
+  ]
 };
