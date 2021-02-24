@@ -9,14 +9,6 @@ import "./IHandler.sol";
 
 abstract contract IBCConnection is IHandler, IBCClient {
 
-    // types
-    struct ClientConnectionPaths {
-        string[] paths;
-    }
-
-    // storage
-    mapping(string => ClientConnectionPaths) clientConnectionPaths;
-
     // constant values
     Version.Data[] versions;
     string[] features;
@@ -188,7 +180,7 @@ abstract contract IBCConnection is IHandler, IBCClient {
         string memory connectionId
     ) internal {
         require(ibcStore.hasClientState(clientId), "client not found");
-        clientConnectionPaths[clientId].paths.push(connectionId);
+        ibcStore.addConnectionPath(clientId, connectionId);
     }
 
     // Verification functions
