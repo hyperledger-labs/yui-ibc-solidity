@@ -9,21 +9,7 @@ import "./IHandler.sol";
 
 abstract contract IBCConnection is IHandler, IBCClient {
 
-    // constant values
-    Version.Data[] versions;
-    string[] features;
-    bytes commitmentPrefix;
-
-    constructor() public {
-        // initialize
-        commitmentPrefix = bytes("ibc");
-        features.push("ORDER_ORDERED");
-        features.push("ORDER_UNORDERED");
-        versions.push(Version.Data({
-            identifier: "1",
-            features: features
-        }));
-    }
+    string constant commitmentPrefix = "ibc";
 
     /* Public functions */
 
@@ -37,7 +23,7 @@ abstract contract IBCConnection is IHandler, IBCClient {
 
         connection = ConnectionEnd.Data({
             client_id: msg_.clientId,
-            versions: versions,
+            versions: getVersions(),
             state: ConnectionEnd.State.STATE_INIT,
             delay_period: msg_.delayPeriod,
             counterparty: msg_.counterparty
@@ -61,7 +47,7 @@ abstract contract IBCConnection is IHandler, IBCClient {
 
         ConnectionEnd.Data memory connection = ConnectionEnd.Data({
             client_id: msg_.clientId,
-            versions: versions,
+            versions: getVersions(),
             state: ConnectionEnd.State.STATE_TRYOPEN,
             delay_period: msg_.delayPeriod,
             counterparty: msg_.counterparty
@@ -75,7 +61,7 @@ abstract contract IBCConnection is IHandler, IBCClient {
             counterparty: Counterparty.Data({
                 client_id: msg_.clientId,
                 connection_id: "",
-                prefix: MerklePrefix.Data({key_prefix: commitmentPrefix})
+                prefix: MerklePrefix.Data({key_prefix: bytes(commitmentPrefix)})
             })
         });
 
@@ -113,12 +99,12 @@ abstract contract IBCConnection is IHandler, IBCClient {
         Counterparty.Data memory expectedCounterparty = Counterparty.Data({
             client_id: connection.client_id,
             connection_id: msg_.connectionId,
-            prefix: MerklePrefix.Data({key_prefix: commitmentPrefix}) 
+            prefix: MerklePrefix.Data({key_prefix: bytes(commitmentPrefix)}) 
         });
 
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: connection.counterparty.client_id,
-            versions: getVersionArray(msg_.version),
+            versions: makeVersionArray(msg_.version),
             state: ConnectionEnd.State.STATE_TRYOPEN,
             delay_period: connection.delay_period,
             counterparty: expectedCounterparty
@@ -143,7 +129,7 @@ abstract contract IBCConnection is IHandler, IBCClient {
         Counterparty.Data memory expectedCounterparty = Counterparty.Data({
             client_id: connection.client_id,
             connection_id: msg_.connectionId,
-            prefix: MerklePrefix.Data({key_prefix: commitmentPrefix}) 
+            prefix: MerklePrefix.Data({key_prefix: bytes(commitmentPrefix)}) 
         });
 
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
@@ -158,29 +144,6 @@ abstract contract IBCConnection is IHandler, IBCClient {
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
         ibcStore.setConnection(msg_.connectionId, connection);
-    }
-
-    function isSupportedVersion(Version.Data memory proposedVersion) internal view returns (bool) {
-        return true;
-    }
-
-    function isEqualVersion(Version.Data memory a, Version.Data memory b) internal view returns (bool) {
-        return keccak256(Version.encode(a)) == keccak256(Version.encode(b));
-    }
-
-    function getVersionArray(Version.Data memory version) internal pure returns (Version.Data[] memory ret) {
-        ret = new Version.Data[](1);
-        ret[0] = version;
-    }   
-
-    // Internal functions
-
-    function addConnectionToClient(
-        string memory clientId,
-        string memory connectionId
-    ) internal {
-        require(ibcStore.hasClientState(clientId), "client not found");
-        ibcStore.addConnectionPath(clientId, connectionId);
     }
 
     // Verification functions
@@ -207,5 +170,41 @@ abstract contract IBCConnection is IHandler, IBCClient {
 
     function verifyPacketAcknowledgement(ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes32 ackCommitmentBytes) internal view returns (bool) {
         return getClient(connection.client_id).verifyPacketAcknowledgement(connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, ackCommitmentBytes);
+    }
+
+    // Internal functions
+
+    function getVersions() internal pure returns (Version.Data[] memory) {
+        Version.Data[] memory versions = new Version.Data[](1);
+        string[] memory features = new string[](2);
+        features[0] = "ORDER_ORDERED";
+        features[1] = "ORDER_UNORDERED";
+        versions[0] = Version.Data({
+            identifier: "1",
+            features: features
+        });
+        return versions;
+    }
+
+    // TODO implements
+    function isSupportedVersion(Version.Data memory proposedVersion) internal view returns (bool) {
+        return true;
+    }
+
+    function isEqualVersion(Version.Data memory a, Version.Data memory b) internal view returns (bool) {
+        return keccak256(Version.encode(a)) == keccak256(Version.encode(b));
+    }
+
+    function makeVersionArray(Version.Data memory version) internal pure returns (Version.Data[] memory ret) {
+        ret = new Version.Data[](1);
+        ret[0] = version;
+    }
+
+    function addConnectionToClient(
+        string memory clientId,
+        string memory connectionId
+    ) internal {
+        require(ibcStore.hasClientState(clientId), "client not found");
+        ibcStore.addConnectionPath(clientId, connectionId);
     }
 }
