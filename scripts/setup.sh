@@ -12,11 +12,9 @@ function before_common() {
 
 function after_common() {
     srcs=(
-        "IBCClient"
-        "IBCConnection"
-        "IBCChannel"
         "IBCStore"
-        "IBCHandler"
+        "IBCModule"
+        "IBFT2Client"
         "SimpleTokenModule"
     )
     if [ -n "$NO_GEN_CODE" ]; then
