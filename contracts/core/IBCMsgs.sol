@@ -1,7 +1,6 @@
 pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
-import "./types/Client.sol";
 import "./types/Connection.sol";
 import "./types/Channel.sol";
 
@@ -14,20 +13,15 @@ library IBCMsgs {
 
     struct MsgCreateClient {
         string clientId;
-        ClientState.Data clientState;
-        ConsensusState.Data consensusState;
+        string clientType;
+        uint64 height;
+        bytes clientStateBytes;
+        bytes consensusStateBytes;
     }
 
     struct MsgUpdateClient {
         string clientId;
-        Header header;
-    }
-
-    struct Header {
-        bytes besuHeaderRLPBytes;
-        bytes[] seals;
-        uint64 trustedHeight;
-        bytes accountStateProof;
+        bytes header;
     }
 
     /// Connection handshake ///
@@ -44,7 +38,7 @@ library IBCMsgs {
         Counterparty.Data counterparty; // counterpartyConnectionIdentifier, counterpartyPrefix and counterpartyClientIdentifier
         uint64 delayPeriod;
         string clientId; // clientID of chainA
-        ClientState.Data clientState; // clientState that chainA has for chainB
+        bytes clientStateBytes; // clientState that chainA has for chainB
         Version.Data[] counterpartyVersions; // supported versions of chain A
         bytes proofInit; // proof that chainA stored connectionEnd in state (on ConnOpenInit)
         bytes proofClient; // proof that chainA stored a light client of chainB
@@ -55,7 +49,7 @@ library IBCMsgs {
 
     struct MsgConnectionOpenAck {
         string connectionId;
-        ClientState.Data clientState; // client state for chainA on chainB
+        bytes clientStateBytes; // client state for chainA on chainB
         Version.Data version; // version that ChainB chose in ConnOpenTry
         string counterpartyConnectionID;
         bytes proofTry; // proof that connectionEnd was added to ChainB state in ConnOpenTry

@@ -13,3 +13,10 @@ message ConsensusState {
   bytes root = 2;
   repeated bytes validators = 3;
 }
+
+message Header {
+  bytes besu_header_rlp = 1;
+  repeated bytes seals = 2;
+  uint64 trusted_height = 3;
+  bytes account_state_proof = 4;
+}

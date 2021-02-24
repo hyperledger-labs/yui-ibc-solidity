@@ -5,12 +5,10 @@ import (
 )
 
 const (
-	IBCStoreAddress = "0x37978908bac82F0191b674235A0fEEE31e7524a4"
-	IBCClientAddress     = "0x173FFadd93aefC4F6e2D9bB20825E68A736DE047"
-	IBCConnectionAddress = "0x962C7179caFBC2F526cE678FcD607078A548474a"
-	IBCChannelAddress = "0x3379866A055CF3725775e8d6876be4877e1a7D89"
-	IBCHandlerAddress = "0xf68230F013AbBc6c2330cdE2Fa2dF84e2417B4a0"
-	SimpleTokenModuleAddress = "0xa954B862442936E35B579EB475CE82768389D301"
+	IBCStoreAddress = "0x361552A65C96621003C62C5971b910a1fdC9ba78"
+	IBCModuleAddress = "0x727A5648832D2b317925CE043eA9b7fE04B4CD55"
+	IBFT2ClientAddress = "0x9eBF3956EE45B2b9F1fC85FB8990ce6be52F47a6"
+	SimpleTokenModuleAddress = "0x702E40245797c5a2108A566b3CE2Bf14Bc6aF841"
 )
 
 type contractConfig struct{}
@@ -21,20 +19,12 @@ func (contractConfig) GetIBCStoreAddress() common.Address {
 	return common.HexToAddress(IBCStoreAddress)
 }
 
-func (contractConfig) GetIBCClientAddress() common.Address {
-	return common.HexToAddress(IBCClientAddress)
+func (contractConfig) GetIBCModuleAddress() common.Address {
+	return common.HexToAddress(IBCModuleAddress)
 }
 
-func (contractConfig) GetIBCConnectionAddress() common.Address {
-	return common.HexToAddress(IBCConnectionAddress)
-}
-
-func (contractConfig) GetIBCChannelAddress() common.Address {
-	return common.HexToAddress(IBCChannelAddress)
-}
-
-func (contractConfig) GetIBCHandlerAddress() common.Address {
-	return common.HexToAddress(IBCHandlerAddress)
+func (contractConfig) GetIBFT2ClientAddress() common.Address {
+	return common.HexToAddress(IBFT2ClientAddress)
 }
 
 func (contractConfig) GetSimpleTokenModuleAddress() common.Address {

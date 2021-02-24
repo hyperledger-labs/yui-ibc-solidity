@@ -16,6 +16,7 @@ type Coordinator struct {
 
 func NewCoordinator(t *testing.T, chains ...*Chain) Coordinator {
 	for _, chain := range chains {
+		chain.Init()
 		chain.UpdateHeader()
 	}
 	return Coordinator{t: t, chains: chains}
@@ -73,7 +74,6 @@ func (c Coordinator) CreateClient(
 	switch clientType {
 	case BesuIBFT2Client:
 		err = source.CreateBesuClient(ctx, counterparty, clientID)
-
 	default:
 		err = fmt.Errorf("client type %s is not supported", clientType)
 	}
