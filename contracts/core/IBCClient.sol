@@ -7,15 +7,14 @@ import "./IBCMsgs.sol";
 import "./IHandler.sol";
 
 abstract contract IBCClient is IHandler, IBCHost {
-    // clientType => Contract
-    mapping(string => IClient) clients;
 
     /**
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
     function createClient(IBCMsgs.MsgCreateClient memory msg_) public override {
         require(!ibcStore.hasClientState(msg_.clientId), "the clientId already exists");
-        require(address(clients[msg_.clientType]) != address(0), "unregistered client type");
+        (IClient clientImpl, bool found) = getClientByType(msg_.clientType);
+        require(found, "unregistered client type");
 
         ibcStore.setClientType(msg_.clientId, msg_.clientType);
         ibcStore.setClientState(msg_.clientId, msg_.clientStateBytes);
@@ -47,10 +46,20 @@ abstract contract IBCClient is IHandler, IBCHost {
     }
 
     function registerClient(string memory clientType, IClient client) public {
-        clients[clientType] = client;
+        ibcStore.setClientImpl(clientType, address(client));
     }
 
     function getClient(string memory clientId) internal view returns (IClient) {
-        return clients[ibcStore.getClientType(clientId)];
+        (IClient clientImpl, bool found) = getClientByType(ibcStore.getClientType(clientId));
+        require(found, "clientImpl not found");
+        return clientImpl;
+    }
+
+    function getClientByType(string memory clientType) internal view returns (IClient clientImpl, bool) {
+        (address addr, bool found) = ibcStore.getClientImpl(clientType);
+        if (!found) {
+            return (clientImpl, false);
+        }
+        return (IClient(addr), true);
     }
 }

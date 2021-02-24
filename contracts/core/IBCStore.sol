@@ -17,8 +17,8 @@ contract IBCStore {
     string constant packetPrefix = "packet/";
     string constant packetAckPrefix = "acks/";
 
-    // TODO use RLP instead of pb?
     // Store
+    mapping (string => address) clientRegistry; // clientType => clientImpl
     mapping (string => string) clientTypes; // clientID => clientType
     mapping (string => bytes) clientStates;
     mapping (string => mapping(uint64 => bytes)) consensusStates;
@@ -110,6 +110,22 @@ contract IBCStore {
     }
 
     /// Storage accessor ///
+
+    // Client registry
+
+    // TODO specify any ACL modifiers to this
+    function setClientImpl(string memory clientType, address clientImpl) public {
+        require(address(clientRegistry[clientType]) == address(0), "clientImpl already exists");
+        clientRegistry[clientType] = clientImpl;
+    }
+
+    function getClientImpl(string memory clientType) onlyIBCModule public view returns (address, bool) {
+        address clientImpl = clientRegistry[clientType];
+        if (clientImpl == address(0)) {
+            return (clientImpl, false);
+        }
+        return (clientImpl, true);
+    }
 
     // Client types
 
