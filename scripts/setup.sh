@@ -13,7 +13,10 @@ function before_common() {
 function after_common() {
     srcs=(
         "IBCStore"
-        "IBCModule"
+        "IBCClient"
+        "IBCConnection"
+        "IBCChannel"
+        "IBCRoutingModule"
         "IBFT2Client"
         "SimpleTokenModule"
     )

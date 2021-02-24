@@ -2,7 +2,7 @@
 set -e
 
 if [ -z "$SOLPB_DIR" ]; then
-    echo "variable CONF_TPL must be set"
+    echo "variable SOLPB_DIR must be set"
     exit 1
 fi
 

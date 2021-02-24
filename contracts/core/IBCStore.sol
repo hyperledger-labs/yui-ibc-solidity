@@ -33,7 +33,10 @@ contract IBCStore {
     mapping (string => mapping(string => mapping(uint64 => bytes))) packets;
 
     address owner;
-    address ibcModule;
+    address ibcClient;
+    address ibcConnection;
+    address ibcChannel;
+    address ibcRoutingModule;
 
     modifier onlyOwner (){
         require(msg.sender == owner);
@@ -41,7 +44,7 @@ contract IBCStore {
     }
 
     modifier onlyIBCModule (){
-        require(msg.sender == ibcModule);
+        require(msg.sender == ibcRoutingModule || msg.sender == ibcChannel || msg.sender == ibcConnection || msg.sender == ibcClient);
         _;
     }
 
@@ -49,16 +52,14 @@ contract IBCStore {
         owner = msg.sender;
     }
 
-    function setIBCModule(address ibcModule_) onlyOwner public {
-        require(!isIBCModuleInitialized(), "the address of IBCModule is already initialized");
-        ibcModule = ibcModule_;
+    function setIBCModule(address ibcClient_, address ibcConnection_, address ibcChannel_, address ibcRoutingModule_) onlyOwner public {
+        ibcClient = ibcClient_;
+        ibcConnection = ibcConnection_;
+        ibcChannel = ibcChannel_;
+        ibcRoutingModule = ibcRoutingModule_;
     }
 
-    function isIBCModuleInitialized() public view returns (bool) {
-        return ibcModule != address(0);
-    }
-
-    // Commitment key generator
+    // Commitment key generator -> move these into a library
 
     function clientCommitmentKey(string memory clientId) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(clientPrefix, clientId));
@@ -84,7 +85,7 @@ contract IBCStore {
         return keccak256(abi.encodePacked(packetAckPrefix, portId, "/", channelId, "/", sequence));
     }
 
-    // Slot calculator
+    // Slot calculator  -> move these into a library
 
     function clientStateCommitmentSlot(string memory clientId) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(clientCommitmentKey(clientId), commitmentSlot));
@@ -291,32 +292,5 @@ contract IBCStore {
 
     function hasPacketReceipt(string memory portId, string memory channelId, uint64 sequence) public view returns (bool) {
         return packetReceipts[portId][channelId][sequence];
-    }
-
-    // Debug
-
-    function getClientStateBytes(string memory clientId) public view returns (bytes memory, bool) {
-        bytes memory encoded = clientStates[clientId];
-        if (encoded.length == 0) {
-            return (encoded, false);
-        }
-        return (encoded, true);
-    }
-
-    function getConnectionBytes(string memory connectionId) public view returns (bytes memory, bool) {
-        bytes memory encoded = connections[connectionId];
-        if (encoded.length == 0) {
-            return (encoded, false);
-        }
-        return (encoded, true);
-    }
-
-    function parseConnectionBytes(bytes memory connectionBytes) public view returns (ConnectionEnd.Data memory connection) {
-        ConnectionEnd.Data memory data = ConnectionEnd.decode(connectionBytes);
-        return data;
-    }
-
-    function getCommitment(string memory connectionId) public view returns (bytes32) {
-        return commitments[connectionCommitmentKey(connectionId)];
     }
 }
