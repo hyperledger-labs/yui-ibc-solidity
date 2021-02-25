@@ -190,11 +190,11 @@ contract IBCConnection is IBCHost {
     }
 
     // TODO implements
-    function isSupportedVersion(Version.Data memory proposedVersion) internal view returns (bool) {
+    function isSupportedVersion(Version.Data memory proposedVersion) internal pure returns (bool) {
         return true;
     }
 
-    function isEqualVersion(Version.Data memory a, Version.Data memory b) internal view returns (bool) {
+    function isEqualVersion(Version.Data memory a, Version.Data memory b) internal pure returns (bool) {
         return keccak256(Version.encode(a)) == keccak256(Version.encode(b));
     }
 

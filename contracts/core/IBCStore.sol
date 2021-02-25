@@ -14,14 +14,14 @@ contract IBCStore {
     mapping (string => string) clientTypes; // clientID => clientType
     mapping (string => bytes) clientStates;
     mapping (string => mapping(uint64 => bytes)) consensusStates;
-    mapping (string => bytes) connections;
-    mapping (string => mapping(string => bytes)) channels;
+    mapping (string => ConnectionEnd.Data) connections;
+    mapping (string => mapping(string => Channel.Data)) channels;
     mapping (string => mapping(string => uint64)) nextSequenceSends;
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
     mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
     // TODO remove this storage variable in production. see details `function setPacket`
-    mapping (string => mapping(string => mapping(uint64 => bytes))) packets;
+    mapping (string => mapping(string => mapping(uint64 => Packet.Data))) packets;
 
     address owner;
     address ibcClient;
@@ -100,30 +100,31 @@ contract IBCStore {
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) public {
         require(onlyIBCModule());
-        connections[connectionId] = ConnectionEnd.encode(connection);
-        commitments[IBCIdentifier.connectionCommitmentKey(connectionId)] = keccak256(connections[connectionId]);
+        connections[connectionId].client_id = connection.client_id;
+        connections[connectionId].state = connection.state;
+        connections[connectionId].delay_period = connection.delay_period;
+        delete connections[connectionId].versions;
+        for (uint8 i = 0; i < connection.versions.length; i++) {
+            connections[connectionId].versions.push(connection.versions[i]);
+        }
+        connections[connectionId].counterparty = connection.counterparty;
+        commitments[IBCIdentifier.connectionCommitmentKey(connectionId)] = keccak256(ConnectionEnd.encode(connection));
     }
 
     function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory connection, bool) {
-        if (connections[connectionId].length == 0) {
-            return (connection, false);
-        }
-        return (ConnectionEnd.decode(connections[connectionId]), true);
+        return (connections[connectionId], connections[connectionId].state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
     // Channel
 
     function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) public {
         require(onlyIBCModule());
-        channels[portId][channelId] = Channel.encode(channel);
-        commitments[IBCIdentifier.channelCommitmentKey(portId, channelId)] = keccak256(channels[portId][channelId]);
+        channels[portId][channelId] = channel;
+        commitments[IBCIdentifier.channelCommitmentKey(portId, channelId)] = keccak256(Channel.encode(channel));
     }
 
     function getChannel(string calldata portId, string calldata channelId) external view returns (Channel.Data memory channel, bool) {
-        if (channels[portId][channelId].length == 0) {
-            return (channel, false);
-        }
-        return (Channel.decode(channels[portId][channelId]), true);
+        return (channels[portId][channelId], channels[portId][channelId].state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
     // Packet
@@ -158,12 +159,12 @@ contract IBCStore {
     // TODO remove this function in production
     // NOTE: A packet doesn't need to be stored in storage, but this will help development
     function setPacket(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) internal {
-        packets[portId][channelId][sequence] = Packet.encode(packet);
+        packets[portId][channelId][sequence] = packet;
     }
 
     // TODO remove this function in production
     function getPacket(string calldata portId, string calldata channelId, uint64 sequence) external view returns (Packet.Data memory) {
-        return Packet.decode(packets[portId][channelId][sequence]);
+        return packets[portId][channelId][sequence];
     }
 
     function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) public {
@@ -177,12 +178,12 @@ contract IBCStore {
         delete commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
     }
 
-    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence) external returns (bytes32, bool) {
+    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bytes32, bool) {
         bytes32 commitment = commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));
     }
 
-    function makePacketCommitment(Packet.Data memory packet) public view returns (bytes32) {
+    function makePacketCommitment(Packet.Data memory packet) public pure returns (bytes32) {
         // TODO serialize uint64 to bytes(big-endian)
         return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, sha256(packet.data)));
     }
