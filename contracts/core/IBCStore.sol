@@ -29,25 +29,20 @@ contract IBCStore {
     address ibcChannel;
     address ibcRoutingModule;
 
-    modifier onlyOwner (){
-        require(msg.sender == owner);
-        _;
-    }
-
-    modifier onlyIBCModule (){
-        require(msg.sender == ibcRoutingModule || msg.sender == ibcChannel || msg.sender == ibcConnection || msg.sender == ibcClient);
-        _;
-    }
-
     constructor() public {
         owner = msg.sender;
     }
 
-    function setIBCModule(address ibcClient_, address ibcConnection_, address ibcChannel_, address ibcRoutingModule_) onlyOwner public {
+    function setIBCModule(address ibcClient_, address ibcConnection_, address ibcChannel_, address ibcRoutingModule_) public {
+        require(msg.sender == owner);
         ibcClient = ibcClient_;
         ibcConnection = ibcConnection_;
         ibcChannel = ibcChannel_;
         ibcRoutingModule = ibcRoutingModule_;
+    }
+
+    function onlyIBCModule() internal view returns (bool) {
+        return msg.sender == ibcRoutingModule || msg.sender == ibcChannel || msg.sender == ibcConnection || msg.sender == ibcClient;
     }
 
     /// Storage accessor ///
@@ -60,7 +55,7 @@ contract IBCStore {
         clientRegistry[clientType] = clientImpl;
     }
 
-    function getClientImpl(string calldata clientType) onlyIBCModule external view returns (address, bool) {
+    function getClientImpl(string calldata clientType) external view returns (address, bool) {
         address clientImpl = clientRegistry[clientType];
         if (clientImpl == address(0)) {
             return (clientImpl, false);
@@ -70,7 +65,8 @@ contract IBCStore {
 
     // Client types
 
-    function setClientType(string memory clientId, string memory clientType) onlyIBCModule public {
+    function setClientType(string memory clientId, string memory clientType) public {
+        require(onlyIBCModule());
         require(bytes(clientTypes[clientId]).length == 0, "clientId already exists");
         require(bytes(clientType).length > 0, "clientType must not be empty string");
         clientTypes[clientId] = clientType;
@@ -82,7 +78,8 @@ contract IBCStore {
 
     // ClientState
 
-    function setClientState(string memory clientId, bytes memory clientStateBytes) onlyIBCModule public {
+    function setClientState(string memory clientId, bytes memory clientStateBytes) public {
+        require(onlyIBCModule());
         clientStates[clientId] = clientStateBytes;
         commitments[IBCIdentifier.clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
     }
@@ -97,7 +94,8 @@ contract IBCStore {
 
     // ConsensusState
 
-    function setConsensusState(string memory clientId, uint64 height, bytes memory consensusStateBytes) onlyIBCModule public {
+    function setConsensusState(string memory clientId, uint64 height, bytes memory consensusStateBytes) public {
+        require(onlyIBCModule());
         consensusStates[clientId][height] = consensusStateBytes;
         commitments[IBCIdentifier.consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
     }
@@ -112,7 +110,8 @@ contract IBCStore {
 
     // Connection
 
-    function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) onlyIBCModule public {
+    function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) public {
+        require(onlyIBCModule());
         connections[connectionId] = ConnectionEnd.encode(connection);
         commitments[IBCIdentifier.connectionCommitmentKey(connectionId)] = keccak256(connections[connectionId]);
     }
@@ -128,7 +127,8 @@ contract IBCStore {
 
     // Channel
 
-    function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) onlyIBCModule public {
+    function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) public {
+        require(onlyIBCModule());
         channels[portId][channelId] = Channel.encode(channel);
         commitments[IBCIdentifier.channelCommitmentKey(portId, channelId)] = keccak256(channels[portId][channelId]);
     }
@@ -144,7 +144,8 @@ contract IBCStore {
 
     // Packet
 
-    function setNextSequenceSend(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
+    function setNextSequenceSend(string calldata portId, string calldata channelId, uint64 sequence) external {
+        require(onlyIBCModule());
         nextSequenceSends[portId][channelId] = sequence;
     }
 
@@ -152,7 +153,8 @@ contract IBCStore {
         return nextSequenceSends[portId][channelId];
     }
 
-    function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
+    function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) external {
+        require(onlyIBCModule());
         nextSequenceRecvs[portId][channelId] = sequence;
     }
 
@@ -160,7 +162,8 @@ contract IBCStore {
         return nextSequenceRecvs[portId][channelId];
     }
 
-    function setNextSequenceAck(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
+    function setNextSequenceAck(string calldata portId, string calldata channelId, uint64 sequence) external {
+        require(onlyIBCModule());
         nextSequenceAcks[portId][channelId] = sequence;
     }
 
@@ -179,12 +182,14 @@ contract IBCStore {
         return Packet.decode(packets[portId][channelId][sequence]);
     }
 
-    function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) onlyIBCModule public {
+    function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) public {
+        require(onlyIBCModule());
         commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
         setPacket(portId, channelId, sequence, packet);
     }
 
-    function deletePacketCommitment(string memory portId, string memory channelId, uint64 sequence) onlyIBCModule public {
+    function deletePacketCommitment(string memory portId, string memory channelId, uint64 sequence) public {
+        require(onlyIBCModule());
         delete commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
     }
 
@@ -198,7 +203,8 @@ contract IBCStore {
         return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, sha256(packet.data)));
     }
 
-    function setPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) onlyIBCModule public {
+    function setPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) public {
+        require(onlyIBCModule());
         commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)] = makePacketAcknowledgementCommitment(acknowledgement);
     }
 
@@ -211,7 +217,8 @@ contract IBCStore {
         return sha256(acknowledgement);
     }
 
-    function setPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
+    function setPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external {
+        require(onlyIBCModule());
         packetReceipts[portId][channelId][sequence] = true;
     }
 
