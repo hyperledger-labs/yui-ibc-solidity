@@ -1,7 +1,9 @@
 pragma solidity ^0.6.8;
 
 library IBCIdentifier {
+
     // constant values
+
     uint256 constant commitmentSlot = 0;
     uint8 constant clientPrefix = 0;
     uint8 constant consensusStatePrefix = 1;
@@ -10,7 +12,7 @@ library IBCIdentifier {
     uint8 constant packetPrefix = 4;
     uint8 constant packetAckPrefix = 5;
 
-    // Commitment key generator -> move these into a library
+    // Commitment key generator
 
     function clientCommitmentKey(string memory clientId) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(clientPrefix, clientId));
@@ -36,7 +38,7 @@ library IBCIdentifier {
         return keccak256(abi.encodePacked(packetAckPrefix, portId, "/", channelId, "/", sequence));
     }
 
-    // Slot calculator  -> move these into a library
+    // Slot calculator
 
     function clientStateCommitmentSlot(string calldata clientId) external pure returns (bytes32) {
         return keccak256(abi.encodePacked(clientCommitmentKey(clientId), commitmentSlot));
