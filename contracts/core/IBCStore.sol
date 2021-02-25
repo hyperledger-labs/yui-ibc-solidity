@@ -56,11 +56,7 @@ contract IBCStore {
     }
 
     function getClientImpl(string calldata clientType) external view returns (address, bool) {
-        address clientImpl = clientRegistry[clientType];
-        if (clientImpl == address(0)) {
-            return (clientImpl, false);
-        }
-        return (clientImpl, true);
+        return (clientRegistry[clientType], clientRegistry[clientType] != address(0));
     }
 
     // Client types
@@ -84,12 +80,8 @@ contract IBCStore {
         commitments[IBCIdentifier.clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
     }
 
-    function getClientState(string calldata clientId) external view returns (bytes memory clientStateBytes, bool found) {
-        clientStateBytes = clientStates[clientId];
-        if (clientStateBytes.length == 0) {
-            return (clientStateBytes, false);
-        }
-        return (clientStateBytes, true);
+    function getClientState(string calldata clientId) external view returns (bytes memory, bool) {
+        return (clientStates[clientId], clientStates[clientId].length > 0);
     }
 
     // ConsensusState
@@ -100,12 +92,8 @@ contract IBCStore {
         commitments[IBCIdentifier.consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
     }
 
-    function getConsensusState(string calldata clientId, uint64 height) external view returns (bytes memory consensusStateBytes, bool found) {
-        consensusStateBytes = consensusStates[clientId][height];
-        if (consensusStateBytes.length == 0) {
-            return (consensusStateBytes, false);
-        }
-        return (consensusStateBytes, true);
+    function getConsensusState(string calldata clientId, uint64 height) external view returns (bytes memory, bool) {
+        return (consensusStates[clientId][height], consensusStates[clientId][height].length > 0);
     }
 
     // Connection
@@ -117,12 +105,10 @@ contract IBCStore {
     }
 
     function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory connection, bool) {
-        bytes memory encoded = connections[connectionId];
-        if (encoded.length == 0) {
+        if (connections[connectionId].length == 0) {
             return (connection, false);
         }
-        connection = ConnectionEnd.decode(encoded);
-        return (connection, true);
+        return (ConnectionEnd.decode(connections[connectionId]), true);
     }
 
     // Channel
@@ -134,12 +120,10 @@ contract IBCStore {
     }
 
     function getChannel(string calldata portId, string calldata channelId) external view returns (Channel.Data memory channel, bool) {
-        bytes memory encoded = channels[portId][channelId];
-        if (encoded.length == 0) {
+        if (channels[portId][channelId].length == 0) {
             return (channel, false);
         }
-        channel = Channel.decode(encoded);
-        return (channel, true);
+        return (Channel.decode(channels[portId][channelId]), true);
     }
 
     // Packet
