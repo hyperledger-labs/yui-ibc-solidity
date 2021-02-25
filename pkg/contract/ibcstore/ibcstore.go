@@ -87,7 +87,7 @@ type VersionData struct {
 }
 
 // IbcstoreABI is the input ABI used to generate the binding from.
-const IbcstoreABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"ibcClient_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"ibcConnection_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"ibcChannel_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"ibcRoutingModule_\",\"type\":\"address\"}],\"name\":\"setIBCModule\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"height\",\"type\":\"uint64\"}],\"name\":\"consensusCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"height\",\"type\":\"uint64\"}],\"name\":\"consensusStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientType\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"clientImpl\",\"type\":\"address\"}],\"name\":\"setClientImpl\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientType\",\"type\":\"string\"}],\"name\":\"getClientImpl\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"clientType\",\"type\":\"string\"}],\"name\":\"setClientType\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getClientType\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"clientStateBytes\",\"type\":\"bytes\"}],\"name\":\"setClientState\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getClientState\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"clientStateBytes\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"found\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"hasClientState\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"height\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"consensusStateBytes\",\"type\":\"bytes\"}],\"name\":\"setConsensusState\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"height\",\"type\":\"uint64\"}],\"name\":\"getConsensusState\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"consensusStateBytes\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"found\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"identifier\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"features\",\"type\":\"string[]\"}],\"internalType\":\"structVersion.Data[]\",\"name\":\"versions\",\"type\":\"tuple[]\"},{\"internalType\":\"enumConnectionEnd.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"delay_period\",\"type\":\"uint64\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"connection_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"key_prefix\",\"type\":\"bytes\"}],\"internalType\":\"structMerklePrefix.Data\",\"name\":\"prefix\",\"type\":\"tuple\"}],\"internalType\":\"structCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"}],\"internalType\":\"structConnectionEnd.Data\",\"name\":\"connection\",\"type\":\"tuple\"}],\"name\":\"setConnection\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"getConnection\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"identifier\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"features\",\"type\":\"string[]\"}],\"internalType\":\"structVersion.Data[]\",\"name\":\"versions\",\"type\":\"tuple[]\"},{\"internalType\":\"enumConnectionEnd.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"delay_period\",\"type\":\"uint64\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"connection_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"key_prefix\",\"type\":\"bytes\"}],\"internalType\":\"structMerklePrefix.Data\",\"name\":\"prefix\",\"type\":\"tuple\"}],\"internalType\":\"structCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"}],\"internalType\":\"structConnectionEnd.Data\",\"name\":\"connection\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"addConnectionPath\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"enumChannel.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"enumChannel.Order\",\"name\":\"ordering\",\"type\":\"uint8\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"},{\"internalType\":\"string[]\",\"name\":\"connection_hops\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"}],\"internalType\":\"structChannel.Data\",\"name\":\"channel\",\"type\":\"tuple\"}],\"name\":\"setChannel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getChannel\",\"outputs\":[{\"components\":[{\"internalType\":\"enumChannel.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"enumChannel.Order\",\"name\":\"ordering\",\"type\":\"uint8\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"},{\"internalType\":\"string[]\",\"name\":\"connection_hops\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"}],\"internalType\":\"structChannel.Data\",\"name\":\"channel\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"hasChannel\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setNextSequenceSend\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getNextSequenceSend\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setNextSequenceRecv\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getNextSequenceRecv\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setNextSequenceAck\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getNextSequenceAck\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"getPacket\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"setPacketCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"deletePacketCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"getPacketCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"makePacketCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"name\":\"setPacketAcknowledgementCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"getPacketAcknowledgementCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"name\":\"makePacketAcknowledgementCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setPacketReceipt\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"hasPacketReceipt\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true}]"
+const IbcstoreABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"ibcClient_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"ibcConnection_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"ibcChannel_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"ibcRoutingModule_\",\"type\":\"address\"}],\"name\":\"setIBCModule\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientType\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"clientImpl\",\"type\":\"address\"}],\"name\":\"setClientImpl\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientType\",\"type\":\"string\"}],\"name\":\"getClientImpl\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"clientType\",\"type\":\"string\"}],\"name\":\"setClientType\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getClientType\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"clientStateBytes\",\"type\":\"bytes\"}],\"name\":\"setClientState\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getClientState\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"height\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"consensusStateBytes\",\"type\":\"bytes\"}],\"name\":\"setConsensusState\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"height\",\"type\":\"uint64\"}],\"name\":\"getConsensusState\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"identifier\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"features\",\"type\":\"string[]\"}],\"internalType\":\"structVersion.Data[]\",\"name\":\"versions\",\"type\":\"tuple[]\"},{\"internalType\":\"enumConnectionEnd.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"delay_period\",\"type\":\"uint64\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"connection_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"key_prefix\",\"type\":\"bytes\"}],\"internalType\":\"structMerklePrefix.Data\",\"name\":\"prefix\",\"type\":\"tuple\"}],\"internalType\":\"structCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"}],\"internalType\":\"structConnectionEnd.Data\",\"name\":\"connection\",\"type\":\"tuple\"}],\"name\":\"setConnection\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"getConnection\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"identifier\",\"type\":\"string\"},{\"internalType\":\"string[]\",\"name\":\"features\",\"type\":\"string[]\"}],\"internalType\":\"structVersion.Data[]\",\"name\":\"versions\",\"type\":\"tuple[]\"},{\"internalType\":\"enumConnectionEnd.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"uint64\",\"name\":\"delay_period\",\"type\":\"uint64\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"client_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"connection_id\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"key_prefix\",\"type\":\"bytes\"}],\"internalType\":\"structMerklePrefix.Data\",\"name\":\"prefix\",\"type\":\"tuple\"}],\"internalType\":\"structCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"}],\"internalType\":\"structConnectionEnd.Data\",\"name\":\"connection\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"enumChannel.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"enumChannel.Order\",\"name\":\"ordering\",\"type\":\"uint8\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"},{\"internalType\":\"string[]\",\"name\":\"connection_hops\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"}],\"internalType\":\"structChannel.Data\",\"name\":\"channel\",\"type\":\"tuple\"}],\"name\":\"setChannel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getChannel\",\"outputs\":[{\"components\":[{\"internalType\":\"enumChannel.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"enumChannel.Order\",\"name\":\"ordering\",\"type\":\"uint8\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"},{\"internalType\":\"string[]\",\"name\":\"connection_hops\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"}],\"internalType\":\"structChannel.Data\",\"name\":\"channel\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setNextSequenceSend\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getNextSequenceSend\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setNextSequenceRecv\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getNextSequenceRecv\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setNextSequenceAck\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"getNextSequenceAck\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"getPacket\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"setPacketCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"deletePacketCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"getPacketCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"makePacketCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"name\":\"setPacketAcknowledgementCommitment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"getPacketAcknowledgementCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"name\":\"makePacketAcknowledgementCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"setPacketReceipt\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"hasPacketReceipt\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true}]"
 
 // Ibcstore is an auto generated Go binding around an Ethereum contract.
 type Ibcstore struct {
@@ -231,254 +231,6 @@ func (_Ibcstore *IbcstoreTransactorRaw) Transact(opts *bind.TransactOpts, method
 	return _Ibcstore.Contract.contract.Transact(opts, method, params...)
 }
 
-// ChannelCommitmentKey is a free data retrieval call binding the contract method 0xc6c9159c.
-//
-// Solidity: function channelCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ChannelCommitmentKey(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "channelCommitmentKey", portId, channelId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ChannelCommitmentKey is a free data retrieval call binding the contract method 0xc6c9159c.
-//
-// Solidity: function channelCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ChannelCommitmentKey(portId string, channelId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ChannelCommitmentKey(&_Ibcstore.CallOpts, portId, channelId)
-}
-
-// ChannelCommitmentKey is a free data retrieval call binding the contract method 0xc6c9159c.
-//
-// Solidity: function channelCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ChannelCommitmentKey(portId string, channelId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ChannelCommitmentKey(&_Ibcstore.CallOpts, portId, channelId)
-}
-
-// ChannelCommitmentSlot is a free data retrieval call binding the contract method 0x3560a02d.
-//
-// Solidity: function channelCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ChannelCommitmentSlot(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "channelCommitmentSlot", portId, channelId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ChannelCommitmentSlot is a free data retrieval call binding the contract method 0x3560a02d.
-//
-// Solidity: function channelCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ChannelCommitmentSlot(portId string, channelId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ChannelCommitmentSlot(&_Ibcstore.CallOpts, portId, channelId)
-}
-
-// ChannelCommitmentSlot is a free data retrieval call binding the contract method 0x3560a02d.
-//
-// Solidity: function channelCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ChannelCommitmentSlot(portId string, channelId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ChannelCommitmentSlot(&_Ibcstore.CallOpts, portId, channelId)
-}
-
-// ClientCommitmentKey is a free data retrieval call binding the contract method 0xc7ddc606.
-//
-// Solidity: function clientCommitmentKey(string clientId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ClientCommitmentKey(opts *bind.CallOpts, clientId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "clientCommitmentKey", clientId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ClientCommitmentKey is a free data retrieval call binding the contract method 0xc7ddc606.
-//
-// Solidity: function clientCommitmentKey(string clientId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ClientCommitmentKey(clientId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ClientCommitmentKey(&_Ibcstore.CallOpts, clientId)
-}
-
-// ClientCommitmentKey is a free data retrieval call binding the contract method 0xc7ddc606.
-//
-// Solidity: function clientCommitmentKey(string clientId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ClientCommitmentKey(clientId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ClientCommitmentKey(&_Ibcstore.CallOpts, clientId)
-}
-
-// ClientStateCommitmentSlot is a free data retrieval call binding the contract method 0xb0cbb120.
-//
-// Solidity: function clientStateCommitmentSlot(string clientId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ClientStateCommitmentSlot(opts *bind.CallOpts, clientId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "clientStateCommitmentSlot", clientId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ClientStateCommitmentSlot is a free data retrieval call binding the contract method 0xb0cbb120.
-//
-// Solidity: function clientStateCommitmentSlot(string clientId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ClientStateCommitmentSlot(clientId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ClientStateCommitmentSlot(&_Ibcstore.CallOpts, clientId)
-}
-
-// ClientStateCommitmentSlot is a free data retrieval call binding the contract method 0xb0cbb120.
-//
-// Solidity: function clientStateCommitmentSlot(string clientId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ClientStateCommitmentSlot(clientId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ClientStateCommitmentSlot(&_Ibcstore.CallOpts, clientId)
-}
-
-// ConnectionCommitmentKey is a free data retrieval call binding the contract method 0xa9dd3eb3.
-//
-// Solidity: function connectionCommitmentKey(string connectionId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ConnectionCommitmentKey(opts *bind.CallOpts, connectionId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "connectionCommitmentKey", connectionId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ConnectionCommitmentKey is a free data retrieval call binding the contract method 0xa9dd3eb3.
-//
-// Solidity: function connectionCommitmentKey(string connectionId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ConnectionCommitmentKey(connectionId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ConnectionCommitmentKey(&_Ibcstore.CallOpts, connectionId)
-}
-
-// ConnectionCommitmentKey is a free data retrieval call binding the contract method 0xa9dd3eb3.
-//
-// Solidity: function connectionCommitmentKey(string connectionId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ConnectionCommitmentKey(connectionId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ConnectionCommitmentKey(&_Ibcstore.CallOpts, connectionId)
-}
-
-// ConnectionCommitmentSlot is a free data retrieval call binding the contract method 0x8b89bf24.
-//
-// Solidity: function connectionCommitmentSlot(string connectionId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ConnectionCommitmentSlot(opts *bind.CallOpts, connectionId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "connectionCommitmentSlot", connectionId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ConnectionCommitmentSlot is a free data retrieval call binding the contract method 0x8b89bf24.
-//
-// Solidity: function connectionCommitmentSlot(string connectionId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ConnectionCommitmentSlot(connectionId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ConnectionCommitmentSlot(&_Ibcstore.CallOpts, connectionId)
-}
-
-// ConnectionCommitmentSlot is a free data retrieval call binding the contract method 0x8b89bf24.
-//
-// Solidity: function connectionCommitmentSlot(string connectionId) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ConnectionCommitmentSlot(connectionId string) ([32]byte, error) {
-	return _Ibcstore.Contract.ConnectionCommitmentSlot(&_Ibcstore.CallOpts, connectionId)
-}
-
-// ConsensusCommitmentKey is a free data retrieval call binding the contract method 0xc1f0b643.
-//
-// Solidity: function consensusCommitmentKey(string clientId, uint64 height) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ConsensusCommitmentKey(opts *bind.CallOpts, clientId string, height uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "consensusCommitmentKey", clientId, height)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ConsensusCommitmentKey is a free data retrieval call binding the contract method 0xc1f0b643.
-//
-// Solidity: function consensusCommitmentKey(string clientId, uint64 height) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ConsensusCommitmentKey(clientId string, height uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.ConsensusCommitmentKey(&_Ibcstore.CallOpts, clientId, height)
-}
-
-// ConsensusCommitmentKey is a free data retrieval call binding the contract method 0xc1f0b643.
-//
-// Solidity: function consensusCommitmentKey(string clientId, uint64 height) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ConsensusCommitmentKey(clientId string, height uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.ConsensusCommitmentKey(&_Ibcstore.CallOpts, clientId, height)
-}
-
-// ConsensusStateCommitmentSlot is a free data retrieval call binding the contract method 0xad30116c.
-//
-// Solidity: function consensusStateCommitmentSlot(string clientId, uint64 height) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) ConsensusStateCommitmentSlot(opts *bind.CallOpts, clientId string, height uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "consensusStateCommitmentSlot", clientId, height)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// ConsensusStateCommitmentSlot is a free data retrieval call binding the contract method 0xad30116c.
-//
-// Solidity: function consensusStateCommitmentSlot(string clientId, uint64 height) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) ConsensusStateCommitmentSlot(clientId string, height uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.ConsensusStateCommitmentSlot(&_Ibcstore.CallOpts, clientId, height)
-}
-
-// ConsensusStateCommitmentSlot is a free data retrieval call binding the contract method 0xad30116c.
-//
-// Solidity: function consensusStateCommitmentSlot(string clientId, uint64 height) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) ConsensusStateCommitmentSlot(clientId string, height uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.ConsensusStateCommitmentSlot(&_Ibcstore.CallOpts, clientId, height)
-}
-
 // GetChannel is a free data retrieval call binding the contract method 0x3000217a.
 //
 // Solidity: function getChannel(string portId, string channelId) view returns((uint8,uint8,(string,string),string[],string) channel, bool)
@@ -545,46 +297,33 @@ func (_Ibcstore *IbcstoreCallerSession) GetClientImpl(clientType string) (common
 
 // GetClientState is a free data retrieval call binding the contract method 0x76c81c42.
 //
-// Solidity: function getClientState(string clientId) view returns(bytes clientStateBytes, bool found)
-func (_Ibcstore *IbcstoreCaller) GetClientState(opts *bind.CallOpts, clientId string) (struct {
-	ClientStateBytes []byte
-	Found            bool
-}, error) {
+// Solidity: function getClientState(string clientId) view returns(bytes, bool)
+func (_Ibcstore *IbcstoreCaller) GetClientState(opts *bind.CallOpts, clientId string) ([]byte, bool, error) {
 	var out []interface{}
 	err := _Ibcstore.contract.Call(opts, &out, "getClientState", clientId)
 
-	outstruct := new(struct {
-		ClientStateBytes []byte
-		Found            bool
-	})
 	if err != nil {
-		return *outstruct, err
+		return *new([]byte), *new(bool), err
 	}
 
-	outstruct.ClientStateBytes = out[0].([]byte)
-	outstruct.Found = out[1].(bool)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+	out1 := *abi.ConvertType(out[1], new(bool)).(*bool)
 
-	return *outstruct, err
+	return out0, out1, err
 
 }
 
 // GetClientState is a free data retrieval call binding the contract method 0x76c81c42.
 //
-// Solidity: function getClientState(string clientId) view returns(bytes clientStateBytes, bool found)
-func (_Ibcstore *IbcstoreSession) GetClientState(clientId string) (struct {
-	ClientStateBytes []byte
-	Found            bool
-}, error) {
+// Solidity: function getClientState(string clientId) view returns(bytes, bool)
+func (_Ibcstore *IbcstoreSession) GetClientState(clientId string) ([]byte, bool, error) {
 	return _Ibcstore.Contract.GetClientState(&_Ibcstore.CallOpts, clientId)
 }
 
 // GetClientState is a free data retrieval call binding the contract method 0x76c81c42.
 //
-// Solidity: function getClientState(string clientId) view returns(bytes clientStateBytes, bool found)
-func (_Ibcstore *IbcstoreCallerSession) GetClientState(clientId string) (struct {
-	ClientStateBytes []byte
-	Found            bool
-}, error) {
+// Solidity: function getClientState(string clientId) view returns(bytes, bool)
+func (_Ibcstore *IbcstoreCallerSession) GetClientState(clientId string) ([]byte, bool, error) {
 	return _Ibcstore.Contract.GetClientState(&_Ibcstore.CallOpts, clientId)
 }
 
@@ -653,46 +392,33 @@ func (_Ibcstore *IbcstoreCallerSession) GetConnection(connectionId string) (Conn
 
 // GetConsensusState is a free data retrieval call binding the contract method 0xa37a45c8.
 //
-// Solidity: function getConsensusState(string clientId, uint64 height) view returns(bytes consensusStateBytes, bool found)
-func (_Ibcstore *IbcstoreCaller) GetConsensusState(opts *bind.CallOpts, clientId string, height uint64) (struct {
-	ConsensusStateBytes []byte
-	Found               bool
-}, error) {
+// Solidity: function getConsensusState(string clientId, uint64 height) view returns(bytes, bool)
+func (_Ibcstore *IbcstoreCaller) GetConsensusState(opts *bind.CallOpts, clientId string, height uint64) ([]byte, bool, error) {
 	var out []interface{}
 	err := _Ibcstore.contract.Call(opts, &out, "getConsensusState", clientId, height)
 
-	outstruct := new(struct {
-		ConsensusStateBytes []byte
-		Found               bool
-	})
 	if err != nil {
-		return *outstruct, err
+		return *new([]byte), *new(bool), err
 	}
 
-	outstruct.ConsensusStateBytes = out[0].([]byte)
-	outstruct.Found = out[1].(bool)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+	out1 := *abi.ConvertType(out[1], new(bool)).(*bool)
 
-	return *outstruct, err
+	return out0, out1, err
 
 }
 
 // GetConsensusState is a free data retrieval call binding the contract method 0xa37a45c8.
 //
-// Solidity: function getConsensusState(string clientId, uint64 height) view returns(bytes consensusStateBytes, bool found)
-func (_Ibcstore *IbcstoreSession) GetConsensusState(clientId string, height uint64) (struct {
-	ConsensusStateBytes []byte
-	Found               bool
-}, error) {
+// Solidity: function getConsensusState(string clientId, uint64 height) view returns(bytes, bool)
+func (_Ibcstore *IbcstoreSession) GetConsensusState(clientId string, height uint64) ([]byte, bool, error) {
 	return _Ibcstore.Contract.GetConsensusState(&_Ibcstore.CallOpts, clientId, height)
 }
 
 // GetConsensusState is a free data retrieval call binding the contract method 0xa37a45c8.
 //
-// Solidity: function getConsensusState(string clientId, uint64 height) view returns(bytes consensusStateBytes, bool found)
-func (_Ibcstore *IbcstoreCallerSession) GetConsensusState(clientId string, height uint64) (struct {
-	ConsensusStateBytes []byte
-	Found               bool
-}, error) {
+// Solidity: function getConsensusState(string clientId, uint64 height) view returns(bytes, bool)
+func (_Ibcstore *IbcstoreCallerSession) GetConsensusState(clientId string, height uint64) ([]byte, bool, error) {
 	return _Ibcstore.Contract.GetConsensusState(&_Ibcstore.CallOpts, clientId, height)
 }
 
@@ -852,66 +578,36 @@ func (_Ibcstore *IbcstoreCallerSession) GetPacketAcknowledgementCommitment(portI
 	return _Ibcstore.Contract.GetPacketAcknowledgementCommitment(&_Ibcstore.CallOpts, portId, channelId, sequence)
 }
 
-// HasChannel is a free data retrieval call binding the contract method 0x4381fc29.
+// GetPacketCommitment is a free data retrieval call binding the contract method 0x61fc5e7b.
 //
-// Solidity: function hasChannel(string portId, string channelId) view returns(bool)
-func (_Ibcstore *IbcstoreCaller) HasChannel(opts *bind.CallOpts, portId string, channelId string) (bool, error) {
+// Solidity: function getPacketCommitment(string portId, string channelId, uint64 sequence) view returns(bytes32, bool)
+func (_Ibcstore *IbcstoreCaller) GetPacketCommitment(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, bool, error) {
 	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "hasChannel", portId, channelId)
+	err := _Ibcstore.contract.Call(opts, &out, "getPacketCommitment", portId, channelId, sequence)
 
 	if err != nil {
-		return *new(bool), err
+		return *new([32]byte), *new(bool), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out1 := *abi.ConvertType(out[1], new(bool)).(*bool)
 
-	return out0, err
-
-}
-
-// HasChannel is a free data retrieval call binding the contract method 0x4381fc29.
-//
-// Solidity: function hasChannel(string portId, string channelId) view returns(bool)
-func (_Ibcstore *IbcstoreSession) HasChannel(portId string, channelId string) (bool, error) {
-	return _Ibcstore.Contract.HasChannel(&_Ibcstore.CallOpts, portId, channelId)
-}
-
-// HasChannel is a free data retrieval call binding the contract method 0x4381fc29.
-//
-// Solidity: function hasChannel(string portId, string channelId) view returns(bool)
-func (_Ibcstore *IbcstoreCallerSession) HasChannel(portId string, channelId string) (bool, error) {
-	return _Ibcstore.Contract.HasChannel(&_Ibcstore.CallOpts, portId, channelId)
-}
-
-// HasClientState is a free data retrieval call binding the contract method 0x41a879d8.
-//
-// Solidity: function hasClientState(string clientId) view returns(bool)
-func (_Ibcstore *IbcstoreCaller) HasClientState(opts *bind.CallOpts, clientId string) (bool, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "hasClientState", clientId)
-
-	if err != nil {
-		return *new(bool), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
-
-	return out0, err
+	return out0, out1, err
 
 }
 
-// HasClientState is a free data retrieval call binding the contract method 0x41a879d8.
+// GetPacketCommitment is a free data retrieval call binding the contract method 0x61fc5e7b.
 //
-// Solidity: function hasClientState(string clientId) view returns(bool)
-func (_Ibcstore *IbcstoreSession) HasClientState(clientId string) (bool, error) {
-	return _Ibcstore.Contract.HasClientState(&_Ibcstore.CallOpts, clientId)
+// Solidity: function getPacketCommitment(string portId, string channelId, uint64 sequence) view returns(bytes32, bool)
+func (_Ibcstore *IbcstoreSession) GetPacketCommitment(portId string, channelId string, sequence uint64) ([32]byte, bool, error) {
+	return _Ibcstore.Contract.GetPacketCommitment(&_Ibcstore.CallOpts, portId, channelId, sequence)
 }
 
-// HasClientState is a free data retrieval call binding the contract method 0x41a879d8.
+// GetPacketCommitment is a free data retrieval call binding the contract method 0x61fc5e7b.
 //
-// Solidity: function hasClientState(string clientId) view returns(bool)
-func (_Ibcstore *IbcstoreCallerSession) HasClientState(clientId string) (bool, error) {
-	return _Ibcstore.Contract.HasClientState(&_Ibcstore.CallOpts, clientId)
+// Solidity: function getPacketCommitment(string portId, string channelId, uint64 sequence) view returns(bytes32, bool)
+func (_Ibcstore *IbcstoreCallerSession) GetPacketCommitment(portId string, channelId string, sequence uint64) ([32]byte, bool, error) {
+	return _Ibcstore.Contract.GetPacketCommitment(&_Ibcstore.CallOpts, portId, channelId, sequence)
 }
 
 // HasPacketReceipt is a free data retrieval call binding the contract method 0x5a9afac3.
@@ -947,7 +643,7 @@ func (_Ibcstore *IbcstoreCallerSession) HasPacketReceipt(portId string, channelI
 
 // MakePacketAcknowledgementCommitment is a free data retrieval call binding the contract method 0x8a889658.
 //
-// Solidity: function makePacketAcknowledgementCommitment(bytes acknowledgement) view returns(bytes32)
+// Solidity: function makePacketAcknowledgementCommitment(bytes acknowledgement) pure returns(bytes32)
 func (_Ibcstore *IbcstoreCaller) MakePacketAcknowledgementCommitment(opts *bind.CallOpts, acknowledgement []byte) ([32]byte, error) {
 	var out []interface{}
 	err := _Ibcstore.contract.Call(opts, &out, "makePacketAcknowledgementCommitment", acknowledgement)
@@ -964,21 +660,21 @@ func (_Ibcstore *IbcstoreCaller) MakePacketAcknowledgementCommitment(opts *bind.
 
 // MakePacketAcknowledgementCommitment is a free data retrieval call binding the contract method 0x8a889658.
 //
-// Solidity: function makePacketAcknowledgementCommitment(bytes acknowledgement) view returns(bytes32)
+// Solidity: function makePacketAcknowledgementCommitment(bytes acknowledgement) pure returns(bytes32)
 func (_Ibcstore *IbcstoreSession) MakePacketAcknowledgementCommitment(acknowledgement []byte) ([32]byte, error) {
 	return _Ibcstore.Contract.MakePacketAcknowledgementCommitment(&_Ibcstore.CallOpts, acknowledgement)
 }
 
 // MakePacketAcknowledgementCommitment is a free data retrieval call binding the contract method 0x8a889658.
 //
-// Solidity: function makePacketAcknowledgementCommitment(bytes acknowledgement) view returns(bytes32)
+// Solidity: function makePacketAcknowledgementCommitment(bytes acknowledgement) pure returns(bytes32)
 func (_Ibcstore *IbcstoreCallerSession) MakePacketAcknowledgementCommitment(acknowledgement []byte) ([32]byte, error) {
 	return _Ibcstore.Contract.MakePacketAcknowledgementCommitment(&_Ibcstore.CallOpts, acknowledgement)
 }
 
 // MakePacketCommitment is a free data retrieval call binding the contract method 0x12a68750.
 //
-// Solidity: function makePacketCommitment((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet) view returns(bytes32)
+// Solidity: function makePacketCommitment((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet) pure returns(bytes32)
 func (_Ibcstore *IbcstoreCaller) MakePacketCommitment(opts *bind.CallOpts, packet PacketData) ([32]byte, error) {
 	var out []interface{}
 	err := _Ibcstore.contract.Call(opts, &out, "makePacketCommitment", packet)
@@ -995,161 +691,16 @@ func (_Ibcstore *IbcstoreCaller) MakePacketCommitment(opts *bind.CallOpts, packe
 
 // MakePacketCommitment is a free data retrieval call binding the contract method 0x12a68750.
 //
-// Solidity: function makePacketCommitment((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet) view returns(bytes32)
+// Solidity: function makePacketCommitment((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet) pure returns(bytes32)
 func (_Ibcstore *IbcstoreSession) MakePacketCommitment(packet PacketData) ([32]byte, error) {
 	return _Ibcstore.Contract.MakePacketCommitment(&_Ibcstore.CallOpts, packet)
 }
 
 // MakePacketCommitment is a free data retrieval call binding the contract method 0x12a68750.
 //
-// Solidity: function makePacketCommitment((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet) view returns(bytes32)
+// Solidity: function makePacketCommitment((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet) pure returns(bytes32)
 func (_Ibcstore *IbcstoreCallerSession) MakePacketCommitment(packet PacketData) ([32]byte, error) {
 	return _Ibcstore.Contract.MakePacketCommitment(&_Ibcstore.CallOpts, packet)
-}
-
-// PacketAcknowledgementCommitmentKey is a free data retrieval call binding the contract method 0xe334f11b.
-//
-// Solidity: function packetAcknowledgementCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) PacketAcknowledgementCommitmentKey(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "packetAcknowledgementCommitmentKey", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketAcknowledgementCommitmentKey is a free data retrieval call binding the contract method 0xe334f11b.
-//
-// Solidity: function packetAcknowledgementCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) PacketAcknowledgementCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketAcknowledgementCommitmentKey(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// PacketAcknowledgementCommitmentKey is a free data retrieval call binding the contract method 0xe334f11b.
-//
-// Solidity: function packetAcknowledgementCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) PacketAcknowledgementCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketAcknowledgementCommitmentKey(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// PacketAcknowledgementCommitmentSlot is a free data retrieval call binding the contract method 0xc50839ec.
-//
-// Solidity: function packetAcknowledgementCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) PacketAcknowledgementCommitmentSlot(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "packetAcknowledgementCommitmentSlot", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketAcknowledgementCommitmentSlot is a free data retrieval call binding the contract method 0xc50839ec.
-//
-// Solidity: function packetAcknowledgementCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) PacketAcknowledgementCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketAcknowledgementCommitmentSlot(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// PacketAcknowledgementCommitmentSlot is a free data retrieval call binding the contract method 0xc50839ec.
-//
-// Solidity: function packetAcknowledgementCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) PacketAcknowledgementCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketAcknowledgementCommitmentSlot(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentKey is a free data retrieval call binding the contract method 0xdae1b0f8.
-//
-// Solidity: function packetCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) PacketCommitmentKey(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "packetCommitmentKey", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketCommitmentKey is a free data retrieval call binding the contract method 0xdae1b0f8.
-//
-// Solidity: function packetCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) PacketCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketCommitmentKey(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentKey is a free data retrieval call binding the contract method 0xdae1b0f8.
-//
-// Solidity: function packetCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) PacketCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketCommitmentKey(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentSlot is a free data retrieval call binding the contract method 0xb0db45ba.
-//
-// Solidity: function packetCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCaller) PacketCommitmentSlot(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcstore.contract.Call(opts, &out, "packetCommitmentSlot", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketCommitmentSlot is a free data retrieval call binding the contract method 0xb0db45ba.
-//
-// Solidity: function packetCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreSession) PacketCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketCommitmentSlot(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentSlot is a free data retrieval call binding the contract method 0xb0db45ba.
-//
-// Solidity: function packetCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcstore *IbcstoreCallerSession) PacketCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcstore.Contract.PacketCommitmentSlot(&_Ibcstore.CallOpts, portId, channelId, sequence)
-}
-
-// AddConnectionPath is a paid mutator transaction binding the contract method 0xc01e1669.
-//
-// Solidity: function addConnectionPath(string clientId, string connectionId) returns()
-func (_Ibcstore *IbcstoreTransactor) AddConnectionPath(opts *bind.TransactOpts, clientId string, connectionId string) (*types.Transaction, error) {
-	return _Ibcstore.contract.Transact(opts, "addConnectionPath", clientId, connectionId)
-}
-
-// AddConnectionPath is a paid mutator transaction binding the contract method 0xc01e1669.
-//
-// Solidity: function addConnectionPath(string clientId, string connectionId) returns()
-func (_Ibcstore *IbcstoreSession) AddConnectionPath(clientId string, connectionId string) (*types.Transaction, error) {
-	return _Ibcstore.Contract.AddConnectionPath(&_Ibcstore.TransactOpts, clientId, connectionId)
-}
-
-// AddConnectionPath is a paid mutator transaction binding the contract method 0xc01e1669.
-//
-// Solidity: function addConnectionPath(string clientId, string connectionId) returns()
-func (_Ibcstore *IbcstoreTransactorSession) AddConnectionPath(clientId string, connectionId string) (*types.Transaction, error) {
-	return _Ibcstore.Contract.AddConnectionPath(&_Ibcstore.TransactOpts, clientId, connectionId)
 }
 
 // DeletePacketCommitment is a paid mutator transaction binding the contract method 0x94dcb4c6.
@@ -1171,27 +722,6 @@ func (_Ibcstore *IbcstoreSession) DeletePacketCommitment(portId string, channelI
 // Solidity: function deletePacketCommitment(string portId, string channelId, uint64 sequence) returns()
 func (_Ibcstore *IbcstoreTransactorSession) DeletePacketCommitment(portId string, channelId string, sequence uint64) (*types.Transaction, error) {
 	return _Ibcstore.Contract.DeletePacketCommitment(&_Ibcstore.TransactOpts, portId, channelId, sequence)
-}
-
-// GetPacketCommitment is a paid mutator transaction binding the contract method 0x61fc5e7b.
-//
-// Solidity: function getPacketCommitment(string portId, string channelId, uint64 sequence) returns(bytes32, bool)
-func (_Ibcstore *IbcstoreTransactor) GetPacketCommitment(opts *bind.TransactOpts, portId string, channelId string, sequence uint64) (*types.Transaction, error) {
-	return _Ibcstore.contract.Transact(opts, "getPacketCommitment", portId, channelId, sequence)
-}
-
-// GetPacketCommitment is a paid mutator transaction binding the contract method 0x61fc5e7b.
-//
-// Solidity: function getPacketCommitment(string portId, string channelId, uint64 sequence) returns(bytes32, bool)
-func (_Ibcstore *IbcstoreSession) GetPacketCommitment(portId string, channelId string, sequence uint64) (*types.Transaction, error) {
-	return _Ibcstore.Contract.GetPacketCommitment(&_Ibcstore.TransactOpts, portId, channelId, sequence)
-}
-
-// GetPacketCommitment is a paid mutator transaction binding the contract method 0x61fc5e7b.
-//
-// Solidity: function getPacketCommitment(string portId, string channelId, uint64 sequence) returns(bytes32, bool)
-func (_Ibcstore *IbcstoreTransactorSession) GetPacketCommitment(portId string, channelId string, sequence uint64) (*types.Transaction, error) {
-	return _Ibcstore.Contract.GetPacketCommitment(&_Ibcstore.TransactOpts, portId, channelId, sequence)
 }
 
 // SetChannel is a paid mutator transaction binding the contract method 0x3564d550.

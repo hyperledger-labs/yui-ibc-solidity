@@ -5,13 +5,14 @@ import (
 )
 
 const (
-	IBCStoreAddress = "0x21AAc107da35eC30f344d26324ad9b7eF30F566A"
-	IBCClientAddress = "0x965b87E87165252c64bcD8dE31b61Dc7A135a8A0"
-	IBCConnectionAddress = "0xe1aDE7B3a75e1D5D4675855239b3d7Ed2e7254a8"
-	IBCChannelAddress = "0xC12d9eB07C4B8fa3469Fc37b2861cBFe9e390C19"
-	IBCRoutingModuleAddress = "0xC5de6fc9374BA11cF47Cc1aECF94aBE620821BAa"
-	IBFT2ClientAddress = "0xe95338C0CaCfdb17b7DabDd32b87d0EcD2B1A091"
-	SimpleTokenModuleAddress = "0x31DEd0C2E93BB82760DCb11ddb6AfCF5045Dd371"
+	IBCStoreAddress = "0xe1B4773F25Fb5109E04CE623c71d4693777cf908"
+	IBCClientAddress = "0x18680e36c779B7d08d47f38769668a264086300D"
+	IBCConnectionAddress = "0x67335fC1B11f450953c317e77423c8162903f0F2"
+	IBCChannelAddress = "0x9B72A7f6824758552812D267C99ef7492778Df0f"
+	IBCRoutingModuleAddress = "0x57f8dD374BBe73724a123b6834f8D6e1aD5efC78"
+	IBCIdentifierAddress = "0x5200801e44F7099158226E4740A84b62b1204EDD"
+	IBFT2ClientAddress = "0x1Be5c5629Fe3037aF0a1a4355687DE694a6d55Bc"
+	SimpleTokenModuleAddress = "0x38b1a3755e2b674cA7141c40DA97bD3A25831560"
 )
 
 type contractConfig struct{}
@@ -40,6 +41,10 @@ func (contractConfig) GetIBCChannelAddress() common.Address {
 
 func (contractConfig) GetIBCRoutingModuleAddress() common.Address {
 	return common.HexToAddress(IBCRoutingModuleAddress)
+}
+
+func (contractConfig) GetIBCIdentifierAddress() common.Address {
+	return common.HexToAddress(IBCIdentifierAddress)
 }
 
 func (contractConfig) GetSimpleTokenModuleAddress() common.Address {
