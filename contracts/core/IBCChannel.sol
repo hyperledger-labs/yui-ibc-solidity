@@ -151,8 +151,7 @@ contract IBCChannel is IBCHost, Ownable {
         ibcStore.setChannel(msg_.portId, msg_.channelId, channel);
     }
 
-    // TODO apply onlyIBCModule modifier
-    function sendPacket(Packet.Data memory packet) public {
+    function sendPacket(Packet.Data calldata packet) external {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         IClient client;
@@ -186,7 +185,7 @@ contract IBCChannel is IBCHost, Ownable {
         // TODO emit an event that includes a packet
     }
 
-    function recvPacket(IBCMsgs.MsgPacketRecv memory msg_) onlyIBCModule public {
+    function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) onlyIBCModule external {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         bool found;
@@ -224,7 +223,7 @@ contract IBCChannel is IBCHost, Ownable {
 
     // WriteAcknowledgement writes the packet execution acknowledgement to the state,
     // which will be verified by the counterparty chain using AcknowledgePacket.
-    function writeAcknowledgement(Packet.Data memory packet, bytes memory acknowledgement) onlyIBCModule public {
+    function writeAcknowledgement(Packet.Data calldata packet, bytes calldata acknowledgement) onlyIBCModule external {
         Channel.Data memory channel;
         bytes32 ackHash;
         bool found;
@@ -239,6 +238,7 @@ contract IBCChannel is IBCHost, Ownable {
         ibcStore.setPacketAcknowledgementCommitment(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
     }
 
+    // TODO use calldata
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement memory msg_) onlyIBCModule public {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;

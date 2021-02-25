@@ -37,7 +37,7 @@ contract IBCRoutingModule is IBCHost {
 
     /// Packet Handler ///
 
-    function recvPacket(IBCMsgs.MsgPacketRecv memory msg_) public returns (bytes memory) {
+    function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory) {
         (Module memory module, bool found) = lookupModule(msg_.packet.destination_port);
         require(found, "module not found");
         bytes memory acknowledgement = module.callbacks.onRecvPacket(msg_.packet);
@@ -47,7 +47,7 @@ contract IBCRoutingModule is IBCHost {
         }
     }
 
-    function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement memory msg_) public {
+    function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
         (Module memory module, bool found) = lookupModule(msg_.packet.source_port);
         require(found, "module not found");
         module.callbacks.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement);
@@ -55,7 +55,7 @@ contract IBCRoutingModule is IBCHost {
     }
 
     // WARNING: This function **must be** removed in production
-    function handlePacketRecvWithoutVerification(IBCMsgs.MsgPacketRecv memory msg_) public returns (bytes memory) {
+    function handlePacketRecvWithoutVerification(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory) {
         (Module memory module, bool found) = lookupModule(msg_.packet.destination_port);
         require(found, "module not found");
         return module.callbacks.onRecvPacket(msg_.packet);
