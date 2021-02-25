@@ -34,7 +34,6 @@ contract IBCConnection is IBCHost {
             counterparty: msg_.counterparty
         });
         ibcStore.setConnection(msg_.connectionId, connection);
-        addConnectionToClient(msg_.clientId, msg_.connectionId);
         return msg_.connectionId;
     }
 
@@ -76,7 +75,6 @@ contract IBCConnection is IBCHost {
         // TODO commentout this
         // require(verifyClientConsensusState(connection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState), "failed to verify consensusState");
 
-        addConnectionToClient(msg_.clientId, msg_.connectionId);
         ibcStore.setConnection(msg_.connectionId, connection);
         return msg_.connectionId;
     }
@@ -203,13 +201,5 @@ contract IBCConnection is IBCHost {
     function makeVersionArray(Version.Data memory version) internal pure returns (Version.Data[] memory ret) {
         ret = new Version.Data[](1);
         ret[0] = version;
-    }
-
-    function addConnectionToClient(
-        string memory clientId,
-        string memory connectionId
-    ) internal {
-        require(ibcStore.hasClientState(clientId), "client not found");
-        ibcStore.addConnectionPath(clientId, connectionId);
     }
 }
