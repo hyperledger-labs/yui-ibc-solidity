@@ -23,9 +23,12 @@ contract IBCChannel is IBCHost, Ownable {
     function channelOpenInit(
         IBCMsgs.MsgChannelOpenInit memory msg_
     ) public returns (string memory) {
-        require(!ibcStore.hasChannel(msg_.portId, msg_.channelId), "channel already exists");
+        ConnectionEnd.Data memory connection;
+        bool found;
+        (, found) = ibcStore.getChannel(msg_.portId, msg_.channelId);
+        require(!found, "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
-        (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.channel.connection_hops[0]);
+        (connection, found) = ibcStore.getConnection(msg_.channel.connection_hops[0]);
         require(found, "connection not found");
         require(connection.versions.length == 1, "single version must be negotiated on connection before opening channel");
         require(msg_.channel.state == Channel.State.STATE_INIT, "channel state must STATE_INIT");
@@ -45,9 +48,12 @@ contract IBCChannel is IBCHost, Ownable {
     function channelOpenTry(
         IBCMsgs.MsgChannelOpenTry memory msg_
     ) public returns (string memory) {
-        require(!ibcStore.hasChannel(msg_.portId, msg_.channelId), "channel already exists");
+        ConnectionEnd.Data memory connection;
+        bool found;
+        (, found) = ibcStore.getChannel(msg_.portId, msg_.channelId);
+        require(!found, "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
-        (ConnectionEnd.Data memory connection, bool found) = ibcStore.getConnection(msg_.channel.connection_hops[0]);
+        (connection, found) = ibcStore.getConnection(msg_.channel.connection_hops[0]);
         require(found, "connection not found");
         require(connection.versions.length == 1, "single version must be negotiated on connection before opening channel");
         require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");

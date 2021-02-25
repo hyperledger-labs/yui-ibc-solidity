@@ -60,7 +60,7 @@ contract IBCStore {
         clientRegistry[clientType] = clientImpl;
     }
 
-    function getClientImpl(string memory clientType) onlyIBCModule public view returns (address, bool) {
+    function getClientImpl(string calldata clientType) onlyIBCModule external view returns (address, bool) {
         address clientImpl = clientRegistry[clientType];
         if (clientImpl == address(0)) {
             return (clientImpl, false);
@@ -76,7 +76,7 @@ contract IBCStore {
         clientTypes[clientId] = clientType;
     }
 
-    function getClientType(string memory clientId) public view returns (string memory) {
+    function getClientType(string calldata clientId) external view returns (string memory) {
         return clientTypes[clientId];
     }
 
@@ -87,17 +87,12 @@ contract IBCStore {
         commitments[IBCIdentifier.clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
     }
 
-    function getClientState(string memory clientId) public view returns (bytes memory clientStateBytes, bool found) {
+    function getClientState(string calldata clientId) external view returns (bytes memory clientStateBytes, bool found) {
         clientStateBytes = clientStates[clientId];
         if (clientStateBytes.length == 0) {
             return (clientStateBytes, false);
         }
         return (clientStateBytes, true);
-    }
-
-    function hasClientState(string memory clientId) public view returns (bool) {
-        bytes memory encoded = clientStates[clientId];
-        return encoded.length != 0;
     }
 
     // ConsensusState
@@ -107,7 +102,7 @@ contract IBCStore {
         commitments[IBCIdentifier.consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
     }
 
-    function getConsensusState(string memory clientId, uint64 height) public view returns (bytes memory consensusStateBytes, bool found) {
+    function getConsensusState(string calldata clientId, uint64 height) external view returns (bytes memory consensusStateBytes, bool found) {
         consensusStateBytes = consensusStates[clientId][height];
         if (consensusStateBytes.length == 0) {
             return (consensusStateBytes, false);
@@ -122,7 +117,7 @@ contract IBCStore {
         commitments[IBCIdentifier.connectionCommitmentKey(connectionId)] = keccak256(connections[connectionId]);
     }
 
-    function getConnection(string memory connectionId) public view returns (ConnectionEnd.Data memory connection, bool) {
+    function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory connection, bool) {
         bytes memory encoded = connections[connectionId];
         if (encoded.length == 0) {
             return (connection, false);
@@ -138,7 +133,7 @@ contract IBCStore {
         commitments[IBCIdentifier.channelCommitmentKey(portId, channelId)] = keccak256(channels[portId][channelId]);
     }
 
-    function getChannel(string memory portId, string memory channelId) public view returns (Channel.Data memory channel, bool) {
+    function getChannel(string calldata portId, string calldata channelId) external view returns (Channel.Data memory channel, bool) {
         bytes memory encoded = channels[portId][channelId];
         if (encoded.length == 0) {
             return (channel, false);
@@ -147,33 +142,29 @@ contract IBCStore {
         return (channel, true);
     }
 
-    function hasChannel(string memory portId, string memory channelId) public view returns (bool) {
-        return channels[portId][channelId].length != 0;
-    }
-
     // Packet
 
-    function setNextSequenceSend(string memory portId, string memory channelId, uint64 sequence) onlyIBCModule public {
+    function setNextSequenceSend(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
         nextSequenceSends[portId][channelId] = sequence;
     }
 
-    function getNextSequenceSend(string memory portId, string memory channelId) public view returns (uint64) {
+    function getNextSequenceSend(string calldata portId, string calldata channelId) external view returns (uint64) {
         return nextSequenceSends[portId][channelId];
     }
 
-    function setNextSequenceRecv(string memory portId, string memory channelId, uint64 sequence) onlyIBCModule public {
+    function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
         nextSequenceRecvs[portId][channelId] = sequence;
     }
 
-    function getNextSequenceRecv(string memory portId, string memory channelId) public view returns (uint64) {
+    function getNextSequenceRecv(string calldata portId, string calldata channelId) external view returns (uint64) {
         return nextSequenceRecvs[portId][channelId];
     }
 
-    function setNextSequenceAck(string memory portId, string memory channelId, uint64 sequence) onlyIBCModule public {
+    function setNextSequenceAck(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
         nextSequenceAcks[portId][channelId] = sequence;
     }
 
-    function getNextSequenceAck(string memory portId, string memory channelId) public view returns (uint64) {
+    function getNextSequenceAck(string calldata portId, string calldata channelId) external view returns (uint64) {
         return nextSequenceAcks[portId][channelId];
     }
 
@@ -184,7 +175,7 @@ contract IBCStore {
     }
 
     // TODO remove this function in production
-    function getPacket(string memory portId, string memory channelId, uint64 sequence) public view returns (Packet.Data memory) {
+    function getPacket(string calldata portId, string calldata channelId, uint64 sequence) external view returns (Packet.Data memory) {
         return Packet.decode(packets[portId][channelId][sequence]);
     }
 
@@ -197,35 +188,34 @@ contract IBCStore {
         delete commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
     }
 
-    function getPacketCommitment(string memory portId, string memory channelId, uint64 sequence) public returns (bytes32, bool) {
+    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence) external returns (bytes32, bool) {
         bytes32 commitment = commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));
     }
 
     function makePacketCommitment(Packet.Data memory packet) public view returns (bytes32) {
-        bytes32 dataHash = sha256(packet.data);
         // TODO serialize uint64 to bytes(big-endian)
-        return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, dataHash));
+        return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, sha256(packet.data)));
     }
 
     function setPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) onlyIBCModule public {
         commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)] = makePacketAcknowledgementCommitment(acknowledgement);
     }
 
-    function getPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence) public view returns (bytes32, bool) {
+    function getPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bytes32, bool) {
         bytes32 commitment = commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));
     }
 
-    function makePacketAcknowledgementCommitment(bytes memory acknowledgement) public view returns (bytes32) {
+    function makePacketAcknowledgementCommitment(bytes memory acknowledgement) public pure returns (bytes32) {
         return sha256(acknowledgement);
     }
 
-    function setPacketReceipt(string memory portId, string memory channelId, uint64 sequence) onlyIBCModule public {
+    function setPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) onlyIBCModule external {
         packetReceipts[portId][channelId][sequence] = true;
     }
 
-    function hasPacketReceipt(string memory portId, string memory channelId, uint64 sequence) public view returns (bool) {
+    function hasPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bool) {
         return packetReceipts[portId][channelId][sequence];
     }
 }

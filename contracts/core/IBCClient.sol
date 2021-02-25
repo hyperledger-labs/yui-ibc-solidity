@@ -14,8 +14,9 @@ contract IBCClient is IBCHost, Ownable {
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
     function createClient(IBCMsgs.MsgCreateClient memory msg_) public {
-        require(!ibcStore.hasClientState(msg_.clientId), "the clientId already exists");
-        (, bool found) = getClientByType(msg_.clientType);
+        (, bool found) = ibcStore.getClientState(msg_.clientId);
+        require(!found, "the clientId already exists");
+        (, found) = getClientByType(msg_.clientType);
         require(found, "unregistered client type");
 
         ibcStore.setClientType(msg_.clientId, msg_.clientType);
