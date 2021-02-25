@@ -15,7 +15,6 @@ contract IBCStore {
     mapping (string => bytes) clientStates;
     mapping (string => mapping(uint64 => bytes)) consensusStates;
     mapping (string => bytes) connections;
-    mapping (string => string[]) clientConnectionPaths; // clientID => [connectionID]
     mapping (string => mapping(string => bytes)) channels;
     mapping (string => mapping(string => uint64)) nextSequenceSends;
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
@@ -130,10 +129,6 @@ contract IBCStore {
         }
         connection = ConnectionEnd.decode(encoded);
         return (connection, true);
-    }
-
-    function addConnectionPath(string memory clientId, string memory connectionId) onlyIBCModule public {
-        clientConnectionPaths[clientId].push(connectionId);
     }
 
     // Channel
