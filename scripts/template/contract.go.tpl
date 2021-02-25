@@ -6,7 +6,10 @@ import (
 
 const (
 	IBCStoreAddress = "<%= IBCStoreAddress; %>"
-	IBCModuleAddress = "<%= IBCModuleAddress; %>"
+	IBCClientAddress = "<%= IBCClientAddress; %>"
+	IBCConnectionAddress = "<%= IBCConnectionAddress; %>"
+	IBCChannelAddress = "<%= IBCChannelAddress; %>"
+	IBCRoutingModuleAddress = "<%= IBCRoutingModuleAddress; %>"
 	IBFT2ClientAddress = "<%= IBFT2ClientAddress; %>"
 	SimpleTokenModuleAddress = "<%= SimpleTokenModuleAddress; %>"
 )
@@ -19,12 +22,24 @@ func (contractConfig) GetIBCStoreAddress() common.Address {
 	return common.HexToAddress(IBCStoreAddress)
 }
 
-func (contractConfig) GetIBCModuleAddress() common.Address {
-	return common.HexToAddress(IBCModuleAddress)
-}
-
 func (contractConfig) GetIBFT2ClientAddress() common.Address {
 	return common.HexToAddress(IBFT2ClientAddress)
+}
+
+func (contractConfig) GetIBCClientAddress() common.Address {
+	return common.HexToAddress(IBCClientAddress)
+}
+
+func (contractConfig) GetIBCConnectionAddress() common.Address {
+	return common.HexToAddress(IBCConnectionAddress)
+}
+
+func (contractConfig) GetIBCChannelAddress() common.Address {
+	return common.HexToAddress(IBCChannelAddress)
+}
+
+func (contractConfig) GetIBCRoutingModuleAddress() common.Address {
+	return common.HexToAddress(IBCRoutingModuleAddress)
 }
 
 func (contractConfig) GetSimpleTokenModuleAddress() common.Address {
