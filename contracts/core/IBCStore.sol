@@ -47,10 +47,10 @@ contract IBCStore {
 
     /// Storage accessor ///
 
-    // Client registry
+    // Client implementation registry
 
-    // TODO specify any ACL modifiers to this
     function setClientImpl(string memory clientType, address clientImpl) public {
+        require(onlyIBCModule());
         require(address(clientRegistry[clientType]) == address(0), "clientImpl already exists");
         clientRegistry[clientType] = clientImpl;
     }
