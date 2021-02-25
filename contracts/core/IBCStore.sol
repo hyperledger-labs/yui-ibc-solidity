@@ -33,7 +33,7 @@ contract IBCStore {
         owner = msg.sender;
     }
 
-    function setIBCModule(address ibcClient_, address ibcConnection_, address ibcChannel_, address ibcRoutingModule_) public {
+    function setIBCModule(address ibcClient_, address ibcConnection_, address ibcChannel_, address ibcRoutingModule_) external {
         require(msg.sender == owner);
         ibcClient = ibcClient_;
         ibcConnection = ibcConnection_;
@@ -49,7 +49,7 @@ contract IBCStore {
 
     // Client implementation registry
 
-    function setClientImpl(string memory clientType, address clientImpl) public {
+    function setClientImpl(string calldata clientType, address clientImpl) external {
         require(onlyIBCModule());
         require(address(clientRegistry[clientType]) == address(0), "clientImpl already exists");
         clientRegistry[clientType] = clientImpl;
@@ -61,7 +61,7 @@ contract IBCStore {
 
     // Client types
 
-    function setClientType(string memory clientId, string memory clientType) public {
+    function setClientType(string calldata clientId, string calldata clientType) external {
         require(onlyIBCModule());
         require(bytes(clientTypes[clientId]).length == 0, "clientId already exists");
         require(bytes(clientType).length > 0, "clientType must not be empty string");
@@ -74,7 +74,7 @@ contract IBCStore {
 
     // ClientState
 
-    function setClientState(string memory clientId, bytes memory clientStateBytes) public {
+    function setClientState(string calldata clientId, bytes calldata clientStateBytes) external {
         require(onlyIBCModule());
         clientStates[clientId] = clientStateBytes;
         commitments[IBCIdentifier.clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
@@ -86,7 +86,7 @@ contract IBCStore {
 
     // ConsensusState
 
-    function setConsensusState(string memory clientId, uint64 height, bytes memory consensusStateBytes) public {
+    function setConsensusState(string calldata clientId, uint64 height, bytes calldata consensusStateBytes) external {
         require(onlyIBCModule());
         consensusStates[clientId][height] = consensusStateBytes;
         commitments[IBCIdentifier.consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
@@ -173,7 +173,7 @@ contract IBCStore {
         setPacket(portId, channelId, sequence, packet);
     }
 
-    function deletePacketCommitment(string memory portId, string memory channelId, uint64 sequence) public {
+    function deletePacketCommitment(string calldata portId, string calldata channelId, uint64 sequence) external {
         require(onlyIBCModule());
         delete commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
     }
@@ -188,7 +188,7 @@ contract IBCStore {
         return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, sha256(packet.data)));
     }
 
-    function setPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) public {
+    function setPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence, bytes calldata acknowledgement) external {
         require(onlyIBCModule());
         commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)] = makePacketAcknowledgementCommitment(acknowledgement);
     }
