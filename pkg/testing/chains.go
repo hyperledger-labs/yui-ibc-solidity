@@ -16,6 +16,7 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcchannel"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcidentifier"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcroutingmodule"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcstore"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibft2client"
@@ -50,6 +51,7 @@ type Chain struct {
 	IBCRoutingModule ibcroutingmodule.Ibcroutingmodule
 	IBFT2Client      ibft2client.Ibft2client
 	IBCStore         ibcstore.Ibcstore
+	IBCIdentifier    ibcidentifier.Ibcidentifier
 
 	// App Modules
 	SimpletokenModule simpletokenmodule.Simpletokenmodule
@@ -75,6 +77,7 @@ type ContractConfig interface {
 	GetIBCConnectionAddress() common.Address
 	GetIBCChannelAddress() common.Address
 	GetIBCRoutingModuleAddress() common.Address
+	GetIBCIdentifierAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
 	GetSimpleTokenModuleAddress() common.Address
 }
@@ -104,6 +107,10 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
+	ibcIdentifier, err := ibcidentifier.NewIbcidentifier(config.GetIBCIdentifierAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
 
 	simpletokenModule, err := simpletokenmodule.NewSimpletokenmodule(config.GetSimpleTokenModuleAddress(), client)
 	if err != nil {
@@ -115,7 +122,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBFT2Client: *ibft2Client, IBCStore: *ibcStore, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, IBCRoutingModule: *ibcRoutingModule, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
+	return &Chain{t: t, client: client, IBFT2Client: *ibft2Client, IBCStore: *ibcStore, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, IBCRoutingModule: *ibcRoutingModule, IBCIdentifier: *ibcIdentifier, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -594,25 +601,25 @@ func packetToCallData(packet channeltypes.Packet) ibcchannel.PacketData {
 // Slot calculator
 
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
-	key, err := chain.IBCStore.ConnectionCommitmentSlot(chain.CallOpts(context.Background()), connectionID)
+	key, err := chain.IBCIdentifier.ConnectionCommitmentSlot(chain.CallOpts(context.Background()), connectionID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string {
-	key, err := chain.IBCStore.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
+	key, err := chain.IBCIdentifier.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) PacketCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.IBCStore.PacketCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
+	key, err := chain.IBCIdentifier.PacketCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) PacketAcknowledgementCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.IBCStore.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
+	key, err := chain.IBCIdentifier.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }

@@ -8,11 +8,15 @@ const IBCRoutingModule = artifacts.require("IBCRoutingModule");
 const IBCMsgs = artifacts.require("IBCMsgs");
 const SimpleTokenModule = artifacts.require("SimpleTokenModule");
 const Bytes = artifacts.require("Bytes");
+const IBCIdentifier = artifacts.require("IBCIdentifier");
 
 module.exports = function (deployer) {
   deployer.deploy(Migrations);
   deployer.deploy(Bytes).then(function() {
     return deployer.link(Bytes, [IBCClient, IBCConnection, IBCChannel, IBCRoutingModule, IBFT2Client, SimpleTokenModule]);
+  });
+  deployer.deploy(IBCIdentifier).then(function() {
+    return deployer.link(IBCIdentifier, [IBCStore, IBFT2Client]);
   });
   deployer.deploy(IBCMsgs).then(function() {
     return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCRoutingModule, IBFT2Client]);
