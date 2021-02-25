@@ -3,19 +3,11 @@ pragma experimental ABIEncoderV2;
 
 import "./types/Connection.sol";
 import "./types/Channel.sol";
+import "../lib/IBCIdentifier.sol";
 
 contract IBCStore {
     // Commitments
     mapping (bytes32 => bytes32) commitments;
-
-    // constant values
-    uint256 constant commitmentSlot = 0;
-    string constant clientPrefix = "client/";
-    string constant consensusStatePrefix = "consensus/";
-    string constant connectionPrefix = "connection/";
-    string constant channelPrefix = "channel/";
-    string constant packetPrefix = "packet/";
-    string constant packetAckPrefix = "acks/";
 
     // Store
     mapping (string => address) clientRegistry; // clientType => clientImpl
@@ -59,58 +51,6 @@ contract IBCStore {
         ibcRoutingModule = ibcRoutingModule_;
     }
 
-    // Commitment key generator -> move these into a library
-
-    function clientCommitmentKey(string memory clientId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(clientPrefix, clientId));
-    }
-
-    function consensusCommitmentKey(string memory clientId, uint64 height) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(consensusStatePrefix, clientId, "/", height));
-    }
-
-    function connectionCommitmentKey(string memory connectionId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(connectionPrefix, connectionId));
-    }
-
-    function channelCommitmentKey(string memory portId, string memory channelId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(channelPrefix, portId, "/", channelId));
-    }
-
-    function packetCommitmentKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(packetPrefix, portId, "/", channelId, "/", sequence));
-    }
-
-    function packetAcknowledgementCommitmentKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(packetAckPrefix, portId, "/", channelId, "/", sequence));
-    }
-
-    // Slot calculator  -> move these into a library
-
-    function clientStateCommitmentSlot(string memory clientId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(clientCommitmentKey(clientId), commitmentSlot));
-    }
-
-    function consensusStateCommitmentSlot(string memory clientId, uint64 height) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(consensusCommitmentKey(clientId, height), commitmentSlot));
-    }
-
-    function connectionCommitmentSlot(string memory connectionId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(connectionCommitmentKey(connectionId), commitmentSlot));
-    }
-
-    function channelCommitmentSlot(string memory portId, string memory channelId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(channelCommitmentKey(portId, channelId), commitmentSlot));
-    }
-
-    function packetCommitmentSlot(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(packetCommitmentKey(portId, channelId, sequence), commitmentSlot));
-    }
-
-    function packetAcknowledgementCommitmentSlot(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(packetAcknowledgementCommitmentKey(portId, channelId, sequence), commitmentSlot));
-    }
-
     /// Storage accessor ///
 
     // Client registry
@@ -145,7 +85,7 @@ contract IBCStore {
 
     function setClientState(string memory clientId, bytes memory clientStateBytes) onlyIBCModule public {
         clientStates[clientId] = clientStateBytes;
-        commitments[clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
+        commitments[IBCIdentifier.clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
     }
 
     function getClientState(string memory clientId) public view returns (bytes memory clientStateBytes, bool found) {
@@ -165,7 +105,7 @@ contract IBCStore {
 
     function setConsensusState(string memory clientId, uint64 height, bytes memory consensusStateBytes) onlyIBCModule public {
         consensusStates[clientId][height] = consensusStateBytes;
-        commitments[consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
+        commitments[IBCIdentifier.consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
     }
 
     function getConsensusState(string memory clientId, uint64 height) public view returns (bytes memory consensusStateBytes, bool found) {
@@ -180,7 +120,7 @@ contract IBCStore {
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) onlyIBCModule public {
         connections[connectionId] = ConnectionEnd.encode(connection);
-        commitments[connectionCommitmentKey(connectionId)] = keccak256(connections[connectionId]);
+        commitments[IBCIdentifier.connectionCommitmentKey(connectionId)] = keccak256(connections[connectionId]);
     }
 
     function getConnection(string memory connectionId) public view returns (ConnectionEnd.Data memory connection, bool) {
@@ -200,7 +140,7 @@ contract IBCStore {
 
     function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) onlyIBCModule public {
         channels[portId][channelId] = Channel.encode(channel);
-        commitments[channelCommitmentKey(portId, channelId)] = keccak256(channels[portId][channelId]);
+        commitments[IBCIdentifier.channelCommitmentKey(portId, channelId)] = keccak256(channels[portId][channelId]);
     }
 
     function getChannel(string memory portId, string memory channelId) public view returns (Channel.Data memory channel, bool) {
@@ -254,16 +194,16 @@ contract IBCStore {
     }
 
     function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) onlyIBCModule public {
-        commitments[packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
+        commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
         setPacket(portId, channelId, sequence, packet);
     }
 
     function deletePacketCommitment(string memory portId, string memory channelId, uint64 sequence) onlyIBCModule public {
-        delete commitments[packetCommitmentKey(portId, channelId, sequence)];
+        delete commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
     }
 
     function getPacketCommitment(string memory portId, string memory channelId, uint64 sequence) public returns (bytes32, bool) {
-        bytes32 commitment = commitments[packetCommitmentKey(portId, channelId, sequence)];
+        bytes32 commitment = commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));
     }
 
@@ -274,11 +214,11 @@ contract IBCStore {
     }
 
     function setPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) onlyIBCModule public {
-        commitments[packetAcknowledgementCommitmentKey(portId, channelId, sequence)] = makePacketAcknowledgementCommitment(acknowledgement);
+        commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)] = makePacketAcknowledgementCommitment(acknowledgement);
     }
 
     function getPacketAcknowledgementCommitment(string memory portId, string memory channelId, uint64 sequence) public view returns (bytes32, bool) {
-        bytes32 commitment = commitments[packetAcknowledgementCommitmentKey(portId, channelId, sequence)];
+        bytes32 commitment = commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));
     }
 

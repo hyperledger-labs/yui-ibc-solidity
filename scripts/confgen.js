@@ -4,6 +4,7 @@ const IBCClient = artifacts.require("IBCClient");
 const IBCConnection = artifacts.require("IBCConnection");
 const IBCChannel = artifacts.require("IBCChannel");
 const IBCRoutingModule = artifacts.require("IBCRoutingModule");
+const IBCIdentifier = artifacts.require("IBCIdentifier");
 const SimpleTokenModule = artifacts.require("SimpleTokenModule");
 
 var fs = require("fs");
@@ -37,6 +38,7 @@ module.exports = function(callback) {
       IBCConnectionAddress: IBCConnection.address,
       IBCChannelAddress: IBCChannel.address,
       IBCRoutingModuleAddress: IBCRoutingModule.address,
+      IBCIdentifierAddress: IBCIdentifier.address,
       IBFT2ClientAddress: IBFT2Client.address,
       SimpleTokenModuleAddress: SimpleTokenModule.address
     }, null, function(err, str){
