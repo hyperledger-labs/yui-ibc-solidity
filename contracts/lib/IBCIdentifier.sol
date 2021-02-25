@@ -3,12 +3,12 @@ pragma solidity ^0.6.8;
 library IBCIdentifier {
     // constant values
     uint256 constant commitmentSlot = 0;
-    string constant clientPrefix = "client/";
-    string constant consensusStatePrefix = "consensus/";
-    string constant connectionPrefix = "connection/";
-    string constant channelPrefix = "channel/";
-    string constant packetPrefix = "packet/";
-    string constant packetAckPrefix = "acks/";
+    uint8 constant clientPrefix = 0;
+    uint8 constant consensusStatePrefix = 1;
+    uint8 constant connectionPrefix = 2;
+    uint8 constant channelPrefix = 3;
+    uint8 constant packetPrefix = 4;
+    uint8 constant packetAckPrefix = 5;
 
     // Commitment key generator -> move these into a library
 
