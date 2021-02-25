@@ -18,6 +18,7 @@ function after_common() {
         "IBCChannel"
         "IBCRoutingModule"
         "IBFT2Client"
+        "IBCIdentifier"
         "SimpleTokenModule"
     )
     if [ -n "$NO_GEN_CODE" ]; then

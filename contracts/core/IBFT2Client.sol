@@ -9,6 +9,7 @@ import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";
 import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
+import "../lib/IBCIdentifier.sol";
 
 contract IBFT2Client is IClient, IBCHost {
     using TrieProofs for bytes;
@@ -169,7 +170,7 @@ contract IBFT2Client is IClient, IBCHost {
             return false;
         }
         ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.clientStateCommitmentSlot(counterpartyClientIdentifier), keccak256(clientStateBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.clientStateCommitmentSlot(counterpartyClientIdentifier), keccak256(clientStateBytes));
     }
 
     function verifyClientConsensusState(
@@ -186,7 +187,7 @@ contract IBFT2Client is IClient, IBCHost {
             return false;
         }
         ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.consensusStateCommitmentSlot(counterpartyClientIdentifier, consensusHeight), keccak256(consensusStateBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.consensusStateCommitmentSlot(counterpartyClientIdentifier, consensusHeight), keccak256(consensusStateBytes));
     }
 
     function verifyConnectionState(
@@ -202,7 +203,7 @@ contract IBFT2Client is IClient, IBCHost {
             return false;
         }
         ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.connectionCommitmentSlot(connectionId), keccak256(connectionBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.connectionCommitmentSlot(connectionId), keccak256(connectionBytes));
     }
 
     function verifyChannelState(
@@ -219,7 +220,7 @@ contract IBFT2Client is IClient, IBCHost {
             return false;
         }
         ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, ibcStore.channelCommitmentSlot(portId, channelId), keccak256(channelBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.channelCommitmentSlot(portId, channelId), keccak256(channelBytes));
     }
 
     function verifyPacketCommitment(
@@ -236,7 +237,7 @@ contract IBFT2Client is IClient, IBCHost {
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        return verifyMembership(proof, getConsensusState(clientId, height).root.toBytes32(), prefix, ibcStore.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
+        return verifyMembership(proof, getConsensusState(clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
     }
 
     function verifyPacketAcknowledgement(
@@ -253,7 +254,7 @@ contract IBFT2Client is IClient, IBCHost {
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        return verifyMembership(proof, getConsensusState(clientId, height).root.toBytes32(), prefix, ibcStore.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
+        return verifyMembership(proof, getConsensusState(clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
     }
 
     /// helper functions ///
