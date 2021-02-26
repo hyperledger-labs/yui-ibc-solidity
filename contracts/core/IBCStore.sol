@@ -22,6 +22,7 @@ contract IBCStore {
     mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
     // TODO remove this storage variable in production. see details `function setPacket`
     mapping (string => mapping(string => mapping(uint64 => Packet.Data))) packets;
+    mapping (bytes => address[]) capabilities;
 
     address owner;
     address ibcClient;
@@ -209,5 +210,29 @@ contract IBCStore {
 
     function hasPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bool) {
         return packetReceipts[portId][channelId][sequence];
+    }
+
+    // capabilities
+
+    function newCapability(bytes calldata name) external {
+        require(onlyIBCModule());
+        require(capabilities[name].length == 0);
+        capabilities[name].push(msg.sender);
+    }
+
+    function claimCapability(bytes calldata name) external {
+        for (uint32 i = 0; i < capabilities[name].length; i++) {
+            require(capabilities[name][i] != msg.sender);
+        }
+        capabilities[name].push(msg.sender);
+    }
+
+    function authenticateCapability(bytes calldata name, address addr) external view returns (bool) {
+        for (uint32 i = 0; i < capabilities[name].length; i++) {
+            if (capabilities[name][i] != addr) {
+                return true;
+            }
+        }
+        return false;
     }
 }

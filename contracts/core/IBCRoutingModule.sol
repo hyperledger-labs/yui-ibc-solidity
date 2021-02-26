@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 import "./IBCChannel.sol";
 import "./IBCMsgs.sol";
 import "./types/Channel.sol";
+import "../lib/IBCIdentifier.sol";
 
 contract IBCRoutingModule is IBCHost {
     // TODO move it into IBCStore
@@ -35,6 +36,14 @@ contract IBCRoutingModule is IBCHost {
         return (modules[portId], true);
     }
 
+    function sendPacket(Packet.Data calldata packet) external {
+        require(ibcStore.authenticateCapability(
+            IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel),
+            msg.sender
+        ));
+        ibcchannel.sendPacket(packet);
+    }
+
     /// Packet Handler ///
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory) {
@@ -63,6 +72,9 @@ contract IBCRoutingModule is IBCHost {
 }
 
 interface CallbacksI {
+    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external;
+    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external;
+
     function onRecvPacket(Packet.Data calldata) external returns(bytes memory);
     function onAcknowledgementPacket(Packet.Data calldata, bytes calldata acknowledgement) external;
 }

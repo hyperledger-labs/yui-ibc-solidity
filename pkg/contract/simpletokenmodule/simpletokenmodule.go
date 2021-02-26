@@ -26,6 +26,12 @@ var (
 	_ = event.NewSubscription
 )
 
+// ChannelCounterpartyData is an auto generated low-level Go binding around an user-defined struct.
+type ChannelCounterpartyData struct {
+	PortId    string
+	ChannelId string
+}
+
 // HeightData is an auto generated low-level Go binding around an user-defined struct.
 type HeightData struct {
 	RevisionNumber uint64
@@ -45,7 +51,7 @@ type PacketData struct {
 }
 
 // SimpletokenmoduleABI is the input ABI used to generate the binding from.
-const SimpletokenmoduleABI = "[{\"inputs\":[{\"internalType\":\"contractIBCStore\",\"name\":\"store_\",\"type\":\"address\"},{\"internalType\":\"contractIBCChannel\",\"name\":\"ibcChannel_\",\"type\":\"address\"},{\"internalType\":\"contractIBCRoutingModule\",\"name\":\"ibcRoutingModule_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"sourcePort\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"sourceChannel\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timeoutHeight\",\"type\":\"uint64\"}],\"name\":\"crossTransfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"onRecvPacket\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"name\":\"onAcknowledgementPacket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const SimpletokenmoduleABI = "[{\"inputs\":[{\"internalType\":\"contractIBCStore\",\"name\":\"store_\",\"type\":\"address\"},{\"internalType\":\"contractIBCChannel\",\"name\":\"ibcChannel_\",\"type\":\"address\"},{\"internalType\":\"contractIBCRoutingModule\",\"name\":\"ibcRoutingModule_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"sourcePort\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"sourceChannel\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"amount\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"timeoutHeight\",\"type\":\"uint64\"}],\"name\":\"crossTransfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"}],\"name\":\"onRecvPacket\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"name\":\"onAcknowledgementPacket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumChannel.Order\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"string[]\",\"name\":\"connectionHops\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"}],\"name\":\"onChanOpenInit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumChannel.Order\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"string[]\",\"name\":\"connectionHops\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"counterpartyVersion\",\"type\":\"string\"}],\"name\":\"onChanOpenTry\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 // Simpletokenmodule is an auto generated Go binding around an Ethereum contract.
 type Simpletokenmodule struct {
@@ -260,6 +266,48 @@ func (_Simpletokenmodule *SimpletokenmoduleSession) OnAcknowledgementPacket(pack
 // Solidity: function onAcknowledgementPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet, bytes acknowledgement) returns()
 func (_Simpletokenmodule *SimpletokenmoduleTransactorSession) OnAcknowledgementPacket(packet PacketData, acknowledgement []byte) (*types.Transaction, error) {
 	return _Simpletokenmodule.Contract.OnAcknowledgementPacket(&_Simpletokenmodule.TransactOpts, packet, acknowledgement)
+}
+
+// OnChanOpenInit is a paid mutator transaction binding the contract method 0x44dd9638.
+//
+// Solidity: function onChanOpenInit(uint8 , string[] connectionHops, string portId, string channelId, (string,string) counterparty, string version) returns()
+func (_Simpletokenmodule *SimpletokenmoduleTransactor) OnChanOpenInit(opts *bind.TransactOpts, arg0 uint8, connectionHops []string, portId string, channelId string, counterparty ChannelCounterpartyData, version string) (*types.Transaction, error) {
+	return _Simpletokenmodule.contract.Transact(opts, "onChanOpenInit", arg0, connectionHops, portId, channelId, counterparty, version)
+}
+
+// OnChanOpenInit is a paid mutator transaction binding the contract method 0x44dd9638.
+//
+// Solidity: function onChanOpenInit(uint8 , string[] connectionHops, string portId, string channelId, (string,string) counterparty, string version) returns()
+func (_Simpletokenmodule *SimpletokenmoduleSession) OnChanOpenInit(arg0 uint8, connectionHops []string, portId string, channelId string, counterparty ChannelCounterpartyData, version string) (*types.Transaction, error) {
+	return _Simpletokenmodule.Contract.OnChanOpenInit(&_Simpletokenmodule.TransactOpts, arg0, connectionHops, portId, channelId, counterparty, version)
+}
+
+// OnChanOpenInit is a paid mutator transaction binding the contract method 0x44dd9638.
+//
+// Solidity: function onChanOpenInit(uint8 , string[] connectionHops, string portId, string channelId, (string,string) counterparty, string version) returns()
+func (_Simpletokenmodule *SimpletokenmoduleTransactorSession) OnChanOpenInit(arg0 uint8, connectionHops []string, portId string, channelId string, counterparty ChannelCounterpartyData, version string) (*types.Transaction, error) {
+	return _Simpletokenmodule.Contract.OnChanOpenInit(&_Simpletokenmodule.TransactOpts, arg0, connectionHops, portId, channelId, counterparty, version)
+}
+
+// OnChanOpenTry is a paid mutator transaction binding the contract method 0x981389f2.
+//
+// Solidity: function onChanOpenTry(uint8 , string[] connectionHops, string portId, string channelId, (string,string) counterparty, string version, string counterpartyVersion) returns()
+func (_Simpletokenmodule *SimpletokenmoduleTransactor) OnChanOpenTry(opts *bind.TransactOpts, arg0 uint8, connectionHops []string, portId string, channelId string, counterparty ChannelCounterpartyData, version string, counterpartyVersion string) (*types.Transaction, error) {
+	return _Simpletokenmodule.contract.Transact(opts, "onChanOpenTry", arg0, connectionHops, portId, channelId, counterparty, version, counterpartyVersion)
+}
+
+// OnChanOpenTry is a paid mutator transaction binding the contract method 0x981389f2.
+//
+// Solidity: function onChanOpenTry(uint8 , string[] connectionHops, string portId, string channelId, (string,string) counterparty, string version, string counterpartyVersion) returns()
+func (_Simpletokenmodule *SimpletokenmoduleSession) OnChanOpenTry(arg0 uint8, connectionHops []string, portId string, channelId string, counterparty ChannelCounterpartyData, version string, counterpartyVersion string) (*types.Transaction, error) {
+	return _Simpletokenmodule.Contract.OnChanOpenTry(&_Simpletokenmodule.TransactOpts, arg0, connectionHops, portId, channelId, counterparty, version, counterpartyVersion)
+}
+
+// OnChanOpenTry is a paid mutator transaction binding the contract method 0x981389f2.
+//
+// Solidity: function onChanOpenTry(uint8 , string[] connectionHops, string portId, string channelId, (string,string) counterparty, string version, string counterpartyVersion) returns()
+func (_Simpletokenmodule *SimpletokenmoduleTransactorSession) OnChanOpenTry(arg0 uint8, connectionHops []string, portId string, channelId string, counterparty ChannelCounterpartyData, version string, counterpartyVersion string) (*types.Transaction, error) {
+	return _Simpletokenmodule.Contract.OnChanOpenTry(&_Simpletokenmodule.TransactOpts, arg0, connectionHops, portId, channelId, counterparty, version, counterpartyVersion)
 }
 
 // OnRecvPacket is a paid mutator transaction binding the contract method 0x5550b656.
