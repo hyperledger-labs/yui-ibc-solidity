@@ -5,11 +5,12 @@ import "../core/types/Channel.sol";
 import "../core/IBCChannel.sol";
 import "../core/IBCHandler.sol";
 import "../core/IBCHost.sol";
+import "../core/IBCModule.sol";
 import "../core/types/App.sol";
 import "../lib/IBCIdentifier.sol";
 import "../lib/Bytes.sol";
 
-contract SimpleTokenModule {
+contract SimpleTokenModule is IModuleCallbacks {
     using Bytes for bytes;
 
     /// Storages ///
@@ -101,7 +102,7 @@ contract SimpleTokenModule {
         _;
     }
 
-    function onRecvPacket(Packet.Data calldata packet) onlyIBCModule external returns (bytes memory acknowledgement) {
+    function onRecvPacket(Packet.Data calldata packet) onlyIBCModule external override returns (bytes memory acknowledgement) {
         FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
         mint(data.receiver.toAddress(), data.amount);
         acknowledgement = new bytes(1);
@@ -109,7 +110,7 @@ contract SimpleTokenModule {
         return acknowledgement;
     }
 
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) onlyIBCModule external {
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) onlyIBCModule external override {
         FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
         // if acknowledgement indicates an error, refund the tokens to sender
         if (acknowledgement.length == 1 && acknowledgement[0] == 0x01) {
@@ -120,7 +121,8 @@ contract SimpleTokenModule {
         }
     }
 
-    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external {}
-
-    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external {}
+    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external override {}
+    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external override {}
+    function onChanOpenAck(string calldata portId, string calldata channelId, string calldata counterpartyVersion) external override {}
+    function onChanOpenConfirm(string calldata portId, string calldata channelId) external override {}
 }
