@@ -9,8 +9,6 @@ import "./types/Channel.sol";
 import "../lib/IBCIdentifier.sol";
 
 contract IBCHandler {
-    // TODO move it into IBCStore
-    mapping(string => Module) modules;
 
     address owner;
     IBCHost host;
@@ -56,13 +54,34 @@ contract IBCHandler {
     }
 
     function channelOpenInit(IBCMsgs.MsgChannelOpenInit memory msg_) public returns (string memory) {
-        // TODO call the binded module's callback `channelOpenInit`
-        return IBCChannel.channelOpenInit(host, msg_);
+        string memory channelId = IBCChannel.channelOpenInit(host, msg_);
+        CallbacksI module = lookupModuleByPortId(msg_.portId);
+        module.onChanOpenInit(
+            msg_.channel.ordering,
+            msg_.channel.connection_hops,
+            msg_.portId,
+            msg_.channelId,
+            msg_.channel.counterparty,
+            msg_.channel.version
+        );
+        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, msg_.channelId), address(module));
+        return channelId;
     }
 
     function channelOpenTry(IBCMsgs.MsgChannelOpenTry memory msg_) public returns (string memory) {
-        // TODO call the binded module's callback `channelOpenTry`
-        return IBCChannel.channelOpenTry(host, msg_);
+        string memory channelId = IBCChannel.channelOpenTry(host, msg_);
+        CallbacksI module = lookupModuleByPortId(msg_.portId);
+        module.onChanOpenTry(
+            msg_.channel.ordering,
+            msg_.channel.connection_hops,
+            msg_.portId,
+            msg_.channelId,
+            msg_.channel.counterparty,
+            msg_.channel.version,
+            msg_.counterpartyVersion
+        );
+        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, msg_.channelId), address(module));
+        return channelId;
     }
 
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck memory msg_) public {
@@ -74,17 +93,16 @@ contract IBCHandler {
     }
 
     function sendPacket(Packet.Data calldata packet) external {
-        // require(host.authenticateCapability(
-        //     IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel),
-        //     msg.sender
-        // ));
+        require(host.authenticateCapability(
+            IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel),
+            msg.sender
+        ));
         IBCChannel.sendPacket(host, packet);
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory) {
-        (Module memory module, bool found) = lookupModule(msg_.packet.destination_port);
-        require(found, "module not found");
-        bytes memory acknowledgement = module.callbacks.onRecvPacket(msg_.packet);
+        CallbacksI module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
+        bytes memory acknowledgement = module.onRecvPacket(msg_.packet);
         IBCChannel.recvPacket(host, msg_);
         if (acknowledgement.length > 0) {
             IBCChannel.writeAcknowledgement(host, msg_.packet, acknowledgement);
@@ -92,37 +110,30 @@ contract IBCHandler {
     }
 
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
-        (Module memory module, bool found) = lookupModule(msg_.packet.source_port);
-        require(found, "module not found");
-        module.callbacks.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement);
+        CallbacksI module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
+        module.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement);
         IBCChannel.acknowledgePacket(host, msg_);
     }
 
-    // WARNING: This function **must be** removed in production
-    function handlePacketRecvWithoutVerification(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory) {
-        (Module memory module, bool found) = lookupModule(msg_.packet.destination_port);
-        require(found, "module not found");
-        return module.callbacks.onRecvPacket(msg_.packet);
-    }
-
-    /// Module manager ///
-
-    struct Module {
-        CallbacksI callbacks;
-        bool exists;
-    }
-
-    // TODO apply ACL to this
     function bindPort(string memory portId, address moduleAddress) public {
-        require(!modules[portId].exists, "the portId is already used by other module");
-        modules[portId] = Module({callbacks: CallbacksI(moduleAddress), exists: true});
+        onlyOwner();
+        host.claimCapability(IBCIdentifier.portCapabilityPath(portId), moduleAddress);
     }
 
-    function lookupModule(string memory portId) public view returns (Module memory module, bool found) {
-        if (!modules[portId].exists) {
-            return (module, false);
-        }
-        return (modules[portId], true);
+    function lookupModuleByPortId(string memory portId) internal view returns (CallbacksI) {
+        (address module, bool found) = host.getModuleOwner(IBCIdentifier.portCapabilityPath(portId));
+        require(found);
+        return CallbacksI(module);
+    }
+
+    function lookupModuleByChannel(string memory portId, string memory channelId) internal view returns (CallbacksI) {
+        (address module, bool found) = host.getModuleOwner(IBCIdentifier.channelCapabilityPath(portId, channelId));
+        require(found);
+        return CallbacksI(module);
+    }
+
+    function onlyOwner() internal view {
+        require(msg.sender == owner);
     }
 }
 

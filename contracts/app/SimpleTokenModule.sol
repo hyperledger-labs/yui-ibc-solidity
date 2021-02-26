@@ -26,7 +26,6 @@ contract SimpleTokenModule {
     constructor(IBCHost host_, IBCHandler ibcHandler_) public {
         ibcHost = host_;
         ibcHandler = ibcHandler_;
-        ibcHandler.bindPort("transfer", address(this));
 
         _balances[msg.sender] = 10000;
     }
@@ -107,13 +106,7 @@ contract SimpleTokenModule {
         // if acknowledgement indicates an error, refund the tokens to sender
     }
 
-    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external {
-        // TODO move this into handshake function
-        ibcHost.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
-    }
+    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external {}
 
-    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external {
-        // TODO move this into handshake function
-        ibcHost.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
-    }
+    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external {}
 }
