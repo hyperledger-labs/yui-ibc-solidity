@@ -208,25 +208,28 @@ contract IBCHost {
 
     // capabilities
 
-    function newCapability(bytes calldata name) external {
+    function claimCapability(bytes calldata name, address addr) external {
         onlyIBCModule();
-        require(capabilities[name].length == 0);
-        capabilities[name].push(msg.sender);
-    }
-
-    function claimCapability(bytes calldata name) external {
         for (uint32 i = 0; i < capabilities[name].length; i++) {
-            require(capabilities[name][i] != msg.sender);
+            require(capabilities[name][i] != addr);
         }
-        capabilities[name].push(msg.sender);
+        capabilities[name].push(addr);
     }
 
     function authenticateCapability(bytes calldata name, address addr) external view returns (bool) {
+        onlyIBCModule();
         for (uint32 i = 0; i < capabilities[name].length; i++) {
-            if (capabilities[name][i] != addr) {
+            if (capabilities[name][i] == addr) {
                 return true;
             }
         }
         return false;
+    }
+
+    function getModuleOwner(bytes calldata name) external view returns (address, bool) {
+        if (capabilities[name].length == 0) {
+            return (address(0), false);
+        }
+        return (capabilities[name][0], true);
     }
 }
