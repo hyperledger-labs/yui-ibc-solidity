@@ -66,7 +66,7 @@ func (suite ChainTestSuite) TestChannel() {
 	chainA.UpdateHeader()
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
 
-	packet, err := chainA.IBCStore.GetPacket(chainA.CallOpts(ctx), chanA.PortID, chanA.ID, 1)
+	packet, err := chainA.IBCHost.GetPacket(chainA.CallOpts(ctx), chanA.PortID, chanA.ID, 1)
 	suite.Require().NoError(err)
 	transferPacket := channel.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
 	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, transferPacket))

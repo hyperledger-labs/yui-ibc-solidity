@@ -1,26 +1,32 @@
 pragma solidity ^0.6.8;
 
+import "./IBCHost.sol";
+
 interface IClient {
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
      */
     function getTimestampAtHeight(
+        IBCHost host,
         string calldata clientId,
         uint64 height
     ) external view returns (uint64, bool);
 
     function getLatestHeight(
+        IBCHost host,
         string calldata clientId
     ) external view returns (uint64, bool);
 
     function checkHeaderAndUpdateState(
+        IBCHost host,
         string calldata clientId, 
         bytes calldata clientStateBytes,
         bytes calldata headerBytes
     ) external view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height);
 
     function verifyClientState(
+        IBCHost host,
         string calldata clientId,
         uint64 height,
         bytes calldata prefix,
@@ -30,6 +36,7 @@ interface IClient {
     ) external view returns (bool);
 
     function verifyClientConsensusState(
+        IBCHost host,
         string calldata clientId,
         uint64 height,
         string calldata counterpartyClientIdentifier,
@@ -40,6 +47,7 @@ interface IClient {
     ) external view returns (bool);
 
     function verifyConnectionState(
+        IBCHost host,
         string calldata clientId,
         uint64 height,
         bytes calldata prefix,
@@ -49,6 +57,7 @@ interface IClient {
     ) external view returns (bool);
 
     function verifyChannelState(
+        IBCHost host,
         string calldata clientId,
         uint64 height,
         bytes calldata prefix,
@@ -59,6 +68,7 @@ interface IClient {
     ) external view returns (bool);
 
     function verifyPacketCommitment(
+        IBCHost host,
         string calldata clientId,
         uint64 height,
         bytes calldata prefix,
@@ -70,6 +80,7 @@ interface IClient {
     ) external view returns (bool);
 
     function verifyPacketAcknowledgement(
+        IBCHost host,
         string calldata clientId,
         uint64 height,
         bytes calldata prefix,

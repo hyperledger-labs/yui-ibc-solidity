@@ -11,7 +11,7 @@ import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
 import "../lib/IBCIdentifier.sol";
 
-contract IBFT2Client is IClient, IBCHost {
+contract IBFT2Client is IClient {
     using TrieProofs for bytes;
     using RLP for RLP.RLPItem;
     using RLP for bytes;
@@ -32,15 +32,11 @@ contract IBFT2Client is IClient, IBCHost {
 
     uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
-    Fraction defaultTrustLevel = Fraction({numerator: 1, denominator: 3});
-
-    constructor(IBCStore s) IBCHost(s) public {}
-
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
      */
-    function getTimestampAtHeight(string memory clientId, uint64 height) public override view returns (uint64, bool) {
-        (bytes memory consensusStateBytes, bool found) = ibcStore.getConsensusState(clientId, height);
+    function getTimestampAtHeight(IBCHost host, string memory clientId, uint64 height) public override view returns (uint64, bool) {
+        (bytes memory consensusStateBytes, bool found) = host.getConsensusState(clientId, height);
         if (!found) {
             return (0, false);
         }
@@ -48,9 +44,10 @@ contract IBFT2Client is IClient, IBCHost {
     }
 
     function getLatestHeight(
+        IBCHost host,
         string memory clientId
     ) public override view returns (uint64, bool) {
-        ClientState.Data memory clientState = getClientState(clientId);
+        ClientState.Data memory clientState = getClientState(host, clientId);
         return (clientState.latest_height, true);
     }
 
@@ -58,6 +55,7 @@ contract IBFT2Client is IClient, IBCHost {
      * @dev checkHeaderAndUpdateState checks if the provided header is valid
      */
     function checkHeaderAndUpdateState(
+        IBCHost host,
         string memory clientId, 
         bytes memory clientStateBytes,
         bytes memory headerBytes
@@ -70,7 +68,7 @@ contract IBFT2Client is IClient, IBCHost {
         ClientState.Data memory clientState = ClientState.decode(clientStateBytes);
 
         header = Header.decode(headerBytes);
-        (consensusStateBytes, ok) = ibcStore.getConsensusState(clientId, header.trusted_height);
+        (consensusStateBytes, ok) = host.getConsensusState(clientId, header.trusted_height);
         require(ok, "consensusState not found");
         consensusState = ConsensusState.decode(consensusStateBytes);
 
@@ -100,10 +98,10 @@ contract IBFT2Client is IClient, IBCHost {
      * @param consensusState consensusState corresponding to trusted height
      * @param untrustedHeader untrusted header
      */
-    function verify(ConsensusState.Data memory consensusState, ParsedBesuHeader memory untrustedHeader) internal view returns (bytes[] memory validators, bool ok) {
+    function verify(ConsensusState.Data memory consensusState, ParsedBesuHeader memory untrustedHeader) internal pure returns (bytes[] memory validators, bool ok) {
         bytes32 blkHash = keccak256(untrustedHeader.base.besu_header_rlp);
 
-        if (!verifyCommitSealsTrusting(consensusState.validators, untrustedHeader.base.seals, blkHash, defaultTrustLevel)) {
+        if (!verifyCommitSealsTrusting(consensusState.validators, untrustedHeader.base.seals, blkHash, Fraction({numerator: 1, denominator: 3}))) {
             return (validators, false);
         }
 
@@ -158,6 +156,7 @@ contract IBFT2Client is IClient, IBCHost {
     /// State verification functions ///
 
     function verifyClientState(
+        IBCHost host,
         string memory clientId,
         uint64 height,
         bytes memory prefix,
@@ -165,15 +164,16 @@ contract IBFT2Client is IClient, IBCHost {
         bytes memory proof,
         bytes memory clientStateBytes
     ) public override view returns (bool) {
-        ClientState.Data memory clientState = getClientState(clientId);
+        ClientState.Data memory clientState = getClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
+        ConsensusState.Data memory consensusState = getConsensusState(host, clientId, height);
         return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.clientStateCommitmentSlot(counterpartyClientIdentifier), keccak256(clientStateBytes));
     }
 
     function verifyClientConsensusState(
+        IBCHost host,
         string memory clientId,
         uint64 height,
         string memory counterpartyClientIdentifier,
@@ -182,15 +182,16 @@ contract IBFT2Client is IClient, IBCHost {
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
     ) public override view returns (bool) {
-        ClientState.Data memory clientState = getClientState(clientId);
+        ClientState.Data memory clientState = getClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
+        ConsensusState.Data memory consensusState = getConsensusState(host, clientId, height);
         return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.consensusStateCommitmentSlot(counterpartyClientIdentifier, consensusHeight), keccak256(consensusStateBytes));
     }
 
     function verifyConnectionState(
+        IBCHost host,
         string memory clientId,
         uint64 height,
         bytes memory prefix,
@@ -198,15 +199,16 @@ contract IBFT2Client is IClient, IBCHost {
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
     ) public override view returns (bool) {
-        ClientState.Data memory clientState = getClientState(clientId);
+        ClientState.Data memory clientState = getClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
+        ConsensusState.Data memory consensusState = getConsensusState(host, clientId, height);
         return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.connectionCommitmentSlot(connectionId), keccak256(connectionBytes));
     }
 
     function verifyChannelState(
+        IBCHost host,
         string memory clientId,
         uint64 height,
         bytes memory prefix,
@@ -215,15 +217,16 @@ contract IBFT2Client is IClient, IBCHost {
         string memory channelId,
         bytes memory channelBytes // serialized with pb
     ) public override view returns (bool) {
-        ClientState.Data memory clientState = getClientState(clientId);
+        ClientState.Data memory clientState = getClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        ConsensusState.Data memory consensusState = getConsensusState(clientId, height);
+        ConsensusState.Data memory consensusState = getConsensusState(host, clientId, height);
         return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.channelCommitmentSlot(portId, channelId), keccak256(channelBytes));
     }
 
     function verifyPacketCommitment(
+        IBCHost host,
         string memory clientId,
         uint64 height,
         bytes memory prefix,
@@ -233,14 +236,15 @@ contract IBFT2Client is IClient, IBCHost {
         uint64 sequence,
         bytes32 commitmentBytes
     ) public override view returns (bool) {
-        ClientState.Data memory clientState = getClientState(clientId);
+        ClientState.Data memory clientState = getClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        return verifyMembership(proof, getConsensusState(clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
+        return verifyMembership(proof, getConsensusState(host, clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetCommitmentSlot(portId, channelId, sequence), commitmentBytes);
     }
 
     function verifyPacketAcknowledgement(
+        IBCHost host,
         string memory clientId,
         uint64 height,
         bytes memory prefix,
@@ -250,11 +254,11 @@ contract IBFT2Client is IClient, IBCHost {
         uint64 sequence,
         bytes32 ackCommitmentBytes
     ) public override view returns (bool) {
-        ClientState.Data memory clientState = getClientState(clientId);
+        ClientState.Data memory clientState = getClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        return verifyMembership(proof, getConsensusState(clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
+        return verifyMembership(proof, getConsensusState(host, clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
     }
 
     /// helper functions ///
@@ -270,14 +274,14 @@ contract IBFT2Client is IClient, IBCHost {
         return true;
     }
 
-    function getClientState(string memory clientId) public view returns (ClientState.Data memory clientState) {
-        (bytes memory clientStateBytes, bool found) = ibcStore.getClientState(clientId);
+    function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState) {
+        (bytes memory clientStateBytes, bool found) = host.getClientState(clientId);
         require(found, "client state not found");
         return ClientState.decode(clientStateBytes);
     }
 
-    function getConsensusState(string memory clientId, uint64 height) public view returns (ConsensusState.Data memory) {
-        (bytes memory consensusStateBytes, bool found) = ibcStore.getConsensusState(clientId, height);
+    function getConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory) {
+        (bytes memory consensusStateBytes, bool found) = host.getConsensusState(clientId, height);
         require(found, "clientState not found");
         return ConsensusState.decode(consensusStateBytes);
     }

@@ -1,9 +1,6 @@
-const IBCStore = artifacts.require("IBCStore");
+const IBCHost = artifacts.require("IBCHost");
 const IBFT2Client = artifacts.require("IBFT2Client");
-const IBCClient = artifacts.require("IBCClient");
-const IBCConnection = artifacts.require("IBCConnection");
-const IBCChannel = artifacts.require("IBCChannel");
-const IBCRoutingModule = artifacts.require("IBCRoutingModule");
+const IBCHandler = artifacts.require("IBCHandler");
 const IBCIdentifier = artifacts.require("IBCIdentifier");
 const SimpleTokenModule = artifacts.require("SimpleTokenModule");
 
@@ -33,13 +30,10 @@ const targets = makePairs(process.env.CONF_TPL.split(":"));
 module.exports = function(callback) {
   targets.forEach(function(item) {
     ejs.renderFile(item[1], {
-      IBCStoreAddress: IBCStore.address,
-      IBCClientAddress: IBCClient.address,
-      IBCConnectionAddress: IBCConnection.address,
-      IBCChannelAddress: IBCChannel.address,
-      IBCRoutingModuleAddress: IBCRoutingModule.address,
-      IBCIdentifierAddress: IBCIdentifier.address,
+      IBCHostAddress: IBCHost.address,
+      IBCHandlerAddress: IBCHandler.address,
       IBFT2ClientAddress: IBFT2Client.address,
+      IBCIdentifierAddress: IBCIdentifier.address,
       SimpleTokenModuleAddress: SimpleTokenModule.address
     }, null, function(err, str){
         if (err) {
