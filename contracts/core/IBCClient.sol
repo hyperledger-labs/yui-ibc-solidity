@@ -4,62 +4,62 @@ pragma experimental ABIEncoderV2;
 import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
-import "../lib/Ownable.sol";
 
-contract IBCClient is IBCHost, Ownable {
-
-    constructor(IBCStore store) IBCHost(store) public {}
+library IBCClient {
 
     /**
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
-    function createClient(IBCMsgs.MsgCreateClient memory msg_) public {
-        (, bool found) = ibcStore.getClientState(msg_.clientId);
+    function createClient(IBCHost host, IBCMsgs.MsgCreateClient calldata msg_) external {
+        host.onlyIBCModule();
+        (, bool found) = host.getClientState(msg_.clientId);
         require(!found, "the clientId already exists");
-        (, found) = getClientByType(msg_.clientType);
+        (, found) = getClientByType(host, msg_.clientType);
         require(found, "unregistered client type");
 
-        ibcStore.setClientType(msg_.clientId, msg_.clientType);
-        ibcStore.setClientState(msg_.clientId, msg_.clientStateBytes);
-        ibcStore.setConsensusState(msg_.clientId, msg_.height, msg_.consensusStateBytes);
+        host.setClientType(msg_.clientId, msg_.clientType);
+        host.setClientState(msg_.clientId, msg_.clientStateBytes);
+        host.setConsensusState(msg_.clientId, msg_.height, msg_.consensusStateBytes);
     }
 
     /**
      * @dev updateClient updates the consensus state and the state root from a provided header
      */
-    function updateClient(IBCMsgs.MsgUpdateClient memory msg_) public {
+    function updateClient(IBCHost host, IBCMsgs.MsgUpdateClient calldata msg_) external {
+        host.onlyIBCModule();
         bytes memory clientStateBytes;
         bytes memory consensusStateBytes;
         uint64 height;
         bool found;
     
-        (clientStateBytes, found) = ibcStore.getClientState(msg_.clientId);
+        (clientStateBytes, found) = host.getClientState(msg_.clientId);
         require(found, "clientState not found");
 
-        (clientStateBytes, consensusStateBytes, height) = getClient(msg_.clientId).checkHeaderAndUpdateState(msg_.clientId, clientStateBytes, msg_.header);
+        (clientStateBytes, consensusStateBytes, height) = getClient(host, msg_.clientId).checkHeaderAndUpdateState(host, msg_.clientId, clientStateBytes, msg_.header);
     
         //// persist states ////
-        ibcStore.setClientState(msg_.clientId, clientStateBytes);
-        ibcStore.setConsensusState(msg_.clientId, height, consensusStateBytes);
+        host.setClientState(msg_.clientId, clientStateBytes);
+        host.setConsensusState(msg_.clientId, height, consensusStateBytes);
     }
 
     // TODO implements
-    function validateSelfClient(bytes calldata clientStateBytes) external view returns (bool) {
+    function validateSelfClient(IBCHost host, bytes calldata clientStateBytes) external view returns (bool) {
         return true;
     }
 
-    function registerClient(string memory clientType, IClient client) onlyOwner public {
-        ibcStore.setClientImpl(clientType, address(client));
+    function registerClient(IBCHost host, string memory clientType, IClient client) public {
+        host.onlyIBCModule();
+        host.setClientImpl(clientType, address(client));
     }
 
-    function getClient(string memory clientId) public view returns (IClient) {
-        (IClient clientImpl, bool found) = getClientByType(ibcStore.getClientType(clientId));
+    function getClient(IBCHost host, string memory clientId) public view returns (IClient) {
+        (IClient clientImpl, bool found) = getClientByType(host, host.getClientType(clientId));
         require(found, "clientImpl not found");
         return clientImpl;
     }
 
-    function getClientByType(string memory clientType) internal view returns (IClient clientImpl, bool) {
-        (address addr, bool found) = ibcStore.getClientImpl(clientType);
+    function getClientByType(IBCHost host, string memory clientType) internal view returns (IClient clientImpl, bool) {
+        (address addr, bool found) = host.getClientImpl(clientType);
         if (!found) {
             return (clientImpl, false);
         }

@@ -1,10 +1,10 @@
 const Migrations = artifacts.require("Migrations");
-const IBCStore = artifacts.require("IBCStore");
+const IBCHost = artifacts.require("IBCHost");
 const IBFT2Client = artifacts.require("IBFT2Client");
 const IBCClient = artifacts.require("IBCClient");
 const IBCConnection = artifacts.require("IBCConnection");
 const IBCChannel = artifacts.require("IBCChannel");
-const IBCRoutingModule = artifacts.require("IBCRoutingModule");
+const IBCHandler = artifacts.require("IBCHandler");
 const IBCMsgs = artifacts.require("IBCMsgs");
 const SimpleTokenModule = artifacts.require("SimpleTokenModule");
 const Bytes = artifacts.require("Bytes");
@@ -13,25 +13,28 @@ const IBCIdentifier = artifacts.require("IBCIdentifier");
 module.exports = function (deployer) {
   deployer.deploy(Migrations);
   deployer.deploy(Bytes).then(function() {
-    return deployer.link(Bytes, [IBCClient, IBCConnection, IBCChannel, IBCRoutingModule, IBFT2Client, SimpleTokenModule]);
+    return deployer.link(Bytes, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client, SimpleTokenModule]);
   });
   deployer.deploy(IBCIdentifier).then(function() {
-    return deployer.link(IBCIdentifier, [IBCStore, IBFT2Client, IBCRoutingModule, SimpleTokenModule]);
+    return deployer.link(IBCIdentifier, [IBCHost, IBFT2Client, IBCHandler, SimpleTokenModule]);
   });
   deployer.deploy(IBCMsgs).then(function() {
-    return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCRoutingModule, IBFT2Client]);
+    return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client]);
   });
-  deployer.deploy(IBCStore).then(function() {
-    return deployer.deploy(IBFT2Client, IBCStore.address).then(function() {
-      return deployer.deploy(IBCClient, IBCStore.address).then(function() {
-        return deployer.deploy(IBCConnection, IBCStore.address, IBCClient.address).then(function() {
-          return deployer.deploy(IBCChannel, IBCStore.address, IBCClient.address, IBCConnection.address).then(function() {
-            return deployer.deploy(IBCRoutingModule, IBCStore.address, IBCChannel.address).then(function() {
-              return deployer.deploy(SimpleTokenModule, IBCStore.address, IBCChannel.address, IBCRoutingModule.address);
-            });
-          });
-        });
-      });
+  deployer.deploy(IBCClient).then(function() {
+    return deployer.link(IBCClient, [IBCHandler, IBCConnection, IBCChannel]);
+  });
+  deployer.deploy(IBCConnection).then(function() {
+    return deployer.link(IBCConnection, [IBCHandler, IBCChannel]);
+  });
+  deployer.deploy(IBCChannel).then(function() {
+    return deployer.link(IBCChannel, [IBCHandler, SimpleTokenModule]);
+  });
+  deployer.deploy(IBFT2Client);
+  deployer.deploy(IBCHost).then(function() {
+    return deployer.deploy(IBCHandler, IBCHost.address).then(function() {
+      return deployer.deploy(SimpleTokenModule, IBCHost.address, IBCHandler.address);
     });
   });
+
 };

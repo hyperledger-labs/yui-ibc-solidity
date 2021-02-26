@@ -3,8 +3,8 @@ pragma experimental ABIEncoderV2;
 
 import "../core/types/Channel.sol";
 import "../core/IBCChannel.sol";
-import "../core/IBCRoutingModule.sol";
-import "../core/IBCStore.sol";
+import "../core/IBCHandler.sol";
+import "../core/IBCHost.sol";
 import "../core/types/App.sol";
 import "../lib/IBCIdentifier.sol";
 import "../lib/Bytes.sol";
@@ -18,17 +18,15 @@ contract SimpleTokenModule {
     mapping (address => uint256) _balances;
 
     // Module storages
-    IBCChannel ibcChannel;
-    IBCRoutingModule ibcRoutingModule;
-    IBCStore ibcStore;
+    IBCHandler ibcHandler;
+    IBCHost ibcHost;
 
     /// Constructor ///
 
-    constructor(IBCStore store_, IBCChannel ibcChannel_, IBCRoutingModule ibcRoutingModule_) public {
-        ibcStore = store_;
-        ibcChannel = ibcChannel_;
-        ibcRoutingModule = ibcRoutingModule_;
-        ibcRoutingModule.bindPort("transfer", address(this));
+    constructor(IBCHost host_, IBCHandler ibcHandler_) public {
+        ibcHost = host_;
+        ibcHandler = ibcHandler_;
+        ibcHandler.bindPort("transfer", address(this));
 
         _balances[msg.sender] = 10000;
     }
@@ -47,7 +45,7 @@ contract SimpleTokenModule {
         // ensure that the sender has sufficient balance
         require(balanceOf(msg.sender) >= amount, "insufficient balance");
 
-        (Channel.Data memory channel, bool found) = ibcStore.getChannel(sourcePort, sourceChannel);
+        (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
         require(found, "channel not found");
 
         bytes memory data = FungibleTokenPacketData.encode(FungibleTokenPacketData.Data({
@@ -57,7 +55,7 @@ contract SimpleTokenModule {
             receiver: abi.encodePacked(recipient)
         }));
         Packet.Data memory packet = Packet.Data({
-            sequence: ibcStore.getNextSequenceSend(sourcePort, sourceChannel),
+            sequence: ibcHost.getNextSequenceSend(sourcePort, sourceChannel),
             source_port: sourcePort,
             source_channel: sourceChannel,
             destination_port: channel.counterparty.port_id,
@@ -66,7 +64,7 @@ contract SimpleTokenModule {
             timeout_height: Height.Data({revision_number: 0, revision_height: timeoutHeight}),
             timeout_timestamp: 0
         });
-        ibcChannel.sendPacket(packet);
+        ibcHandler.sendPacket(packet);
         burn(msg.sender, amount);
     }
 
@@ -93,7 +91,7 @@ contract SimpleTokenModule {
     /// Module implementations ///
 
     modifier onlyIBCModule (){
-        require(msg.sender == address(ibcRoutingModule));
+        require(msg.sender == address(ibcHandler));
         _;
     }
 
@@ -110,10 +108,12 @@ contract SimpleTokenModule {
     }
 
     function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external {
-        ibcStore.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
+        // TODO move this into handshake function
+        ibcHost.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
     }
 
     function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external {
-        ibcStore.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
+        // TODO move this into handshake function
+        ibcHost.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
     }
 }

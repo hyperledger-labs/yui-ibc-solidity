@@ -13,13 +13,9 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/chains"
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcchannel"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcclient"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcconnection"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcidentifier"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcroutingmodule"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcstore"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibft2client"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletokenmodule"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
@@ -44,14 +40,10 @@ type Chain struct {
 	t *testing.T
 
 	// Core Modules
-	client           contract.Client
-	IBCClient        ibcclient.Ibcclient
-	IBCConnection    ibcconnection.Ibcconnection
-	IBCChannel       ibcchannel.Ibcchannel
-	IBCRoutingModule ibcroutingmodule.Ibcroutingmodule
-	IBFT2Client      ibft2client.Ibft2client
-	IBCStore         ibcstore.Ibcstore
-	IBCIdentifier    ibcidentifier.Ibcidentifier
+	client        contract.Client
+	IBCHandler    ibchandler.Ibchandler
+	IBCHost       ibchost.Ibchost
+	IBCIdentifier ibcidentifier.Ibcidentifier
 
 	// App Modules
 	SimpletokenModule simpletokenmodule.Simpletokenmodule
@@ -72,38 +64,19 @@ type Chain struct {
 }
 
 type ContractConfig interface {
-	GetIBCStoreAddress() common.Address
-	GetIBCClientAddress() common.Address
-	GetIBCConnectionAddress() common.Address
-	GetIBCChannelAddress() common.Address
-	GetIBCRoutingModuleAddress() common.Address
+	GetIBCHostAddress() common.Address
+	GetIBCHandlerAddress() common.Address
 	GetIBCIdentifierAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
 	GetSimpleTokenModuleAddress() common.Address
 }
 
 func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
-	ibft2Client, err := ibft2client.NewIbft2client(config.GetIBFT2ClientAddress(), client)
+	ibcHost, err := ibchost.NewIbchost(config.GetIBCHostAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
-	ibcStore, err := ibcstore.NewIbcstore(config.GetIBCStoreAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
-	ibcClient, err := ibcclient.NewIbcclient(config.GetIBCClientAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
-	ibcConnection, err := ibcconnection.NewIbcconnection(config.GetIBCConnectionAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
-	ibcChannel, err := ibcchannel.NewIbcchannel(config.GetIBCChannelAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
-	ibcRoutingModule, err := ibcroutingmodule.NewIbcroutingmodule(config.GetIBCRoutingModuleAddress(), client)
+	ibcHandler, err := ibchandler.NewIbchandler(config.GetIBCHandlerAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -122,7 +95,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		t.Error(err)
 	}
 
-	return &Chain{t: t, client: client, IBFT2Client: *ibft2Client, IBCStore: *ibcStore, IBCClient: *ibcClient, IBCConnection: *ibcConnection, IBCChannel: *ibcChannel, IBCRoutingModule: *ibcRoutingModule, IBCIdentifier: *ibcIdentifier, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
+	return &Chain{t: t, client: client, IBCHost: *ibcHost, IBCHandler: *ibcHandler, IBCIdentifier: *ibcIdentifier, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -155,20 +128,24 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 
 func (chain *Chain) GetClientState(clientID string) *clienttypes.ClientState {
 	ctx := context.Background()
-	cs, err := chain.IBFT2Client.GetClientState(chain.CallOpts(ctx), clientID)
-	require.NoError(chain.t, err)
-	return &clienttypes.ClientState{
-		ChainId:         cs.ChainId,
-		IbcStoreAddress: cs.IbcStoreAddress,
-		LatestHeight:    cs.LatestHeight,
+	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx), clientID)
+	if err != nil {
+		require.NoError(chain.t, err)
+	} else if !found {
+		panic("clientState not found")
 	}
+	var cs clienttypes.ClientState
+	if err := proto.Unmarshal(bz, &cs); err != nil {
+		panic(err)
+	}
+	return &cs
 }
 
 func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (*contract.ContractState, error) {
 	height := counterparty.GetClientState(counterpartyClientID).LatestHeight
 	return chain.client.GetContractState(
 		context.Background(),
-		chain.ContractConfig.GetIBCStoreAddress(),
+		chain.ContractConfig.GetIBCHostAddress(),
 		storageKeys,
 		big.NewInt(int64(height)),
 	)
@@ -177,43 +154,36 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 func (chain *Chain) Init() error {
 	ctx := context.Background()
 	if err := chain.WaitIfNoError(ctx)(
-		chain.IBCStore.SetIBCModule(
+		chain.IBCHost.SetIBCModule(
 			chain.TxOpts(ctx),
-			chain.ContractConfig.GetIBCClientAddress(),
-			chain.ContractConfig.GetIBCConnectionAddress(),
-			chain.ContractConfig.GetIBCChannelAddress(),
-			chain.ContractConfig.GetIBCRoutingModuleAddress(),
+			chain.ContractConfig.GetIBCHandlerAddress(),
 		),
 	); err != nil {
 		return err
 	}
 
-	if err := chain.WaitIfNoError(ctx)(
-		chain.IBCClient.RegisterClient(
-			chain.TxOpts(ctx),
-			BesuIBFT2Client,
-			chain.ContractConfig.GetIBFT2ClientAddress(),
-		),
-	); err != nil {
+	_, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), BesuIBFT2Client)
+	if err != nil {
 		return err
-	}
-
-	if err := chain.WaitIfNoError(ctx)(
-		chain.IBCChannel.SetIBCModule(
-			chain.TxOpts(ctx),
-			chain.ContractConfig.GetIBCRoutingModuleAddress(),
-		),
-	); err != nil {
-		return err
+	} else if !found {
+		if err := chain.WaitIfNoError(ctx)(
+			chain.IBCHandler.RegisterClient(
+				chain.TxOpts(ctx),
+				BesuIBFT2Client,
+				chain.ContractConfig.GetIBFT2ClientAddress(),
+			),
+		); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID string) ibcclient.IBCMsgsMsgCreateClient {
+func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgCreateClient {
 	clientState := clienttypes.ClientState{
 		ChainId:         counterparty.ChainIDString(),
-		IbcStoreAddress: counterparty.ContractConfig.GetIBCStoreAddress().Bytes(),
+		IbcStoreAddress: counterparty.ContractConfig.GetIBCHostAddress().Bytes(),
 		LatestHeight:    counterparty.LastHeader().Base.Number.Uint64(),
 	}
 	consensusState := clienttypes.ConsensusState{
@@ -229,7 +199,7 @@ func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID strin
 	if err != nil {
 		panic(err)
 	}
-	return ibcclient.IBCMsgsMsgCreateClient{
+	return ibchandler.IBCMsgsMsgCreateClient{
 		ClientId:            clientID,
 		ClientType:          BesuIBFT2Client,
 		Height:              clientState.LatestHeight,
@@ -238,7 +208,7 @@ func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID strin
 	}
 }
 
-func (chain *Chain) ConstructMsgUpdateClient(counterparty *Chain, clientID string) ibcclient.IBCMsgsMsgUpdateClient {
+func (chain *Chain) ConstructMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
 	trustedHeight := chain.GetClientState(clientID).LatestHeight
 	var header = clienttypes.Header{
 		BesuHeaderRlp:     counterparty.LastContractState.SealingHeaderRLP(),
@@ -250,7 +220,7 @@ func (chain *Chain) ConstructMsgUpdateClient(counterparty *Chain, clientID strin
 	if err != nil {
 		panic(err)
 	}
-	return ibcclient.IBCMsgsMsgUpdateClient{
+	return ibchandler.IBCMsgsMsgUpdateClient{
 		ClientId: clientID,
 		Header:   headerBytes,
 	}
@@ -260,7 +230,7 @@ func (chain *Chain) UpdateHeader() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		state, err := chain.client.GetContractState(ctx, chain.ContractConfig.GetIBCStoreAddress(), nil, nil)
+		state, err := chain.client.GetContractState(ctx, chain.ContractConfig.GetIBCHostAddress(), nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -276,28 +246,28 @@ func (chain *Chain) UpdateHeader() {
 func (chain *Chain) CreateBesuClient(ctx context.Context, counterparty *Chain, clientID string) error {
 	msg := chain.ConstructMsgCreateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCClient.CreateClient(chain.TxOpts(ctx), msg),
+		chain.IBCHandler.CreateClient(chain.TxOpts(ctx), msg),
 	)
 }
 
 func (chain *Chain) UpdateBesuClient(ctx context.Context, counterparty *Chain, clientID string) error {
 	msg := chain.ConstructMsgUpdateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCClient.UpdateClient(chain.TxOpts(ctx), msg),
+		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx), msg),
 	)
 }
 
 func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) error {
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCConnection.ConnectionOpenInit(
+		chain.IBCHandler.ConnectionOpenInit(
 			chain.TxOpts(ctx),
-			ibcconnection.IBCMsgsMsgConnectionOpenInit{
+			ibchandler.IBCMsgsMsgConnectionOpenInit{
 				ClientId:     connection.ClientID,
 				ConnectionId: connection.ID,
-				Counterparty: ibcconnection.CounterpartyData{
+				Counterparty: ibchandler.CounterpartyData{
 					ClientId:     connection.CounterpartyClientID,
 					ConnectionId: "",
-					Prefix:       ibcconnection.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
+					Prefix:       ibchandler.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
 				},
 				DelayPeriod: DefaultDelayPeriod,
 			},
@@ -311,19 +281,19 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCConnection.ConnectionOpenTry(
+		chain.IBCHandler.ConnectionOpenTry(
 			chain.TxOpts(ctx),
-			ibcconnection.IBCMsgsMsgConnectionOpenTry{
+			ibchandler.IBCMsgsMsgConnectionOpenTry{
 				ConnectionId: connection.ID,
-				Counterparty: ibcconnection.CounterpartyData{
+				Counterparty: ibchandler.CounterpartyData{
 					ClientId:     counterpartyConnection.ClientID,
 					ConnectionId: counterpartyConnection.ID,
-					Prefix:       ibcconnection.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
+					Prefix:       ibchandler.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
 				},
 				DelayPeriod: DefaultDelayPeriod,
 				ClientId:    connection.ClientID,
 				// ClientState: ibcconnection.ClientStateData{}, // TODO set chain's clientState
-				CounterpartyVersions: []ibcconnection.VersionData{
+				CounterpartyVersions: []ibchandler.VersionData{
 					{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
 				},
 				ProofHeight: proof.Height,
@@ -344,13 +314,13 @@ func (chain *Chain) ConnectionOpenAck(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCConnection.ConnectionOpenAck(
+		chain.IBCHandler.ConnectionOpenAck(
 			chain.TxOpts(ctx),
-			ibcconnection.IBCMsgsMsgConnectionOpenAck{
+			ibchandler.IBCMsgsMsgConnectionOpenAck{
 				ConnectionId:             connection.ID,
 				CounterpartyConnectionID: counterpartyConnection.ID,
 				// clientState
-				Version:     ibcconnection.VersionData{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
+				Version:     ibchandler.VersionData{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
 				ProofTry:    proof.Data,
 				ProofHeight: proof.Height,
 			},
@@ -368,9 +338,9 @@ func (chain *Chain) ConnectionOpenConfirm(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCConnection.ConnectionOpenConfirm(
+		chain.IBCHandler.ConnectionOpenConfirm(
 			chain.TxOpts(ctx),
-			ibcconnection.IBCMsgsMsgConnectionOpenConfirm{
+			ibchandler.IBCMsgsMsgConnectionOpenConfirm{
 				ConnectionId: connection.ID,
 				ProofAck:     proof.Data,
 				ProofHeight:  proof.Height,
@@ -386,15 +356,15 @@ func (chain *Chain) ChannelOpenInit(
 	connectionID string,
 ) error {
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCChannel.ChannelOpenInit(
+		chain.IBCHandler.ChannelOpenInit(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCMsgsMsgChannelOpenInit{
+			ibchandler.IBCMsgsMsgChannelOpenInit{
 				ChannelId: ch.ID,
 				PortId:    ch.PortID,
-				Channel: ibcchannel.ChannelData{
+				Channel: ibchandler.ChannelData{
 					State:    uint8(channeltypes.INIT),
 					Ordering: uint8(order),
-					Counterparty: ibcchannel.ChannelCounterpartyData{
+					Counterparty: ibchandler.ChannelCounterpartyData{
 						PortId:    counterparty.PortID,
 						ChannelId: "",
 					},
@@ -418,15 +388,15 @@ func (chain *Chain) ChannelOpenTry(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCChannel.ChannelOpenTry(
+		chain.IBCHandler.ChannelOpenTry(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCMsgsMsgChannelOpenTry{
+			ibchandler.IBCMsgsMsgChannelOpenTry{
 				PortId:    ch.PortID,
 				ChannelId: ch.ID,
-				Channel: ibcchannel.ChannelData{
+				Channel: ibchandler.ChannelData{
 					State:    uint8(channeltypes.TRYOPEN),
 					Ordering: uint8(order),
-					Counterparty: ibcchannel.ChannelCounterpartyData{
+					Counterparty: ibchandler.ChannelCounterpartyData{
 						PortId:    counterpartyCh.PortID,
 						ChannelId: counterpartyCh.ID,
 					},
@@ -451,9 +421,9 @@ func (chain *Chain) ChannelOpenAck(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCChannel.ChannelOpenAck(
+		chain.IBCHandler.ChannelOpenAck(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCMsgsMsgChannelOpenAck{
+			ibchandler.IBCMsgsMsgChannelOpenAck{
 				PortId:                ch.PortID,
 				ChannelId:             ch.ID,
 				CounterpartyVersion:   counterpartyCh.Version,
@@ -475,9 +445,9 @@ func (chain *Chain) ChannelOpenConfirm(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCChannel.ChannelOpenConfirm(
+		chain.IBCHandler.ChannelOpenConfirm(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCMsgsMsgChannelOpenConfirm{
+			ibchandler.IBCMsgsMsgChannelOpenConfirm{
 				PortId:      ch.PortID,
 				ChannelId:   ch.ID,
 				ProofAck:    proof.Data,
@@ -492,7 +462,7 @@ func (chain *Chain) SendPacket(
 	packet channeltypes.Packet,
 ) error {
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCChannel.SendPacket(
+		chain.IBCHandler.SendPacket(
 			chain.TxOpts(ctx),
 			packetToCallData(packet),
 		),
@@ -510,9 +480,9 @@ func (chain *Chain) RecvPacket(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCChannel.RecvPacket(
+		chain.IBCHandler.RecvPacket(
 			chain.TxOpts(ctx),
-			ibcchannel.IBCMsgsMsgPacketRecv{
+			ibchandler.IBCMsgsMsgPacketRecv{
 				Packet:      packetToCallData(packet),
 				Proof:       proof.Data,
 				ProofHeight: proof.Height,
@@ -532,17 +502,17 @@ func (chain *Chain) HandlePacketRecv(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCRoutingModule.RecvPacket(
+		chain.IBCHandler.RecvPacket(
 			chain.TxOpts(ctx),
-			ibcroutingmodule.IBCMsgsMsgPacketRecv{
-				Packet: ibcroutingmodule.PacketData{
+			ibchandler.IBCMsgsMsgPacketRecv{
+				Packet: ibchandler.PacketData{
 					Sequence:           packet.Sequence,
 					SourcePort:         packet.SourcePort,
 					SourceChannel:      packet.SourceChannel,
 					DestinationPort:    packet.DestinationPort,
 					DestinationChannel: packet.DestinationChannel,
 					Data:               packet.Data,
-					TimeoutHeight:      ibcroutingmodule.HeightData(packet.TimeoutHeight),
+					TimeoutHeight:      ibchandler.HeightData(packet.TimeoutHeight),
 					TimeoutTimestamp:   packet.TimeoutTimestamp,
 				},
 				Proof:       proof.Data,
@@ -564,17 +534,17 @@ func (chain *Chain) HandlePacketAcknowledgement(
 		return err
 	}
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCRoutingModule.AcknowledgePacket(
+		chain.IBCHandler.AcknowledgePacket(
 			chain.TxOpts(ctx),
-			ibcroutingmodule.IBCMsgsMsgPacketAcknowledgement{
-				Packet: ibcroutingmodule.PacketData{
+			ibchandler.IBCMsgsMsgPacketAcknowledgement{
+				Packet: ibchandler.PacketData{
 					Sequence:           packet.Sequence,
 					SourcePort:         packet.SourcePort,
 					SourceChannel:      packet.SourceChannel,
 					DestinationPort:    packet.DestinationPort,
 					DestinationChannel: packet.DestinationChannel,
 					Data:               packet.Data,
-					TimeoutHeight:      ibcroutingmodule.HeightData(packet.TimeoutHeight),
+					TimeoutHeight:      ibchandler.HeightData(packet.TimeoutHeight),
 					TimeoutTimestamp:   packet.TimeoutTimestamp,
 				},
 				Acknowledgement: acknowledgement,
@@ -585,15 +555,15 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	)
 }
 
-func packetToCallData(packet channeltypes.Packet) ibcchannel.PacketData {
-	return ibcchannel.PacketData{
+func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
+	return ibchandler.PacketData{
 		Sequence:           packet.Sequence,
 		SourcePort:         packet.SourcePort,
 		SourceChannel:      packet.SourceChannel,
 		DestinationPort:    packet.DestinationPort,
 		DestinationChannel: packet.DestinationChannel,
 		Data:               packet.Data,
-		TimeoutHeight:      ibcchannel.HeightData(packet.TimeoutHeight),
+		TimeoutHeight:      ibchandler.HeightData(packet.TimeoutHeight),
 		TimeoutTimestamp:   packet.TimeoutTimestamp,
 	}
 }

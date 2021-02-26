@@ -16,7 +16,9 @@ type Coordinator struct {
 
 func NewCoordinator(t *testing.T, chains ...*Chain) Coordinator {
 	for _, chain := range chains {
-		chain.Init()
+		if err := chain.Init(); err != nil {
+			panic(err)
+		}
 		chain.UpdateHeader()
 	}
 	return Coordinator{t: t, chains: chains}
@@ -166,6 +168,7 @@ func (c Coordinator) ConnOpenInit(
 
 	// initialize connection on source
 	if err := source.ConnectionOpenInit(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
+		fmt.Println("cannot ConnectionOpenInit")
 		return sourceConnection, counterpartyConnection, err
 	}
 
@@ -178,6 +181,7 @@ func (c Coordinator) ConnOpenInit(
 		counterpartyClientID,
 		BesuIBFT2Client,
 	); err != nil {
+		fmt.Println("updateClient:", err)
 		return sourceConnection, counterpartyConnection, err
 	}
 
