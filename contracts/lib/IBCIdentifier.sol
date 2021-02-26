@@ -64,4 +64,13 @@ library IBCIdentifier {
         return keccak256(abi.encodePacked(packetAcknowledgementCommitmentKey(portId, channelId, sequence), commitmentSlot));
     }
 
+    // CapabilityPath
+
+    function portCapabilityPath(string calldata portId) external pure returns (bytes memory) {
+        return abi.encodePacked(portId);
+    }
+
+    function channelCapabilityPath(string calldata portId, string calldata channelId) external pure returns (bytes memory) {
+        return abi.encodePacked(portId, "/", channelId);
+    }
 }

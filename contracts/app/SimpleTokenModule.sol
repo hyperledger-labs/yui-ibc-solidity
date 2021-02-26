@@ -6,6 +6,7 @@ import "../core/IBCChannel.sol";
 import "../core/IBCRoutingModule.sol";
 import "../core/IBCStore.sol";
 import "../core/types/App.sol";
+import "../lib/IBCIdentifier.sol";
 import "../lib/Bytes.sol";
 
 contract SimpleTokenModule {
@@ -106,5 +107,13 @@ contract SimpleTokenModule {
 
     function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) onlyIBCModule external {
         // if acknowledgement indicates an error, refund the tokens to sender
+    }
+
+    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external {
+        ibcStore.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
+    }
+
+    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external {
+        ibcStore.claimCapability(IBCIdentifier.channelCapabilityPath(portId, channelId));
     }
 }

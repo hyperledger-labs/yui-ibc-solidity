@@ -16,7 +16,7 @@ module.exports = function (deployer) {
     return deployer.link(Bytes, [IBCClient, IBCConnection, IBCChannel, IBCRoutingModule, IBFT2Client, SimpleTokenModule]);
   });
   deployer.deploy(IBCIdentifier).then(function() {
-    return deployer.link(IBCIdentifier, [IBCStore, IBFT2Client]);
+    return deployer.link(IBCIdentifier, [IBCStore, IBFT2Client, IBCRoutingModule, SimpleTokenModule]);
   });
   deployer.deploy(IBCMsgs).then(function() {
     return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCRoutingModule, IBFT2Client]);
