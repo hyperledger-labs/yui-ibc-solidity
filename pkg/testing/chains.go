@@ -162,15 +162,19 @@ func (chain *Chain) Init() error {
 		return err
 	}
 
-	// TODO ensure that the port is already binded by other modules
-	if err := chain.WaitIfNoError(ctx)(
-		chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetSimpleTokenModuleAddress()),
-	); err != nil {
+	if name, err := chain.IBCIdentifier.PortCapabilityPath(chain.CallOpts(ctx), TransferPort); err != nil {
 		return err
+	} else if _, found, err := chain.IBCHost.GetModuleOwner(chain.CallOpts(ctx), name); err != nil {
+		return err
+	} else if !found {
+		if err := chain.WaitIfNoError(ctx)(
+			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetSimpleTokenModuleAddress()),
+		); err != nil {
+			return err
+		}
 	}
 
-	_, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), BesuIBFT2Client)
-	if err != nil {
+	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), BesuIBFT2Client); err != nil {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
