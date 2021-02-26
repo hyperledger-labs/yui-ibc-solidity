@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 import "./IClient.sol";
 import "./IBCClient.sol";
 import "./IBCChannel.sol";
+import "./IBCModule.sol";
 import "./IBCMsgs.sol";
 import "./types/Channel.sol";
 import "../lib/IBCIdentifier.sol";
@@ -55,7 +56,7 @@ contract IBCHandler {
 
     function channelOpenInit(IBCMsgs.MsgChannelOpenInit memory msg_) public returns (string memory) {
         string memory channelId = IBCChannel.channelOpenInit(host, msg_);
-        CallbacksI module = lookupModuleByPortId(msg_.portId);
+        IModuleCallbacks module = lookupModuleByPortId(msg_.portId);
         module.onChanOpenInit(
             msg_.channel.ordering,
             msg_.channel.connection_hops,
@@ -70,7 +71,7 @@ contract IBCHandler {
 
     function channelOpenTry(IBCMsgs.MsgChannelOpenTry memory msg_) public returns (string memory) {
         string memory channelId = IBCChannel.channelOpenTry(host, msg_);
-        CallbacksI module = lookupModuleByPortId(msg_.portId);
+        IModuleCallbacks module = lookupModuleByPortId(msg_.portId);
         module.onChanOpenTry(
             msg_.channel.ordering,
             msg_.channel.connection_hops,
@@ -85,11 +86,13 @@ contract IBCHandler {
     }
 
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck memory msg_) public {
-        return IBCChannel.channelOpenAck(host, msg_);
+        IBCChannel.channelOpenAck(host, msg_);
+        lookupModuleByPortId(msg_.portId).onChanOpenAck(msg_.portId, msg_.channelId, msg_.counterpartyVersion);
     }
 
     function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm memory msg_) public {
-        return IBCChannel.channelOpenConfirm(host, msg_);
+        IBCChannel.channelOpenConfirm(host, msg_);
+        lookupModuleByPortId(msg_.portId).onChanOpenConfirm(msg_.portId, msg_.channelId);
     }
 
     function sendPacket(Packet.Data calldata packet) external {
@@ -101,7 +104,7 @@ contract IBCHandler {
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory) {
-        CallbacksI module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
+        IModuleCallbacks module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
         bytes memory acknowledgement = module.onRecvPacket(msg_.packet);
         IBCChannel.recvPacket(host, msg_);
         if (acknowledgement.length > 0) {
@@ -110,7 +113,7 @@ contract IBCHandler {
     }
 
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
-        CallbacksI module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
+        IModuleCallbacks module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
         module.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement);
         IBCChannel.acknowledgePacket(host, msg_);
     }
@@ -120,27 +123,19 @@ contract IBCHandler {
         host.claimCapability(IBCIdentifier.portCapabilityPath(portId), moduleAddress);
     }
 
-    function lookupModuleByPortId(string memory portId) internal view returns (CallbacksI) {
+    function lookupModuleByPortId(string memory portId) internal view returns (IModuleCallbacks) {
         (address module, bool found) = host.getModuleOwner(IBCIdentifier.portCapabilityPath(portId));
         require(found);
-        return CallbacksI(module);
+        return IModuleCallbacks(module);
     }
 
-    function lookupModuleByChannel(string memory portId, string memory channelId) internal view returns (CallbacksI) {
+    function lookupModuleByChannel(string memory portId, string memory channelId) internal view returns (IModuleCallbacks) {
         (address module, bool found) = host.getModuleOwner(IBCIdentifier.channelCapabilityPath(portId, channelId));
         require(found);
-        return CallbacksI(module);
+        return IModuleCallbacks(module);
     }
 
     function onlyOwner() internal view {
         require(msg.sender == owner);
     }
-}
-
-interface CallbacksI {
-    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external;
-    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external;
-
-    function onRecvPacket(Packet.Data calldata) external returns(bytes memory);
-    function onAcknowledgementPacket(Packet.Data calldata, bytes calldata acknowledgement) external;
 }
