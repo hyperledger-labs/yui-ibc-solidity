@@ -16,6 +16,7 @@ contract SimpleTokenModule {
 
     // Token storages
     mapping (address => uint256) _balances;
+    uint256 lockedBalance;
 
     // Module storages
     IBCHandler ibcHandler;
@@ -64,7 +65,7 @@ contract SimpleTokenModule {
             timeout_timestamp: 0
         });
         ibcHandler.sendPacket(packet);
-        burn(msg.sender, amount);
+        lock(msg.sender, amount);
     }
 
     /// Internal functions ///
@@ -81,10 +82,16 @@ contract SimpleTokenModule {
         _balances[recipient] += amount;
     }
 
-    function burn(address sender, uint256 amount) internal {
+    function lock(address sender, uint256 amount) internal {
         uint256 senderBalance = _balances[sender];
         require(senderBalance >= amount, "burn amount exceeds balance");
         _balances[sender] = senderBalance - amount;
+        lockedBalance += amount;
+    }
+
+    function burn(uint256 amount) internal {
+        require(lockedBalance >= amount);
+        lockedBalance -= amount;
     }
 
     /// Module implementations ///
@@ -103,7 +110,14 @@ contract SimpleTokenModule {
     }
 
     function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) onlyIBCModule external {
+        FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
         // if acknowledgement indicates an error, refund the tokens to sender
+        if (acknowledgement.length == 1 && acknowledgement[0] == 0x01) {
+            burn(data.amount);
+        } else {
+            burn(data.amount);
+            mint(data.sender.toAddress(), data.amount);
+        }
     }
 
     function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external {}
