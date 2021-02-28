@@ -7,7 +7,7 @@ import "../core/IBCHandler.sol";
 import "../core/IBCHost.sol";
 import "../core/IBCModule.sol";
 import "../core/types/App.sol";
-import "../lib/IBCIdentifier.sol";
+import "../core/IBCIdentifier.sol";
 import "../lib/Bytes.sol";
 
 contract SimpleTokenModule is IModuleCallbacks {
@@ -97,7 +97,7 @@ contract SimpleTokenModule is IModuleCallbacks {
 
     /// Module implementations ///
 
-    modifier onlyIBCModule (){
+    modifier onlyIBCModule (){ // TODO use capability
         require(msg.sender == address(ibcHandler));
         _;
     }
