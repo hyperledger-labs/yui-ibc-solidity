@@ -15,7 +15,6 @@ function after_common() {
         "IBCHost"
         "IBCHandler"
         "IBCIdentifier"
-        "SimpleTokenModule"
         "SimpleToken"
         "ICS20Transfer"
         "ICS20Vouchers"

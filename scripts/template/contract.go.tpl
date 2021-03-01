@@ -9,7 +9,6 @@ const (
 	IBCHandlerAddress = "<%= IBCHandlerAddress; %>"
 	IBCIdentifierAddress = "<%= IBCIdentifierAddress; %>"
 	IBFT2ClientAddress = "<%= IBFT2ClientAddress; %>"
-	SimpleTokenModuleAddress = "<%= SimpleTokenModuleAddress; %>"
 	SimpleTokenAddress = "<%= SimpleTokenAddress; %>"
 	ICS20TransferAddress = "<%= ICS20TransferAddress; %>"
 	ICS20VouchersAddress = "<%= ICS20VouchersAddress; %>"
@@ -33,10 +32,6 @@ func (contractConfig) GetIBCIdentifierAddress() common.Address {
 
 func (contractConfig) GetIBFT2ClientAddress() common.Address {
 	return common.HexToAddress(IBFT2ClientAddress)
-}
-
-func (contractConfig) GetSimpleTokenModuleAddress() common.Address {
-	return common.HexToAddress(SimpleTokenModuleAddress)
 }
 
 func (contractConfig) GetSimpleTokenAddress() common.Address {

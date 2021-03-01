@@ -19,7 +19,6 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20transfer"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20vouchers"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletoken"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletokenmodule"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 	"github.com/gogo/protobuf/proto"
@@ -53,8 +52,6 @@ type Chain struct {
 	ICS20Transfer ics20transfer.Ics20transfer
 	ICS20Vouchers ics20vouchers.Ics20vouchers
 
-	SimpletokenModule simpletokenmodule.Simpletokenmodule
-
 	chainID int64
 
 	ContractConfig ContractConfig
@@ -76,7 +73,6 @@ type ContractConfig interface {
 	GetIBCIdentifierAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
 
-	GetSimpleTokenModuleAddress() common.Address
 	GetSimpleTokenAddress() common.Address
 	GetICS20TransferAddress() common.Address
 	GetICS20VouchersAddress() common.Address
@@ -112,10 +108,6 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
-	simpletokenModule, err := simpletokenmodule.NewSimpletokenmodule(config.GetSimpleTokenModuleAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
 
 	return &Chain{
 		t:              t,
@@ -125,13 +117,12 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		key0:           key0,
 		IBCID:          ibcID,
 
-		IBCHost:           *ibcHost,
-		IBCHandler:        *ibcHandler,
-		IBCIdentifier:     *ibcIdentifier,
-		SimpletokenModule: *simpletokenModule,
-		SimpleToken:       *simpletoken,
-		ICS20Transfer:     *ics20transfer,
-		ICS20Vouchers:     *ics20vouchers,
+		IBCHost:       *ibcHost,
+		IBCHandler:    *ibcHandler,
+		IBCIdentifier: *ibcIdentifier,
+		SimpleToken:   *simpletoken,
+		ICS20Transfer: *ics20transfer,
+		ICS20Vouchers: *ics20vouchers,
 	}
 }
 
