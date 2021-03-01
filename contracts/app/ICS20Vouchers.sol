@@ -50,5 +50,4 @@ contract ICS20Vouchers is Context, AccessControl, IICS20Vouchers {
         require(accountBalance >= amount, "Vouchers: burn amount exceeds balance");
         _balances[id][account] = accountBalance - amount;
     }
-
 }

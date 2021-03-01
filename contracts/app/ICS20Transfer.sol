@@ -72,13 +72,7 @@ contract ICS20Transfer is IModuleCallbacks {
         (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
         require(found, "channel not found");
 
-        bool source = !denom.toSlice().startsWith(
-            sourcePort.toSlice().concat(
-            "/".toSlice()
-            ).toSlice().concat(sourceChannel.toSlice()).toSlice()
-        );
-
-        if (source) {
+        if (!denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender chain is source
             bank.transferFrom(msg.sender, getEscrowAddress(sourceChannel), bytes(denom), amount);
         } else {
             bank.burnFrom(msg.sender, bytes(denom), amount);
@@ -133,18 +127,14 @@ contract ICS20Transfer is IModuleCallbacks {
         FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
         strings.slice memory denom = data.denom.toSlice();
         strings.slice memory trimedDenom = data.denom.toSlice().beyond(
-            packet.source_port.toSlice().concat(
-            "/".toSlice()
-            ).toSlice().concat(packet.source_channel.toSlice()).toSlice()
+            makeDenomPrefix(packet.source_port, packet.source_channel)
         );
         if (!denom.equals(trimedDenom)) { // receiver is source chain
             // TODO try and catch
             bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), bytes(trimedDenom.toString()), data.amount);
             return newAcknowledgement(true);
         } else {
-            string memory prefixedDenom = packet.destination_port.toSlice().concat(
-            "/".toSlice()
-            ).toSlice().concat(packet.destination_channel.toSlice()).toSlice().concat(denom);
+            string memory prefixedDenom = makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
             // TODO try and catch
             bank.mint(data.receiver.toAddress(), bytes(prefixedDenom), data.amount);
             return newAcknowledgement(true);
@@ -173,7 +163,14 @@ contract ICS20Transfer is IModuleCallbacks {
 
     /// Helper functions ///
 
-    function addressToString(address _address) public pure returns(string memory) {
+    function makeDenomPrefix(string memory port, string memory channel) internal pure returns (strings.slice memory) {
+        return port.toSlice()
+            .concat("/".toSlice()).toSlice()
+            .concat(channel.toSlice()).toSlice()
+            .concat("/".toSlice()).toSlice();
+    }
+
+    function addressToString(address _address) internal pure returns(string memory) {
         bytes memory alphabet = "0123456789abcdef";
         bytes20 data = bytes20(_address);
 
@@ -188,7 +185,7 @@ contract ICS20Transfer is IModuleCallbacks {
     }
 
     // a copy from https://github.com/provable-things/ethereum-api/blob/161552ebd4f77090d86482cff8c863cf903c6f5f/oraclizeAPI_0.6.sol
-    function parseAddr(string memory _a) public pure returns (address _parsedAddress) {
+    function parseAddr(string memory _a) internal pure returns (address _parsedAddress) {
         bytes memory tmp = bytes(_a);
         uint160 iaddr = 0;
         uint160 b1;

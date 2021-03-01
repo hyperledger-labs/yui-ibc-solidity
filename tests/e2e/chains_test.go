@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
 	"time"
 
@@ -39,23 +40,6 @@ func (suite *ChainTestSuite) SetupTest() {
 	suite.chainA = ibctesting.NewChain(suite.T(), 2018, *chainClientA, testchain0.Contract, mnemonicPhrase, ibcID)
 	suite.chainB = ibctesting.NewChain(suite.T(), 3018, *chainClientB, testchain1.Contract, mnemonicPhrase, ibcID)
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
-}
-
-func (suite ChainTestSuite) TestStringUtils() {
-	ctx := context.Background()
-	addr, err := suite.chainA.ICS20Transfer.AddressToString(
-		suite.chainA.CallOpts(ctx),
-		suite.chainA.CallOpts(ctx).From,
-	)
-	suite.Require().NoError(err)
-	fmt.Println(suite.chainA.CallOpts(ctx).From.String(), addr)
-
-	parsed, err := suite.chainA.ICS20Transfer.ParseAddr(
-		suite.chainA.CallOpts(ctx),
-		addr,
-	)
-	suite.Require().NoError(err)
-	fmt.Println(suite.chainA.CallOpts(ctx).From.String(), parsed.String())
 }
 
 func (suite ChainTestSuite) TestChannel() {
@@ -96,6 +80,11 @@ func (suite ChainTestSuite) TestChannel() {
 
 	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, transferPacket))
 	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, transferPacket, []byte{1}))
+
+	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, strings.ToLower(chainA.ContractConfig.GetSimpleTokenAddress().String()))
+	balance, err := chainB.ICS20Vouchers.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From, []byte(expectedDenom))
+	suite.Require().NoError(err)
+	suite.Require().Equal(int64(100), balance.Int64())
 }
 
 func TestChainTestSuite(t *testing.T) {
