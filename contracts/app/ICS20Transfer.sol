@@ -173,23 +173,46 @@ contract ICS20Transfer is IModuleCallbacks {
 
     /// Helper functions ///
 
-    function addressToString(address _address) internal pure returns (string memory _uintAsString) {
-        uint _i = uint256(_address);
-        if (_i == 0) {
-            return "0";
+    function addressToString(address _address) public pure returns(string memory) {
+        bytes memory alphabet = "0123456789abcdef";
+        bytes20 data = bytes20(_address);
+
+        bytes memory str = new bytes(42);
+        str[0] = "0";
+        str[1] = "x";
+        for (uint i = 0; i < 20; i++) {
+            str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
+            str[2+1+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
         }
-        uint j = _i;
-        uint len;
-        while (j != 0) {
-            len++;
-            j /= 10;
+        return string(str);
+    }
+
+    // a copy from https://github.com/provable-things/ethereum-api/blob/161552ebd4f77090d86482cff8c863cf903c6f5f/oraclizeAPI_0.6.sol
+    function parseAddr(string memory _a) public pure returns (address _parsedAddress) {
+        bytes memory tmp = bytes(_a);
+        uint160 iaddr = 0;
+        uint160 b1;
+        uint160 b2;
+        for (uint i = 2; i < 2 + 2 * 20; i += 2) {
+            iaddr *= 256;
+            b1 = uint160(uint8(tmp[i]));
+            b2 = uint160(uint8(tmp[i + 1]));
+            if ((b1 >= 97) && (b1 <= 102)) {
+                b1 -= 87;
+            } else if ((b1 >= 65) && (b1 <= 70)) {
+                b1 -= 55;
+            } else if ((b1 >= 48) && (b1 <= 57)) {
+                b1 -= 48;
+            }
+            if ((b2 >= 97) && (b2 <= 102)) {
+                b2 -= 87;
+            } else if ((b2 >= 65) && (b2 <= 70)) {
+                b2 -= 55;
+            } else if ((b2 >= 48) && (b2 <= 57)) {
+                b2 -= 48;
+            }
+            iaddr += (b1 * 16 + b2);
         }
-        bytes memory bstr = new bytes(len);
-        uint k = len - 1;
-        while (_i != 0) {
-            bstr[k--] = byte(uint8(48 + _i % 10));
-            _i /= 10;
-        }
-        return string(bstr);
+        return address(iaddr);
     }
 }

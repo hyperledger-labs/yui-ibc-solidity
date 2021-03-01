@@ -205,7 +205,7 @@ func (chain *Chain) Init() error {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
-			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetSimpleTokenModuleAddress()),
+			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetICS20TransferAddress()),
 		); err != nil {
 			return err
 		}
@@ -223,6 +223,12 @@ func (chain *Chain) Init() error {
 		); err != nil {
 			return err
 		}
+	}
+
+	if err := chain.WaitIfNoError(ctx)(
+		chain.ICS20Vouchers.SetOperator(chain.TxOpts(ctx), chain.ContractConfig.GetICS20TransferAddress()),
+	); err != nil {
+		return err
 	}
 
 	return nil
