@@ -16,6 +16,9 @@ function after_common() {
         "IBCHandler"
         "IBCIdentifier"
         "SimpleTokenModule"
+        "SimpleToken"
+        "ICS20Transfer"
+        "ICS20Vouchers"
     )
     if [ -n "$NO_GEN_CODE" ]; then
         return
