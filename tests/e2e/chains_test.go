@@ -51,6 +51,10 @@ func (suite ChainTestSuite) TestChannel() {
 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
 	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channel.UNORDERED)
+
+	/// Tests for Transfer module ///
+	balanceA0, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	suite.Require().NoError(err)
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.SimpleToken.Approve(chainA.TxOpts(ctx), chainA.ContractConfig.GetICS20TransferAddress(), big.NewInt(100)),
 	))
@@ -66,6 +70,10 @@ func (suite ChainTestSuite) TestChannel() {
 	))
 	chainA.UpdateHeader()
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
+
+	balanceA1, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	suite.Require().NoError(err)
+	suite.Require().Equal(balanceA0.Int64()-100, balanceA1.Int64())
 
 	seq, err := suite.chainA.IBCHost.GetNextSequenceSend(chainA.CallOpts(ctx), chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
@@ -102,6 +110,17 @@ func (suite ChainTestSuite) TestChannel() {
 	balance, err = chainB.ICS20Vouchers.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From, []byte(expectedDenom))
 	suite.Require().NoError(err)
 	suite.Require().Equal(int64(0), balance.Int64())
+	seq, err = chainB.IBCHost.GetNextSequenceSend(chainB.CallOpts(ctx), chanB.PortID, chanB.ID)
+	suite.Require().NoError(err)
+	packet, err = chainB.IBCHost.GetPacket(chainB.CallOpts(ctx), chanB.PortID, chanB.ID, seq-1)
+	suite.Require().NoError(err)
+	transferPacket = channel.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
+	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, transferPacket))
+	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, transferPacket, []byte{1}))
+
+	balanceA2, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	suite.Require().NoError(err)
+	suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 }
 
 func TestChainTestSuite(t *testing.T) {
