@@ -9,10 +9,11 @@ import "../core/types/App.sol";
 import "./IICS20Vouchers.sol";
 import "../lib/strings.sol";
 import "../lib/Bytes.sol";
+import "openzeppelin-solidity/contracts/utils/Context.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/utils/Address.sol";
 
-contract ICS20Transfer is IModuleCallbacks {
+contract ICS20Transfer is Context, IModuleCallbacks {
     using Address for address;
     using strings for *;
     using Bytes for *;
@@ -31,66 +32,66 @@ contract ICS20Transfer is IModuleCallbacks {
 
     function transferToken(
         address tokenContract,
-        uint256 amount,
+        uint64 amount,
         address receiver,
         string calldata sourcePort,
         string calldata sourceChannel,
         uint64 timeoutHeight        
     ) external {
         require(tokenContract.isContract());
-        (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
-        require(found, "channel not found");
 
-        require(IERC20(tokenContract).transferFrom(msg.sender, address(this), amount));
+        require(IERC20(tokenContract).transferFrom(_msgSender(), address(this), amount));
 
-        bytes memory data = FungibleTokenPacketData.encode(FungibleTokenPacketData.Data({
-            denom: addressToString(tokenContract),
-            amount: uint64(amount), // TODO fix type
-            sender: abi.encodePacked(msg.sender),
-            receiver: abi.encodePacked(receiver)
-        }));
-        ibcHandler.sendPacket(Packet.Data({
-            sequence: ibcHost.getNextSequenceSend(sourcePort, sourceChannel),
-            source_port: sourcePort,
-            source_channel: sourceChannel,
-            destination_port: channel.counterparty.port_id,
-            destination_channel: channel.counterparty.channel_id,
-            data: data,
-            timeout_height: Height.Data({revision_number: 0, revision_height: timeoutHeight}),
-            timeout_timestamp: 0
-        }));
+        sendPacket(
+            FungibleTokenPacketData.Data({
+                denom: addressToString(tokenContract),
+                amount: amount,
+                sender: abi.encodePacked(_msgSender()),
+                receiver: abi.encodePacked(receiver)
+            }),
+            sourcePort,
+            sourceChannel,
+            timeoutHeight
+        );
     }
 
     function transferVoucher(
         string calldata denom,
-        uint256 amount,
+        uint64 amount,
         address receiver,
         string calldata sourcePort,
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
-        require(found, "channel not found");
-
         if (!denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender is source chain
-            bank.transferFrom(msg.sender, getEscrowAddress(sourceChannel), bytes(denom), amount);
+            bank.transferFrom(_msgSender(), getEscrowAddress(sourceChannel), bytes(denom), amount);
         } else {
-            bank.burnFrom(msg.sender, bytes(denom), amount);
+            bank.burnFrom(_msgSender(), bytes(denom), amount);
         }
 
-        bytes memory data = FungibleTokenPacketData.encode(FungibleTokenPacketData.Data({
-            denom: denom,
-            amount: uint64(amount), // TODO fix type
-            sender: abi.encodePacked(msg.sender),
-            receiver: abi.encodePacked(receiver)
-        }));
+        sendPacket(
+            FungibleTokenPacketData.Data({
+                denom: denom,
+                amount: amount,
+                sender: abi.encodePacked(_msgSender()),
+                receiver: abi.encodePacked(receiver)
+            }),
+            sourcePort,
+            sourceChannel,
+            timeoutHeight
+        );
+    }
+
+    function sendPacket(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel, uint64 timeoutHeight) internal {
+        (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
+        require(found, "channel not found");
         ibcHandler.sendPacket(Packet.Data({
             sequence: ibcHost.getNextSequenceSend(sourcePort, sourceChannel),
             source_port: sourcePort,
             source_channel: sourceChannel,
             destination_port: channel.counterparty.port_id,
             destination_channel: channel.counterparty.channel_id,
-            data: data,
+            data: FungibleTokenPacketData.encode(data),
             timeout_height: Height.Data({revision_number: 0, revision_height: timeoutHeight}),
             timeout_timestamp: 0
         }));

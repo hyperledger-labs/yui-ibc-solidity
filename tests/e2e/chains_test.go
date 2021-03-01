@@ -62,7 +62,7 @@ func (suite ChainTestSuite) TestChannel() {
 		chainA.ICS20Transfer.TransferToken(
 			chainA.TxOpts(ctx),
 			chainA.ContractConfig.GetSimpleTokenAddress(),
-			big.NewInt(100),
+			100,
 			chainB.CallOpts(ctx).From,
 			chanA.PortID, chanA.ID,
 			uint64(chainA.LastHeader().Base.Number.Int64())+1000,
@@ -98,7 +98,7 @@ func (suite ChainTestSuite) TestChannel() {
 		chainB.ICS20Transfer.TransferVoucher(
 			chainB.TxOpts(ctx),
 			expectedDenom,
-			big.NewInt(100),
+			100,
 			chainA.CallOpts(ctx).From,
 			chanB.PortID,
 			chanB.ID,
