@@ -40,7 +40,7 @@ func (contractConfig) GetSimpleTokenModuleAddress() common.Address {
 }
 
 func (contractConfig) GetSimpleTokenAddress() common.Address {
-	return common.HexToAddress(SimpleTokenAddresss)
+	return common.HexToAddress(SimpleTokenAddress)
 }
 
 func (contractConfig) GetICS20TransferAddress() common.Address {

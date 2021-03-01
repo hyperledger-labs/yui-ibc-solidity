@@ -16,6 +16,9 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcidentifier"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20transfer"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20vouchers"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletoken"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletokenmodule"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
@@ -46,6 +49,10 @@ type Chain struct {
 	IBCIdentifier ibcidentifier.Ibcidentifier
 
 	// App Modules
+	SimpleToken   simpletoken.Simpletoken
+	ICS20Transfer ics20transfer.Ics20transfer
+	ICS20Vouchers ics20vouchers.Ics20vouchers
+
 	SimpletokenModule simpletokenmodule.Simpletokenmodule
 
 	chainID int64
@@ -68,10 +75,19 @@ type ContractConfig interface {
 	GetIBCHandlerAddress() common.Address
 	GetIBCIdentifierAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
+
 	GetSimpleTokenModuleAddress() common.Address
+	GetSimpleTokenAddress() common.Address
+	GetICS20TransferAddress() common.Address
+	GetICS20VouchersAddress() common.Address
 }
 
 func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
+	key0, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(mnemonicPhrase, "m/44'/60'/0'/0/0")
+	if err != nil {
+		t.Error(err)
+	}
+
 	ibcHost, err := ibchost.NewIbchost(config.GetIBCHostAddress(), client)
 	if err != nil {
 		t.Error(err)
@@ -84,18 +100,39 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
-
+	simpletoken, err := simpletoken.NewSimpletoken(config.GetSimpleTokenAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	ics20transfer, err := ics20transfer.NewIcs20transfer(config.GetICS20TransferAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	ics20vouchers, err := ics20vouchers.NewIcs20vouchers(config.GetICS20VouchersAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
 	simpletokenModule, err := simpletokenmodule.NewSimpletokenmodule(config.GetSimpleTokenModuleAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
 
-	key0, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(mnemonicPhrase, "m/44'/60'/0'/0/0")
-	if err != nil {
-		t.Error(err)
-	}
+	return &Chain{
+		t:              t,
+		client:         client,
+		chainID:        chainID,
+		ContractConfig: config,
+		key0:           key0,
+		IBCID:          ibcID,
 
-	return &Chain{t: t, client: client, IBCHost: *ibcHost, IBCHandler: *ibcHandler, IBCIdentifier: *ibcIdentifier, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
+		IBCHost:           *ibcHost,
+		IBCHandler:        *ibcHandler,
+		IBCIdentifier:     *ibcIdentifier,
+		SimpletokenModule: *simpletokenModule,
+		SimpleToken:       *simpletoken,
+		ICS20Transfer:     *ics20transfer,
+		ICS20Vouchers:     *ics20vouchers,
+	}
 }
 
 func (chain *Chain) Client() contract.Client {
