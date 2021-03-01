@@ -85,6 +85,23 @@ func (suite ChainTestSuite) TestChannel() {
 	balance, err := chainB.ICS20Vouchers.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From, []byte(expectedDenom))
 	suite.Require().NoError(err)
 	suite.Require().Equal(int64(100), balance.Int64())
+
+	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
+		chainB.ICS20Transfer.SendTransfer(
+			chainB.TxOpts(ctx),
+			expectedDenom,
+			big.NewInt(100),
+			chainA.CallOpts(ctx).From,
+			chanB.PortID,
+			chanB.ID,
+			uint64(chainB.LastHeader().Base.Number.Int64())+1000,
+		),
+	))
+	chainB.UpdateHeader()
+	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA, ibctesting.BesuIBFT2Client))
+	balance, err = chainB.ICS20Vouchers.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From, []byte(expectedDenom))
+	suite.Require().NoError(err)
+	suite.Require().Equal(int64(0), balance.Int64())
 }
 
 func TestChainTestSuite(t *testing.T) {
