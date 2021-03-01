@@ -29,7 +29,7 @@ contract ICS20Transfer is IModuleCallbacks {
 
     mapping(string => address) channelEscrowAddresses;
 
-    function sendTransferWithTokenContract(
+    function transferToken(
         address tokenContract,
         uint256 amount,
         address receiver,
@@ -41,7 +41,7 @@ contract ICS20Transfer is IModuleCallbacks {
         (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
         require(found, "channel not found");
 
-        IERC20(tokenContract).transferFrom(msg.sender, address(this), amount);
+        require(IERC20(tokenContract).transferFrom(msg.sender, address(this), amount));
 
         bytes memory data = FungibleTokenPacketData.encode(FungibleTokenPacketData.Data({
             denom: addressToString(tokenContract),
@@ -61,7 +61,7 @@ contract ICS20Transfer is IModuleCallbacks {
         }));
     }
 
-    function sendTransfer(
+    function transferVoucher(
         string calldata denom,
         uint256 amount,
         address receiver,
@@ -72,7 +72,7 @@ contract ICS20Transfer is IModuleCallbacks {
         (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
         require(found, "channel not found");
 
-        if (!denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender chain is source
+        if (!denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender is source chain
             bank.transferFrom(msg.sender, getEscrowAddress(sourceChannel), bytes(denom), amount);
         } else {
             bank.burnFrom(msg.sender, bytes(denom), amount);
@@ -117,9 +117,13 @@ contract ICS20Transfer is IModuleCallbacks {
         return acknowledgement[0] == 0x01;
     }
 
-    // function refundTokens(Packet.Data memory packet) internal {
-    //     // TODO implements
-    // }
+    function refundTokens(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel) internal {
+        if (!data.denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender was source chain
+            bank.transferFrom(getEscrowAddress(sourceChannel), data.sender.toAddress(), bytes(data.denom), data.amount);
+        } else {
+            bank.mint(data.sender.toAddress(), bytes(data.denom), data.amount);
+        }
+    }
 
     /// Module callbacks ///
 
@@ -130,24 +134,32 @@ contract ICS20Transfer is IModuleCallbacks {
             makeDenomPrefix(packet.source_port, packet.source_channel)
         );
         if (!denom.equals(trimedDenom)) { // receiver is source chain
-            // TODO try and catch
             if (trimedDenom.len() == 42) {
-                IERC20(parseAddr(trimedDenom.toString())).transfer(data.receiver.toAddress(), data.amount);
+                try IERC20(parseAddr(trimedDenom.toString())).transfer(data.receiver.toAddress(), data.amount) returns (bool ok) {
+                    return newAcknowledgement(ok);
+                } catch (bytes memory) {
+                    return newAcknowledgement(false);
+                }
             } else {
-                bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), bytes(trimedDenom.toString()), data.amount);
+                try bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), bytes(trimedDenom.toString()), data.amount) {
+                    return newAcknowledgement(true);
+                } catch (bytes memory) {
+                    return newAcknowledgement(false);
+                }
             }
-            return newAcknowledgement(true);
         } else {
             string memory prefixedDenom = makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            // TODO try and catch
-            bank.mint(data.receiver.toAddress(), bytes(prefixedDenom), data.amount);
-            return newAcknowledgement(true);
+            try bank.mint(data.receiver.toAddress(), bytes(prefixedDenom), data.amount) {
+                return newAcknowledgement(true);
+            } catch (bytes memory) {
+                return newAcknowledgement(false);
+            }
         }
     }
 
     function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external override {
         if (!isSuccessAcknowledgement(acknowledgement)) {
-            // refundTokens(packet);
+            refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
         }
     }
 

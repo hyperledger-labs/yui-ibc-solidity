@@ -59,7 +59,7 @@ func (suite ChainTestSuite) TestChannel() {
 		chainA.SimpleToken.Approve(chainA.TxOpts(ctx), chainA.ContractConfig.GetICS20TransferAddress(), big.NewInt(100)),
 	))
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ICS20Transfer.SendTransferWithTokenContract(
+		chainA.ICS20Transfer.TransferToken(
 			chainA.TxOpts(ctx),
 			chainA.ContractConfig.GetSimpleTokenAddress(),
 			big.NewInt(100),
@@ -95,7 +95,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().Equal(int64(100), balance.Int64())
 
 	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
-		chainB.ICS20Transfer.SendTransfer(
+		chainB.ICS20Transfer.TransferVoucher(
 			chainB.TxOpts(ctx),
 			expectedDenom,
 			big.NewInt(100),
