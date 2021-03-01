@@ -131,7 +131,11 @@ contract ICS20Transfer is IModuleCallbacks {
         );
         if (!denom.equals(trimedDenom)) { // receiver is source chain
             // TODO try and catch
-            bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), bytes(trimedDenom.toString()), data.amount);
+            if (trimedDenom.len() == 42) {
+                IERC20(parseAddr(trimedDenom.toString())).transfer(data.receiver.toAddress(), data.amount);
+            } else {
+                bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), bytes(trimedDenom.toString()), data.amount);
+            }
             return newAcknowledgement(true);
         } else {
             string memory prefixedDenom = makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
