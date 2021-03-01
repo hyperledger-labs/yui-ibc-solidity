@@ -17,7 +17,7 @@ contract ICS20Vouchers is Context, AccessControl, IICS20Vouchers {
     }
 
     function balanceOf(address account, bytes calldata id) external view returns (uint256) {
-        require(account != address(0), "ERC1155: balance query for the zero address");
+        require(account != address(0), "ICS20Vouchers: balance query for the zero address");
         return _balances[id][account];
     }
 
@@ -27,27 +27,27 @@ contract ICS20Vouchers is Context, AccessControl, IICS20Vouchers {
     }
 
     function transferFrom(address from, address to, bytes calldata id, uint256 amount) override external {
-        require(to != address(0), "ERC1155: transfer to the zero address");
+        require(to != address(0), "ICS20Vouchers: transfer to the zero address");
         require(
             from == _msgSender() || hasRole(OPERATOR_ROLE, from),
-            "ERC1155: caller is not owner nor approved"
+            "ICS20Vouchers: caller is not owner nor approved"
         );
 
         uint256 fromBalance = _balances[id][from];
-        require(fromBalance >= amount, "Vouchers: insufficient balance for transfer");
+        require(fromBalance >= amount, "ICS20Vouchers: insufficient balance for transfer");
         _balances[id][from] = fromBalance - amount;
         _balances[id][to] += amount;
     }
 
     function mint(address account, bytes calldata id, uint256 amount) override external {
-        require(hasRole(OPERATOR_ROLE, _msgSender()), "Vouchers: must have minter role to mint");
+        require(hasRole(OPERATOR_ROLE, _msgSender()), "ICS20Vouchers: must have minter role to mint");
         _balances[id][account] += amount;
     }
 
     function burnFrom(address account, bytes calldata id, uint256 amount) override external {
-        require(hasRole(OPERATOR_ROLE, _msgSender()), "Vouchers: must have minter role to mint");
+        require(hasRole(OPERATOR_ROLE, _msgSender()), "ICS20Vouchers: must have minter role to mint");
         uint256 accountBalance = _balances[id][account];
-        require(accountBalance >= amount, "Vouchers: burn amount exceeds balance");
+        require(accountBalance >= amount, "ICS20Vouchers: burn amount exceeds balance");
         _balances[id][account] = accountBalance - amount;
     }
 }
