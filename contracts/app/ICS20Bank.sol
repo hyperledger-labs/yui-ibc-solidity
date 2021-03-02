@@ -19,17 +19,17 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
         _setupRole(ADMIN_ROLE, _msgSender());
     }
 
-    function setOperator(address operator) public {
+    function setOperator(address operator) virtual public {
         require(hasRole(ADMIN_ROLE, _msgSender()), "must have admin role to set new operator");
         _setupRole(OPERATOR_ROLE, operator);
     }
 
-    function balanceOf(address account, string calldata id) external view returns (uint256) {
+    function balanceOf(address account, string calldata id) virtual external view returns (uint256) {
         require(account != address(0), "ICS20Bank: balance query for the zero address");
         return _balances[id][account];
     }
 
-    function transferFrom(address from, address to, string calldata id, uint256 amount) override external {
+    function transferFrom(address from, address to, string calldata id, uint256 amount) override virtual external {
         require(to != address(0), "ICS20Bank: transfer to the zero address");
         require(
             from == _msgSender() || hasRole(OPERATOR_ROLE, _msgSender()),
@@ -42,21 +42,21 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
         _balances[id][to] += amount;
     }
 
-    function mint(address account, string calldata id, uint256 amount) override external {
+    function mint(address account, string calldata id, uint256 amount) override virtual external {
         require(hasRole(OPERATOR_ROLE, _msgSender()), "ICS20Bank: must have minter role to mint");
         _mint(account, id, amount);
     }
 
-    function burn(address account, string calldata id, uint256 amount) override external {
+    function burn(address account, string calldata id, uint256 amount) override virtual external {
         require(hasRole(OPERATOR_ROLE, _msgSender()), "ICS20Bank: must have minter role to mint");
         _burn(account, id, amount);
     }
 
-    function depositFrom(
+    function deposit(
         address tokenContract,
         uint256 amount,
         address receiver
-    ) external {
+    ) virtual external {
         require(tokenContract.isContract());
         require(IERC20(tokenContract).transferFrom(_msgSender(), address(this), amount));
         _mint(receiver, genDenom(tokenContract), amount);
@@ -66,28 +66,28 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
         address tokenContract,
         uint256 amount,
         address receiver
-    ) external {
+    ) virtual external {
         require(tokenContract.isContract());
         _burn(_msgSender(), genDenom(tokenContract), amount);
         require(IERC20(tokenContract).transfer(receiver, amount));
     }
 
-    function _mint(address account, string memory id, uint256 amount) internal {
+    function _mint(address account, string memory id, uint256 amount) virtual internal {
         _balances[id][account] += amount;
     }
 
-    function _burn(address account, string memory id, uint256 amount) internal {
+    function _burn(address account, string memory id, uint256 amount) virtual internal {
         uint256 accountBalance = _balances[id][account];
         require(accountBalance >= amount, "ICS20Bank: burn amount exceeds balance");
         _balances[id][account] = accountBalance - amount;
     }
 
-    function genDenom(address tokenContract) internal returns (string memory) {
+    function genDenom(address tokenContract) virtual internal returns (string memory) {
         return addressToString(tokenContract);
     }
 
     /// Helper functions ///
-
+    // TODO move following functions into any library
     function addressToString(address _address) internal pure returns(string memory) {
         bytes memory alphabet = "0123456789abcdef";
         bytes20 data = bytes20(_address);

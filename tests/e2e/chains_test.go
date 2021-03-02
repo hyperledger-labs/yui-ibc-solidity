@@ -58,7 +58,7 @@ func (suite ChainTestSuite) TestChannel() {
 	))
 
 	// deposit a simple token to the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.DepositFrom(
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
 		chainA.TxOpts(ctx),
 		chainA.ContractConfig.GetSimpleTokenAddress(),
 		big.NewInt(100),

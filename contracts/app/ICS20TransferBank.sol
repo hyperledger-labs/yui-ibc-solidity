@@ -3,19 +3,11 @@ pragma experimental ABIEncoderV2;
 
 import "./ICS20Transfer.sol";
 import "./IICS20Bank.sol";
-import "../core/types/Channel.sol";
-import "../core/IBCModule.sol";
 import "../core/IBCHandler.sol";
 import "../core/IBCHost.sol";
 import "../core/types/App.sol";
-import "../lib/strings.sol";
-import "../lib/Bytes.sol";
-import "openzeppelin-solidity/contracts/utils/Context.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
-    using strings for *;
-    using Bytes for *;
-
     IICS20Bank bank;
 
     constructor(IBCHost host_, IBCHandler ibcHandler_, IICS20Bank bank_) ICS20Transfer(host_, ibcHandler_) public {

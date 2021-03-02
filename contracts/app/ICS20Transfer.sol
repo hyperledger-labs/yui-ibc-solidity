@@ -25,10 +25,6 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         ibcHandler = ibcHandler_;
     }
 
-    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount) virtual internal returns (bool);
-    function _mint(address account, string memory denom, uint256 amount) virtual internal returns (bool);
-    function _burn(address account, string memory denom, uint256 amount) virtual internal returns (bool);
-
     function sendTransfer(
         string calldata denom,
         uint64 amount,
@@ -36,8 +32,8 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         string calldata sourcePort,
         string calldata sourceChannel,
         uint64 timeoutHeight
-    ) override external {
-        if (!denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender is source chain
+    ) override virtual external {
+        if (!denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) { // sender is source chain
             require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
         } else {
             require(_burn(_msgSender(), denom, amount));
@@ -56,6 +52,54 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         );
     }
 
+    /// Module callbacks ///
+
+    function onRecvPacket(Packet.Data calldata packet) external virtual override returns (bytes memory acknowledgement) {
+        FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
+        strings.slice memory denom = data.denom.toSlice();
+        strings.slice memory trimedDenom = data.denom.toSlice().beyond(
+            _makeDenomPrefix(packet.source_port, packet.source_channel)
+        );
+        if (!denom.equals(trimedDenom)) { // receiver is source chain
+            return _newAcknowledgement(
+                _transferFrom(_getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), trimedDenom.toString(), data.amount)
+            );
+        } else {
+            string memory prefixedDenom = _makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
+            return _newAcknowledgement(
+                _mint(data.receiver.toAddress(), prefixedDenom, data.amount)
+            );
+        }
+    }
+
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external virtual override {
+        if (!_isSuccessAcknowledgement(acknowledgement)) {
+            _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
+        }
+    }
+
+    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external virtual override {
+        // TODO authenticate a capability
+        channelEscrowAddresses[channelId] = address(this);
+    }
+
+    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external virtual override {
+        // TODO authenticate a capability
+        channelEscrowAddresses[channelId] = address(this);
+    }
+
+    function onChanOpenAck(string calldata portId, string calldata channelId, string calldata counterpartyVersion) external virtual override {}
+
+    function onChanOpenConfirm(string calldata portId, string calldata channelId) external virtual override {}
+
+    /// Internal functions ///
+
+    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount) virtual internal returns (bool);
+
+    function _mint(address account, string memory denom, uint256 amount) virtual internal returns (bool);
+
+    function _burn(address account, string memory denom, uint256 amount) virtual internal returns (bool);
+
     function _sendPacket(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel, uint64 timeoutHeight) virtual internal {
         (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
         require(found, "channel not found");
@@ -71,13 +115,13 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         }));
     }
 
-    function _getEscrowAddress(string memory sourceChannel) internal view returns (address) {
+    function _getEscrowAddress(string memory sourceChannel) virtual internal view returns (address) {
         address escrow = channelEscrowAddresses[sourceChannel];
         require(escrow != address(0));
         return escrow;
     }
 
-    function _newAcknowledgement(bool success) internal pure returns (bytes memory) {
+    function _newAcknowledgement(bool success) virtual internal pure returns (bytes memory) {
         bytes memory acknowledgement = new bytes(1);
         if (success) {
             acknowledgement[0] = 0x01;
@@ -87,62 +131,22 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         return acknowledgement;
     }
     
-    function _isSuccessAcknowledgement(bytes memory acknowledgement) internal pure returns (bool) {
+    function _isSuccessAcknowledgement(bytes memory acknowledgement) virtual internal pure returns (bool) {
         require(acknowledgement.length == 1);
         return acknowledgement[0] == 0x01;
     }
 
-    function _refundTokens(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel) internal {
-        if (!data.denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender was source chain
+    function _refundTokens(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel) virtual internal {
+        if (!data.denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) { // sender was source chain
             require(_transferFrom(_getEscrowAddress(sourceChannel), data.sender.toAddress(), data.denom, data.amount));
         } else {
             require(_mint(data.sender.toAddress(), data.denom, data.amount));
         }
     }
 
-    /// Module callbacks ///
-
-    function onRecvPacket(Packet.Data calldata packet) external override returns (bytes memory acknowledgement) {
-        FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
-        strings.slice memory denom = data.denom.toSlice();
-        strings.slice memory trimedDenom = data.denom.toSlice().beyond(
-            makeDenomPrefix(packet.source_port, packet.source_channel)
-        );
-        if (!denom.equals(trimedDenom)) { // receiver is source chain
-            return _newAcknowledgement(
-                _transferFrom(_getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), trimedDenom.toString(), data.amount)
-            );
-        } else {
-            string memory prefixedDenom = makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            return _newAcknowledgement(
-                _mint(data.receiver.toAddress(), prefixedDenom, data.amount)
-            );
-        }
-    }
-
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external override {
-        if (!_isSuccessAcknowledgement(acknowledgement)) {
-            _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
-        }
-    }
-
-    function onChanOpenInit(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version) external override {
-        // TODO authenticate a capability
-        channelEscrowAddresses[channelId] = address(this);
-    }
-
-    function onChanOpenTry(Channel.Order, string[] calldata connectionHops, string calldata portId, string calldata channelId, ChannelCounterparty.Data calldata counterparty, string calldata version, string calldata counterpartyVersion) external override {
-        // TODO authenticate a capability
-        channelEscrowAddresses[channelId] = address(this);
-    }
-
-    function onChanOpenAck(string calldata portId, string calldata channelId, string calldata counterpartyVersion) external override {}
-
-    function onChanOpenConfirm(string calldata portId, string calldata channelId) external override {}
-
     /// Helper functions ///
 
-    function makeDenomPrefix(string memory port, string memory channel) internal pure returns (strings.slice memory) {
+    function _makeDenomPrefix(string memory port, string memory channel) virtual internal pure returns (strings.slice memory) {
         return port.toSlice()
             .concat("/".toSlice()).toSlice()
             .concat(channel.toSlice()).toSlice()
