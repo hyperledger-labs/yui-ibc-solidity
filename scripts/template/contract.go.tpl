@@ -11,7 +11,7 @@ const (
 	IBFT2ClientAddress = "<%= IBFT2ClientAddress; %>"
 	SimpleTokenAddress = "<%= SimpleTokenAddress; %>"
 	ICS20TransferAddress = "<%= ICS20TransferAddress; %>"
-	ICS20VouchersAddress = "<%= ICS20VouchersAddress; %>"
+	ICS20BankAddress = "<%= ICS20BankAddress; %>"
 )
 
 type contractConfig struct{}
@@ -42,6 +42,6 @@ func (contractConfig) GetICS20TransferAddress() common.Address {
 	return common.HexToAddress(ICS20TransferAddress)
 }
 
-func (contractConfig) GetICS20VouchersAddress() common.Address {
-	return common.HexToAddress(ICS20VouchersAddress)
+func (contractConfig) GetICS20BankAddress() common.Address {
+	return common.HexToAddress(ICS20BankAddress)
 }

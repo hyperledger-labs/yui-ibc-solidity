@@ -16,8 +16,8 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcidentifier"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20bank"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20transfer"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20vouchers"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletoken"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
@@ -50,7 +50,7 @@ type Chain struct {
 	// App Modules
 	SimpleToken   simpletoken.Simpletoken
 	ICS20Transfer ics20transfer.Ics20transfer
-	ICS20Vouchers ics20vouchers.Ics20vouchers
+	ICS20Bank     ics20bank.Ics20bank
 
 	chainID int64
 
@@ -75,7 +75,7 @@ type ContractConfig interface {
 
 	GetSimpleTokenAddress() common.Address
 	GetICS20TransferAddress() common.Address
-	GetICS20VouchersAddress() common.Address
+	GetICS20BankAddress() common.Address
 }
 
 func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
@@ -104,7 +104,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
-	ics20vouchers, err := ics20vouchers.NewIcs20vouchers(config.GetICS20VouchersAddress(), client)
+	ics20bank, err := ics20bank.NewIcs20bank(config.GetICS20BankAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -122,7 +122,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 		IBCIdentifier: *ibcIdentifier,
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
-		ICS20Vouchers: *ics20vouchers,
+		ICS20Bank:     *ics20bank,
 	}
 }
 
@@ -217,7 +217,7 @@ func (chain *Chain) Init() error {
 	}
 
 	if err := chain.WaitIfNoError(ctx)(
-		chain.ICS20Vouchers.SetOperator(chain.TxOpts(ctx), chain.ContractConfig.GetICS20TransferAddress()),
+		chain.ICS20Bank.SetOperator(chain.TxOpts(ctx), chain.ContractConfig.GetICS20TransferAddress()),
 	); err != nil {
 		return err
 	}
@@ -598,6 +598,23 @@ func (chain *Chain) HandlePacketAcknowledgement(
 			},
 		),
 	)
+}
+
+func (chain *Chain) GetLastSentPacket(
+	ctx context.Context,
+	sourcePortID string,
+	sourceChannel string,
+) (*channeltypes.Packet, error) {
+	seq, err := chain.IBCHost.GetNextSequenceSend(chain.CallOpts(ctx), sourcePortID, sourceChannel)
+	if err != nil {
+		return nil, err
+	}
+	packet, err := chain.IBCHost.GetPacket(chain.CallOpts(ctx), sourcePortID, sourceChannel, seq-1)
+	if err != nil {
+		return nil, err
+	}
+	p := channeltypes.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
+	return &p, nil
 }
 
 func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {

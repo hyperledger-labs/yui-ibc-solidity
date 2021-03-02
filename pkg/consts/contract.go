@@ -11,7 +11,7 @@ const (
 	IBFT2ClientAddress = "0x702E40245797c5a2108A566b3CE2Bf14Bc6aF841"
 	SimpleTokenAddress = "0x2F5703804E29F4252FA9405B8D357220d11b3bd9"
 	ICS20TransferAddress = "0xa7f733a4fEA1071f58114b203F57444969b86524"
-	ICS20VouchersAddress = "0xaE1C9125BbcF63bf51294C4D15CBD472782E330D"
+	ICS20BankAddress = "0xaE1C9125BbcF63bf51294C4D15CBD472782E330D"
 )
 
 type contractConfig struct{}
@@ -42,6 +42,6 @@ func (contractConfig) GetICS20TransferAddress() common.Address {
 	return common.HexToAddress(ICS20TransferAddress)
 }
 
-func (contractConfig) GetICS20VouchersAddress() common.Address {
-	return common.HexToAddress(ICS20VouchersAddress)
+func (contractConfig) GetICS20BankAddress() common.Address {
+	return common.HexToAddress(ICS20BankAddress)
 }

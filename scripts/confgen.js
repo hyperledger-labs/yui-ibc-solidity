@@ -4,7 +4,7 @@ const IBCHandler = artifacts.require("IBCHandler");
 const IBCIdentifier = artifacts.require("IBCIdentifier");
 const SimpleToken = artifacts.require("SimpleToken");
 const ICS20Transfer = artifacts.require("ICS20Transfer");
-const ICS20Vouchers = artifacts.require("ICS20Vouchers");
+const ICS20Bank = artifacts.require("ICS20Bank");
 
 var fs = require("fs");
 var ejs = require("ejs");
@@ -38,7 +38,7 @@ module.exports = function(callback) {
       IBCIdentifierAddress: IBCIdentifier.address,
       SimpleTokenAddress: SimpleToken.address,
       ICS20TransferAddress: ICS20Transfer.address,
-      ICS20VouchersAddress: ICS20Vouchers.address
+      ICS20BankAddress: ICS20Bank.address
     }, null, function(err, str){
         if (err) {
           throw err;

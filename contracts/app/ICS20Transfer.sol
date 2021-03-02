@@ -6,56 +6,28 @@ import "../core/IBCModule.sol";
 import "../core/IBCHandler.sol";
 import "../core/IBCHost.sol";
 import "../core/types/App.sol";
-import "./IICS20Vouchers.sol";
 import "../lib/strings.sol";
 import "../lib/Bytes.sol";
+import "./IICS20Bank.sol";
 import "openzeppelin-solidity/contracts/utils/Context.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/utils/Address.sol";
 
 contract ICS20Transfer is Context, IModuleCallbacks {
-    using Address for address;
     using strings for *;
     using Bytes for *;
 
     IBCHandler ibcHandler;
     IBCHost ibcHost;
-    IICS20Vouchers bank;
+    IICS20Bank bank;
 
-    constructor(IBCHost host_, IBCHandler ibcHandler_, IICS20Vouchers bank_) public {
+    mapping(string => address) channelEscrowAddresses;
+
+    constructor(IBCHost host_, IBCHandler ibcHandler_, IICS20Bank bank_) public {
         ibcHost = host_;
         ibcHandler = ibcHandler_;
         bank = bank_;
     }
 
-    mapping(string => address) channelEscrowAddresses;
-
-    function transferToken(
-        address tokenContract,
-        uint64 amount,
-        address receiver,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        uint64 timeoutHeight        
-    ) external {
-        require(tokenContract.isContract());
-
-        require(IERC20(tokenContract).transferFrom(_msgSender(), address(this), amount));
-
-        sendPacket(
-            FungibleTokenPacketData.Data({
-                denom: addressToString(tokenContract),
-                amount: amount,
-                sender: abi.encodePacked(_msgSender()),
-                receiver: abi.encodePacked(receiver)
-            }),
-            sourcePort,
-            sourceChannel,
-            timeoutHeight
-        );
-    }
-
-    function transferVoucher(
+    function sendTransfer(
         string calldata denom,
         uint64 amount,
         address receiver,
@@ -64,9 +36,9 @@ contract ICS20Transfer is Context, IModuleCallbacks {
         uint64 timeoutHeight
     ) external {
         if (!denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender is source chain
-            bank.transferFrom(_msgSender(), getEscrowAddress(sourceChannel), bytes(denom), amount);
+            bank.transferFrom(_msgSender(), getEscrowAddress(sourceChannel), denom, amount);
         } else {
-            bank.burnFrom(_msgSender(), bytes(denom), amount);
+            bank.burn(_msgSender(), denom, amount);
         }
 
         sendPacket(
@@ -120,9 +92,9 @@ contract ICS20Transfer is Context, IModuleCallbacks {
 
     function refundTokens(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel) internal {
         if (!data.denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender was source chain
-            bank.transferFrom(getEscrowAddress(sourceChannel), data.sender.toAddress(), bytes(data.denom), data.amount);
+            bank.transferFrom(getEscrowAddress(sourceChannel), data.sender.toAddress(), data.denom, data.amount);
         } else {
-            bank.mint(data.sender.toAddress(), bytes(data.denom), data.amount);
+            bank.mint(data.sender.toAddress(), data.denom, data.amount);
         }
     }
 
@@ -135,22 +107,14 @@ contract ICS20Transfer is Context, IModuleCallbacks {
             makeDenomPrefix(packet.source_port, packet.source_channel)
         );
         if (!denom.equals(trimedDenom)) { // receiver is source chain
-            if (trimedDenom.len() == 42) {
-                try IERC20(parseAddr(trimedDenom.toString())).transfer(data.receiver.toAddress(), data.amount) returns (bool ok) {
-                    return newAcknowledgement(ok);
-                } catch (bytes memory) {
-                    return newAcknowledgement(false);
-                }
-            } else {
-                try bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), bytes(trimedDenom.toString()), data.amount) {
-                    return newAcknowledgement(true);
-                } catch (bytes memory) {
-                    return newAcknowledgement(false);
-                }
+            try bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), trimedDenom.toString(), data.amount) {
+                return newAcknowledgement(true);
+            } catch (bytes memory) {
+                return newAcknowledgement(false);
             }
         } else {
             string memory prefixedDenom = makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            try bank.mint(data.receiver.toAddress(), bytes(prefixedDenom), data.amount) {
+            try bank.mint(data.receiver.toAddress(), prefixedDenom, data.amount) {
                 return newAcknowledgement(true);
             } catch (bytes memory) {
                 return newAcknowledgement(false);
@@ -185,48 +149,5 @@ contract ICS20Transfer is Context, IModuleCallbacks {
             .concat("/".toSlice()).toSlice()
             .concat(channel.toSlice()).toSlice()
             .concat("/".toSlice()).toSlice();
-    }
-
-    function addressToString(address _address) internal pure returns(string memory) {
-        bytes memory alphabet = "0123456789abcdef";
-        bytes20 data = bytes20(_address);
-
-        bytes memory str = new bytes(42);
-        str[0] = "0";
-        str[1] = "x";
-        for (uint i = 0; i < 20; i++) {
-            str[2+i*2] = alphabet[uint(uint8(data[i] >> 4))];
-            str[2+1+i*2] = alphabet[uint(uint8(data[i] & 0x0f))];
-        }
-        return string(str);
-    }
-
-    // a copy from https://github.com/provable-things/ethereum-api/blob/161552ebd4f77090d86482cff8c863cf903c6f5f/oraclizeAPI_0.6.sol
-    function parseAddr(string memory _a) internal pure returns (address _parsedAddress) {
-        bytes memory tmp = bytes(_a);
-        uint160 iaddr = 0;
-        uint160 b1;
-        uint160 b2;
-        for (uint i = 2; i < 2 + 2 * 20; i += 2) {
-            iaddr *= 256;
-            b1 = uint160(uint8(tmp[i]));
-            b2 = uint160(uint8(tmp[i + 1]));
-            if ((b1 >= 97) && (b1 <= 102)) {
-                b1 -= 87;
-            } else if ((b1 >= 65) && (b1 <= 70)) {
-                b1 -= 55;
-            } else if ((b1 >= 48) && (b1 <= 57)) {
-                b1 -= 48;
-            }
-            if ((b2 >= 97) && (b2 <= 102)) {
-                b2 -= 87;
-            } else if ((b2 >= 65) && (b2 <= 70)) {
-                b2 -= 55;
-            } else if ((b2 >= 48) && (b2 <= 57)) {
-                b2 -= 48;
-            }
-            iaddr += (b1 * 16 + b2);
-        }
-        return address(iaddr);
     }
 }
