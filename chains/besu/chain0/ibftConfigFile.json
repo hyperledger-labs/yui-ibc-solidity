@@ -4,7 +4,7 @@
          "chainId": 2018,
          "muirglacierblock": 0,
          "ibft2": {
-           "blockperiodseconds": 2,
+           "blockperiodseconds": 1,
            "epochlength": 30000,
            "requesttimeoutseconds": 4
          }

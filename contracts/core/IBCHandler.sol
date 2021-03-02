@@ -6,8 +6,8 @@ import "./IBCClient.sol";
 import "./IBCChannel.sol";
 import "./IBCModule.sol";
 import "./IBCMsgs.sol";
+import "./IBCIdentifier.sol";
 import "./types/Channel.sol";
-import "../lib/IBCIdentifier.sol";
 
 contract IBCHandler {
 
@@ -103,13 +103,14 @@ contract IBCHandler {
         IBCChannel.sendPacket(host, packet);
     }
 
-    function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory) {
+    function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory acknowledgement) {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
-        bytes memory acknowledgement = module.onRecvPacket(msg_.packet);
+        acknowledgement = module.onRecvPacket(msg_.packet);
         IBCChannel.recvPacket(host, msg_);
         if (acknowledgement.length > 0) {
             IBCChannel.writeAcknowledgement(host, msg_.packet, acknowledgement);
         }
+        return acknowledgement;
     }
 
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {

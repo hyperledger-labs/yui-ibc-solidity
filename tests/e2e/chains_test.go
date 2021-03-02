@@ -2,11 +2,13 @@ package e2e
 
 import (
 	"context"
+	"fmt"
+	"math/big"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/datachainlab/ibc-solidity/pkg/contract"
-	"github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 	testchain0 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain0"
@@ -31,8 +33,9 @@ func (suite *ChainTestSuite) SetupTest() {
 	chainClientB, err := contract.CreateClient("http://127.0.0.1:8745")
 	suite.Require().NoError(err)
 
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, *chainClientA, testchain0.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
-	suite.chainB = ibctesting.NewChain(suite.T(), 3018, *chainClientB, testchain1.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	ibcID := uint64(time.Now().UnixNano())
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, *chainClientA, testchain0.Contract, mnemonicPhrase, ibcID)
+	suite.chainB = ibctesting.NewChain(suite.T(), 3018, *chainClientB, testchain1.Contract, mnemonicPhrase, ibcID)
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
@@ -44,44 +47,100 @@ func (suite ChainTestSuite) TestChannel() {
 
 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
 	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channel.UNORDERED)
+	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
 
-	// TODO refactoring follow steps:
+	/// Tests for Transfer module ///
 
-	// // TODO give a dynamic height
-	// packet := channeltypes.NewPacket([]byte("data"), 1, chanB.PortID, chanB.ID, chanA.PortID, chanA.ID, channeltypes.Height{0, 1000000}, 0)
-	// suite.Require().NoError(suite.coordinator.SendPacket(ctx, chainA, chainB, packet, chanA.CounterpartyClientID))
-	// suite.Require().NoError(suite.coordinator.RecvPacket(ctx, chainB, chainA, chanB, chanA, packet, chanB.CounterpartyClientID))
-
-	balanceA, err := chainA.SimpletokenModule.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	balanceA0, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
 	suite.Require().NoError(err)
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.SimpleToken.Approve(chainA.TxOpts(ctx), chainA.ContractConfig.GetICS20BankAddress(), big.NewInt(100)),
+	))
 
-	balanceB, err := chainB.SimpletokenModule.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From)
+	// deposit a simple token to the bank
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
+		chainA.TxOpts(ctx),
+		chainA.ContractConfig.GetSimpleTokenAddress(),
+		big.NewInt(100),
+		chainA.CallOpts(ctx).From,
+	)))
+
+	// ensure that the balance is reduced
+	balanceA1, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
 	suite.Require().NoError(err)
+	suite.Require().Equal(balanceA0.Int64()-100, balanceA1.Int64())
 
-	// TODO modify an address of recipient
-	suite.Require().NoError(
-		suite.chainA.WaitIfNoError(ctx)(suite.chainA.SimpletokenModule.CrossTransfer(suite.chainA.TxOpts(ctx), chanA.PortID, chanA.ID, suite.chainA.CallOpts(ctx).From, 100, 1000000)),
-	)
+	baseDenom := strings.ToLower(chainA.ContractConfig.GetSimpleTokenAddress().String())
+
+	bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From, baseDenom)
+	suite.Require().NoError(err)
+	suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
+
+	// try to transfer the token to chainB
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.ICS20Transfer.SendTransfer(
+			chainA.TxOpts(ctx),
+			baseDenom,
+			100,
+			chainB.CallOpts(ctx).From,
+			chanA.PortID, chanA.ID,
+			uint64(chainA.LastHeader().Base.Number.Int64())+1000,
+		),
+	))
 	chainA.UpdateHeader()
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
 
-	seq, err := suite.chainA.IBCHost.GetNextSequenceSend(chainA.CallOpts(ctx), chanA.PortID, chanA.ID)
+	// ensure that escrow has correct balance
+	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx), chainA.ContractConfig.GetICS20TransferBankAddress(), baseDenom)
 	suite.Require().NoError(err)
-	packet, err := chainA.IBCHost.GetPacket(chainA.CallOpts(ctx), chanA.PortID, chanA.ID, seq-1)
-	suite.Require().NoError(err)
-	transferPacket := channel.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
-	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, transferPacket))
+	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
-	postBalanceA, err := chainA.SimpletokenModule.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	// relay the packet
+	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
-	suite.Require().EqualValues(balanceA.Uint64()-100, postBalanceA.Uint64())
+	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, *transferPacket))
+	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1}))
 
-	postBalanceB, err := chainB.SimpletokenModule.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From)
+	// ensure that chainB has correct balance
+	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, baseDenom)
+	balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From, expectedDenom)
 	suite.Require().NoError(err)
-	suite.Require().EqualValues(balanceB.Uint64()+100, postBalanceB.Uint64())
+	suite.Require().Equal(int64(100), balance.Int64())
 
-	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, transferPacket, []byte{1}))
+	// try to transfer the token to chainA
+	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
+		chainB.ICS20Transfer.SendTransfer(
+			chainB.TxOpts(ctx),
+			expectedDenom,
+			100,
+			chainA.CallOpts(ctx).From,
+			chanB.PortID,
+			chanB.ID,
+			uint64(chainB.LastHeader().Base.Number.Int64())+1000,
+		),
+	))
+	chainB.UpdateHeader()
+	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA, ibctesting.BesuIBFT2Client))
+
+	// relay the packet
+	transferPacket, err = chainB.GetLastSentPacket(ctx, chanB.PortID, chanB.ID)
+	suite.Require().NoError(err)
+	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
+	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1}))
+
+	// withdraw tokens from the bank
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.ICS20Bank.Withdraw(
+			chainA.TxOpts(ctx),
+			chainA.ContractConfig.GetSimpleTokenAddress(),
+			big.NewInt(100),
+			chainA.CallOpts(ctx).From,
+		)))
+
+	// ensure that token balance equals original value
+	balanceA2, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	suite.Require().NoError(err)
+	suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 }
 
 func TestChainTestSuite(t *testing.T) {

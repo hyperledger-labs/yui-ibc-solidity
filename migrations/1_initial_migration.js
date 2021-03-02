@@ -6,17 +6,15 @@ const IBCConnection = artifacts.require("IBCConnection");
 const IBCChannel = artifacts.require("IBCChannel");
 const IBCHandler = artifacts.require("IBCHandler");
 const IBCMsgs = artifacts.require("IBCMsgs");
-const SimpleTokenModule = artifacts.require("SimpleTokenModule");
-const Bytes = artifacts.require("Bytes");
 const IBCIdentifier = artifacts.require("IBCIdentifier");
+const SimpleToken = artifacts.require("SimpleToken");
+const ICS20TransferBank = artifacts.require("ICS20TransferBank");
+const ICS20Bank = artifacts.require("ICS20Bank");
 
 module.exports = function (deployer) {
   deployer.deploy(Migrations);
-  deployer.deploy(Bytes).then(function() {
-    return deployer.link(Bytes, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client, SimpleTokenModule]);
-  });
   deployer.deploy(IBCIdentifier).then(function() {
-    return deployer.link(IBCIdentifier, [IBCHost, IBFT2Client, IBCHandler, SimpleTokenModule]);
+    return deployer.link(IBCIdentifier, [IBCHost, IBFT2Client, IBCHandler]);
   });
   deployer.deploy(IBCMsgs).then(function() {
     return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client]);
@@ -28,13 +26,14 @@ module.exports = function (deployer) {
     return deployer.link(IBCConnection, [IBCHandler, IBCChannel]);
   });
   deployer.deploy(IBCChannel).then(function() {
-    return deployer.link(IBCChannel, [IBCHandler, SimpleTokenModule]);
+    return deployer.link(IBCChannel, [IBCHandler]);
   });
   deployer.deploy(IBFT2Client);
   deployer.deploy(IBCHost).then(function() {
-    return deployer.deploy(IBCHandler, IBCHost.address).then(function() {
-      return deployer.deploy(SimpleTokenModule, IBCHost.address, IBCHandler.address);
-    });
+    return deployer.deploy(IBCHandler, IBCHost.address);
   });
-
+  deployer.deploy(SimpleToken, "simple", "simple", 1000000);
+  deployer.deploy(ICS20Bank).then(function() {
+    return deployer.deploy(ICS20TransferBank, IBCHost.address, IBCHandler.address, ICS20Bank.address);
+  });
 };

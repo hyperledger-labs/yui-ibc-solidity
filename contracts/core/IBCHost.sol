@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./types/Connection.sol";
 import "./types/Channel.sol";
-import "../lib/IBCIdentifier.sol";
+import "./IBCIdentifier.sol";
 
 contract IBCHost {
     // Commitments
