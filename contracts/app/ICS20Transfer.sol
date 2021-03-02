@@ -1,6 +1,7 @@
 pragma solidity ^0.6.8;
 pragma experimental ABIEncoderV2;
 
+import "./IICS20Transfer.sol";
 import "../core/types/Channel.sol";
 import "../core/IBCModule.sol";
 import "../core/IBCHandler.sol";
@@ -8,24 +9,25 @@ import "../core/IBCHost.sol";
 import "../core/types/App.sol";
 import "../lib/strings.sol";
 import "../lib/Bytes.sol";
-import "./IICS20Bank.sol";
 import "openzeppelin-solidity/contracts/utils/Context.sol";
 
-contract ICS20Transfer is Context, IModuleCallbacks {
+abstract contract ICS20Transfer is Context, IICS20Transfer {
     using strings for *;
     using Bytes for *;
 
     IBCHandler ibcHandler;
     IBCHost ibcHost;
-    IICS20Bank bank;
 
     mapping(string => address) channelEscrowAddresses;
 
-    constructor(IBCHost host_, IBCHandler ibcHandler_, IICS20Bank bank_) public {
+    constructor(IBCHost host_, IBCHandler ibcHandler_) public {
         ibcHost = host_;
         ibcHandler = ibcHandler_;
-        bank = bank_;
     }
+
+    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount) virtual internal returns (bool);
+    function _mint(address account, string memory denom, uint256 amount) virtual internal returns (bool);
+    function _burn(address account, string memory denom, uint256 amount) virtual internal returns (bool);
 
     function sendTransfer(
         string calldata denom,
@@ -34,14 +36,14 @@ contract ICS20Transfer is Context, IModuleCallbacks {
         string calldata sourcePort,
         string calldata sourceChannel,
         uint64 timeoutHeight
-    ) external {
+    ) override external {
         if (!denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender is source chain
-            bank.transferFrom(_msgSender(), getEscrowAddress(sourceChannel), denom, amount);
+            require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
         } else {
-            bank.burn(_msgSender(), denom, amount);
+            require(_burn(_msgSender(), denom, amount));
         }
 
-        sendPacket(
+        _sendPacket(
             FungibleTokenPacketData.Data({
                 denom: denom,
                 amount: amount,
@@ -54,7 +56,7 @@ contract ICS20Transfer is Context, IModuleCallbacks {
         );
     }
 
-    function sendPacket(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel, uint64 timeoutHeight) internal {
+    function _sendPacket(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel, uint64 timeoutHeight) virtual internal {
         (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
         require(found, "channel not found");
         ibcHandler.sendPacket(Packet.Data({
@@ -69,13 +71,13 @@ contract ICS20Transfer is Context, IModuleCallbacks {
         }));
     }
 
-    function getEscrowAddress(string memory sourceChannel) internal view returns (address) {
+    function _getEscrowAddress(string memory sourceChannel) internal view returns (address) {
         address escrow = channelEscrowAddresses[sourceChannel];
         require(escrow != address(0));
         return escrow;
     }
 
-    function newAcknowledgement(bool success) internal pure returns (bytes memory) {
+    function _newAcknowledgement(bool success) internal pure returns (bytes memory) {
         bytes memory acknowledgement = new bytes(1);
         if (success) {
             acknowledgement[0] = 0x01;
@@ -85,16 +87,16 @@ contract ICS20Transfer is Context, IModuleCallbacks {
         return acknowledgement;
     }
     
-    function isSuccessAcknowledgement(bytes memory acknowledgement) internal pure returns (bool) {
+    function _isSuccessAcknowledgement(bytes memory acknowledgement) internal pure returns (bool) {
         require(acknowledgement.length == 1);
         return acknowledgement[0] == 0x01;
     }
 
-    function refundTokens(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel) internal {
+    function _refundTokens(FungibleTokenPacketData.Data memory data, string memory sourcePort, string memory sourceChannel) internal {
         if (!data.denom.toSlice().startsWith(makeDenomPrefix(sourcePort, sourceChannel))) { // sender was source chain
-            bank.transferFrom(getEscrowAddress(sourceChannel), data.sender.toAddress(), data.denom, data.amount);
+            require(_transferFrom(_getEscrowAddress(sourceChannel), data.sender.toAddress(), data.denom, data.amount));
         } else {
-            bank.mint(data.sender.toAddress(), data.denom, data.amount);
+            require(_mint(data.sender.toAddress(), data.denom, data.amount));
         }
     }
 
@@ -107,24 +109,20 @@ contract ICS20Transfer is Context, IModuleCallbacks {
             makeDenomPrefix(packet.source_port, packet.source_channel)
         );
         if (!denom.equals(trimedDenom)) { // receiver is source chain
-            try bank.transferFrom(getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), trimedDenom.toString(), data.amount) {
-                return newAcknowledgement(true);
-            } catch (bytes memory) {
-                return newAcknowledgement(false);
-            }
+            return _newAcknowledgement(
+                _transferFrom(_getEscrowAddress(packet.destination_channel), data.receiver.toAddress(), trimedDenom.toString(), data.amount)
+            );
         } else {
             string memory prefixedDenom = makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            try bank.mint(data.receiver.toAddress(), prefixedDenom, data.amount) {
-                return newAcknowledgement(true);
-            } catch (bytes memory) {
-                return newAcknowledgement(false);
-            }
+            return _newAcknowledgement(
+                _mint(data.receiver.toAddress(), prefixedDenom, data.amount)
+            );
         }
     }
 
     function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external override {
-        if (!isSuccessAcknowledgement(acknowledgement)) {
-            refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
+        if (!_isSuccessAcknowledgement(acknowledgement)) {
+            _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
         }
     }
 

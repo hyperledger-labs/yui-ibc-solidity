@@ -8,7 +8,7 @@ const IBCHandler = artifacts.require("IBCHandler");
 const IBCMsgs = artifacts.require("IBCMsgs");
 const IBCIdentifier = artifacts.require("IBCIdentifier");
 const SimpleToken = artifacts.require("SimpleToken");
-const ICS20Transfer = artifacts.require("ICS20Transfer");
+const ICS20TransferBank = artifacts.require("ICS20TransferBank");
 const ICS20Bank = artifacts.require("ICS20Bank");
 
 module.exports = function (deployer) {
@@ -34,6 +34,6 @@ module.exports = function (deployer) {
   });
   deployer.deploy(SimpleToken, "simple", "simple", 1000000);
   deployer.deploy(ICS20Bank).then(function() {
-    return deployer.deploy(ICS20Transfer, IBCHost.address, IBCHandler.address, ICS20Bank.address);
+    return deployer.deploy(ICS20TransferBank, IBCHost.address, IBCHandler.address, ICS20Bank.address);
   });
 };

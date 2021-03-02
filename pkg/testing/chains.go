@@ -17,7 +17,7 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcidentifier"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20bank"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20transfer"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20transferbank"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletoken"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
@@ -49,7 +49,7 @@ type Chain struct {
 
 	// App Modules
 	SimpleToken   simpletoken.Simpletoken
-	ICS20Transfer ics20transfer.Ics20transfer
+	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
 
 	chainID int64
@@ -74,7 +74,7 @@ type ContractConfig interface {
 	GetIBFT2ClientAddress() common.Address
 
 	GetSimpleTokenAddress() common.Address
-	GetICS20TransferAddress() common.Address
+	GetICS20TransferBankAddress() common.Address
 	GetICS20BankAddress() common.Address
 }
 
@@ -100,7 +100,7 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
-	ics20transfer, err := ics20transfer.NewIcs20transfer(config.GetICS20TransferAddress(), client)
+	ics20transfer, err := ics20transferbank.NewIcs20transferbank(config.GetICS20TransferBankAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -196,7 +196,7 @@ func (chain *Chain) Init() error {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
-			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetICS20TransferAddress()),
+			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetICS20TransferBankAddress()),
 		); err != nil {
 			return err
 		}
@@ -217,7 +217,7 @@ func (chain *Chain) Init() error {
 	}
 
 	if err := chain.WaitIfNoError(ctx)(
-		chain.ICS20Bank.SetOperator(chain.TxOpts(ctx), chain.ContractConfig.GetICS20TransferAddress()),
+		chain.ICS20Bank.SetOperator(chain.TxOpts(ctx), chain.ContractConfig.GetICS20TransferBankAddress()),
 	); err != nil {
 		return err
 	}

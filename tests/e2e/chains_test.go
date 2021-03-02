@@ -91,7 +91,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
 
 	// ensure that escrow has correct balance
-	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx), chainA.ContractConfig.GetICS20TransferAddress(), baseDenom)
+	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx), chainA.ContractConfig.GetICS20TransferBankAddress(), baseDenom)
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
