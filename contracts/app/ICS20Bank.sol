@@ -59,7 +59,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
     ) virtual external {
         require(tokenContract.isContract());
         require(IERC20(tokenContract).transferFrom(_msgSender(), address(this), amount));
-        _mint(receiver, genDenom(tokenContract), amount);
+        _mint(receiver, _genDenom(tokenContract), amount);
     }
 
     function withdraw(
@@ -68,7 +68,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
         address receiver
     ) virtual external {
         require(tokenContract.isContract());
-        _burn(_msgSender(), genDenom(tokenContract), amount);
+        _burn(_msgSender(), _genDenom(tokenContract), amount);
         require(IERC20(tokenContract).transfer(receiver, amount));
     }
 
@@ -82,7 +82,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
         _balances[id][account] = accountBalance - amount;
     }
 
-    function genDenom(address tokenContract) virtual internal returns (string memory) {
+    function _genDenom(address tokenContract) virtual pure internal returns (string memory) {
         return addressToString(tokenContract);
     }
 
