@@ -9,7 +9,7 @@ import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";
 import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
-import "../lib/IBCIdentifier.sol";
+import "./IBCIdentifier.sol";
 
 contract IBFT2Client is IClient {
     using TrieProofs for bytes;

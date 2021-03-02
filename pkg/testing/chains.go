@@ -16,7 +16,9 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcidentifier"
-	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletokenmodule"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20bank"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20transferbank"
+	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletoken"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 	"github.com/gogo/protobuf/proto"
@@ -46,7 +48,9 @@ type Chain struct {
 	IBCIdentifier ibcidentifier.Ibcidentifier
 
 	// App Modules
-	SimpletokenModule simpletokenmodule.Simpletokenmodule
+	SimpleToken   simpletoken.Simpletoken
+	ICS20Transfer ics20transferbank.Ics20transferbank
+	ICS20Bank     ics20bank.Ics20bank
 
 	chainID int64
 
@@ -68,10 +72,18 @@ type ContractConfig interface {
 	GetIBCHandlerAddress() common.Address
 	GetIBCIdentifierAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
-	GetSimpleTokenModuleAddress() common.Address
+
+	GetSimpleTokenAddress() common.Address
+	GetICS20TransferBankAddress() common.Address
+	GetICS20BankAddress() common.Address
 }
 
 func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
+	key0, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(mnemonicPhrase, "m/44'/60'/0'/0/0")
+	if err != nil {
+		t.Error(err)
+	}
+
 	ibcHost, err := ibchost.NewIbchost(config.GetIBCHostAddress(), client)
 	if err != nil {
 		t.Error(err)
@@ -84,18 +96,34 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	if err != nil {
 		t.Error(err)
 	}
-
-	simpletokenModule, err := simpletokenmodule.NewSimpletokenmodule(config.GetSimpleTokenModuleAddress(), client)
+	simpletoken, err := simpletoken.NewSimpletoken(config.GetSimpleTokenAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	ics20transfer, err := ics20transferbank.NewIcs20transferbank(config.GetICS20TransferBankAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	ics20bank, err := ics20bank.NewIcs20bank(config.GetICS20BankAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
 
-	key0, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(mnemonicPhrase, "m/44'/60'/0'/0/0")
-	if err != nil {
-		t.Error(err)
-	}
+	return &Chain{
+		t:              t,
+		client:         client,
+		chainID:        chainID,
+		ContractConfig: config,
+		key0:           key0,
+		IBCID:          ibcID,
 
-	return &Chain{t: t, client: client, IBCHost: *ibcHost, IBCHandler: *ibcHandler, IBCIdentifier: *ibcIdentifier, SimpletokenModule: *simpletokenModule, chainID: chainID, ContractConfig: config, key0: key0, IBCID: ibcID}
+		IBCHost:       *ibcHost,
+		IBCHandler:    *ibcHandler,
+		IBCIdentifier: *ibcIdentifier,
+		SimpleToken:   *simpletoken,
+		ICS20Transfer: *ics20transfer,
+		ICS20Bank:     *ics20bank,
+	}
 }
 
 func (chain *Chain) Client() contract.Client {
@@ -168,7 +196,7 @@ func (chain *Chain) Init() error {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
-			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetSimpleTokenModuleAddress()),
+			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetICS20TransferBankAddress()),
 		); err != nil {
 			return err
 		}
@@ -186,6 +214,12 @@ func (chain *Chain) Init() error {
 		); err != nil {
 			return err
 		}
+	}
+
+	if err := chain.WaitIfNoError(ctx)(
+		chain.ICS20Bank.SetOperator(chain.TxOpts(ctx), chain.ContractConfig.GetICS20TransferBankAddress()),
+	); err != nil {
+		return err
 	}
 
 	return nil
@@ -564,6 +598,23 @@ func (chain *Chain) HandlePacketAcknowledgement(
 			},
 		),
 	)
+}
+
+func (chain *Chain) GetLastSentPacket(
+	ctx context.Context,
+	sourcePortID string,
+	sourceChannel string,
+) (*channeltypes.Packet, error) {
+	seq, err := chain.IBCHost.GetNextSequenceSend(chain.CallOpts(ctx), sourcePortID, sourceChannel)
+	if err != nil {
+		return nil, err
+	}
+	packet, err := chain.IBCHost.GetPacket(chain.CallOpts(ctx), sourcePortID, sourceChannel, seq-1)
+	if err != nil {
+		return nil, err
+	}
+	p := channeltypes.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
+	return &p, nil
 }
 
 func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
