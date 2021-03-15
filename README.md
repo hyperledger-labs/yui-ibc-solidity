@@ -5,10 +5,12 @@
 
 IBC implementations in ethereum.
 
+NOTE: This is yet pre-alpha non-production-quality software.
+
 ## Features
 
 - Implementation of [ICS](https://github.com/cosmos/ics/tree/master/spec)
-- Implementation of ICS-20 that can use ERC20 token
+- Implementation of ICS-20 that can integrate with ERC20 token
 - IBFT2.0 Light Client
 
 ## Getting started
@@ -27,3 +29,7 @@ After launch the chains, execute the following command:
 ```
 $ make e2e-test
 ```
+
+## Maintainers
+
+- [Jun Kimura](https://github.com/bluele)
