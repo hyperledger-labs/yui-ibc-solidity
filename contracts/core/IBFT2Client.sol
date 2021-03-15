@@ -11,6 +11,7 @@ import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
 import "./IBCIdentifier.sol";
 
+// WARNING: The spec is WIP
 contract IBFT2Client is IClient {
     using TrieProofs for bytes;
     using RLP for RLP.RLPItem;
