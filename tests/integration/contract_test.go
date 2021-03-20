@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/datachainlab/ibc-solidity/pkg/client"
 	"github.com/datachainlab/ibc-solidity/pkg/consts"
-	"github.com/datachainlab/ibc-solidity/pkg/contract"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 
 	"github.com/stretchr/testify/suite"
@@ -20,7 +20,7 @@ type ContractTestSuite struct {
 }
 
 func (suite *ContractTestSuite) SetupTest() {
-	chainClient, err := contract.CreateClient("http://127.0.0.1:8545")
+	chainClient, err := client.CreateClient("http://127.0.0.1:8545")
 	suite.Require().NoError(err)
 
 	suite.chain = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))

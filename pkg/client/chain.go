@@ -1,4 +1,4 @@
-package contract
+package client
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -20,23 +19,11 @@ type Client struct {
 	endpoint string
 
 	conn *rpc.Client
-	*ethclient.Client
+	ETHClient
 }
 
-func CreateClient(endpoint string) (*Client, error) {
-	conn, err := rpc.DialHTTP(endpoint)
-	if err != nil {
-		return nil, err
-	}
-	return &Client{
-		endpoint: endpoint,
-		conn:     conn,
-		Client:   ethclient.NewClient(conn),
-	}, nil
-}
-
-func (cl Client) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) (*gethtypes.Receipt, error) {
-	var receipt *gethtypes.Receipt
+func (cl Client) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) (Receipt, error) {
+	var receipt Receipt
 	err := retry.Do(
 		func() error {
 			rc, err := cl.TransactionReceipt(ctx, tx.Hash())
@@ -53,6 +40,27 @@ func (cl Client) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transac
 		return nil, err
 	}
 	return receipt, nil
+}
+
+type ETHClient interface {
+	bind.ContractBackend
+	BlockByNumber(ctx context.Context, bn *big.Int) (*gethtypes.Block, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (Receipt, error)
+}
+
+type Receipt interface {
+	PostState() []byte
+	Status() uint64
+	CumulativeGasUsed() uint64
+	Bloom() gethtypes.Bloom
+	Logs() []*gethtypes.Log
+	TxHash() common.Hash
+	ContractAddress() common.Address
+	GasUsed() uint64
+	BlockHash() common.Hash
+	BlockNumber() *big.Int
+	TransactionIndex() uint
+	RevertReason() string
 }
 
 type GenTxOpts func(ctx context.Context) *bind.TransactOpts
