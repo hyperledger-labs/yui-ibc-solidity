@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/datachainlab/ibc-solidity/pkg/chains"
-	"github.com/datachainlab/ibc-solidity/pkg/contract"
+	"github.com/datachainlab/ibc-solidity/pkg/client"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibcidentifier"
@@ -42,7 +42,7 @@ type Chain struct {
 	t *testing.T
 
 	// Core Modules
-	client        contract.Client
+	client        client.Client
 	IBCHandler    ibchandler.Ibchandler
 	IBCHost       ibchost.Ibchost
 	IBCIdentifier ibcidentifier.Ibcidentifier
@@ -59,7 +59,7 @@ type Chain struct {
 	key0 *ecdsa.PrivateKey
 
 	// State
-	LastContractState *contract.ContractState
+	LastContractState *client.ContractState
 
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
@@ -78,7 +78,7 @@ type ContractConfig interface {
 	GetICS20BankAddress() common.Address
 }
 
-func NewChain(t *testing.T, chainID int64, client contract.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
+func NewChain(t *testing.T, chainID int64, client client.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
 	key0, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(mnemonicPhrase, "m/44'/60'/0'/0/0")
 	if err != nil {
 		t.Error(err)
@@ -126,12 +126,12 @@ func NewChain(t *testing.T, chainID int64, client contract.Client, config Contra
 	}
 }
 
-func (chain *Chain) Client() contract.Client {
+func (chain *Chain) Client() client.Client {
 	return chain.client
 }
 
 func (chain *Chain) TxOpts(ctx context.Context) *bind.TransactOpts {
-	return contract.MakeGenTxOpts(big.NewInt(chain.chainID), chain.key0)(ctx)
+	return client.MakeGenTxOpts(big.NewInt(chain.chainID), chain.key0)(ctx)
 }
 
 func (chain *Chain) CallOpts(ctx context.Context) *bind.CallOpts {
@@ -169,7 +169,7 @@ func (chain *Chain) GetClientState(clientID string) *clienttypes.ClientState {
 	return &cs
 }
 
-func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (*contract.ContractState, error) {
+func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (*client.ContractState, error) {
 	height := counterparty.GetClientState(counterpartyClientID).LatestHeight
 	return chain.client.GetContractState(
 		context.Background(),
@@ -691,10 +691,10 @@ func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tran
 	if err != nil {
 		return err
 	}
-	if rc.Status == 1 {
+	if rc.Status() == 1 {
 		return nil
 	} else {
-		return fmt.Errorf("failed to call transaction: %v %v", err, rc)
+		return fmt.Errorf("failed to call transaction: err='%v' rc='%v' reason='%v'", err, rc, rc.RevertReason())
 	}
 }
 
