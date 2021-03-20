@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datachainlab/ibc-solidity/pkg/contract"
+	"github.com/datachainlab/ibc-solidity/pkg/client"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 	testchain0 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain0"
@@ -27,10 +27,10 @@ type ChainTestSuite struct {
 }
 
 func (suite *ChainTestSuite) SetupTest() {
-	chainClientA, err := contract.CreateClient("http://127.0.0.1:8645")
+	chainClientA, err := client.NewBesuClient("http://127.0.0.1:8645")
 	suite.Require().NoError(err)
 
-	chainClientB, err := contract.CreateClient("http://127.0.0.1:8745")
+	chainClientB, err := client.NewBesuClient("http://127.0.0.1:8745")
 	suite.Require().NoError(err)
 
 	ibcID := uint64(time.Now().UnixNano())

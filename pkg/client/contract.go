@@ -1,4 +1,4 @@
-package contract
+package client
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 func (cl Client) GetContractState(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (*ContractState, error) {
 	var state ContractState
-	block, err := cl.Client.BlockByNumber(ctx, bn)
+	block, err := cl.BlockByNumber(ctx, bn)
 	if err != nil {
 		return nil, err
 	}

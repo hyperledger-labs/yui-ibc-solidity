@@ -1,4 +1,4 @@
-package contract
+package client
 
 import (
 	"encoding/hex"
