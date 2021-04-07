@@ -3,7 +3,7 @@
 ![Test](https://github.com/datachainlab/ibc-solidity/workflows/Test/badge.svg)
 [![GoDoc](https://godoc.org/github.com/datachainlab/ibc-solidity?status.svg)](https://pkg.go.dev/github.com/datachainlab/ibc-solidity?tab=doc)
 
-IBC implementations in ethereum.
+IBC implementations in solidity.
 
 NOTE: This is yet pre-alpha non-production-quality software.
 
@@ -11,7 +11,11 @@ NOTE: This is yet pre-alpha non-production-quality software.
 
 - Implementation of [ICS](https://github.com/cosmos/ics/tree/master/spec)
 - Implementation of ICS-20 that can integrate with ERC20 token
-- IBFT2.0 Light Client
+- IBFT 2.0 Light Client
+
+## Documents
+
+Please see [here](./docs/README.md).
 
 ## Getting started
 
