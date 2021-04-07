@@ -5,13 +5,14 @@ import (
 )
 
 const (
-	IBCHostAddress = "0xF16Fdb1FF23359633cCe37b7554394E8beA262D4"
-	IBCHandlerAddress = "0xff67836F5cb28030F6B8bDC32736F69e2e91d3F2"
-	IBCIdentifierAddress = "0xeeB18f5AC5bb97Fc68B6d3397e22564B2a38B78b"
-	IBFT2ClientAddress = "0x69112AC6cBe42103F63f3001114aF647E56EB98d"
-	SimpleTokenAddress = "0xFEAB95Eeb8507978bC5edD22E9BA2F52f9d377A1"
-	ICS20TransferBankAddress = "0x36C7086273a419f07B061a7E4184384270F5ec97"
-	ICS20BankAddress = "0x6fdA347f2A64fd55F43B63c28619548c9B362835"
+	IBCHostAddress = "0xff77D90D6aA12db33d3Ba50A34fB25401f6e4c4F"
+	IBCHandlerAddress = "0x2F5703804E29F4252FA9405B8D357220d11b3bd9"
+	IBCIdentifierAddress = "0xB9c99Dc02185993bdB9C48Fc29544f6cC6604F87"
+	IBFT2ClientAddress = "0x702E40245797c5a2108A566b3CE2Bf14Bc6aF841"
+	MockClientAddress = "0xaa43d337145E8930d01cb4E60Abf6595C692921E"
+	SimpleTokenAddress = "0xaE1C9125BbcF63bf51294C4D15CBD472782E330D"
+	ICS20TransferBankAddress = "0x87d7778dbc81251D5A0D78DFD8a0C359887E98C9"
+	ICS20BankAddress = "0xa7f733a4fEA1071f58114b203F57444969b86524"
 )
 
 type contractConfig struct{}
@@ -32,6 +33,10 @@ func (contractConfig) GetIBCIdentifierAddress() common.Address {
 
 func (contractConfig) GetIBFT2ClientAddress() common.Address {
 	return common.HexToAddress(IBFT2ClientAddress)
+}
+
+func (contractConfig) GetMockClientAddress() common.Address {
+	return common.HexToAddress(MockClientAddress)
 }
 
 func (contractConfig) GetSimpleTokenAddress() common.Address {

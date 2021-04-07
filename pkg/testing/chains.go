@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datachainlab/ibc-solidity/pkg/chains"
 	"github.com/datachainlab/ibc-solidity/pkg/client"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchandler"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
@@ -20,18 +19,20 @@ import (
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ics20transferbank"
 	"github.com/datachainlab/ibc-solidity/pkg/contract/simpletoken"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
-	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
+	ibcclient "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
+	ibft2clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client/ibft2"
+	mockclienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client/mock"
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/datachainlab/ibc-solidity/pkg/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	BesuIBFT2Client              = "ibft2"
 	DefaultChannelVersion        = "ics20-1"
 	DefaultDelayPeriod    uint64 = 0
 	DefaultPrefix                = "ibc"
@@ -59,7 +60,7 @@ type Chain struct {
 	key0 *ecdsa.PrivateKey
 
 	// State
-	LastContractState *client.ContractState
+	LastContractState client.ContractState
 
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
@@ -72,6 +73,7 @@ type ContractConfig interface {
 	GetIBCHandlerAddress() common.Address
 	GetIBCIdentifierAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
+	GetMockClientAddress() common.Address
 
 	GetSimpleTokenAddress() common.Address
 	GetICS20TransferBankAddress() common.Address
@@ -130,6 +132,10 @@ func (chain *Chain) Client() client.Client {
 	return chain.client
 }
 
+func (chain *Chain) ClientType() string {
+	return chain.client.ClientType()
+}
+
 func (chain *Chain) TxOpts(ctx context.Context) *bind.TransactOpts {
 	return client.MakeGenTxOpts(big.NewInt(chain.chainID), chain.key0)(ctx)
 }
@@ -154,7 +160,7 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 	return []byte(DefaultPrefix)
 }
 
-func (chain *Chain) GetClientState(clientID string) *clienttypes.ClientState {
+func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.ClientState {
 	ctx := context.Background()
 	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx), clientID)
 	if err != nil {
@@ -162,15 +168,40 @@ func (chain *Chain) GetClientState(clientID string) *clienttypes.ClientState {
 	} else if !found {
 		panic("clientState not found")
 	}
-	var cs clienttypes.ClientState
+	var cs ibft2clienttypes.ClientState
 	if err := proto.Unmarshal(bz, &cs); err != nil {
 		panic(err)
 	}
 	return &cs
 }
 
-func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (*client.ContractState, error) {
-	height := counterparty.GetClientState(counterpartyClientID).LatestHeight
+func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientState {
+	ctx := context.Background()
+	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx), clientID)
+	if err != nil {
+		require.NoError(chain.t, err)
+	} else if !found {
+		panic("clientState not found")
+	}
+	var cs mockclienttypes.ClientState
+	if err := proto.Unmarshal(bz, &cs); err != nil {
+		panic(err)
+	}
+	return &cs
+}
+
+func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (client.ContractState, error) {
+	var height uint64
+
+	switch counterparty.ClientType() {
+	case ibcclient.MockClient:
+		height = counterparty.GetMockClientState(counterpartyClientID).LatestHeight
+	case ibcclient.BesuIBFT2Client:
+		height = counterparty.GetIBFT2ClientState(counterpartyClientID).LatestHeight
+	default:
+		return nil, fmt.Errorf("unknown client type: '%v'", counterparty.ClientType())
+	}
+
 	return chain.client.GetContractState(
 		context.Background(),
 		chain.ContractConfig.GetIBCHostAddress(),
@@ -202,14 +233,28 @@ func (chain *Chain) Init() error {
 		}
 	}
 
-	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), BesuIBFT2Client); err != nil {
+	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), ibcclient.BesuIBFT2Client); err != nil {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
 			chain.IBCHandler.RegisterClient(
 				chain.TxOpts(ctx),
-				BesuIBFT2Client,
+				ibcclient.BesuIBFT2Client,
 				chain.ContractConfig.GetIBFT2ClientAddress(),
+			),
+		); err != nil {
+			return err
+		}
+	}
+
+	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), ibcclient.MockClient); err != nil {
+		return err
+	} else if !found {
+		if err := chain.WaitIfNoError(ctx)(
+			chain.IBCHandler.RegisterClient(
+				chain.TxOpts(ctx),
+				ibcclient.MockClient,
+				chain.ContractConfig.GetMockClientAddress(),
 			),
 		); err != nil {
 			return err
@@ -225,16 +270,12 @@ func (chain *Chain) Init() error {
 	return nil
 }
 
-func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgCreateClient {
-	clientState := clienttypes.ClientState{
-		ChainId:         counterparty.ChainIDString(),
-		IbcStoreAddress: counterparty.ContractConfig.GetIBCHostAddress().Bytes(),
-		LatestHeight:    counterparty.LastHeader().Base.Number.Uint64(),
+func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgCreateClient {
+	clientState := mockclienttypes.ClientState{
+		LatestHeight: counterparty.LastHeader().Number.Uint64(),
 	}
-	consensusState := clienttypes.ConsensusState{
-		Timestamp:  counterparty.LastHeader().Base.Time,
-		Root:       counterparty.LastHeader().Base.Root.Bytes(),
-		Validators: counterparty.LastValidators(),
+	consensusState := mockclienttypes.ConsensusState{
+		Timestamp: counterparty.LastHeader().Time,
 	}
 	clientStateBytes, err := proto.Marshal(&clientState)
 	if err != nil {
@@ -246,20 +287,61 @@ func (chain *Chain) ConstructMsgCreateClient(counterparty *Chain, clientID strin
 	}
 	return ibchandler.IBCMsgsMsgCreateClient{
 		ClientId:            clientID,
-		ClientType:          BesuIBFT2Client,
+		ClientType:          ibcclient.MockClient,
 		Height:              clientState.LatestHeight,
 		ClientStateBytes:    clientStateBytes,
 		ConsensusStateBytes: consensusStateBytes,
 	}
 }
 
-func (chain *Chain) ConstructMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
-	trustedHeight := chain.GetClientState(clientID).LatestHeight
-	var header = clienttypes.Header{
-		BesuHeaderRlp:     counterparty.LastContractState.SealingHeaderRLP(),
-		Seals:             counterparty.LastContractState.CommitSeals,
+func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgCreateClient {
+	clientState := ibft2clienttypes.ClientState{
+		ChainId:         counterparty.ChainIDString(),
+		IbcStoreAddress: counterparty.ContractConfig.GetIBCHostAddress().Bytes(),
+		LatestHeight:    counterparty.LastHeader().Number.Uint64(),
+	}
+	consensusState := ibft2clienttypes.ConsensusState{
+		Timestamp:  counterparty.LastHeader().Time,
+		Root:       counterparty.LastHeader().Root.Bytes(),
+		Validators: counterparty.LastContractState.(client.IBFT2ContractState).Validators(),
+	}
+	clientStateBytes, err := proto.Marshal(&clientState)
+	if err != nil {
+		panic(err)
+	}
+	consensusStateBytes, err := proto.Marshal(&consensusState)
+	if err != nil {
+		panic(err)
+	}
+	return ibchandler.IBCMsgsMsgCreateClient{
+		ClientId:            clientID,
+		ClientType:          ibcclient.BesuIBFT2Client,
+		Height:              clientState.LatestHeight,
+		ClientStateBytes:    clientStateBytes,
+		ConsensusStateBytes: consensusStateBytes,
+	}
+}
+
+func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
+	cs := counterparty.LastContractState.(client.ETHContractState)
+	bz, err := rlp.EncodeToBytes(cs.Header())
+	if err != nil {
+		panic(err)
+	}
+	return ibchandler.IBCMsgsMsgUpdateClient{
+		ClientId: clientID,
+		Header:   bz,
+	}
+}
+
+func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
+	trustedHeight := chain.GetIBFT2ClientState(clientID).LatestHeight
+	cs := counterparty.LastContractState.(client.IBFT2ContractState)
+	var header = ibft2clienttypes.Header{
+		BesuHeaderRlp:     cs.SealingHeaderRLP(),
+		Seals:             cs.CommitSeals,
 		TrustedHeight:     trustedHeight,
-		AccountStateProof: counterparty.LastContractState.AccountProofRLP(),
+		AccountStateProof: cs.ETHProof().AccountProofRLP,
 	}
 	headerBytes, err := proto.Marshal(&header)
 	if err != nil {
@@ -279,7 +361,7 @@ func (chain *Chain) UpdateHeader() {
 		if err != nil {
 			panic(err)
 		}
-		if chain.LastContractState == nil || state.ParsedHeader.Base.Number.Cmp(chain.LastHeader().Base.Number) == 1 {
+		if chain.LastContractState == nil || state.Header().Number.Cmp(chain.LastHeader().Number) == 1 {
 			chain.LastContractState = state
 			return
 		} else {
@@ -288,15 +370,29 @@ func (chain *Chain) UpdateHeader() {
 	}
 }
 
-func (chain *Chain) CreateBesuClient(ctx context.Context, counterparty *Chain, clientID string) error {
-	msg := chain.ConstructMsgCreateClient(counterparty, clientID)
+func (chain *Chain) CreateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
+	msg := chain.ConstructMockMsgCreateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.CreateClient(chain.TxOpts(ctx), msg),
 	)
 }
 
-func (chain *Chain) UpdateBesuClient(ctx context.Context, counterparty *Chain, clientID string) error {
-	msg := chain.ConstructMsgUpdateClient(counterparty, clientID)
+func (chain *Chain) UpdateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
+	msg := chain.ConstructMockMsgUpdateClient(counterparty, clientID)
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx), msg),
+	)
+}
+
+func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
+	msg := chain.ConstructIBFT2MsgCreateClient(counterparty, clientID)
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCHandler.CreateClient(chain.TxOpts(ctx), msg),
+	)
+}
+
+func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
+	msg := chain.ConstructIBFT2MsgUpdateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx), msg),
 	)
@@ -671,19 +767,11 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	if err != nil {
 		return nil, err
 	}
-	return &Proof{Height: s.ParsedHeader.Base.Number.Uint64(), Data: s.StorageProofRLP(0)}, nil
+	return &Proof{Height: s.Header().Number.Uint64(), Data: s.ETHProof().StorageProofRLP[0]}, nil
 }
 
-func (chain *Chain) LastValidators() [][]byte {
-	var addrs [][]byte
-	for _, val := range chain.LastContractState.ParsedHeader.Validators {
-		addrs = append(addrs, val.Bytes())
-	}
-	return addrs
-}
-
-func (chain *Chain) LastHeader() *chains.ParsedHeader {
-	return chain.LastContractState.ParsedHeader
+func (chain *Chain) LastHeader() *gethtypes.Header {
+	return chain.LastContractState.Header()
 }
 
 func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) error {

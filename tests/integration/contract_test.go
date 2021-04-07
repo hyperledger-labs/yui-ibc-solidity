@@ -1,11 +1,14 @@
 package tests
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/datachainlab/ibc-solidity/pkg/client"
 	"github.com/datachainlab/ibc-solidity/pkg/consts"
+	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
+	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 
 	"github.com/stretchr/testify/suite"
@@ -16,36 +19,31 @@ const mnemonicPhrase = "math razor capable expose worth grape metal sunset metal
 type ContractTestSuite struct {
 	suite.Suite
 
-	chain *ibctesting.Chain
+	coordinator ibctesting.Coordinator
+	chainA      *ibctesting.Chain
+	chainB      *ibctesting.Chain
 }
 
 func (suite *ContractTestSuite) SetupTest() {
-	chainClient, err := client.CreateClient("http://127.0.0.1:8545")
+	chainClient, err := client.NewETHClient("http://127.0.0.1:8545", clienttypes.MockClient)
 	suite.Require().NoError(err)
 
-	suite.chain = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.chainB = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
-// func (suite *ContractTestSuite) TestHandlePacketRecv() {
-// 	ctx := context.Background()
+func (suite *ContractTestSuite) TestClient() {
+	ctx := context.Background()
 
-// 	portId := "transfer"
-// 	suite.T().Log(portId, suite.chain.ContractConfig.GetSimpleTokenModuleAddress())
-// 	data := []byte("data0")
-// 	suite.Require().NoError(
-// 		suite.chain.WaitIfNoError(ctx)(
-// 			suite.chain.IBCModule.HandlePacketRecvWithoutVerification(
-// 				suite.chain.TxOpts(ctx),
-// 				ibchandler.IBCMsgsMsgPacketRecv{
-// 					Packet: ibchandler.PacketData{
-// 						DestinationPort: portId,
-// 						Data:            data,
-// 					},
-// 				},
-// 			),
-// 		),
-// 	)
-// }
+	chainA := suite.chainA
+	chainB := suite.chainB
+
+	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
+	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+	_, _ = chanA, chanB
+}
 
 func TestContractTestSuite(t *testing.T) {
 	suite.Run(t, new(ContractTestSuite))

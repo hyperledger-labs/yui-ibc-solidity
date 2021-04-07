@@ -16,10 +16,15 @@ import (
 )
 
 type Client struct {
-	endpoint string
+	endpoint   string
+	clientType string
 
 	conn *rpc.Client
 	ETHClient
+}
+
+func (cl Client) ClientType() string {
+	return cl.clientType
 }
 
 func (cl Client) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) (Receipt, error) {
