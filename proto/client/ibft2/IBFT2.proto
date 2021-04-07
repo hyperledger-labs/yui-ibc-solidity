@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "pkg/ibc/client";
+option go_package = "pkg/ibc/client/ibft2";
 
 message ClientState {
   string chain_id = 1;

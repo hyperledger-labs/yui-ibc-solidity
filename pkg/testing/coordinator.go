@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
+	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,8 +75,10 @@ func (c Coordinator) CreateClient(
 ) (clientID string, err error) {
 	clientID = source.NewClientID(clientType)
 	switch clientType {
-	case BesuIBFT2Client:
-		err = source.CreateBesuClient(ctx, counterparty, clientID)
+	case clienttypes.BesuIBFT2Client:
+		err = source.CreateIBFT2Client(ctx, counterparty, clientID)
+	case clienttypes.MockClient:
+		err = source.CreateMockClient(ctx, counterparty, clientID)
 	default:
 		err = fmt.Errorf("client type %s is not supported", clientType)
 	}
@@ -91,14 +94,15 @@ func (c Coordinator) UpdateClient(
 	ctx context.Context,
 	source, counterparty *Chain,
 	clientID string,
-	clientType string,
 ) error {
 	var err error
-	switch clientType {
-	case BesuIBFT2Client:
-		err = source.UpdateBesuClient(ctx, counterparty, clientID)
+	switch counterparty.ClientType() {
+	case clienttypes.BesuIBFT2Client:
+		err = source.UpdateIBFT2Client(ctx, counterparty, clientID)
+	case clienttypes.MockClient:
+		err = source.UpdateMockClient(ctx, counterparty, clientID)
 	default:
-		err = fmt.Errorf("client type %s is not supported", clientType)
+		err = fmt.Errorf("client type %s is not supported", counterparty.ClientType())
 	}
 	if err != nil {
 		return err
@@ -179,7 +183,6 @@ func (c Coordinator) ConnOpenInit(
 		ctx,
 		counterparty, source,
 		counterpartyClientID,
-		BesuIBFT2Client,
 	); err != nil {
 		fmt.Println("updateClient:", err)
 		return sourceConnection, counterpartyConnection, err
@@ -206,7 +209,6 @@ func (c *Coordinator) ConnOpenTry(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
-		BesuIBFT2Client,
 	)
 }
 
@@ -229,7 +231,6 @@ func (c *Coordinator) ConnOpenAck(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
-		BesuIBFT2Client,
 	)
 }
 
@@ -251,7 +252,6 @@ func (c *Coordinator) ConnOpenConfirm(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
-		BesuIBFT2Client,
 	)
 }
 
@@ -281,7 +281,6 @@ func (c *Coordinator) ChanOpenInit(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
-		BesuIBFT2Client,
 	)
 	return sourceChannel, counterpartyChannel, err
 }
@@ -306,7 +305,6 @@ func (c *Coordinator) ChanOpenTry(
 		ctx,
 		counterparty, source,
 		connection.CounterpartyClientID,
-		BesuIBFT2Client,
 	)
 }
 
@@ -327,7 +325,6 @@ func (c *Coordinator) ChanOpenAck(
 		ctx,
 		counterparty, source,
 		sourceChannel.CounterpartyClientID,
-		BesuIBFT2Client,
 	)
 }
 
@@ -347,7 +344,6 @@ func (c *Coordinator) ChanOpenConfirm(
 		ctx,
 		counterparty, source,
 		sourceChannel.CounterpartyClientID,
-		BesuIBFT2Client,
 	)
 }
 
@@ -368,7 +364,7 @@ func (c *Coordinator) SendPacket(
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
-		counterpartyClientID, BesuIBFT2Client,
+		counterpartyClientID,
 	)
 }
 
@@ -388,7 +384,7 @@ func (c *Coordinator) RecvPacket(
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
-		counterpartyClientID, BesuIBFT2Client,
+		counterpartyClientID,
 	)
 }
 
@@ -407,7 +403,7 @@ func (c *Coordinator) HandlePacketRecv(
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
-		counterpartyChannel.ClientID, BesuIBFT2Client,
+		counterpartyChannel.ClientID,
 	)
 }
 
@@ -427,6 +423,6 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
-		counterpartyChannel.ClientID, BesuIBFT2Client,
+		counterpartyChannel.ClientID,
 	)
 }

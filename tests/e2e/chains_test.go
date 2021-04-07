@@ -10,6 +10,7 @@ import (
 
 	"github.com/datachainlab/ibc-solidity/pkg/client"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
+	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
 	testchain0 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain0"
 	testchain1 "github.com/datachainlab/ibc-solidity/tests/e2e/config/chain1"
@@ -27,10 +28,10 @@ type ChainTestSuite struct {
 }
 
 func (suite *ChainTestSuite) SetupTest() {
-	chainClientA, err := client.NewBesuClient("http://127.0.0.1:8645")
+	chainClientA, err := client.NewBesuClient("http://127.0.0.1:8645", clienttypes.BesuIBFT2Client)
 	suite.Require().NoError(err)
 
-	chainClientB, err := client.NewBesuClient("http://127.0.0.1:8745")
+	chainClientB, err := client.NewBesuClient("http://127.0.0.1:8745", clienttypes.BesuIBFT2Client)
 	suite.Require().NoError(err)
 
 	ibcID := uint64(time.Now().UnixNano())
@@ -45,7 +46,7 @@ func (suite ChainTestSuite) TestChannel() {
 	chainA := suite.chainA
 	chainB := suite.chainB
 
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, ibctesting.BesuIBFT2Client)
+	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.BesuIBFT2Client)
 	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
 
@@ -84,11 +85,11 @@ func (suite ChainTestSuite) TestChannel() {
 			100,
 			chainB.CallOpts(ctx).From,
 			chanA.PortID, chanA.ID,
-			uint64(chainA.LastHeader().Base.Number.Int64())+1000,
+			uint64(chainA.LastHeader().Number.Int64())+1000,
 		),
 	))
 	chainA.UpdateHeader()
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB, ibctesting.BesuIBFT2Client))
+	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
 	// ensure that escrow has correct balance
 	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx), chainA.ContractConfig.GetICS20TransferBankAddress(), baseDenom)
@@ -116,11 +117,11 @@ func (suite ChainTestSuite) TestChannel() {
 			chainA.CallOpts(ctx).From,
 			chanB.PortID,
 			chanB.ID,
-			uint64(chainB.LastHeader().Base.Number.Int64())+1000,
+			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
 	))
 	chainB.UpdateHeader()
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA, ibctesting.BesuIBFT2Client))
+	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 	// relay the packet
 	transferPacket, err = chainB.GetLastSentPacket(ctx, chanB.PortID, chanB.ID)

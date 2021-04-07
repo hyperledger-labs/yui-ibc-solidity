@@ -15,15 +15,16 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-func NewBesuClient(endpoint string) (*Client, error) {
+func NewBesuClient(endpoint string, clientType string) (*Client, error) {
 	conn, err := rpc.DialHTTP(endpoint)
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
-		endpoint:  endpoint,
-		conn:      conn,
-		ETHClient: besuClient{Client: ethclient.NewClient(conn), rpcClient: conn},
+		endpoint:   endpoint,
+		clientType: clientType,
+		conn:       conn,
+		ETHClient:  besuClient{Client: ethclient.NewClient(conn), rpcClient: conn},
 	}, nil
 }
 
