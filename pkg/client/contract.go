@@ -21,20 +21,20 @@ func (cl Client) GetContractState(ctx context.Context, address common.Address, s
 	case ibcclient.BesuIBFT2Client:
 		return cl.GetIBFT2ContractState(ctx, address, storageKeys, bn)
 	case ibcclient.MockClient:
-		return cl.GetETHContractState(ctx, address, storageKeys, bn)
+		return cl.GetMockContractState(ctx, address, storageKeys, bn)
 	default:
 		panic(fmt.Sprintf("unknown client type '%v'", cl.clientType))
 	}
 }
 
-func (cl Client) GetETHContractState(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (ContractState, error) {
+func (cl Client) GetMockContractState(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (ContractState, error) {
 	block, err := cl.BlockByNumber(ctx, bn)
 	if err != nil {
 		return nil, err
 	}
-	proof, err := cl.GetETHProof(address, storageKeys, block.Number())
-	if err != nil {
-		return nil, err
+	// this is dummy
+	proof := &ETHProof{
+		StorageProofRLP: make([][]byte, len(storageKeys)),
 	}
 	return ETHContractState{header: block.Header(), ethProof: proof}, nil
 }
