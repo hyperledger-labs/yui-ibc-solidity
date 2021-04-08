@@ -43,6 +43,10 @@ proto-gen:
 	@echo "Generating Protobuf files"
 	docker run -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen sh ./scripts/protocgen.sh
 
+.PHONY: integration-test
+integration-test:
+	go test -v ./tests/integration/... -count=1
+
 .PHONY: e2e-test
 e2e-test:
-	go test -v ./tests/e2e/...
+	go test -v ./tests/e2e/... -count=1

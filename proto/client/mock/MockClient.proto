@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package mock;
+
+option go_package = "pkg/ibc/client/mock";
+
+message ClientState {
+  uint64 latest_height = 1;
+}
+
+message ConsensusState {
+  uint64 timestamp = 1;
+}
