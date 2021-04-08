@@ -1,6 +1,7 @@
 const Migrations = artifacts.require("Migrations");
 const IBCHost = artifacts.require("IBCHost");
 const IBFT2Client = artifacts.require("IBFT2Client");
+const MockClient = artifacts.require("MockClient");
 const IBCClient = artifacts.require("IBCClient");
 const IBCConnection = artifacts.require("IBCConnection");
 const IBCChannel = artifacts.require("IBCChannel");
@@ -29,6 +30,7 @@ module.exports = function (deployer) {
     return deployer.link(IBCChannel, [IBCHandler]);
   });
   deployer.deploy(IBFT2Client);
+  deployer.deploy(MockClient);
   deployer.deploy(IBCHost).then(function() {
     return deployer.deploy(IBCHandler, IBCHost.address);
   });
