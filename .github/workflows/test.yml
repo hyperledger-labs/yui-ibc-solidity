@@ -28,8 +28,14 @@ jobs:
     - name: apply the patch
       run: sed -i -e 's/20000,/200000,/' ./node_modules/@trufflesuite/web3-provider-engine/subproviders/rpc.js
 
-    - name: Setup chains
+    - name: Setup ganache-cli
+      run: NO_GEN_CODE=1 ./scripts/setup.sh development
+
+    - name: Integartion test
+      run: make integration-test
+
+    - name: Setup chains for E2E test
       run: NO_GEN_CODE=1 ./scripts/setup.sh testtwochainz
 
     - name: E2E test
-      run: go test -v ./tests/e2e/...
+      run: make e2e-test
