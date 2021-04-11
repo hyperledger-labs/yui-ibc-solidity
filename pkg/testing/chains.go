@@ -705,12 +705,39 @@ func (chain *Chain) GetLastSentPacket(
 	if err != nil {
 		return nil, err
 	}
-	packet, err := chain.IBCHost.GetPacket(chain.CallOpts(ctx), sourcePortID, sourceChannel, seq-1)
+	return chain.FindPacket(ctx, sourcePortID, sourceChannel, seq-1)
+}
+
+func (chain *Chain) FindPacket(
+	ctx context.Context,
+	sourcePortID string,
+	sourceChannel string,
+	sequence uint64,
+) (*channeltypes.Packet, error) {
+	iter, err := chain.IBCHandler.FilterSendPacket(&bind.FilterOpts{
+		Start:   0,
+		Context: ctx,
+	})
 	if err != nil {
 		return nil, err
 	}
-	p := channeltypes.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
-	return &p, nil
+	defer iter.Close()
+	for iter.Next() {
+		p := iter.Event.Packet
+		if p.SourcePort == sourcePortID && p.SourceChannel == sourceChannel && p.Sequence == sequence {
+			return &channeltypes.Packet{
+				Sequence:           p.Sequence,
+				SourcePort:         p.SourcePort,
+				SourceChannel:      p.SourceChannel,
+				DestinationPort:    p.DestinationPort,
+				DestinationChannel: p.DestinationChannel,
+				Data:               p.Data,
+				TimeoutHeight:      channeltypes.Height(p.TimeoutHeight),
+				TimeoutTimestamp:   p.TimeoutTimestamp,
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
 }
 
 func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
