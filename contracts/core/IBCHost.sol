@@ -20,7 +20,7 @@ contract IBCHost {
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
     mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
-    // TODO remove this storage variable in production. see details `function setPacket`
+    // TODO remove this storage variable in production. should use the event instead of it. see details `function setPacket`
     mapping (string => mapping(string => mapping(uint64 => Packet.Data))) packets;
     mapping (bytes => address[]) capabilities;
 
