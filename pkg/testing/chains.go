@@ -25,6 +25,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/datachainlab/ibc-solidity/pkg/wallet"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -40,6 +42,18 @@ const (
 
 	RelayerKeyIndex uint32 = 0
 )
+
+var (
+	abiSendPacket abi.Event
+)
+
+func init() {
+	parsedABI, err := abi.JSON(strings.NewReader(ibchandler.IbchandlerABI))
+	if err != nil {
+		panic(err)
+	}
+	abiSendPacket = parsedABI.Events["SendPacket"]
+}
 
 type Chain struct {
 	t *testing.T
@@ -726,29 +740,52 @@ func (chain *Chain) FindPacket(
 	sourceChannel string,
 	sequence uint64,
 ) (*channeltypes.Packet, error) {
-	iter, err := chain.IBCHandler.FilterSendPacket(&bind.FilterOpts{
-		Start:   0,
-		Context: ctx,
-	})
+	query := ethereum.FilterQuery{
+		FromBlock: big.NewInt(0),
+		Addresses: []common.Address{
+			chain.ContractConfig.GetIBCHandlerAddress(),
+		},
+		Topics: [][]common.Hash{{
+			abiSendPacket.ID,
+		}},
+	}
+	logs, err := chain.client.FilterLogs(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer iter.Close()
-	for iter.Next() {
-		p := iter.Event.Packet
-		if p.SourcePort == sourcePortID && p.SourceChannel == sourceChannel && p.Sequence == sequence {
-			return &channeltypes.Packet{
-				Sequence:           p.Sequence,
-				SourcePort:         p.SourcePort,
-				SourceChannel:      p.SourceChannel,
-				DestinationPort:    p.DestinationPort,
-				DestinationChannel: p.DestinationChannel,
-				Data:               p.Data,
-				TimeoutHeight:      channeltypes.Height(p.TimeoutHeight),
-				TimeoutTimestamp:   p.TimeoutTimestamp,
-			}, nil
+
+	for _, log := range logs {
+		if values, err := abiSendPacket.Inputs.Unpack(log.Data); err != nil {
+			return nil, err
+		} else {
+			p := values[0].(struct {
+				Sequence           uint64  "json:\"sequence\""
+				SourcePort         string  "json:\"source_port\""
+				SourceChannel      string  "json:\"source_channel\""
+				DestinationPort    string  "json:\"destination_port\""
+				DestinationChannel string  "json:\"destination_channel\""
+				Data               []uint8 "json:\"data\""
+				TimeoutHeight      struct {
+					RevisionNumber uint64 "json:\"revision_number\""
+					RevisionHeight uint64 "json:\"revision_height\""
+				} "json:\"timeout_height\""
+				TimeoutTimestamp uint64 "json:\"timeout_timestamp\""
+			})
+			if p.SourcePort == sourcePortID && p.SourceChannel == sourceChannel && p.Sequence == sequence {
+				return &channeltypes.Packet{
+					Sequence:           p.Sequence,
+					SourcePort:         p.SourcePort,
+					SourceChannel:      p.SourceChannel,
+					DestinationPort:    p.DestinationPort,
+					DestinationChannel: p.DestinationChannel,
+					Data:               p.Data,
+					TimeoutHeight:      channeltypes.Height(p.TimeoutHeight),
+					TimeoutTimestamp:   p.TimeoutTimestamp,
+				}, nil
+			}
 		}
 	}
+
 	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
 }
 
