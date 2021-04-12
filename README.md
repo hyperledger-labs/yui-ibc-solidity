@@ -9,9 +9,9 @@ NOTE: This is yet pre-alpha non-production-quality software.
 
 ## Features
 
-- Implementation of [ICS](https://github.com/cosmos/ics/tree/master/spec)
-- Implementation of ICS-20 that can integrate with ERC20 token
-- IBFT 2.0 Light Client
+- Implementation of [ICS](https://github.com/cosmos/ibc/tree/master/spec/core)
+- Implementation of [ICS-20](https://github.com/cosmos/ibc/tree/master/spec/app/ics-020-fungible-token-transfer) that can integrate with ERC20 token
+- [IBFT 2.0 Light Client](./docs/ibft2-light-client.md)
 
 ## Documents
 
