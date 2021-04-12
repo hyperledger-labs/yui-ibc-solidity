@@ -14,6 +14,12 @@ contract IBCHandler {
     address owner;
     IBCHost host;
 
+    /// Event definitions ///
+    event SendPacket(Packet.Data packet);
+    event RecvPacket(Packet.Data packet, bytes acknowledgement);
+    event WriteAcknowledgement(string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement);
+    event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
+
     constructor(IBCHost host_) public {
         owner = msg.sender;
         host = host_;
@@ -101,6 +107,7 @@ contract IBCHandler {
             msg.sender
         ));
         IBCChannel.sendPacket(host, packet);
+        emit SendPacket(packet);
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory acknowledgement) {
@@ -108,15 +115,26 @@ contract IBCHandler {
         acknowledgement = module.onRecvPacket(msg_.packet);
         IBCChannel.recvPacket(host, msg_);
         if (acknowledgement.length > 0) {
-            IBCChannel.writeAcknowledgement(host, msg_.packet, acknowledgement);
+            IBCChannel.writeAcknowledgement(host, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
         }
+        emit RecvPacket(msg_.packet, acknowledgement);
         return acknowledgement;
+    }
+
+    function writeAcknowledgement(string calldata destinationPortId, string calldata destinationChannel, uint64 sequence, bytes calldata acknowledgement) external {
+        require(host.authenticateCapability(
+            IBCIdentifier.channelCapabilityPath(destinationPortId, destinationChannel),
+            msg.sender
+        ));
+        IBCChannel.writeAcknowledgement(host, destinationPortId, destinationChannel, sequence, acknowledgement);
+        emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
         module.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement);
         IBCChannel.acknowledgePacket(host, msg_);
+        emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
     }
 
     function bindPort(string memory portId, address moduleAddress) public {

@@ -223,20 +223,20 @@ library IBCChannel {
 
     // WriteAcknowledgement writes the packet execution acknowledgement to the state,
     // which will be verified by the counterparty chain using AcknowledgePacket.
-    function writeAcknowledgement(IBCHost host, Packet.Data calldata packet, bytes calldata acknowledgement) external {
+    function writeAcknowledgement(IBCHost host, string calldata destinationPortId, string calldata destinationChannel, uint64 sequence, bytes calldata acknowledgement) external {
         host.onlyIBCModule();
         Channel.Data memory channel;
         bytes32 ackHash;
         bool found;
-        (channel, found) = host.getChannel(packet.destination_port, packet.destination_channel);
+        (channel, found) = host.getChannel(destinationPortId, destinationChannel);
         require(found, "channel not found");
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
-        (ackHash, found) = host.getPacketAcknowledgementCommitment(packet.destination_port, packet.destination_channel, packet.sequence);
+        (ackHash, found) = host.getPacketAcknowledgementCommitment(destinationPortId, destinationChannel, sequence);
         require(!found, "acknowledgement for packet already exists");
 
         require(acknowledgement.length > 0, "acknowledgement cannot be empty");
-        host.setPacketAcknowledgementCommitment(packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement);
+        host.setPacketAcknowledgementCommitment(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
     // TODO use calldata
