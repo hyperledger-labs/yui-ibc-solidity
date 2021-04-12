@@ -20,8 +20,6 @@ contract IBCHost {
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
     mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
-    // TODO remove this storage variable in production. see details `function setPacket`
-    mapping (string => mapping(string => mapping(uint64 => Packet.Data))) packets;
     mapping (bytes => address[]) capabilities;
 
     address owner;
@@ -151,21 +149,9 @@ contract IBCHost {
         return nextSequenceAcks[portId][channelId];
     }
 
-    // TODO remove this function in production
-    // NOTE: A packet doesn't need to be stored in storage, but this will help development
-    function setPacket(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) internal {
-        packets[portId][channelId][sequence] = packet;
-    }
-
-    // TODO remove this function in production
-    function getPacket(string calldata portId, string calldata channelId, uint64 sequence) external view returns (Packet.Data memory) {
-        return packets[portId][channelId][sequence];
-    }
-
     function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) public {
         onlyIBCModule();
         commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
-        setPacket(portId, channelId, sequence, packet);
     }
 
     function deletePacketCommitment(string calldata portId, string calldata channelId, uint64 sequence) external {

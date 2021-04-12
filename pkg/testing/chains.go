@@ -25,6 +25,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 
 	"github.com/datachainlab/ibc-solidity/pkg/wallet"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -37,7 +39,21 @@ const (
 	DefaultDelayPeriod    uint64 = 0
 	DefaultPrefix                = "ibc"
 	TransferPort                 = "transfer"
+
+	RelayerKeyIndex uint32 = 0
 )
+
+var (
+	abiSendPacket abi.Event
+)
+
+func init() {
+	parsedABI, err := abi.JSON(strings.NewReader(ibchandler.IbchandlerABI))
+	if err != nil {
+		panic(err)
+	}
+	abiSendPacket = parsedABI.Events["SendPacket"]
+}
 
 type Chain struct {
 	t *testing.T
@@ -57,7 +73,8 @@ type Chain struct {
 
 	ContractConfig ContractConfig
 
-	key0 *ecdsa.PrivateKey
+	mnemonicPhrase string
+	keys           map[uint32]*ecdsa.PrivateKey
 
 	// State
 	LastContractState client.ContractState
@@ -81,11 +98,6 @@ type ContractConfig interface {
 }
 
 func NewChain(t *testing.T, chainID int64, client client.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
-	key0, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(mnemonicPhrase, "m/44'/60'/0'/0/0")
-	if err != nil {
-		t.Error(err)
-	}
-
 	ibcHost, err := ibchost.NewIbchost(config.GetIBCHostAddress(), client)
 	if err != nil {
 		t.Error(err)
@@ -116,7 +128,8 @@ func NewChain(t *testing.T, chainID int64, client client.Client, config Contract
 		client:         client,
 		chainID:        chainID,
 		ContractConfig: config,
-		key0:           key0,
+		mnemonicPhrase: mnemonicPhrase,
+		keys:           make(map[uint32]*ecdsa.PrivateKey),
 		IBCID:          ibcID,
 
 		IBCHost:       *ibcHost,
@@ -136,16 +149,29 @@ func (chain *Chain) ClientType() string {
 	return chain.client.ClientType()
 }
 
-func (chain *Chain) TxOpts(ctx context.Context) *bind.TransactOpts {
-	return client.MakeGenTxOpts(big.NewInt(chain.chainID), chain.key0)(ctx)
+func (chain *Chain) TxOpts(ctx context.Context, index uint32) *bind.TransactOpts {
+	return client.MakeGenTxOpts(big.NewInt(chain.chainID), chain.prvKey(index))(ctx)
 }
 
-func (chain *Chain) CallOpts(ctx context.Context) *bind.CallOpts {
-	opts := chain.TxOpts(ctx)
+func (chain *Chain) CallOpts(ctx context.Context, index uint32) *bind.CallOpts {
+	opts := chain.TxOpts(ctx, index)
 	return &bind.CallOpts{
 		From:    opts.From,
 		Context: opts.Context,
 	}
+}
+
+func (chain *Chain) prvKey(index uint32) *ecdsa.PrivateKey {
+	key, ok := chain.keys[index]
+	if ok {
+		return key
+	}
+	key, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(chain.mnemonicPhrase, fmt.Sprintf("m/44'/60'/0'/0/%v", index))
+	if err != nil {
+		panic(err)
+	}
+	chain.keys[index] = key
+	return key
 }
 
 func (chain *Chain) ChainID() int64 {
@@ -162,7 +188,7 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 
 func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.ClientState {
 	ctx := context.Background()
-	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx), clientID)
+	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
 	if err != nil {
 		require.NoError(chain.t, err)
 	} else if !found {
@@ -177,7 +203,7 @@ func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.Clien
 
 func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientState {
 	ctx := context.Background()
-	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx), clientID)
+	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
 	if err != nil {
 		require.NoError(chain.t, err)
 	} else if !found {
@@ -214,31 +240,31 @@ func (chain *Chain) Init() error {
 	ctx := context.Background()
 	if err := chain.WaitIfNoError(ctx)(
 		chain.IBCHost.SetIBCModule(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			chain.ContractConfig.GetIBCHandlerAddress(),
 		),
 	); err != nil {
 		return err
 	}
 
-	if name, err := chain.IBCIdentifier.PortCapabilityPath(chain.CallOpts(ctx), TransferPort); err != nil {
+	if name, err := chain.IBCIdentifier.PortCapabilityPath(chain.CallOpts(ctx, RelayerKeyIndex), TransferPort); err != nil {
 		return err
-	} else if _, found, err := chain.IBCHost.GetModuleOwner(chain.CallOpts(ctx), name); err != nil {
+	} else if _, found, err := chain.IBCHost.GetModuleOwner(chain.CallOpts(ctx, RelayerKeyIndex), name); err != nil {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
-			chain.IBCHandler.BindPort(chain.TxOpts(ctx), TransferPort, chain.ContractConfig.GetICS20TransferBankAddress()),
+			chain.IBCHandler.BindPort(chain.TxOpts(ctx, RelayerKeyIndex), TransferPort, chain.ContractConfig.GetICS20TransferBankAddress()),
 		); err != nil {
 			return err
 		}
 	}
 
-	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), ibcclient.BesuIBFT2Client); err != nil {
+	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx, RelayerKeyIndex), ibcclient.BesuIBFT2Client); err != nil {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
 			chain.IBCHandler.RegisterClient(
-				chain.TxOpts(ctx),
+				chain.TxOpts(ctx, RelayerKeyIndex),
 				ibcclient.BesuIBFT2Client,
 				chain.ContractConfig.GetIBFT2ClientAddress(),
 			),
@@ -247,12 +273,12 @@ func (chain *Chain) Init() error {
 		}
 	}
 
-	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx), ibcclient.MockClient); err != nil {
+	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx, RelayerKeyIndex), ibcclient.MockClient); err != nil {
 		return err
 	} else if !found {
 		if err := chain.WaitIfNoError(ctx)(
 			chain.IBCHandler.RegisterClient(
-				chain.TxOpts(ctx),
+				chain.TxOpts(ctx, RelayerKeyIndex),
 				ibcclient.MockClient,
 				chain.ContractConfig.GetMockClientAddress(),
 			),
@@ -262,7 +288,7 @@ func (chain *Chain) Init() error {
 	}
 
 	if err := chain.WaitIfNoError(ctx)(
-		chain.ICS20Bank.SetOperator(chain.TxOpts(ctx), chain.ContractConfig.GetICS20TransferBankAddress()),
+		chain.ICS20Bank.SetOperator(chain.TxOpts(ctx, RelayerKeyIndex), chain.ContractConfig.GetICS20TransferBankAddress()),
 	); err != nil {
 		return err
 	}
@@ -373,35 +399,35 @@ func (chain *Chain) UpdateHeader() {
 func (chain *Chain) CreateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
 	msg := chain.ConstructMockMsgCreateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCHandler.CreateClient(chain.TxOpts(ctx), msg),
+		chain.IBCHandler.CreateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
 	)
 }
 
 func (chain *Chain) UpdateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
 	msg := chain.ConstructMockMsgUpdateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx), msg),
+		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
 	)
 }
 
 func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
 	msg := chain.ConstructIBFT2MsgCreateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCHandler.CreateClient(chain.TxOpts(ctx), msg),
+		chain.IBCHandler.CreateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
 	)
 }
 
 func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
 	msg := chain.ConstructIBFT2MsgUpdateClient(counterparty, clientID)
 	return chain.WaitIfNoError(ctx)(
-		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx), msg),
+		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
 	)
 }
 
 func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) error {
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ConnectionOpenInit(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgConnectionOpenInit{
 				ClientId:     connection.ClientID,
 				ConnectionId: connection.ID,
@@ -423,7 +449,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ConnectionOpenTry(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgConnectionOpenTry{
 				ConnectionId: connection.ID,
 				Counterparty: ibchandler.CounterpartyData{
@@ -456,7 +482,7 @@ func (chain *Chain) ConnectionOpenAck(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ConnectionOpenAck(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgConnectionOpenAck{
 				ConnectionId:             connection.ID,
 				CounterpartyConnectionID: counterpartyConnection.ID,
@@ -480,7 +506,7 @@ func (chain *Chain) ConnectionOpenConfirm(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ConnectionOpenConfirm(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgConnectionOpenConfirm{
 				ConnectionId: connection.ID,
 				ProofAck:     proof.Data,
@@ -498,7 +524,7 @@ func (chain *Chain) ChannelOpenInit(
 ) error {
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ChannelOpenInit(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgChannelOpenInit{
 				ChannelId: ch.ID,
 				PortId:    ch.PortID,
@@ -530,7 +556,7 @@ func (chain *Chain) ChannelOpenTry(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ChannelOpenTry(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgChannelOpenTry{
 				PortId:    ch.PortID,
 				ChannelId: ch.ID,
@@ -563,7 +589,7 @@ func (chain *Chain) ChannelOpenAck(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ChannelOpenAck(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgChannelOpenAck{
 				PortId:                ch.PortID,
 				ChannelId:             ch.ID,
@@ -587,7 +613,7 @@ func (chain *Chain) ChannelOpenConfirm(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ChannelOpenConfirm(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgChannelOpenConfirm{
 				PortId:      ch.PortID,
 				ChannelId:   ch.ID,
@@ -604,7 +630,7 @@ func (chain *Chain) SendPacket(
 ) error {
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.SendPacket(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			packetToCallData(packet),
 		),
 	)
@@ -622,7 +648,7 @@ func (chain *Chain) RecvPacket(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.RecvPacket(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgPacketRecv{
 				Packet:      packetToCallData(packet),
 				Proof:       proof.Data,
@@ -644,7 +670,7 @@ func (chain *Chain) HandlePacketRecv(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.RecvPacket(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgPacketRecv{
 				Packet: ibchandler.PacketData{
 					Sequence:           packet.Sequence,
@@ -676,7 +702,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.AcknowledgePacket(
-			chain.TxOpts(ctx),
+			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgPacketAcknowledgement{
 				Packet: ibchandler.PacketData{
 					Sequence:           packet.Sequence,
@@ -701,16 +727,66 @@ func (chain *Chain) GetLastSentPacket(
 	sourcePortID string,
 	sourceChannel string,
 ) (*channeltypes.Packet, error) {
-	seq, err := chain.IBCHost.GetNextSequenceSend(chain.CallOpts(ctx), sourcePortID, sourceChannel)
+	seq, err := chain.IBCHost.GetNextSequenceSend(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
 	if err != nil {
 		return nil, err
 	}
-	packet, err := chain.IBCHost.GetPacket(chain.CallOpts(ctx), sourcePortID, sourceChannel, seq-1)
+	return chain.FindPacket(ctx, sourcePortID, sourceChannel, seq-1)
+}
+
+func (chain *Chain) FindPacket(
+	ctx context.Context,
+	sourcePortID string,
+	sourceChannel string,
+	sequence uint64,
+) (*channeltypes.Packet, error) {
+	query := ethereum.FilterQuery{
+		FromBlock: big.NewInt(0),
+		Addresses: []common.Address{
+			chain.ContractConfig.GetIBCHandlerAddress(),
+		},
+		Topics: [][]common.Hash{{
+			abiSendPacket.ID,
+		}},
+	}
+	logs, err := chain.client.FilterLogs(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	p := channeltypes.NewPacket(packet.Data, packet.Sequence, packet.SourcePort, packet.SourceChannel, packet.DestinationPort, packet.DestinationChannel, channeltypes.Height(packet.TimeoutHeight), packet.TimeoutTimestamp)
-	return &p, nil
+
+	for _, log := range logs {
+		if values, err := abiSendPacket.Inputs.Unpack(log.Data); err != nil {
+			return nil, err
+		} else {
+			p := values[0].(struct {
+				Sequence           uint64  "json:\"sequence\""
+				SourcePort         string  "json:\"source_port\""
+				SourceChannel      string  "json:\"source_channel\""
+				DestinationPort    string  "json:\"destination_port\""
+				DestinationChannel string  "json:\"destination_channel\""
+				Data               []uint8 "json:\"data\""
+				TimeoutHeight      struct {
+					RevisionNumber uint64 "json:\"revision_number\""
+					RevisionHeight uint64 "json:\"revision_height\""
+				} "json:\"timeout_height\""
+				TimeoutTimestamp uint64 "json:\"timeout_timestamp\""
+			})
+			if p.SourcePort == sourcePortID && p.SourceChannel == sourceChannel && p.Sequence == sequence {
+				return &channeltypes.Packet{
+					Sequence:           p.Sequence,
+					SourcePort:         p.SourcePort,
+					SourceChannel:      p.SourceChannel,
+					DestinationPort:    p.DestinationPort,
+					DestinationChannel: p.DestinationChannel,
+					Data:               p.Data,
+					TimeoutHeight:      channeltypes.Height(p.TimeoutHeight),
+					TimeoutTimestamp:   p.TimeoutTimestamp,
+				}, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
 }
 
 func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
@@ -729,25 +805,25 @@ func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
 // Slot calculator
 
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
-	key, err := chain.IBCIdentifier.ConnectionCommitmentSlot(chain.CallOpts(context.Background()), connectionID)
+	key, err := chain.IBCIdentifier.ConnectionCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), connectionID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string {
-	key, err := chain.IBCIdentifier.ChannelCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID)
+	key, err := chain.IBCIdentifier.ChannelCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), portID, channelID)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) PacketCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.IBCIdentifier.PacketCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
+	key, err := chain.IBCIdentifier.PacketCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }
 
 func (chain *Chain) PacketAcknowledgementCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.IBCIdentifier.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background()), portID, channelID, sequence)
+	key, err := chain.IBCIdentifier.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), portID, channelID, sequence)
 	require.NoError(chain.t, err)
 	return "0x" + hex.EncodeToString(key[:])
 }

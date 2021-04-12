@@ -43,6 +43,13 @@ func (suite *ChainTestSuite) SetupTest() {
 func (suite ChainTestSuite) TestChannel() {
 	ctx := context.Background()
 
+	const (
+		relayer          = ibctesting.RelayerKeyIndex // the key-index of relayer on both chains
+		deployerA        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain A
+		aliceA    uint32 = 1                          // the key-index of alice on chain A
+		bobB      uint32 = 2                          // the key-index of alice on chain B
+	)
+
 	chainA := suite.chainA
 	chainB := suite.chainB
 
@@ -52,38 +59,38 @@ func (suite ChainTestSuite) TestChannel() {
 
 	/// Tests for Transfer module ///
 
-	balanceA0, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	balanceA0, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.SimpleToken.Approve(chainA.TxOpts(ctx), chainA.ContractConfig.GetICS20BankAddress(), big.NewInt(100)),
+		chainA.SimpleToken.Approve(chainA.TxOpts(ctx, deployerA), chainA.ContractConfig.GetICS20BankAddress(), big.NewInt(100)),
 	))
 
 	// deposit a simple token to the bank
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
-		chainA.TxOpts(ctx),
+		chainA.TxOpts(ctx, deployerA),
 		chainA.ContractConfig.GetSimpleTokenAddress(),
 		big.NewInt(100),
-		chainA.CallOpts(ctx).From,
+		chainA.CallOpts(ctx, aliceA).From,
 	)))
 
 	// ensure that the balance is reduced
-	balanceA1, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	balanceA1, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
 	suite.Require().Equal(balanceA0.Int64()-100, balanceA1.Int64())
 
 	baseDenom := strings.ToLower(chainA.ContractConfig.GetSimpleTokenAddress().String())
 
-	bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From, baseDenom)
+	bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, aliceA).From, baseDenom)
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
 
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Transfer.SendTransfer(
-			chainA.TxOpts(ctx),
+			chainA.TxOpts(ctx, aliceA),
 			baseDenom,
 			100,
-			chainB.CallOpts(ctx).From,
+			chainB.CallOpts(ctx, bobB).From,
 			chanA.PortID, chanA.ID,
 			uint64(chainA.LastHeader().Number.Int64())+1000,
 		),
@@ -92,7 +99,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
 	// ensure that escrow has correct balance
-	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx), chainA.ContractConfig.GetICS20TransferBankAddress(), baseDenom)
+	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, aliceA), chainA.ContractConfig.GetICS20TransferBankAddress(), baseDenom)
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
@@ -104,17 +111,17 @@ func (suite ChainTestSuite) TestChannel() {
 
 	// ensure that chainB has correct balance
 	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, baseDenom)
-	balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx), chainB.CallOpts(ctx).From, expectedDenom)
+	balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bobB).From, expectedDenom)
 	suite.Require().NoError(err)
 	suite.Require().Equal(int64(100), balance.Int64())
 
 	// try to transfer the token to chainA
 	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
 		chainB.ICS20Transfer.SendTransfer(
-			chainB.TxOpts(ctx),
+			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
 			100,
-			chainA.CallOpts(ctx).From,
+			chainA.CallOpts(ctx, aliceA).From,
 			chanB.PortID,
 			chanB.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
@@ -132,14 +139,14 @@ func (suite ChainTestSuite) TestChannel() {
 	// withdraw tokens from the bank
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Bank.Withdraw(
-			chainA.TxOpts(ctx),
+			chainA.TxOpts(ctx, aliceA),
 			chainA.ContractConfig.GetSimpleTokenAddress(),
 			big.NewInt(100),
-			chainA.CallOpts(ctx).From,
+			chainA.CallOpts(ctx, deployerA).From,
 		)))
 
 	// ensure that token balance equals original value
-	balanceA2, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx), chainA.CallOpts(ctx).From)
+	balanceA2, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
 	suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 }

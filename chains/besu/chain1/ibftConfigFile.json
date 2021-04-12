@@ -35,8 +35,18 @@
             "privateKey": "e517af47112e4f501afb26e4f34eadc8b0ad8eadaf4962169fc04bc8ddbfe091",
             "comment": "private key and this comment are ignored.  In a real chain, the private key should NOT be stored",
             "balance": "0xad78ebc5ac6200000"
+          },
+          "cBED645B1C1a6254f1149Df51d3591c6B3803007": {
+            "privateKey": "713071a0b7101f177ae9c9ab0412eb7e43812bd289650f8db63f3055f2bcb029",
+            "comment": "private key and this comment are ignored.  In a real chain, the private key should NOT be stored",
+            "balance": "0xad78ebc5ac6200000"
+          },
+          "00731540cd6060991D6B9C57CE295998d9bC2faB": {
+            "privateKey": "043a3427c36481e3cce70f5e6738b5f4d1a7e87fa90aa833f4bf2d3d690d4919",
+            "comment": "private key and this comment are ignored.  In a real chain, the private key should NOT be stored",
+            "balance": "0xad78ebc5ac6200000"
           }
-         }
+        }
     },
     "blockchain": {
       "nodes": {
