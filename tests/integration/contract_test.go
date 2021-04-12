@@ -19,6 +19,9 @@ import (
 
 const mnemonicPhrase = "math razor capable expose worth grape metal sunset metal sudden usage scheme"
 
+/*
+NOTE: This test is intended to be run on ganache. Therefore, we are using MockClient instead of IBFT2Client.
+*/
 type ContractTestSuite struct {
 	suite.Suite
 
@@ -43,7 +46,7 @@ func (suite *ContractTestSuite) TestChannel() {
 		relayer         = ibctesting.RelayerKeyIndex // the key-index of relayer on chain
 		deployer        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain
 		alice    uint32 = 1                          // the key-index of alice on chain
-		bob      uint32 = 2                          // the key-index of alice on chain
+		bob      uint32 = 2                          // the key-index of bob on chain
 	)
 
 	chainA := suite.chainA
