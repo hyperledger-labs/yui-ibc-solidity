@@ -11,7 +11,7 @@ import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
 import "./IBCIdentifier.sol";
 
-// WARNING: The spec is WIP
+// please see docs/ibft2-light-client.md for client spec
 contract IBFT2Client is IClient {
     using TrieProofs for bytes;
     using RLP for RLP.RLPItem;
@@ -294,8 +294,7 @@ contract IBFT2Client is IClient {
         bytes32 slot,
         bytes32 expectedValue
     ) internal pure returns (bool) {
-        uint256 slotNum = toUint256(abi.encodePacked(slot), 0);
-        bytes32 path = keccak256(abi.encodePacked(slotNum));
+        bytes32 path = keccak256(abi.encodePacked(slot));
         bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
         return expectedValue == dataHash.toRLPItem().toBytes().toBytes32();
     }
@@ -321,17 +320,5 @@ contract IBFT2Client is IClient {
         bytes32 proofPath = keccak256(abi.encodePacked(account));
         bytes memory accountRLP = accountStateProof.verify(stateRoot, proofPath); // reverts if proof is invalid
         return bytes32(accountRLP.toRLPItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
-    }
-
-    function toUint256(bytes memory _bytes, uint256 _start) internal pure returns (uint256) {
-        require(_start + 32 >= _start, "toUint256_overflow");
-        require(_bytes.length >= _start + 32, "toUint256_outOfBounds");
-        uint256 tempUint;
-
-        assembly {
-            tempUint := mload(add(add(_bytes, 0x20), _start))
-        }
-
-        return tempUint;
     }
 }
