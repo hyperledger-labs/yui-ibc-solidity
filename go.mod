@@ -1,6 +1,6 @@
 module github.com/datachainlab/ibc-solidity
 
-go 1.15
+go 1.16
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
@@ -20,7 +20,6 @@ require (
 	github.com/rs/cors v1.7.0 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef
-	github.com/umbracle/go-web3 v0.0.0-20201123180055-e3fe47008350
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/sys v0.0.0-20201015000850-e3ed0017c211 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect

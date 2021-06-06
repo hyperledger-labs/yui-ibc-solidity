@@ -7,8 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
 )
 
 type ETHProof struct {
@@ -48,22 +46,16 @@ func (cl Client) GetETHProof(address common.Address, storageKeys [][]byte, block
 }
 
 func (cl Client) getProof(address common.Address, storageKeys [][]byte, blockNumber string) ([]byte, error) {
-	jc, err := jsonrpc.NewClient(cl.endpoint)
-	if err != nil {
-		return nil, err
-	}
-	defer jc.Close()
-	hashes := []web3.Hash{}
+	hashes := []common.Hash{}
 	for _, k := range storageKeys {
-		var h web3.Hash
-		err = h.UnmarshalText(k)
-		if err != nil {
+		var h common.Hash
+		if err := h.UnmarshalText(k); err != nil {
 			return nil, err
 		}
 		hashes = append(hashes, h)
 	}
 	var msg json.RawMessage
-	if err := jc.Call("eth_getProof", &msg, address, hashes, blockNumber); err != nil {
+	if err := cl.conn.Call(&msg, "eth_getProof", address, hashes, blockNumber); err != nil {
 		return nil, err
 	}
 	return msg, nil
