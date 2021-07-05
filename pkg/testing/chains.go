@@ -44,8 +44,10 @@ const (
 )
 
 var (
-	abiSendPacket                abi.Event
-	abiGeneratedClientIdentifier abi.Event
+	abiSendPacket,
+	abiGeneratedClientIdentifier,
+	abiGeneratedConnectionIdentifier,
+	abiGeneratedChannelIdentifier abi.Event
 )
 
 func init() {
@@ -59,6 +61,8 @@ func init() {
 	}
 	abiSendPacket = parsedHandlerABI.Events["SendPacket"]
 	abiGeneratedClientIdentifier = parsedHostABI.Events["GeneratedClientIdentifier"]
+	abiGeneratedConnectionIdentifier = parsedHostABI.Events["GeneratedConnectionIdentifier"]
+	abiGeneratedChannelIdentifier = parsedHostABI.Events["GeneratedChannelIdentifier"]
 }
 
 type Chain struct {
@@ -434,13 +438,12 @@ func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, 
 	)
 }
 
-func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) error {
-	return chain.WaitIfNoError(ctx)(
+func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) (string, error) {
+	if err := chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ConnectionOpenInit(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgConnectionOpenInit{
-				ClientId:     connection.ClientID,
-				ConnectionId: connection.ID,
+				ClientId: connection.ClientID,
 				Counterparty: ibchandler.CounterpartyData{
 					ClientId:     connection.CounterpartyClientID,
 					ConnectionId: "",
@@ -449,19 +452,22 @@ func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain,
 				DelayPeriod: DefaultDelayPeriod,
 			},
 		),
-	)
+	); err != nil {
+		return "", err
+	}
+	return chain.GetLastGeneratedConnectionID(ctx)
 }
 
-func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) error {
+func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) (string, error) {
 	proof, err := counterparty.QueryProof(chain, connection.ClientID, chain.ConnectionStateCommitmentSlot(counterpartyConnection.ID))
 	if err != nil {
-		return err
+		return "", err
 	}
-	return chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ConnectionOpenTry(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgConnectionOpenTry{
-				ConnectionId: connection.ID,
+				PreviousConnectionId: "",
 				Counterparty: ibchandler.CounterpartyData{
 					ClientId:     counterpartyConnection.ClientID,
 					ConnectionId: counterpartyConnection.ID,
@@ -477,7 +483,10 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 				ProofInit:   proof.Data,
 			},
 		),
-	)
+	); err != nil {
+		return "", err
+	}
+	return chain.GetLastGeneratedConnectionID(ctx)
 }
 
 // ConnectionOpenAck will construct and execute a MsgConnectionOpenAck.
@@ -735,13 +744,29 @@ func (chain *Chain) HandlePacketAcknowledgement(
 func (chain *Chain) GetLastGeneratedClientID(
 	ctx context.Context,
 ) (string, error) {
+	return chain.getLastID(ctx, abiGeneratedClientIdentifier)
+}
+
+func (chain *Chain) GetLastGeneratedConnectionID(
+	ctx context.Context,
+) (string, error) {
+	return chain.getLastID(ctx, abiGeneratedConnectionIdentifier)
+}
+
+func (chain *Chain) GetLastGeneratedChannelID(
+	ctx context.Context,
+) (string, error) {
+	return chain.getLastID(ctx, abiGeneratedChannelIdentifier)
+}
+
+func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
 			chain.ContractConfig.GetIBCHostAddress(),
 		},
 		Topics: [][]common.Hash{{
-			abiGeneratedClientIdentifier.ID,
+			event.ID,
 		}},
 	}
 	logs, err := chain.client.FilterLogs(ctx, query)
@@ -752,7 +777,7 @@ func (chain *Chain) GetLastGeneratedClientID(
 		return "", errors.New("no clients")
 	}
 	log := logs[len(logs)-1]
-	values, err := abiGeneratedClientIdentifier.Inputs.Unpack(log.Data)
+	values, err := event.Inputs.Unpack(log.Data)
 	if err != nil {
 		return "", err
 	}
@@ -921,12 +946,10 @@ func (chain *Chain) AddTestConnection(clientID, counterpartyClientID string) *Te
 }
 
 // ConstructNextTestConnection constructs the next test connection to be
-// created given a clientID and counterparty clientID. The connection id
-// format: <chainID>-conn<index>
+// created given a clientID and counterparty clientID.
 func (chain *Chain) ConstructNextTestConnection(clientID, counterpartyClientID string) *TestConnection {
-	connectionID := fmt.Sprintf("connection-%v-%v-%v", uint64(len(chain.Connections)), chain.chainID, chain.IBCID)
 	return &TestConnection{
-		ID:                   connectionID,
+		ID:                   "",
 		ClientID:             clientID,
 		NextChannelVersion:   DefaultChannelVersion,
 		CounterpartyClientID: counterpartyClientID,

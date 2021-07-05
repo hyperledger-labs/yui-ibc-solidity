@@ -170,9 +170,10 @@ func (c Coordinator) ConnOpenInit(
 	counterpartyConnection := counterparty.AddTestConnection(counterpartyClientID, clientID)
 
 	// initialize connection on source
-	if err := source.ConnectionOpenInit(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
-		fmt.Println("cannot ConnectionOpenInit")
+	if connID, err := source.ConnectionOpenInit(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
 		return sourceConnection, counterpartyConnection, err
+	} else {
+		sourceConnection.ID = connID
 	}
 
 	source.UpdateHeader()
@@ -183,7 +184,6 @@ func (c Coordinator) ConnOpenInit(
 		counterparty, source,
 		counterpartyClientID,
 	); err != nil {
-		fmt.Println("updateClient:", err)
 		return sourceConnection, counterpartyConnection, err
 	}
 
@@ -198,8 +198,10 @@ func (c *Coordinator) ConnOpenTry(
 	sourceConnection, counterpartyConnection *TestConnection,
 ) error {
 
-	if err := source.ConnectionOpenTry(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
+	if connID, err := source.ConnectionOpenTry(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
 		return err
+	} else {
+		sourceConnection.ID = connID
 	}
 
 	source.UpdateHeader()

@@ -16,20 +16,16 @@ library IBCConnection {
     // is returned.
     function connectionOpenInit(IBCHost host, IBCMsgs.MsgConnectionOpenInit memory msg_) public returns (string memory) {
         host.onlyIBCModule();
-        ConnectionEnd.Data memory connection;
-        bool found;
-        (connection, found) = host.getConnection(msg_.connectionId);
-        require(!found, "connection already exists");
-
-        connection = ConnectionEnd.Data({
+        ConnectionEnd.Data memory connection = ConnectionEnd.Data({
             client_id: msg_.clientId,
             versions: getVersions(),
             state: ConnectionEnd.State.STATE_INIT,
             delay_period: msg_.delayPeriod,
             counterparty: msg_.counterparty
         });
-        host.setConnection(msg_.connectionId, connection);
-        return msg_.connectionId;
+        string memory connectionId = host.generateConnectionIdentifier();
+        host.setConnection(connectionId, connection);
+        return connectionId;
     }
 
     // ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
@@ -72,8 +68,9 @@ library IBCConnection {
         // TODO commentout this
         // require(verifyClientConsensusState(connection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState), "failed to verify consensusState");
 
-        host.setConnection(msg_.connectionId, connection);
-        return msg_.connectionId;
+        string memory connectionId = host.generateConnectionIdentifier();
+        host.setConnection(connectionId, connection);
+        return connectionId;
     }
 
     function connectionOpenAck(
