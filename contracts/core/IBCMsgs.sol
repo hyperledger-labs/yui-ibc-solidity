@@ -12,7 +12,6 @@ library IBCMsgs {
     /// Client ///
 
     struct MsgCreateClient {
-        string clientId;
         string clientType;
         uint64 height;
         bytes clientStateBytes;

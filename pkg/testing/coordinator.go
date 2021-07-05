@@ -73,12 +73,11 @@ func (c Coordinator) CreateClient(
 	source, counterparty *Chain,
 	clientType string,
 ) (clientID string, err error) {
-	clientID = source.NewClientID(clientType)
 	switch clientType {
 	case clienttypes.BesuIBFT2Client:
-		err = source.CreateIBFT2Client(ctx, counterparty, clientID)
+		clientID, err = source.CreateIBFT2Client(ctx, counterparty)
 	case clienttypes.MockClient:
-		err = source.CreateMockClient(ctx, counterparty, clientID)
+		clientID, err = source.CreateMockClient(ctx, counterparty)
 	default:
 		err = fmt.Errorf("client type %s is not supported", clientType)
 	}
@@ -86,7 +85,7 @@ func (c Coordinator) CreateClient(
 	if err != nil {
 		return "", err
 	}
-
+	source.nextClientSequence++
 	return clientID, nil
 }
 

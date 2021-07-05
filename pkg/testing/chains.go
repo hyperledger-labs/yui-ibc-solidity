@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -83,6 +82,10 @@ type Chain struct {
 	ClientIDs   []string          // ClientID's used on this chain
 	Connections []*TestConnection // track connectionID's created for this chain
 	IBCID       uint64
+
+	// TODO use an event of createClient instead of the sequence
+	// sequences
+	nextClientSequence uint64
 }
 
 type ContractConfig interface {
@@ -296,7 +299,7 @@ func (chain *Chain) Init() error {
 	return nil
 }
 
-func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgCreateClient {
+func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler.IBCMsgsMsgCreateClient {
 	clientState := mockclienttypes.ClientState{
 		LatestHeight: counterparty.LastHeader().Number.Uint64(),
 	}
@@ -312,7 +315,6 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain, clientID s
 		panic(err)
 	}
 	return ibchandler.IBCMsgsMsgCreateClient{
-		ClientId:            clientID,
 		ClientType:          ibcclient.MockClient,
 		Height:              clientState.LatestHeight,
 		ClientStateBytes:    clientStateBytes,
@@ -320,7 +322,7 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain, clientID s
 	}
 }
 
-func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgCreateClient {
+func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandler.IBCMsgsMsgCreateClient {
 	clientState := ibft2clienttypes.ClientState{
 		ChainId:         counterparty.ChainIDString(),
 		IbcStoreAddress: counterparty.ContractConfig.GetIBCHostAddress().Bytes(),
@@ -340,7 +342,6 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain, clientID 
 		panic(err)
 	}
 	return ibchandler.IBCMsgsMsgCreateClient{
-		ClientId:            clientID,
 		ClientType:          ibcclient.BesuIBFT2Client,
 		Height:              clientState.LatestHeight,
 		ClientStateBytes:    clientStateBytes,
@@ -396,11 +397,14 @@ func (chain *Chain) UpdateHeader() {
 	}
 }
 
-func (chain *Chain) CreateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
-	msg := chain.ConstructMockMsgCreateClient(counterparty, clientID)
-	return chain.WaitIfNoError(ctx)(
+func (chain *Chain) CreateMockClient(ctx context.Context, counterparty *Chain) (string, error) {
+	msg := chain.ConstructMockMsgCreateClient(counterparty)
+	if err := chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.CreateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
-	)
+	); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%v-%v", msg.ClientType, chain.nextClientSequence), nil
 }
 
 func (chain *Chain) UpdateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
@@ -410,11 +414,14 @@ func (chain *Chain) UpdateMockClient(ctx context.Context, counterparty *Chain, c
 	)
 }
 
-func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
-	msg := chain.ConstructIBFT2MsgCreateClient(counterparty, clientID)
-	return chain.WaitIfNoError(ctx)(
+func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain) (string, error) {
+	msg := chain.ConstructIBFT2MsgCreateClient(counterparty)
+	if err := chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.CreateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
-	)
+	); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%v-%v", msg.ClientType, chain.nextClientSequence), nil
 }
 
 func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
@@ -872,14 +879,6 @@ func (chain *Chain) WaitIfNoError(ctx context.Context) func(tx *gethtypes.Transa
 		}
 		return nil
 	}
-}
-
-// NewClientID appends a new clientID string in the format:
-// ClientFor<counterparty-chain-id><index>
-func (chain *Chain) NewClientID(clientType string) string {
-	clientID := fmt.Sprintf("%s-%s-%v-%v", clientType, strconv.Itoa(len(chain.ClientIDs)), chain.chainID, chain.IBCID)
-	chain.ClientIDs = append(chain.ClientIDs, clientID)
-	return clientID
 }
 
 // AddTestConnection appends a new TestConnection which contains references
