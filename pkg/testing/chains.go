@@ -540,13 +540,12 @@ func (chain *Chain) ChannelOpenInit(
 	ch, counterparty TestChannel,
 	order channeltypes.Channel_Order,
 	connectionID string,
-) error {
-	return chain.WaitIfNoError(ctx)(
+) (string, error) {
+	if err := chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ChannelOpenInit(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgChannelOpenInit{
-				ChannelId: ch.ID,
-				PortId:    ch.PortID,
+				PortId: ch.PortID,
 				Channel: ibchandler.ChannelData{
 					State:    uint8(channeltypes.INIT),
 					Ordering: uint8(order),
@@ -559,7 +558,10 @@ func (chain *Chain) ChannelOpenInit(
 				},
 			},
 		),
-	)
+	); err != nil {
+		return "", err
+	}
+	return chain.GetLastGeneratedChannelID(ctx)
 }
 
 func (chain *Chain) ChannelOpenTry(
@@ -568,17 +570,16 @@ func (chain *Chain) ChannelOpenTry(
 	ch, counterpartyCh TestChannel,
 	order channeltypes.Channel_Order,
 	connectionID string,
-) error {
+) (string, error) {
 	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.ChannelStateCommitmentSlot(counterpartyCh.PortID, counterpartyCh.ID))
 	if err != nil {
-		return err
+		return "", err
 	}
-	return chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.ChannelOpenTry(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgChannelOpenTry{
-				PortId:    ch.PortID,
-				ChannelId: ch.ID,
+				PortId: ch.PortID,
 				Channel: ibchandler.ChannelData{
 					State:    uint8(channeltypes.TRYOPEN),
 					Ordering: uint8(order),
@@ -594,7 +595,10 @@ func (chain *Chain) ChannelOpenTry(
 				ProofHeight:         proof.Height,
 			},
 		),
-	)
+	); err != nil {
+		return "", err
+	}
+	return chain.GetLastGeneratedChannelID(ctx)
 }
 
 func (chain *Chain) ChannelOpenAck(
@@ -774,7 +778,7 @@ func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, err
 		return "", err
 	}
 	if len(logs) == 0 {
-		return "", errors.New("no clients")
+		return "", errors.New("no items")
 	}
 	log := logs[len(logs)-1]
 	values, err := event.Inputs.Unpack(log.Data)
@@ -969,14 +973,11 @@ func (chain *Chain) AddTestChannel(conn *TestConnection, portID string) TestChan
 // has not created the associated channel in app state, but would still like to refer to the
 // non-existent channel usually to test for its non-existence.
 //
-// channel ID format: <connectionid>-chan<channel-index>
-//
 // The port is passed in by the caller.
 func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestChannel {
-	channelID := fmt.Sprintf("channel-%v-%v", chain.chainID, chain.IBCID)
 	return TestChannel{
 		PortID:               portID,
-		ID:                   channelID,
+		ID:                   "",
 		ClientID:             conn.ClientID,
 		CounterpartyClientID: conn.CounterpartyClientID,
 		Version:              conn.NextChannelVersion,

@@ -67,13 +67,12 @@ library IBCMsgs {
 
     struct MsgChannelOpenInit {
         string portId;
-        string channelId;
         Channel.Data channel;
     }
 
     struct MsgChannelOpenTry {
         string portId;
-        string channelId;
+        string previousChannelId;
         Channel.Data channel;
         string counterpartyVersion;
         bytes proofInit;
