@@ -85,7 +85,7 @@ func (c Coordinator) CreateClient(
 	if err != nil {
 		return "", err
 	}
-	source.nextClientSequence++
+
 	return clientID, nil
 }
 

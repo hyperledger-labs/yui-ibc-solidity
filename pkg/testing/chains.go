@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -43,15 +44,21 @@ const (
 )
 
 var (
-	abiSendPacket abi.Event
+	abiSendPacket                abi.Event
+	abiGeneratedClientIdentifier abi.Event
 )
 
 func init() {
-	parsedABI, err := abi.JSON(strings.NewReader(ibchandler.IbchandlerABI))
+	parsedHandlerABI, err := abi.JSON(strings.NewReader(ibchandler.IbchandlerABI))
 	if err != nil {
 		panic(err)
 	}
-	abiSendPacket = parsedABI.Events["SendPacket"]
+	parsedHostABI, err := abi.JSON(strings.NewReader(ibchost.IbchostABI))
+	if err != nil {
+		panic(err)
+	}
+	abiSendPacket = parsedHandlerABI.Events["SendPacket"]
+	abiGeneratedClientIdentifier = parsedHostABI.Events["GeneratedClientIdentifier"]
 }
 
 type Chain struct {
@@ -82,10 +89,6 @@ type Chain struct {
 	ClientIDs   []string          // ClientID's used on this chain
 	Connections []*TestConnection // track connectionID's created for this chain
 	IBCID       uint64
-
-	// TODO use an event of createClient instead of the sequence
-	// sequences
-	nextClientSequence uint64
 }
 
 type ContractConfig interface {
@@ -404,7 +407,7 @@ func (chain *Chain) CreateMockClient(ctx context.Context, counterparty *Chain) (
 	); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%v-%v", msg.ClientType, chain.nextClientSequence), nil
+	return chain.GetLastGeneratedClientID(ctx)
 }
 
 func (chain *Chain) UpdateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
@@ -421,7 +424,7 @@ func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain) 
 	); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%v-%v", msg.ClientType, chain.nextClientSequence), nil
+	return chain.GetLastGeneratedClientID(ctx)
 }
 
 func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
@@ -727,6 +730,33 @@ func (chain *Chain) HandlePacketAcknowledgement(
 			},
 		),
 	)
+}
+
+func (chain *Chain) GetLastGeneratedClientID(
+	ctx context.Context,
+) (string, error) {
+	query := ethereum.FilterQuery{
+		FromBlock: big.NewInt(0),
+		Addresses: []common.Address{
+			chain.ContractConfig.GetIBCHostAddress(),
+		},
+		Topics: [][]common.Hash{{
+			abiGeneratedClientIdentifier.ID,
+		}},
+	}
+	logs, err := chain.client.FilterLogs(ctx, query)
+	if err != nil {
+		return "", err
+	}
+	if len(logs) == 0 {
+		return "", errors.New("no clients")
+	}
+	log := logs[len(logs)-1]
+	values, err := abiGeneratedClientIdentifier.Inputs.Unpack(log.Data)
+	if err != nil {
+		return "", err
+	}
+	return values[0].(string), nil
 }
 
 func (chain *Chain) GetLastSentPacket(

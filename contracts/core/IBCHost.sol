@@ -25,6 +25,10 @@ contract IBCHost {
     uint64 nextConnectionSequence;
     uint64 nextChannelSequence;
 
+    event GeneratedClientIdentifier(string);
+    event GeneratedConnectionIdentifier(string);
+    event GeneratedChannelIdentifier(string);
+
     address owner;
     address ibcModule;
 
@@ -228,6 +232,7 @@ contract IBCHost {
         onlyIBCModule();
         string memory identifier = string(abi.encodePacked(clientType, "-", uint2str(nextClientSequence)));
         nextClientSequence++;
+        emit GeneratedClientIdentifier(identifier);
         return identifier;
     }
 
@@ -235,6 +240,7 @@ contract IBCHost {
         onlyIBCModule();
         string memory identifier = string(abi.encodePacked("connection-", uint2str(nextConnectionSequence)));
         nextConnectionSequence++;
+        emit GeneratedConnectionIdentifier(identifier);
         return identifier;
     }
 
@@ -242,6 +248,7 @@ contract IBCHost {
         onlyIBCModule();
         string memory identifier = string(abi.encodePacked("channel-", uint2str(nextChannelSequence)));
         nextChannelSequence++;
+        emit GeneratedChannelIdentifier(identifier);
         return identifier;
     }
 
