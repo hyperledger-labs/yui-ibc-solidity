@@ -17,8 +17,6 @@ library IBCChannel {
         host.onlyIBCModule();
         ConnectionEnd.Data memory connection;
         bool found;
-        (, found) = host.getChannel(msg_.portId, msg_.channelId);
-        require(!found, "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         (connection, found) = host.getConnection(msg_.channel.connection_hops[0]);
         require(found, "connection not found");
@@ -29,12 +27,13 @@ library IBCChannel {
 
         // TODO authenticates a port binding
 
-        host.setChannel(msg_.portId, msg_.channelId, msg_.channel);
-        host.setNextSequenceSend(msg_.portId, msg_.channelId, 1);
-        host.setNextSequenceRecv(msg_.portId, msg_.channelId, 1);
-        host.setNextSequenceAck(msg_.portId, msg_.channelId, 1);
+        string memory channelId = host.generateChannelIdentifier();
+        host.setChannel(msg_.portId, channelId, msg_.channel);
+        host.setNextSequenceSend(msg_.portId, channelId, 1);
+        host.setNextSequenceRecv(msg_.portId, channelId, 1);
+        host.setNextSequenceAck(msg_.portId, channelId, 1);
 
-        return msg_.channelId;
+        return channelId;
     }
 
     function channelOpenTry(
@@ -44,8 +43,6 @@ library IBCChannel {
         host.onlyIBCModule();
         ConnectionEnd.Data memory connection;
         bool found;
-        (, found) = host.getChannel(msg_.portId, msg_.channelId);
-        require(!found, "channel already exists");
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         (connection, found) = host.getConnection(msg_.channel.connection_hops[0]);
         require(found, "connection not found");
@@ -69,12 +66,13 @@ library IBCChannel {
         });
         require(IBCConnection.verifyChannelState(host, connection, msg_.proofHeight, msg_.proofInit, msg_.channel.counterparty.port_id, msg_.channel.counterparty.channel_id, Channel.encode(expectedChannel)), "failed to verify channel state");
 
-        host.setChannel(msg_.portId, msg_.channelId, msg_.channel);
-        host.setNextSequenceSend(msg_.portId, msg_.channelId, 1);
-        host.setNextSequenceRecv(msg_.portId, msg_.channelId, 1);
-        host.setNextSequenceAck(msg_.portId, msg_.channelId, 1);
+        string memory channelId = host.generateChannelIdentifier();
+        host.setChannel(msg_.portId, channelId, msg_.channel);
+        host.setNextSequenceSend(msg_.portId, channelId, 1);
+        host.setNextSequenceRecv(msg_.portId, channelId, 1);
+        host.setNextSequenceAck(msg_.portId, channelId, 1);
 
-        return msg_.channelId;
+        return channelId;
     }
 
     function channelOpenAck(

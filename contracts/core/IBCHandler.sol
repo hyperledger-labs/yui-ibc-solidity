@@ -67,11 +67,11 @@ contract IBCHandler {
             msg_.channel.ordering,
             msg_.channel.connection_hops,
             msg_.portId,
-            msg_.channelId,
+            channelId,
             msg_.channel.counterparty,
             msg_.channel.version
         );
-        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, msg_.channelId), address(module));
+        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
         return channelId;
     }
 
@@ -82,12 +82,12 @@ contract IBCHandler {
             msg_.channel.ordering,
             msg_.channel.connection_hops,
             msg_.portId,
-            msg_.channelId,
+            channelId,
             msg_.channel.counterparty,
             msg_.channel.version,
             msg_.counterpartyVersion
         );
-        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, msg_.channelId), address(module));
+        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
         return channelId;
     }
 

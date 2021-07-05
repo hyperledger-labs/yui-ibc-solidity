@@ -12,14 +12,13 @@ library IBCClient {
      */
     function createClient(IBCHost host, IBCMsgs.MsgCreateClient calldata msg_) external {
         host.onlyIBCModule();
-        (, bool found) = host.getClientState(msg_.clientId);
-        require(!found, "the clientId already exists");
-        (, found) = getClientByType(host, msg_.clientType);
+        (, bool found) = getClientByType(host, msg_.clientType);
         require(found, "unregistered client type");
 
-        host.setClientType(msg_.clientId, msg_.clientType);
-        host.setClientState(msg_.clientId, msg_.clientStateBytes);
-        host.setConsensusState(msg_.clientId, msg_.height, msg_.consensusStateBytes);
+        string memory clientId = host.generateClientIdentifier(msg_.clientType);
+        host.setClientType(clientId, msg_.clientType);
+        host.setClientState(clientId, msg_.clientStateBytes);
+        host.setConsensusState(clientId, msg_.height, msg_.consensusStateBytes);
     }
 
     /**

@@ -21,6 +21,13 @@ contract IBCHost {
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
     mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
     mapping (bytes => address[]) capabilities;
+    uint64 nextClientSequence;
+    uint64 nextConnectionSequence;
+    uint64 nextChannelSequence;
+
+    event GeneratedClientIdentifier(string);
+    event GeneratedConnectionIdentifier(string);
+    event GeneratedChannelIdentifier(string);
 
     address owner;
     address ibcModule;
@@ -217,5 +224,53 @@ contract IBCHost {
             return (address(0), false);
         }
         return (capabilities[name][0], true);
+    }
+
+    /// Identifier generators ///
+
+    function generateClientIdentifier(string calldata clientType) external returns (string memory) {
+        onlyIBCModule();
+        string memory identifier = string(abi.encodePacked(clientType, "-", uint2str(nextClientSequence)));
+        nextClientSequence++;
+        emit GeneratedClientIdentifier(identifier);
+        return identifier;
+    }
+
+    function generateConnectionIdentifier() external returns (string memory) {
+        onlyIBCModule();
+        string memory identifier = string(abi.encodePacked("connection-", uint2str(nextConnectionSequence)));
+        nextConnectionSequence++;
+        emit GeneratedConnectionIdentifier(identifier);
+        return identifier;
+    }
+
+    function generateChannelIdentifier() external returns (string memory) {
+        onlyIBCModule();
+        string memory identifier = string(abi.encodePacked("channel-", uint2str(nextChannelSequence)));
+        nextChannelSequence++;
+        emit GeneratedChannelIdentifier(identifier);
+        return identifier;
+    }
+
+    function uint2str(uint64 _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint64 j = _i;
+        uint64 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint64 k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 }
