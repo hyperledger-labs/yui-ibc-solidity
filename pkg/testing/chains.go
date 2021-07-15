@@ -3,6 +3,7 @@ package testing
 import (
 	"context"
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -30,7 +31,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 )
@@ -903,7 +903,8 @@ func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClient
 		if err != nil {
 			return nil, err
 		}
-		proof.Data = crypto.Keccak256(bz)
+		h := sha256.Sum256(bz)
+		proof.Data = h[:]
 	}
 	return proof, nil
 }
@@ -928,7 +929,8 @@ func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID 
 		if err != nil {
 			return nil, err
 		}
-		proof.Data = crypto.Keccak256(bz)
+		h := sha256.Sum256(bz)
+		proof.Data = h[:]
 	}
 	return proof, nil
 }

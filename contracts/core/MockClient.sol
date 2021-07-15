@@ -65,7 +65,7 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory clientStateBytes // serialized with pb
     ) public override view returns (bool) {
-        return keccak256(clientStateBytes) == proof.toBytes32();
+        return sha256(clientStateBytes) == proof.toBytes32();
     }
 
     function verifyClientConsensusState(
@@ -78,7 +78,7 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
     ) public override view returns (bool) {
-        return keccak256(consensusStateBytes) == proof.toBytes32();
+        return sha256(consensusStateBytes) == proof.toBytes32();
     }
 
     function verifyConnectionState(
@@ -90,7 +90,7 @@ contract MockClient is IClient {
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
     ) public override view returns (bool) {
-        return keccak256(connectionBytes) == proof.toBytes32();
+        return sha256(connectionBytes) == proof.toBytes32();
     }
 
     function verifyChannelState(
@@ -103,7 +103,7 @@ contract MockClient is IClient {
         string memory channelId,
         bytes memory channelBytes // serialized with pb
     ) public override view returns (bool) {
-        return keccak256(channelBytes) == proof.toBytes32();
+        return sha256(channelBytes) == proof.toBytes32();
     }
 
     function verifyPacketCommitment(
