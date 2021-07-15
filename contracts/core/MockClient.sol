@@ -65,7 +65,7 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory clientStateBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        return keccak256(clientStateBytes) == proof.toBytes32();
     }
 
     function verifyClientConsensusState(
@@ -78,7 +78,7 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        return keccak256(consensusStateBytes) == proof.toBytes32();
     }
 
     function verifyConnectionState(
@@ -90,7 +90,7 @@ contract MockClient is IClient {
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        return keccak256(connectionBytes) == proof.toBytes32();
     }
 
     function verifyChannelState(
@@ -103,7 +103,7 @@ contract MockClient is IClient {
         string memory channelId,
         bytes memory channelBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        return keccak256(channelBytes) == proof.toBytes32();
     }
 
     function verifyPacketCommitment(
@@ -115,9 +115,9 @@ contract MockClient is IClient {
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes32 commitmentBytes // serialized with pb
+        bytes32 commitmentBytes
     ) public override view returns (bool) {
-        return true;
+        return commitmentBytes == proof.toBytes32();
     }
 
     function verifyPacketAcknowledgement(
@@ -129,9 +129,9 @@ contract MockClient is IClient {
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes32 ackCommitmentBytes // serialized with pb
+        bytes32 ackCommitmentBytes
     ) public override view returns (bool) {
-        return true;
+        return ackCommitmentBytes == proof.toBytes32();
     }
 
     function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState) {
