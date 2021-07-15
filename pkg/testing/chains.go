@@ -883,7 +883,7 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	return &Proof{Height: s.Header().Number.Uint64(), Data: s.ETHProof().StorageProofRLP[0]}, nil
 }
 
-func (chain *Chain) QueryConnectionProof(counterparty *Chain, counterpartyClientID string, counterpartyConnectionID string) (*Proof, error) {
+func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string) (*Proof, error) {
 	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ConnectionStateCommitmentSlot(counterpartyConnectionID))
 	if err != nil {
 		return nil, err
@@ -908,7 +908,7 @@ func (chain *Chain) QueryConnectionProof(counterparty *Chain, counterpartyClient
 	return proof, nil
 }
 
-func (chain *Chain) QueryChannelProof(counterparty *Chain, counterpartyClientID string, channel TestChannel) (*Proof, error) {
+func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID string, channel TestChannel) (*Proof, error) {
 	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ChannelStateCommitmentSlot(channel.PortID, channel.ID))
 	if err != nil {
 		return nil, err
