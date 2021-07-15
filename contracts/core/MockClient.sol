@@ -15,12 +15,6 @@ contract MockClient is IClient {
     using RLP for bytes;
     using Bytes for bytes;
 
-    struct Header {
-        bytes32 stateRoot;
-        uint64 height;
-        uint64 time;
-    }
-
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
      */
@@ -53,16 +47,13 @@ contract MockClient is IClient {
         bytes memory clientStateBytes,
         bytes memory headerBytes
     ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height) {
-        Header memory header;
-        ConsensusState.Data memory consensusState;
         ClientState.Data memory clientState = ClientState.decode(clientStateBytes);
-
-        header = parseETHHeader(headerBytes);
-        if (header.height > clientState.latest_height) {
-            clientState.latest_height = header.height;
+        (uint64 height, uint64 timestamp) = parseHeader(headerBytes);
+        if (height > clientState.latest_height) {
+            clientState.latest_height = height;
         }
-        consensusState = ConsensusState.Data({timestamp: header.time});
-        return (ClientState.encode(clientState), ConsensusState.encode(consensusState), header.height);
+        ConsensusState.Data memory consensusState = ConsensusState.Data({timestamp: timestamp});
+        return (ClientState.encode(clientState), ConsensusState.encode(consensusState), height);
     }
 
     function verifyClientState(
@@ -155,12 +146,9 @@ contract MockClient is IClient {
         return ConsensusState.decode(consensusStateBytes);
     }
 
-    function parseETHHeader(bytes memory headerBytes) internal pure returns (Header memory header) {
+    function parseHeader(bytes memory headerBytes) internal pure returns (uint64, uint64) {
         RLP.RLPItem[] memory items = headerBytes.toRLPItem().toList();
-        require(items.length == 15, "items length must be 15");
-        header.stateRoot = items[3].toBytes().toBytes32();
-        header.height = uint64(items[8].toUint());
-        header.time = uint64(items[11].toUint());
-        return header;
+        require(items.length == 2, "items length must be 2");
+        return (uint64(items[0].toUint()), uint64(items[1].toUint()));
     }
 }

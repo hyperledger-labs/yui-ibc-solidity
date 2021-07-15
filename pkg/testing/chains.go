@@ -358,7 +358,9 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 
 func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
 	cs := counterparty.LastContractState.(client.ETHContractState)
-	bz, err := rlp.EncodeToBytes(cs.Header())
+	height := cs.Header().Number.Uint64()
+	time := cs.Header().Time
+	bz, err := rlp.EncodeToBytes([]uint64{height, time})
 	if err != nil {
 		panic(err)
 	}
