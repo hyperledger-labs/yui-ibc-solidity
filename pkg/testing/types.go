@@ -1,6 +1,9 @@
 package testing
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
+
 	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
 	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
 	connectiontypes "github.com/datachainlab/ibc-solidity/pkg/ibc/connection"
@@ -55,4 +58,39 @@ func channelToPB(ch ibchost.ChannelData) *channeltypes.Channel {
 		ConnectionHops: ch.ConnectionHops,
 		Version:        ch.Version,
 	}
+}
+
+// uint64ToBigEndian - marshals uint64 to a bigendian byte slice so it can be sorted
+func uint64ToBigEndian(i uint64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, i)
+	return b
+}
+
+// commitPacket returns the packet commitment bytes. The commitment consists of:
+// sha256_hash(timeout_timestamp + timeout_height.RevisionNumber + timeout_height.RevisionHeight + sha256_hash(data))
+// from a given packet. This results in a fixed length preimage.
+// NOTE: uint64ToBigEndian sets the uint64 to a slice of length 8.
+func commitPacket(packet channeltypes.Packet) []byte {
+	timeoutHeight := packet.TimeoutHeight
+
+	buf := uint64ToBigEndian(packet.TimeoutTimestamp)
+
+	revisionNumber := uint64ToBigEndian(timeoutHeight.GetRevisionNumber())
+	buf = append(buf, revisionNumber...)
+
+	revisionHeight := uint64ToBigEndian(timeoutHeight.GetRevisionHeight())
+	buf = append(buf, revisionHeight...)
+
+	dataHash := sha256.Sum256(packet.Data)
+	buf = append(buf, dataHash[:]...)
+
+	hash := sha256.Sum256(buf)
+	return hash[:]
+}
+
+// commitAcknowledgement returns the hash of commitment bytes
+func commitAcknowledgement(data []byte) []byte {
+	hash := sha256.Sum256(data)
+	return hash[:]
 }

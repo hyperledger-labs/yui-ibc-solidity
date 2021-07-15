@@ -672,6 +672,10 @@ func (chain *Chain) HandlePacketRecv(
 	if err != nil {
 		return err
 	}
+	switch chain.ClientType() {
+	case ibcclient.MockClient:
+		proof.Data = commitPacket(packet)
+	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.RecvPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
@@ -694,6 +698,10 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketAcknowledgementCommitmentSlot(packet.DestinationPort, packet.DestinationChannel, packet.Sequence))
 	if err != nil {
 		return err
+	}
+	switch chain.ClientType() {
+	case ibcclient.MockClient:
+		proof.Data = commitAcknowledgement(acknowledgement)
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.AcknowledgePacket(
