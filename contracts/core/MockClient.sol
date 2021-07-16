@@ -42,8 +42,9 @@ contract MockClient is IClient {
         bytes memory clientStateBytes,
         bytes memory headerBytes
     ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height) {
+        uint64 timestamp;
         ClientState.Data memory clientState = ClientState.decode(clientStateBytes);
-        (uint64 height, uint64 timestamp) = parseHeader(headerBytes);
+        (height, timestamp) = parseHeader(headerBytes);
         if (height > clientState.latest_height) {
             clientState.latest_height = height;
         }
