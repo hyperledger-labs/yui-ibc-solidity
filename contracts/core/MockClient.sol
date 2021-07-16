@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
-import {MockClientState as ClientState, MockConsensusState as ConsensusState} from "./types/MockClient.sol";
+import {MockClientState as ClientState, MockConsensusState as ConsensusState, MockHeader as Header} from "./types/MockClient.sol";
 import "../lib/Bytes.sol";
 
 contract MockClient is IClient {
@@ -154,7 +154,7 @@ contract MockClient is IClient {
     }
 
     function parseHeader(bytes memory headerBytes) internal pure returns (uint64, uint64) {
-        require(headerBytes.length == 128, "the header length must be 128");
-        return (headerBytes.toUint64(0), headerBytes.toUint64(64));
+        Header.Data memory header = Header.decode(headerBytes);
+        return (header.height, header.timestamp);
     }
 }

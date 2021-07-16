@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -359,14 +358,17 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 
 func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
 	cs := counterparty.LastContractState.(client.ETHContractState)
-	height := cs.Header().Number.Uint64()
-	time := cs.Header().Time
-	var header [128]byte
-	binary.BigEndian.PutUint64(header[:64], height)
-	binary.BigEndian.PutUint64(header[64:], time)
+	header := mockclienttypes.Header{
+		Height:    cs.Header().Number.Uint64(),
+		Timestamp: cs.Header().Time,
+	}
+	bz, err := proto.Marshal(&header)
+	if err != nil {
+		panic(err)
+	}
 	return ibchandler.IBCMsgsMsgUpdateClient{
 		ClientId: clientID,
-		Header:   header[:],
+		Header:   bz,
 	}
 }
 
