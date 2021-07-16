@@ -4,22 +4,11 @@ pragma experimental ABIEncoderV2;
 import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
-import {MockClientState as ClientState, MockConsensusState as ConsensusState} from "./types/MockClient.sol";
-import "../lib/ECRecovery.sol";
+import {MockClientState as ClientState, MockConsensusState as ConsensusState, MockHeader as Header} from "./types/MockClient.sol";
 import "../lib/Bytes.sol";
-import "../lib/TrieProofs.sol";
-import "../lib/RLP.sol";
 
 contract MockClient is IClient {
-    using RLP for RLP.RLPItem;
-    using RLP for bytes;
     using Bytes for bytes;
-
-    struct Header {
-        bytes32 stateRoot;
-        uint64 height;
-        uint64 time;
-    }
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
@@ -53,16 +42,14 @@ contract MockClient is IClient {
         bytes memory clientStateBytes,
         bytes memory headerBytes
     ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height) {
-        Header memory header;
-        ConsensusState.Data memory consensusState;
+        uint64 timestamp;
         ClientState.Data memory clientState = ClientState.decode(clientStateBytes);
-
-        header = parseETHHeader(headerBytes);
-        if (header.height > clientState.latest_height) {
-            clientState.latest_height = header.height;
+        (height, timestamp) = parseHeader(headerBytes);
+        if (height > clientState.latest_height) {
+            clientState.latest_height = height;
         }
-        consensusState = ConsensusState.Data({timestamp: header.time});
-        return (ClientState.encode(clientState), ConsensusState.encode(consensusState), header.height);
+        ConsensusState.Data memory consensusState = ConsensusState.Data({timestamp: timestamp});
+        return (ClientState.encode(clientState), ConsensusState.encode(consensusState), height);
     }
 
     function verifyClientState(
@@ -74,7 +61,9 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory clientStateBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
+        return sha256(clientStateBytes) == proof.toBytes32();
     }
 
     function verifyClientConsensusState(
@@ -87,7 +76,9 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
+        return sha256(consensusStateBytes) == proof.toBytes32();
     }
 
     function verifyConnectionState(
@@ -99,7 +90,9 @@ contract MockClient is IClient {
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
+        return sha256(connectionBytes) == proof.toBytes32();
     }
 
     function verifyChannelState(
@@ -112,7 +105,9 @@ contract MockClient is IClient {
         string memory channelId,
         bytes memory channelBytes // serialized with pb
     ) public override view returns (bool) {
-        return true;
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
+        return sha256(channelBytes) == proof.toBytes32();
     }
 
     function verifyPacketCommitment(
@@ -124,9 +119,11 @@ contract MockClient is IClient {
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes32 commitmentBytes // serialized with pb
+        bytes32 commitmentBytes
     ) public override view returns (bool) {
-        return true;
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
+        return commitmentBytes == proof.toBytes32();
     }
 
     function verifyPacketAcknowledgement(
@@ -138,9 +135,11 @@ contract MockClient is IClient {
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes32 ackCommitmentBytes // serialized with pb
+        bytes32 ackCommitmentBytes
     ) public override view returns (bool) {
-        return true;
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
+        return ackCommitmentBytes == proof.toBytes32();
     }
 
     function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState) {
@@ -155,12 +154,8 @@ contract MockClient is IClient {
         return ConsensusState.decode(consensusStateBytes);
     }
 
-    function parseETHHeader(bytes memory headerBytes) internal pure returns (Header memory header) {
-        RLP.RLPItem[] memory items = headerBytes.toRLPItem().toList();
-        require(items.length == 15, "items length must be 15");
-        header.stateRoot = items[3].toBytes().toBytes32();
-        header.height = uint64(items[8].toUint());
-        header.time = uint64(items[11].toUint());
-        return header;
+    function parseHeader(bytes memory headerBytes) internal pure returns (uint64, uint64) {
+        Header.Data memory header = Header.decode(headerBytes);
+        return (header.height, header.timestamp);
     }
 }

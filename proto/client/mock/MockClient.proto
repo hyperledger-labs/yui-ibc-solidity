@@ -11,3 +11,8 @@ message ClientState {
 message ConsensusState {
   uint64 timestamp = 1;
 }
+
+message Header {
+  uint64 height = 1;
+  uint64 timestamp = 2;
+}

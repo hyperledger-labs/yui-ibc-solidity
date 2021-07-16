@@ -110,15 +110,68 @@ func (m *ConsensusState) GetTimestamp() uint64 {
 	return 0
 }
 
+type Header struct {
+	Height    uint64 `protobuf:"varint,1,opt,name=height,proto3" json:"height,omitempty"`
+	Timestamp uint64 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+}
+
+func (m *Header) Reset()         { *m = Header{} }
+func (m *Header) String() string { return proto.CompactTextString(m) }
+func (*Header) ProtoMessage()    {}
+func (*Header) Descriptor() ([]byte, []int) {
+	return fileDescriptor_aa8d7a2e1ed6d381, []int{2}
+}
+func (m *Header) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *Header) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_Header.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *Header) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Header.Merge(m, src)
+}
+func (m *Header) XXX_Size() int {
+	return m.Size()
+}
+func (m *Header) XXX_DiscardUnknown() {
+	xxx_messageInfo_Header.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Header proto.InternalMessageInfo
+
+func (m *Header) GetHeight() uint64 {
+	if m != nil {
+		return m.Height
+	}
+	return 0
+}
+
+func (m *Header) GetTimestamp() uint64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*ClientState)(nil), "mock.ClientState")
 	proto.RegisterType((*ConsensusState)(nil), "mock.ConsensusState")
+	proto.RegisterType((*Header)(nil), "mock.Header")
 }
 
 func init() { proto.RegisterFile("client/mock/MockClient.proto", fileDescriptor_aa8d7a2e1ed6d381) }
 
 var fileDescriptor_aa8d7a2e1ed6d381 = []byte{
-	// 171 bytes of a gzipped FileDescriptorProto
+	// 195 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x49, 0xce, 0xc9, 0x4c,
 	0xcd, 0x2b, 0xd1, 0xcf, 0xcd, 0x4f, 0xce, 0xd6, 0xf7, 0xcd, 0x4f, 0xce, 0x76, 0x06, 0xf3, 0xf5,
 	0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0x58, 0x40, 0xc2, 0x4a, 0x46, 0x5c, 0xdc, 0x10, 0xd1, 0xe0,
@@ -126,10 +179,12 @@ var fileDescriptor_aa8d7a2e1ed6d381 = []byte{
 	0xd4, 0xcc, 0xf4, 0x8c, 0x12, 0x09, 0x46, 0x05, 0x46, 0x0d, 0x96, 0x20, 0x1e, 0x88, 0xa0, 0x07,
 	0x58, 0x4c, 0x49, 0x8f, 0x8b, 0xcf, 0x39, 0x3f, 0xaf, 0x38, 0x35, 0xaf, 0xb8, 0xb4, 0x18, 0xa2,
 	0x4d, 0x86, 0x8b, 0xb3, 0x24, 0x33, 0x37, 0xb5, 0xb8, 0x24, 0x31, 0xb7, 0x00, 0xaa, 0x05, 0x21,
-	0xe0, 0xa4, 0x7b, 0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0x4e,
-	0x78, 0x2c, 0xc7, 0x70, 0xe1, 0xb1, 0x1c, 0xc3, 0x8d, 0xc7, 0x72, 0x0c, 0x51, 0xc2, 0x05, 0xd9,
-	0xe9, 0xfa, 0x99, 0x49, 0xc9, 0xfa, 0x48, 0x2e, 0x4d, 0x62, 0x03, 0xbb, 0xcf, 0x18, 0x10, 0x00,
-	0x00, 0xff, 0xff, 0x0b, 0xf5, 0x9c, 0x4c, 0xbf, 0x00, 0x00, 0x00,
+	0xa0, 0x64, 0xc7, 0xc5, 0xe6, 0x91, 0x9a, 0x98, 0x92, 0x5a, 0x24, 0x24, 0xc6, 0xc5, 0x86, 0x62,
+	0x2e, 0x94, 0x87, 0xaa, 0x9f, 0x09, 0x4d, 0xbf, 0x93, 0xee, 0x89, 0x47, 0x72, 0x8c, 0x17, 0x1e,
+	0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3, 0x85, 0xc7, 0x72, 0x0c, 0x37,
+	0x1e, 0xcb, 0x31, 0x44, 0x09, 0x17, 0x64, 0xa7, 0xeb, 0x67, 0x26, 0x25, 0xeb, 0x23, 0xf9, 0x34,
+	0x89, 0x0d, 0xec, 0x3f, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x37, 0xf0, 0x38, 0x6f, 0xff,
+	0x00, 0x00, 0x00,
 }
 
 func (m *ClientState) Marshal() (dAtA []byte, err error) {
@@ -188,6 +243,39 @@ func (m *ConsensusState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *Header) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Header) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Header) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Timestamp != 0 {
+		i = encodeVarintMockClient(dAtA, i, uint64(m.Timestamp))
+		i--
+		dAtA[i] = 0x10
+	}
+	if m.Height != 0 {
+		i = encodeVarintMockClient(dAtA, i, uint64(m.Height))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintMockClient(dAtA []byte, offset int, v uint64) int {
 	offset -= sovMockClient(v)
 	base := offset
@@ -217,6 +305,21 @@ func (m *ConsensusState) Size() (n int) {
 	}
 	var l int
 	_ = l
+	if m.Timestamp != 0 {
+		n += 1 + sovMockClient(uint64(m.Timestamp))
+	}
+	return n
+}
+
+func (m *Header) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Height != 0 {
+		n += 1 + sovMockClient(uint64(m.Height))
+	}
 	if m.Timestamp != 0 {
 		n += 1 + sovMockClient(uint64(m.Timestamp))
 	}
@@ -328,6 +431,94 @@ func (m *ConsensusState) Unmarshal(dAtA []byte) error {
 		}
 		switch fieldNum {
 		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			m.Timestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMockClient
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Timestamp |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipMockClient(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthMockClient
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Header) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowMockClient
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Header: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Header: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
+			}
+			m.Height = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowMockClient
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Height |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
 			}
