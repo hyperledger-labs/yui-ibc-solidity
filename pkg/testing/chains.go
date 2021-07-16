@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -31,7 +32,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -361,13 +361,12 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 	cs := counterparty.LastContractState.(client.ETHContractState)
 	height := cs.Header().Number.Uint64()
 	time := cs.Header().Time
-	bz, err := rlp.EncodeToBytes([]uint64{height, time})
-	if err != nil {
-		panic(err)
-	}
+	var header [128]byte
+	binary.BigEndian.PutUint64(header[:64], height)
+	binary.BigEndian.PutUint64(header[64:], time)
 	return ibchandler.IBCMsgsMsgUpdateClient{
 		ClientId: clientID,
-		Header:   bz,
+		Header:   header[:],
 	}
 }
 

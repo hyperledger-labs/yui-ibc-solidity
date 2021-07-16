@@ -5,14 +5,9 @@ import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
 import {MockClientState as ClientState, MockConsensusState as ConsensusState} from "./types/MockClient.sol";
-import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";
-import "../lib/TrieProofs.sol";
-import "../lib/RLP.sol";
 
 contract MockClient is IClient {
-    using RLP for RLP.RLPItem;
-    using RLP for bytes;
     using Bytes for bytes;
 
     /**
@@ -65,6 +60,8 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory clientStateBytes // serialized with pb
     ) public override view returns (bool) {
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
         return sha256(clientStateBytes) == proof.toBytes32();
     }
 
@@ -78,6 +75,8 @@ contract MockClient is IClient {
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
     ) public override view returns (bool) {
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
         return sha256(consensusStateBytes) == proof.toBytes32();
     }
 
@@ -90,6 +89,8 @@ contract MockClient is IClient {
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
     ) public override view returns (bool) {
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
         return sha256(connectionBytes) == proof.toBytes32();
     }
 
@@ -103,6 +104,8 @@ contract MockClient is IClient {
         string memory channelId,
         bytes memory channelBytes // serialized with pb
     ) public override view returns (bool) {
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
         return sha256(channelBytes) == proof.toBytes32();
     }
 
@@ -117,6 +120,8 @@ contract MockClient is IClient {
         uint64 sequence,
         bytes32 commitmentBytes
     ) public override view returns (bool) {
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
         return commitmentBytes == proof.toBytes32();
     }
 
@@ -131,6 +136,8 @@ contract MockClient is IClient {
         uint64 sequence,
         bytes32 ackCommitmentBytes
     ) public override view returns (bool) {
+        (, bool found) = host.getConsensusState(clientId, height);
+        require(found, "consensus state not found");
         return ackCommitmentBytes == proof.toBytes32();
     }
 
@@ -147,8 +154,7 @@ contract MockClient is IClient {
     }
 
     function parseHeader(bytes memory headerBytes) internal pure returns (uint64, uint64) {
-        RLP.RLPItem[] memory items = headerBytes.toRLPItem().toList();
-        require(items.length == 2, "items length must be 2");
-        return (uint64(items[0].toUint()), uint64(items[1].toUint()));
+        require(headerBytes.length == 128, "the header length must be 128");
+        return (headerBytes.toUint64(0), headerBytes.toUint64(64));
     }
 }
