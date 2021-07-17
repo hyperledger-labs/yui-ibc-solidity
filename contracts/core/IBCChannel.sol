@@ -260,7 +260,7 @@ library IBCChannel {
 
         require(commitment == host.makePacketCommitment(msg_.packet), "commitment bytes are not equal");
 
-        require(IBCConnection.verifyPacketAcknowledgement(host, connection, msg_.proofHeight, msg_.proof, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, host.makePacketAcknowledgementCommitment(msg_.acknowledgement)), "failed to verify packet acknowledgement commitment");
+        require(IBCConnection.verifyPacketAcknowledgement(host, connection, msg_.proofHeight, msg_.proof, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, msg_.acknowledgement), "failed to verify packet acknowledgement commitment");
 
         if (channel.ordering == Channel.Order.ORDER_ORDERED) {
             uint64 nextSequenceAck = host.getNextSequenceAck(msg_.packet.source_port, msg_.packet.source_channel);

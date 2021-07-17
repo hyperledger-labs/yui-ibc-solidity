@@ -135,11 +135,11 @@ contract MockClient is IClient {
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes32 ackCommitmentBytes
+        bytes memory acknowledgement
     ) public override view returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
-        return ackCommitmentBytes == proof.toBytes32();
+        return host.makePacketAcknowledgementCommitment(acknowledgement) == proof.toBytes32();
     }
 
     function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState) {

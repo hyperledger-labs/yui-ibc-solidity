@@ -88,6 +88,6 @@ interface IClient {
         string calldata portId,
         string calldata channelId,
         uint64 sequence,
-        bytes32 ackCommitmentBytes // serialized with pb
+        bytes calldata acknowledgement // serialized with pb
     ) external view returns (bool);
 }

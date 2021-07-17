@@ -253,13 +253,13 @@ contract IBFT2Client is IClient {
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes32 ackCommitmentBytes
+        bytes memory acknowledgement
     ) public override view returns (bool) {
         ClientState.Data memory clientState = getClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        return verifyMembership(proof, getConsensusState(host, clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), ackCommitmentBytes);
+        return verifyMembership(proof, getConsensusState(host, clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), host.makePacketAcknowledgementCommitment(acknowledgement));
     }
 
     /// helper functions ///

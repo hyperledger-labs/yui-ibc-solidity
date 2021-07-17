@@ -169,8 +169,8 @@ library IBCConnection {
         return IBCClient.getClient(host, connection.client_id).verifyPacketCommitment(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, commitmentBytes);
     }
 
-    function verifyPacketAcknowledgement(IBCHost host, ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes32 ackCommitmentBytes) public view returns (bool) {
-        return IBCClient.getClient(host, connection.client_id).verifyPacketAcknowledgement(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, ackCommitmentBytes);
+    function verifyPacketAcknowledgement(IBCHost host, ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) public view returns (bool) {
+        return IBCClient.getClient(host, connection.client_id).verifyPacketAcknowledgement(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, acknowledgement);
     }
 
     // Internal functions
