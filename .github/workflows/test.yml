@@ -31,7 +31,7 @@ jobs:
     - name: Setup ganache-cli
       run: NO_GEN_CODE=1 ./scripts/setup.sh development
 
-    - name: Integartion test
+    - name: Integration test
       run: make integration-test
 
     - name: Setup chains for E2E test
