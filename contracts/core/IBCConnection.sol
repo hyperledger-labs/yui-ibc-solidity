@@ -39,9 +39,6 @@ library IBCConnection {
         require(IBCClient.validateSelfClient(host, msg_.clientStateBytes), "failed to validate self client state");
         require(msg_.counterpartyVersions.length > 0, "counterpartyVersions length must be greater than 0");
 
-        // TODO add a support for selfConsensusState getter
-        // (ConsensusState.Data memory expectedConsensusState, bool found) = client.getSelfConsensusState(consensusHeight);
-
         ConnectionEnd.Data memory connection = ConnectionEnd.Data({
             client_id: msg_.clientId,
             versions: getVersions(),
@@ -63,10 +60,8 @@ library IBCConnection {
         });
 
         require(verifyConnectionState(host, connection, msg_.proofHeight, msg_.proofInit, msg_.counterparty.connection_id, expectedConnection), "failed to verify connection state");
-        // TODO commentout this after connectionState validation is passed
-        // require(verifyClientState(connection, msg_.proofHeight, msg_.proofClient, msg_.clientState), "failed to verify clientState");
-        // TODO commentout this
-        // require(verifyClientConsensusState(connection, proofHeight, consensusHeight, proofConsensus, expectedConsensusState), "failed to verify consensusState");
+        require(verifyClientState(host, connection, msg_.proofHeight, msg_.proofClient, msg_.clientStateBytes), "failed to verify clientState");
+        // TODO we should also verify a consensus state
 
         string memory connectionId = host.generateConnectionIdentifier();
         host.setConnection(connectionId, connection);
@@ -92,9 +87,6 @@ library IBCConnection {
 
         require(IBCClient.validateSelfClient(host, msg_.clientStateBytes), "failed to validate self client state");
 
-        // TODO add a support for selfConsensusState getter
-        // (ConsensusState.Data memory expectedConsensusState, bool found) = client.getSelfConsensusState(consensusHeight);
-        
         Counterparty.Data memory expectedCounterparty = Counterparty.Data({
             client_id: connection.client_id,
             connection_id: msg_.connectionId,
@@ -110,6 +102,8 @@ library IBCConnection {
         });
 
         require(verifyConnectionState(host, connection, msg_.proofHeight, msg_.proofTry, msg_.counterpartyConnectionID, expectedConnection), "failed to verify connection state");
+        require(verifyClientState(host, connection, msg_.proofHeight, msg_.proofClient, msg_.clientStateBytes), "failed to verify clientState");
+        // TODO we should also verify a consensus state
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
         connection.versions = expectedConnection.versions;
