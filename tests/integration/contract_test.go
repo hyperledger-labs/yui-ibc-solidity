@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datachainlab/ibc-solidity/pkg/client"
-	"github.com/datachainlab/ibc-solidity/pkg/consts"
-	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
-	clienttypes "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
-	ibctesting "github.com/datachainlab/ibc-solidity/pkg/testing"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/consts"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
+	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
+	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
 
 	"github.com/stretchr/testify/suite"
 )

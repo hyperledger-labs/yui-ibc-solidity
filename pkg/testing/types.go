@@ -4,9 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 
-	"github.com/datachainlab/ibc-solidity/pkg/contract/ibchost"
-	channeltypes "github.com/datachainlab/ibc-solidity/pkg/ibc/channel"
-	connectiontypes "github.com/datachainlab/ibc-solidity/pkg/ibc/connection"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
+	connectiontypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection"
 )
 
 // TestConnection is a testing helper struct to keep track of the connectionID, source clientID,
