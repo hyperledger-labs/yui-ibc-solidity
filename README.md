@@ -1,7 +1,7 @@
 # IBC-Solidity
 
-![Test](https://github.com/datachainlab/ibc-solidity/workflows/Test/badge.svg)
-[![GoDoc](https://godoc.org/github.com/datachainlab/ibc-solidity?status.svg)](https://pkg.go.dev/github.com/datachainlab/ibc-solidity?tab=doc)
+![Test](https://github.com/hyperledger-labs/yui-ibc-solidity/workflows/Test/badge.svg)
+[![GoDoc](https://godoc.org/github.com/hyperledger-labs/yui-ibc-solidity?status.svg)](https://pkg.go.dev/github.com/hyperledger-labs/yui-ibc-solidity?tab=doc)
 
 IBC implementations in solidity.
 

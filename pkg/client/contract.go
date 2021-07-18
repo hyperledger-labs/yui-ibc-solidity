@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/datachainlab/ibc-solidity/pkg/chains"
-	ibcclient "github.com/datachainlab/ibc-solidity/pkg/ibc/client"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/chains"
+	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
 )
 
 type ContractState interface {

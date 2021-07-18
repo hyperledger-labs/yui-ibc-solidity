@@ -1,4 +1,4 @@
-module github.com/datachainlab/ibc-solidity
+module github.com/hyperledger-labs/yui-ibc-solidity
 
 go 1.16
 

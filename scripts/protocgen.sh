@@ -31,5 +31,5 @@ Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:. \
 
 done
 
-cp -r github.com/datachainlab/ibc-solidity/* ./
+cp -r github.com/hyperledger-labs/yui-ibc-solidity/* ./
 rm -rf github.com
