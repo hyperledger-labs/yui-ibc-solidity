@@ -226,23 +226,22 @@ func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientS
 	return &cs
 }
 
-func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte) (client.ContractState, error) {
-	var height uint64
-
-	switch counterparty.ClientType() {
-	case ibcclient.MockClient:
-		height = counterparty.GetMockClientState(counterpartyClientID).LatestHeight
-	case ibcclient.BesuIBFT2Client:
-		height = counterparty.GetIBFT2ClientState(counterpartyClientID).LatestHeight
-	default:
-		return nil, fmt.Errorf("unknown client type: '%v'", counterparty.ClientType())
+func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (client.ContractState, error) {
+	if height == nil {
+		switch counterparty.ClientType() {
+		case ibcclient.MockClient:
+			height = big.NewInt(int64(counterparty.GetMockClientState(counterpartyClientID).LatestHeight))
+		case ibcclient.BesuIBFT2Client:
+			height = big.NewInt(int64(counterparty.GetIBFT2ClientState(counterpartyClientID).LatestHeight))
+		default:
+			return nil, fmt.Errorf("unknown client type: '%v'", counterparty.ClientType())
+		}
 	}
-
 	return chain.client.GetContractState(
 		context.Background(),
 		chain.ContractConfig.GetIBCHostAddress(),
 		storageKeys,
-		big.NewInt(int64(height)),
+		height,
 	)
 }
 
@@ -463,7 +462,11 @@ func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain,
 }
 
 func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) (string, error) {
-	proof, err := counterparty.QueryConnectionProof(chain, connection.ClientID, counterpartyConnection.ID)
+	proofConnection, err := counterparty.QueryConnectionProof(chain, connection.ClientID, counterpartyConnection.ID, nil)
+	if err != nil {
+		return "", err
+	}
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, big.NewInt(int64(proofConnection.Height)))
 	if err != nil {
 		return "", err
 	}
@@ -477,14 +480,15 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 					ConnectionId: counterpartyConnection.ID,
 					Prefix:       ibchandler.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
 				},
-				DelayPeriod: DefaultDelayPeriod,
-				ClientId:    connection.ClientID,
-				// ClientState: ibcconnection.ClientStateData{}, // TODO set chain's clientState
+				DelayPeriod:      DefaultDelayPeriod,
+				ClientId:         connection.ClientID,
+				ClientStateBytes: clientStateBytes,
 				CounterpartyVersions: []ibchandler.VersionData{
 					{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
 				},
-				ProofHeight: proof.Height,
-				ProofInit:   proof.Data,
+				ProofHeight: proofConnection.Height,
+				ProofInit:   proofConnection.Data,
+				ProofClient: proofClient.Data,
 			},
 		),
 	); err != nil {
@@ -499,7 +503,11 @@ func (chain *Chain) ConnectionOpenAck(
 	counterparty *Chain,
 	connection, counterpartyConnection *TestConnection,
 ) error {
-	proof, err := counterparty.QueryConnectionProof(chain, connection.ClientID, counterpartyConnection.ID)
+	proofConnection, err := counterparty.QueryConnectionProof(chain, connection.ClientID, counterpartyConnection.ID, nil)
+	if err != nil {
+		return err
+	}
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, big.NewInt(int64(proofConnection.Height)))
 	if err != nil {
 		return err
 	}
@@ -509,10 +517,11 @@ func (chain *Chain) ConnectionOpenAck(
 			ibchandler.IBCMsgsMsgConnectionOpenAck{
 				ConnectionId:             connection.ID,
 				CounterpartyConnectionID: counterpartyConnection.ID,
-				// clientState
-				Version:     ibchandler.VersionData{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
-				ProofTry:    proof.Data,
-				ProofHeight: proof.Height,
+				ClientStateBytes:         clientStateBytes,
+				Version:                  ibchandler.VersionData{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
+				ProofHeight:              proofConnection.Height,
+				ProofTry:                 proofConnection.Data,
+				ProofClient:              proofClient.Data,
 			},
 		),
 	)
@@ -523,7 +532,7 @@ func (chain *Chain) ConnectionOpenConfirm(
 	counterparty *Chain,
 	connection, counterpartyConnection *TestConnection,
 ) error {
-	proof, err := counterparty.QueryConnectionProof(chain, connection.ClientID, counterpartyConnection.ID)
+	proof, err := counterparty.QueryConnectionProof(chain, connection.ClientID, counterpartyConnection.ID, nil)
 	if err != nil {
 		return err
 	}
@@ -575,7 +584,7 @@ func (chain *Chain) ChannelOpenTry(
 	order channeltypes.Channel_Order,
 	connectionID string,
 ) (string, error) {
-	proof, err := counterparty.QueryChannelProof(chain, ch.ClientID, counterpartyCh)
+	proof, err := counterparty.QueryChannelProof(chain, ch.ClientID, counterpartyCh, nil)
 	if err != nil {
 		return "", err
 	}
@@ -610,7 +619,7 @@ func (chain *Chain) ChannelOpenAck(
 	counterparty *Chain,
 	ch, counterpartyCh TestChannel,
 ) error {
-	proof, err := counterparty.QueryChannelProof(chain, ch.ClientID, counterpartyCh)
+	proof, err := counterparty.QueryChannelProof(chain, ch.ClientID, counterpartyCh, nil)
 	if err != nil {
 		return err
 	}
@@ -634,7 +643,7 @@ func (chain *Chain) ChannelOpenConfirm(
 	counterparty *Chain,
 	ch, counterpartyCh TestChannel,
 ) error {
-	proof, err := counterparty.QueryChannelProof(chain, ch.ClientID, counterpartyCh)
+	proof, err := counterparty.QueryChannelProof(chain, ch.ClientID, counterpartyCh, nil)
 	if err != nil {
 		return err
 	}
@@ -669,7 +678,7 @@ func (chain *Chain) HandlePacketRecv(
 	ch, counterpartyCh TestChannel,
 	packet channeltypes.Packet,
 ) error {
-	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence))
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence), nil)
 	if err != nil {
 		return err
 	}
@@ -696,7 +705,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	packet channeltypes.Packet,
 	acknowledgement []byte,
 ) error {
-	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketAcknowledgementCommitmentSlot(packet.DestinationPort, packet.DestinationChannel, packet.Sequence))
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketAcknowledgementCommitmentSlot(packet.DestinationPort, packet.DestinationChannel, packet.Sequence), nil)
 	if err != nil {
 		return err
 	}
@@ -842,6 +851,12 @@ func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
 
 // Slot calculator
 
+func (chain *Chain) ClientStateCommitmentSlot(clientID string) string {
+	key, err := chain.IBCIdentifier.ClientStateCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), clientID)
+	require.NoError(chain.t, err)
+	return "0x" + hex.EncodeToString(key[:])
+}
+
 func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
 	key, err := chain.IBCIdentifier.ConnectionCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), connectionID)
 	require.NoError(chain.t, err)
@@ -873,19 +888,41 @@ type Proof struct {
 	Data   []byte
 }
 
-func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string, storageKey string) (*Proof, error) {
+func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string, storageKey string, height *big.Int) (*Proof, error) {
 	if !strings.HasPrefix(storageKey, "0x") {
 		return nil, fmt.Errorf("storageKey must be hex string")
 	}
-	s, err := chain.GetContractState(counterparty, counterpartyClientID, [][]byte{[]byte(storageKey)})
+	s, err := chain.GetContractState(counterparty, counterpartyClientID, [][]byte{[]byte(storageKey)}, height)
 	if err != nil {
 		return nil, err
 	}
 	return &Proof{Height: s.Header().Number.Uint64(), Data: s.ETHProof().StorageProofRLP[0]}, nil
 }
 
-func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ConnectionStateCommitmentSlot(counterpartyConnectionID))
+func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
+	cs, found, err := counterparty.IBCHost.GetClientState(
+		counterparty.CallOpts(context.Background(), RelayerKeyIndex),
+		counterpartyClientID,
+	)
+	if err != nil {
+		return nil, nil, err
+	} else if !found {
+		return nil, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
+	}
+	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ClientStateCommitmentSlot(counterpartyClientID), height)
+	if err != nil {
+		return nil, nil, err
+	}
+	switch counterparty.ClientType() {
+	case ibcclient.MockClient:
+		h := sha256.Sum256(cs)
+		proof.Data = h[:]
+	}
+	return cs, proof, nil
+}
+
+func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string, height *big.Int) (*Proof, error) {
+	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ConnectionStateCommitmentSlot(counterpartyConnectionID), height)
 	if err != nil {
 		return nil, err
 	}
@@ -910,8 +947,8 @@ func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClient
 	return proof, nil
 }
 
-func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID string, channel TestChannel) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ChannelStateCommitmentSlot(channel.PortID, channel.ID))
+func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID string, channel TestChannel, height *big.Int) (*Proof, error) {
+	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ChannelStateCommitmentSlot(channel.PortID, channel.ID), height)
 	if err != nil {
 		return nil, err
 	}
