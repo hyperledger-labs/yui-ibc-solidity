@@ -3,7 +3,7 @@ pragma solidity ^0.6.8;
 import "./ProtoBufRuntime.sol";
 import "./GoogleProtobufAny.sol";
 
-library MockClientState {
+library IbcLightclientsMockV1ClientState {
 
 
   //struct definition
@@ -254,9 +254,9 @@ library MockClientState {
     }
   }
 }
-//library MockClientState
+//library IbcLightclientsMockV1ClientState
 
-library MockConsensusState {
+library IbcLightclientsMockV1ConsensusState {
 
 
   //struct definition
@@ -507,9 +507,9 @@ library MockConsensusState {
     }
   }
 }
-//library MockConsensusState
+//library IbcLightclientsMockV1ConsensusState
 
-library MockHeader {
+library IbcLightclientsMockV1Header {
 
 
   //struct definition
@@ -806,4 +806,4 @@ library MockHeader {
     }
   }
 }
-//library MockHeader
+//library IbcLightclientsMockV1Header

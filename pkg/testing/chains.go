@@ -220,7 +220,7 @@ func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientS
 		panic("clientState not found")
 	}
 	var cs mockclienttypes.ClientState
-	if err := proto.Unmarshal(bz, &cs); err != nil {
+	if err := UnmarshalWithAny(bz, &cs); err != nil {
 		panic(err)
 	}
 	return &cs
@@ -312,11 +312,11 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 	consensusState := mockclienttypes.ConsensusState{
 		Timestamp: counterparty.LastHeader().Time,
 	}
-	clientStateBytes, err := proto.Marshal(&clientState)
+	clientStateBytes, err := MarshalWithAny(&clientState)
 	if err != nil {
 		panic(err)
 	}
-	consensusStateBytes, err := proto.Marshal(&consensusState)
+	consensusStateBytes, err := MarshalWithAny(&consensusState)
 	if err != nil {
 		panic(err)
 	}
@@ -361,7 +361,7 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 		Height:    cs.Header().Number.Uint64(),
 		Timestamp: cs.Header().Time,
 	}
-	bz, err := proto.Marshal(&header)
+	bz, err := MarshalWithAny(&header)
 	if err != nil {
 		panic(err)
 	}

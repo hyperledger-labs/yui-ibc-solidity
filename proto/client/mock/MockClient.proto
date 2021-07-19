@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package mock;
+package ibc.lightclients.mock.v1;
 
 option go_package = "pkg/ibc/client/mock";
 
