@@ -16,7 +16,7 @@ contract IBCHandler {
 
     /// Event definitions ///
     event SendPacket(Packet.Data packet);
-    event RecvPacket(Packet.Data packet, bytes acknowledgement);
+    event RecvPacket(Packet.Data packet);
     event WriteAcknowledgement(string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement);
     event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
 
@@ -116,8 +116,9 @@ contract IBCHandler {
         IBCChannel.recvPacket(host, msg_);
         if (acknowledgement.length > 0) {
             IBCChannel.writeAcknowledgement(host, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
+            emit WriteAcknowledgement(msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
         }
-        emit RecvPacket(msg_.packet, acknowledgement);
+        emit RecvPacket(msg_.packet);
         return acknowledgement;
     }
 
