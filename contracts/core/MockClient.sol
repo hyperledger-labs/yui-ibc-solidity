@@ -178,7 +178,6 @@ contract MockClient is IClient {
 
     function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState, bool found) {
         bytes memory clientStateBytes;
-        bool found;
         (clientStateBytes, found) = host.getClientState(clientId);
         if (!found) {
             return (clientState, false);
@@ -188,7 +187,6 @@ contract MockClient is IClient {
 
     function getConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory consensusState, bool found) {
         bytes memory consensusStateBytes;
-        bool found;
         (consensusStateBytes, found) = host.getConsensusState(clientId, height);
         if (!found) {
             return (consensusState, false);

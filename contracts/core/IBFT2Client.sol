@@ -388,7 +388,6 @@ contract IBFT2Client is IClient {
 
     function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState, bool found) {
         bytes memory clientStateBytes;
-        bool found;
         (clientStateBytes, found) = host.getClientState(clientId);
         if (!found) {
             return (clientState, false);
@@ -398,7 +397,6 @@ contract IBFT2Client is IClient {
 
     function getConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory consensusState, bool found) {
         bytes memory consensusStateBytes;
-        bool found;
         (consensusStateBytes, found) = host.getConsensusState(clientId, height);
         if (!found) {
             return (consensusState, false);
@@ -418,14 +416,14 @@ contract IBFT2Client is IClient {
     }
 
     // NOTE: this is a workaround to avoid the error `Stack too deep` in caller side
-    function mustGetClientState(IBCHost host, string memory clientId) internal view returns (ClientState.Data memory clientState) {
+    function mustGetClientState(IBCHost host, string memory clientId) internal view returns (ClientState.Data memory) {
         (ClientState.Data memory clientState, bool found) = getClientState(host, clientId);
         require(found, "client state not found");
         return clientState;
     }
 
     // NOTE: this is a workaround to avoid the error `Stack too deep` in caller side
-    function mustGetConsensusState(IBCHost host, string memory clientId, uint64 height) internal view returns (ConsensusState.Data memory consensusState) {
+    function mustGetConsensusState(IBCHost host, string memory clientId, uint64 height) internal view returns (ConsensusState.Data memory) {
         (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         require(found, "consensus state not found");
         return consensusState;
