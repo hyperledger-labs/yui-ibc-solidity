@@ -386,17 +386,6 @@ contract IBFT2Client is IClient {
 
     /// helper functions ///
 
-    function validateArgs(ClientState.Data memory cs, uint64 height, bytes memory prefix, bytes memory proof) internal pure returns (bool) {
-        if (cs.latest_height < height) {
-            return false;
-        } else if (prefix.length == 0) {
-            return false;
-        } else if (proof.length == 0) {
-            return false;
-        }
-        return true;
-    }
-
     function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState, bool found) {
         bytes memory clientStateBytes;
         bool found;
@@ -417,13 +406,26 @@ contract IBFT2Client is IClient {
         return (ConsensusState.decode(Any.decode(consensusStateBytes).value), true);
     }
 
-    function mustGetClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState) {
+    function validateArgs(ClientState.Data memory cs, uint64 height, bytes memory prefix, bytes memory proof) internal pure returns (bool) {
+        if (cs.latest_height < height) {
+            return false;
+        } else if (prefix.length == 0) {
+            return false;
+        } else if (proof.length == 0) {
+            return false;
+        }
+        return true;
+    }
+
+    // NOTE: this is a workaround to avoid the error `Stack too deep` in caller side
+    function mustGetClientState(IBCHost host, string memory clientId) internal view returns (ClientState.Data memory clientState) {
         (ClientState.Data memory clientState, bool found) = getClientState(host, clientId);
         require(found, "client state not found");
         return clientState;
     }
 
-    function mustGetConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory consensusState) {
+    // NOTE: this is a workaround to avoid the error `Stack too deep` in caller side
+    function mustGetConsensusState(IBCHost host, string memory clientId, uint64 height) internal view returns (ConsensusState.Data memory consensusState) {
         (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         require(found, "consensus state not found");
         return consensusState;
