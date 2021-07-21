@@ -4,11 +4,34 @@ pragma experimental ABIEncoderV2;
 import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
-import {MockClientState as ClientState, MockConsensusState as ConsensusState, MockHeader as Header} from "./types/MockClient.sol";
+import {
+    IbcLightclientsMockV1ClientState as ClientState,
+    IbcLightclientsMockV1ConsensusState as ConsensusState,
+    IbcLightclientsMockV1Header as Header
+} from "./types/MockClient.sol";
+import {GoogleProtobufAny as Any} from "./types/GoogleProtobufAny.sol";
 import "../lib/Bytes.sol";
 
 contract MockClient is IClient {
     using Bytes for bytes;
+
+    struct protoTypes {
+        bytes32 clientState;
+        bytes32 consensusState;
+        bytes32 header;
+    }
+
+    protoTypes pts;
+
+    constructor() public {
+        // TODO The typeUrl should be defined in types/MockClient.sol
+        // The schema of typeUrl follows cosmos/cosmos-sdk/codec/types/any.go
+        pts = protoTypes({
+            clientState: keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ClientState")),
+            consensusState: keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState")),
+            header: keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.Header"))
+        });
+    }
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
@@ -18,18 +41,21 @@ contract MockClient is IClient {
         string memory clientId,
         uint64 height
     ) public override view returns (uint64, bool) {
-        (bytes memory consensusStateBytes, bool found) = host.getConsensusState(clientId, height);
+        (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         if (!found) {
             return (0, false);
         }
-        return (ConsensusState.decode(consensusStateBytes).timestamp, true);
+        return (consensusState.timestamp, true);
     }
 
     function getLatestHeight(
         IBCHost host,
         string memory clientId
     ) public override view returns (uint64, bool) {
-        ClientState.Data memory clientState = getClientState(host, clientId);
+        (ClientState.Data memory clientState, bool found) = getClientState(host, clientId);
+        if (!found) {
+            return (0, false);
+        }
         return (clientState.latest_height, true);
     }
 
@@ -43,13 +69,21 @@ contract MockClient is IClient {
         bytes memory headerBytes
     ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height) {
         uint64 timestamp;
-        ClientState.Data memory clientState = ClientState.decode(clientStateBytes);
+        Any.Data memory anyClientState;
+        Any.Data memory anyConsensusState;
+
+        anyClientState = Any.decode(clientStateBytes);
+        require(keccak256(abi.encodePacked(anyClientState.type_url)) == pts.clientState, "invalid client type");
+        ClientState.Data memory clientState = ClientState.decode(anyClientState.value);
         (height, timestamp) = parseHeader(headerBytes);
         if (height > clientState.latest_height) {
             clientState.latest_height = height;
         }
-        ConsensusState.Data memory consensusState = ConsensusState.Data({timestamp: timestamp});
-        return (ClientState.encode(clientState), ConsensusState.encode(consensusState), height);
+
+        anyClientState.value = ClientState.encode(clientState);
+        anyConsensusState.type_url = "/ibc.lightclients.mock.v1.ConsensusState";
+        anyConsensusState.value = ConsensusState.encode(ConsensusState.Data({timestamp: timestamp}));
+        return (Any.encode(anyClientState), Any.encode(anyConsensusState), height);
     }
 
     function verifyClientState(
@@ -142,20 +176,28 @@ contract MockClient is IClient {
         return host.makePacketAcknowledgementCommitment(acknowledgement) == proof.toBytes32();
     }
 
-    function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState) {
-        (bytes memory clientStateBytes, bool found) = host.getClientState(clientId);
-        require(found, "client state not found");
-        return ClientState.decode(clientStateBytes);
+    function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState, bool found) {
+        bytes memory clientStateBytes;
+        (clientStateBytes, found) = host.getClientState(clientId);
+        if (!found) {
+            return (clientState, false);
+        }
+        return (ClientState.decode(Any.decode(clientStateBytes).value), true);
     }
 
-    function getConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory) {
-        (bytes memory consensusStateBytes, bool found) = host.getConsensusState(clientId, height);
-        require(found, "clientState not found");
-        return ConsensusState.decode(consensusStateBytes);
+    function getConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory consensusState, bool found) {
+        bytes memory consensusStateBytes;
+        (consensusStateBytes, found) = host.getConsensusState(clientId, height);
+        if (!found) {
+            return (consensusState, false);
+        }
+        return (ConsensusState.decode(Any.decode(consensusStateBytes).value), true);
     }
 
-    function parseHeader(bytes memory headerBytes) internal pure returns (uint64, uint64) {
-        Header.Data memory header = Header.decode(headerBytes);
+    function parseHeader(bytes memory headerBytes) internal view returns (uint64, uint64) {
+        Any.Data memory any = Any.decode(headerBytes);
+        require(keccak256(abi.encodePacked(any.type_url)) == pts.header, "invalid header type");
+        Header.Data memory header = Header.decode(any.value);
         return (header.height, header.timestamp);
     }
 }

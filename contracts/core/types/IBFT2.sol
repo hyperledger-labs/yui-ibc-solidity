@@ -3,7 +3,7 @@ pragma solidity ^0.6.8;
 import "./ProtoBufRuntime.sol";
 import "./GoogleProtobufAny.sol";
 
-library ClientState {
+library IbcLightclientsIbft2V1ClientState {
 
 
   //struct definition
@@ -346,9 +346,9 @@ library ClientState {
     }
   }
 }
-//library ClientState
+//library IbcLightclientsIbft2V1ClientState
 
-library ConsensusState {
+library IbcLightclientsIbft2V1ConsensusState {
 
 
   //struct definition
@@ -751,9 +751,9 @@ library ConsensusState {
     }
   }
 }
-//library ConsensusState
+//library IbcLightclientsIbft2V1ConsensusState
 
-library Header {
+library IbcLightclientsIbft2V1Header {
 
 
   //struct definition
@@ -1205,4 +1205,4 @@ library Header {
     }
   }
 }
-//library Header
+//library IbcLightclientsIbft2V1Header

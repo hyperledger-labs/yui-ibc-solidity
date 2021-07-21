@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package ibc.lightclients.ibft2.v1;
+
 option go_package = "pkg/ibc/client/ibft2";
 
 message ClientState {

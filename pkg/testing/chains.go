@@ -205,7 +205,7 @@ func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.Clien
 		panic("clientState not found")
 	}
 	var cs ibft2clienttypes.ClientState
-	if err := proto.Unmarshal(bz, &cs); err != nil {
+	if err := UnmarshalWithAny(bz, &cs); err != nil {
 		panic(err)
 	}
 	return &cs
@@ -220,7 +220,7 @@ func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientS
 		panic("clientState not found")
 	}
 	var cs mockclienttypes.ClientState
-	if err := proto.Unmarshal(bz, &cs); err != nil {
+	if err := UnmarshalWithAny(bz, &cs); err != nil {
 		panic(err)
 	}
 	return &cs
@@ -312,11 +312,11 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 	consensusState := mockclienttypes.ConsensusState{
 		Timestamp: counterparty.LastHeader().Time,
 	}
-	clientStateBytes, err := proto.Marshal(&clientState)
+	clientStateBytes, err := MarshalWithAny(&clientState)
 	if err != nil {
 		panic(err)
 	}
-	consensusStateBytes, err := proto.Marshal(&consensusState)
+	consensusStateBytes, err := MarshalWithAny(&consensusState)
 	if err != nil {
 		panic(err)
 	}
@@ -339,11 +339,11 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 		Root:       counterparty.LastHeader().Root.Bytes(),
 		Validators: counterparty.LastContractState.(client.IBFT2ContractState).Validators(),
 	}
-	clientStateBytes, err := proto.Marshal(&clientState)
+	clientStateBytes, err := MarshalWithAny(&clientState)
 	if err != nil {
 		panic(err)
 	}
-	consensusStateBytes, err := proto.Marshal(&consensusState)
+	consensusStateBytes, err := MarshalWithAny(&consensusState)
 	if err != nil {
 		panic(err)
 	}
@@ -361,7 +361,7 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 		Height:    cs.Header().Number.Uint64(),
 		Timestamp: cs.Header().Time,
 	}
-	bz, err := proto.Marshal(&header)
+	bz, err := MarshalWithAny(&header)
 	if err != nil {
 		panic(err)
 	}
@@ -380,13 +380,13 @@ func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID 
 		TrustedHeight:     trustedHeight,
 		AccountStateProof: cs.ETHProof().AccountProofRLP,
 	}
-	headerBytes, err := proto.Marshal(&header)
+	bz, err := MarshalWithAny(&header)
 	if err != nil {
 		panic(err)
 	}
 	return ibchandler.IBCMsgsMsgUpdateClient{
 		ClientId: clientID,
-		Header:   headerBytes,
+		Header:   bz,
 	}
 }
 

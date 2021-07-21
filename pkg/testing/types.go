@@ -3,7 +3,10 @@ package testing
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"fmt"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	connectiontypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection"
@@ -93,4 +96,43 @@ func commitPacket(packet channeltypes.Packet) []byte {
 func commitAcknowledgement(data []byte) []byte {
 	hash := sha256.Sum256(data)
 	return hash[:]
+}
+
+func PackAny(msg proto.Message) (*types.Any, error) {
+	var any types.Any
+	any.TypeUrl = "/" + proto.MessageName(msg)
+
+	bz, err := proto.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	any.Value = bz
+	return &any, nil
+}
+
+func UnpackAny(bz []byte) (*types.Any, error) {
+	var any types.Any
+	if err := proto.Unmarshal(bz, &any); err != nil {
+		return nil, err
+	}
+	return &any, nil
+}
+
+func MarshalWithAny(msg proto.Message) ([]byte, error) {
+	any, err := PackAny(msg)
+	if err != nil {
+		return nil, err
+	}
+	return proto.Marshal(any)
+}
+
+func UnmarshalWithAny(bz []byte, msg proto.Message) error {
+	any, err := UnpackAny(bz)
+	if err != nil {
+		return err
+	}
+	if t := "/" + proto.MessageName(msg); any.TypeUrl != t {
+		return fmt.Errorf("expected %v, but got %v", t, any.TypeUrl)
+	}
+	return proto.Unmarshal(any.Value, msg)
 }
