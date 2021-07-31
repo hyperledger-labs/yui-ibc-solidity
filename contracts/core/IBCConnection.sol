@@ -35,7 +35,6 @@ library IBCConnection {
         IBCMsgs.MsgConnectionOpenTry memory msg_
     ) public returns (string memory) {
         host.onlyIBCModule();
-        require(msg_.consensusHeight < block.number, "consensus height is greater than or equal to the current block height");
         require(IBCClient.validateSelfClient(host, msg_.clientStateBytes), "failed to validate self client state");
         require(msg_.counterpartyVersions.length > 0, "counterpartyVersions length must be greater than 0");
 
@@ -73,7 +72,6 @@ library IBCConnection {
         IBCMsgs.MsgConnectionOpenAck memory msg_
     ) public {
         host.onlyIBCModule();
-        require(msg_.consensusHeight < block.number, "consensus height is greater than or equal to the current block height");
         (ConnectionEnd.Data memory connection, bool found) = host.getConnection(msg_.connectionId);
         require(found, "connection not found");
 
