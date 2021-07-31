@@ -728,12 +728,12 @@ library ProtoBufRuntime {
     return _encode_varint(twosComplement, p, bs);
   }
 
-  function _encode_enum(int64 x, uint256 p, bytes memory bs)
+  function _encode_enum(int32 x, uint256 p, bytes memory bs)
     internal
     pure
     returns (uint256)
   {
-    return _encode_int64(x, p, bs);
+    return _encode_int32(x, p, bs);
   }
 
   function _encode_bool(bool x, uint256 p, bytes memory bs)

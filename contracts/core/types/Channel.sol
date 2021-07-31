@@ -18,7 +18,7 @@ library Channel {
 
 
   // Solidity enum encoder
-  function encode_State(State x) internal pure returns (int64) {
+  function encode_State(State x) internal pure returns (int32) {
     
     if (x == State.STATE_UNINITIALIZED_UNSPECIFIED) {
       return 0;
@@ -78,7 +78,7 @@ library Channel {
 
 
   // Solidity enum encoder
-  function encode_Order(Order x) internal pure returns (int64) {
+  function encode_Order(Order x) internal pure returns (int32) {
     
     if (x == Order.ORDER_NONE_UNSPECIFIED) {
       return 0;
@@ -454,7 +454,7 @@ library Channel {
       pointer,
       bs
     );
-    int64 _enum_state = encode_State(r.state);
+    int32 _enum_state = encode_State(r.state);
     pointer += ProtoBufRuntime._encode_enum(_enum_state, pointer, bs);
     }
     if (uint(r.ordering) != 0) {
@@ -464,7 +464,7 @@ library Channel {
       pointer,
       bs
     );
-    int64 _enum_ordering = encode_Order(r.ordering);
+    int32 _enum_ordering = encode_Order(r.ordering);
     pointer += ProtoBufRuntime._encode_enum(_enum_ordering, pointer, bs);
     }
     
@@ -1344,7 +1344,7 @@ library ChannelIdentifiedChannel {
       pointer,
       bs
     );
-    int64 _enum_state = Channel.encode_State(r.state);
+    int32 _enum_state = Channel.encode_State(r.state);
     pointer += ProtoBufRuntime._encode_enum(_enum_state, pointer, bs);
     }
     if (uint(r.ordering) != 0) {
@@ -1354,7 +1354,7 @@ library ChannelIdentifiedChannel {
       pointer,
       bs
     );
-    int64 _enum_ordering = Channel.encode_Order(r.ordering);
+    int32 _enum_ordering = Channel.encode_Order(r.ordering);
     pointer += ProtoBufRuntime._encode_enum(_enum_ordering, pointer, bs);
     }
     
