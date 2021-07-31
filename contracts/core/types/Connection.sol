@@ -64,8 +64,8 @@ library ConnectionEnd {
     string client_id;
     Version.Data[] versions;
     ConnectionEnd.State state;
-    uint64 delay_period;
     Counterparty.Data counterparty;
+    uint64 delay_period;
   }
 
   // Decoder section
@@ -124,10 +124,10 @@ library ConnectionEnd {
         pointer += _read_state(pointer, bs, r, counters);
       }
       else if (fieldId == 4) {
-        pointer += _read_delay_period(pointer, bs, r, counters);
+        pointer += _read_counterparty(pointer, bs, r, counters);
       }
       else if (fieldId == 5) {
-        pointer += _read_counterparty(pointer, bs, r, counters);
+        pointer += _read_delay_period(pointer, bs, r, counters);
       }
       
       else {
@@ -170,10 +170,10 @@ library ConnectionEnd {
         pointer += _read_state(pointer, bs, nil(), counters);
       }
       else if (fieldId == 4) {
-        pointer += _read_delay_period(pointer, bs, nil(), counters);
+        pointer += _read_counterparty(pointer, bs, nil(), counters);
       }
       else if (fieldId == 5) {
-        pointer += _read_counterparty(pointer, bs, nil(), counters);
+        pointer += _read_delay_period(pointer, bs, nil(), counters);
       }
       else {
         if (wireType == ProtoBufRuntime.WireType.Fixed64) {
@@ -293,7 +293,7 @@ library ConnectionEnd {
    * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
-  function _read_delay_period(
+  function _read_counterparty(
     uint256 p,
     bytes memory bs,
     Data memory r,
@@ -302,11 +302,11 @@ library ConnectionEnd {
     /**
      * if `r` is NULL, then only counting the number of fields.
      */
-    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
+    (Counterparty.Data memory x, uint256 sz) = _decode_Counterparty(p, bs);
     if (isNil(r)) {
       counters[4] += 1;
     } else {
-      r.delay_period = x;
+      r.counterparty = x;
       if (counters[4] > 0) counters[4] -= 1;
     }
     return sz;
@@ -320,7 +320,7 @@ library ConnectionEnd {
    * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
-  function _read_counterparty(
+  function _read_delay_period(
     uint256 p,
     bytes memory bs,
     Data memory r,
@@ -329,11 +329,11 @@ library ConnectionEnd {
     /**
      * if `r` is NULL, then only counting the number of fields.
      */
-    (Counterparty.Data memory x, uint256 sz) = _decode_Counterparty(p, bs);
+    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
     if (isNil(r)) {
       counters[5] += 1;
     } else {
-      r.counterparty = x;
+      r.delay_period = x;
       if (counters[5] > 0) counters[5] -= 1;
     }
     return sz;
@@ -441,24 +441,24 @@ library ConnectionEnd {
     int32 _enum_state = encode_State(r.state);
     pointer += ProtoBufRuntime._encode_enum(_enum_state, pointer, bs);
     }
-    if (r.delay_period != 0) {
-    pointer += ProtoBufRuntime._encode_key(
-      4,
-      ProtoBufRuntime.WireType.Varint,
-      pointer,
-      bs
-    );
-    pointer += ProtoBufRuntime._encode_uint64(r.delay_period, pointer, bs);
-    }
     
     pointer += ProtoBufRuntime._encode_key(
-      5,
+      4,
       ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
     pointer += Counterparty._encode_nested(r.counterparty, pointer, bs);
     
+    if (r.delay_period != 0) {
+    pointer += ProtoBufRuntime._encode_key(
+      5,
+      ProtoBufRuntime.WireType.Varint,
+      pointer,
+      bs
+    );
+    pointer += ProtoBufRuntime._encode_uint64(r.delay_period, pointer, bs);
+    }
     return pointer - offset;
   }
   // nested encoder
@@ -507,8 +507,8 @@ library ConnectionEnd {
       e += 1 + ProtoBufRuntime._sz_lendelim(Version._estimate(r.versions[i]));
     }
     e += 1 + ProtoBufRuntime._sz_enum(encode_State(r.state));
-    e += 1 + ProtoBufRuntime._sz_uint64(r.delay_period);
     e += 1 + ProtoBufRuntime._sz_lendelim(Counterparty._estimate(r.counterparty));
+    e += 1 + ProtoBufRuntime._sz_uint64(r.delay_period);
     return e;
   }
   // empty checker
@@ -551,8 +551,8 @@ library ConnectionEnd {
     }
     
     output.state = input.state;
-    output.delay_period = input.delay_period;
     Counterparty.store(input.counterparty, output.counterparty);
+    output.delay_period = input.delay_period;
 
   }
 

@@ -28,11 +28,11 @@ message ConnectionEnd {
     repeated Version versions = 2;
     // current state of the connection end.
     State state = 3;
+    // counterparty chain associated with this connection.
+    Counterparty counterparty = 4;
     // delay period that must pass before a consensus state can be used for packet-verification
     // NOTE: delay period logic is only implemented by some clients.
-    uint64 delay_period = 4;
-    // counterparty chain associated with this connection.
-    Counterparty counterparty = 5;
+    uint64 delay_period = 5;
 }
 
 // Counterparty defines the counterparty chain associated with a connection end.
