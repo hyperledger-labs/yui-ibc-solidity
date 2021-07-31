@@ -16,7 +16,7 @@ library ConnectionEnd {
 
 
   // Solidity enum encoder
-  function encode_State(State x) internal pure returns (int64) {
+  function encode_State(State x) internal pure returns (int32) {
     
     if (x == State.STATE_UNINITIALIZED_UNSPECIFIED) {
       return 0;
@@ -438,7 +438,7 @@ library ConnectionEnd {
       pointer,
       bs
     );
-    int64 _enum_state = encode_State(r.state);
+    int32 _enum_state = encode_State(r.state);
     pointer += ProtoBufRuntime._encode_enum(_enum_state, pointer, bs);
     }
     if (r.delay_period != 0) {
