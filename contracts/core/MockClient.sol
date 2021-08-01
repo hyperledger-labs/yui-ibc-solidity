@@ -12,6 +12,8 @@ import {
 import {GoogleProtobufAny as Any} from "./types/GoogleProtobufAny.sol";
 import "../lib/Bytes.sol";
 
+// MockClient implements https://github.com/datachainlab/ibc-mock-client
+// WARNING: This client is intended to be used for testing purpose. Therefore, it is not generally available in a production, except in a fully trusted environment.
 contract MockClient is IClient {
     using Bytes for bytes;
 
