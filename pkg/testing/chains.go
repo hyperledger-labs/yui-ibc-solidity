@@ -245,66 +245,6 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 	)
 }
 
-func (chain *Chain) Init() error {
-	ctx := context.Background()
-	if err := chain.WaitIfNoError(ctx)(
-		chain.IBCHost.SetIBCModule(
-			chain.TxOpts(ctx, RelayerKeyIndex),
-			chain.ContractConfig.GetIBCHandlerAddress(),
-		),
-	); err != nil {
-		return err
-	}
-
-	if name, err := chain.IBCIdentifier.PortCapabilityPath(chain.CallOpts(ctx, RelayerKeyIndex), TransferPort); err != nil {
-		return err
-	} else if _, found, err := chain.IBCHost.GetModuleOwner(chain.CallOpts(ctx, RelayerKeyIndex), name); err != nil {
-		return err
-	} else if !found {
-		if err := chain.WaitIfNoError(ctx)(
-			chain.IBCHandler.BindPort(chain.TxOpts(ctx, RelayerKeyIndex), TransferPort, chain.ContractConfig.GetICS20TransferBankAddress()),
-		); err != nil {
-			return err
-		}
-	}
-
-	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx, RelayerKeyIndex), ibcclient.BesuIBFT2Client); err != nil {
-		return err
-	} else if !found {
-		if err := chain.WaitIfNoError(ctx)(
-			chain.IBCHandler.RegisterClient(
-				chain.TxOpts(ctx, RelayerKeyIndex),
-				ibcclient.BesuIBFT2Client,
-				chain.ContractConfig.GetIBFT2ClientAddress(),
-			),
-		); err != nil {
-			return err
-		}
-	}
-
-	if _, found, err := chain.IBCHost.GetClientImpl(chain.CallOpts(ctx, RelayerKeyIndex), ibcclient.MockClient); err != nil {
-		return err
-	} else if !found {
-		if err := chain.WaitIfNoError(ctx)(
-			chain.IBCHandler.RegisterClient(
-				chain.TxOpts(ctx, RelayerKeyIndex),
-				ibcclient.MockClient,
-				chain.ContractConfig.GetMockClientAddress(),
-			),
-		); err != nil {
-			return err
-		}
-	}
-
-	if err := chain.WaitIfNoError(ctx)(
-		chain.ICS20Bank.SetOperator(chain.TxOpts(ctx, RelayerKeyIndex), chain.ContractConfig.GetICS20TransferBankAddress()),
-	); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler.IBCMsgsMsgCreateClient {
 	clientState := mockclienttypes.ClientState{
 		LatestHeight: counterparty.LastHeader().Number.Uint64(),

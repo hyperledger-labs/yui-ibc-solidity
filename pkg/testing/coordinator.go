@@ -17,9 +17,7 @@ type Coordinator struct {
 
 func NewCoordinator(t *testing.T, chains ...*Chain) Coordinator {
 	for _, chain := range chains {
-		if err := chain.Init(); err != nil {
-			panic(err)
-		}
+		// initialize LastContractState of chain
 		chain.UpdateHeader()
 	}
 	return Coordinator{t: t, chains: chains}
