@@ -5,6 +5,8 @@
 
 IBC implementations in solidity.
 
+This is available not only for Ethereum and Hyperledger Besu, but also for Binance Smart Chain and other blockchains that run smart contract in EVM.
+
 NOTE: This is yet pre-alpha non-production-quality software.
 
 ## Features
@@ -26,6 +28,10 @@ Launch two Besu chains with IBC Contract deployed with the following command:
 $ NO_GEN_CODE=1 ./scripts/setup.sh testtwochainz
 ```
 
+An example of E2E working can be found here:
+- https://github.com/hyperledger-labs/yui-relayer/tree/main/tests/cases/tm2eth
+- https://github.com/hyperledger-labs/yui-relayer/blob/main/.github/workflows/test.yml
+
 ## Example and Testing
 
 After launch the chains, execute the following command:
@@ -33,6 +39,12 @@ After launch the chains, execute the following command:
 ```
 $ make e2e-test
 ```
+
+## For Developers
+
+To develop this project, you need the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf) to generate encoders and decoders in solidity from proto files.
+
+Currently, you need to use [this version](https://github.com/datachainlab/solidity-protobuf/tree/fe7b540ff6158dca02b7ddcce80a2222be37b514).
 
 ## Maintainers
 
