@@ -286,7 +286,7 @@ func (c *Coordinator) ChanOpenInit(
 	return sourceChannel, counterpartyChannel, err
 }
 
-// ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
+// ChanOpenTry relays notice of a channel open attempt on chain A to chain B (this
 // code is executed on chain B).
 func (c *Coordinator) ChanOpenTry(
 	ctx context.Context,
@@ -311,7 +311,7 @@ func (c *Coordinator) ChanOpenTry(
 	)
 }
 
-// ConnOpenAck relays acceptance of a connection open attempt from chain B back
+// ChanOpenAck relays acceptance of a channel open attempt from chain B back
 // to chain A (this code is executed on chain A).
 func (c *Coordinator) ChanOpenAck(
 	ctx context.Context,
@@ -331,8 +331,8 @@ func (c *Coordinator) ChanOpenAck(
 	)
 }
 
-// ConnOpenConfirm confirms opening of a connection on chain A to chain B, after
-// which the connection is open on both chains (this code is executed on chain B).
+// ChanOpenConfirm confirms opening of a channel on chain A to chain B, after
+// which the channel is open on both chains (this code is executed on chain B).
 func (c *Coordinator) ChanOpenConfirm(
 	ctx context.Context,
 	source, counterparty *Chain,
