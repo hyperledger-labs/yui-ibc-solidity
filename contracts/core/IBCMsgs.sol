@@ -95,6 +95,20 @@ library IBCMsgs {
         uint64 proofHeight;
     }
 
+    /// Channel closing ///
+
+    struct MsgChannelCloseInit {
+        string portId;
+        string channelId;
+    }
+
+    struct MsgChannelCloseConfirm {
+        string portId;
+        string channelId;
+        bytes proofInit;
+        uint64 proofHeight;
+    }
+
     /// Packet ///
 
     struct MsgPacketRecv {
