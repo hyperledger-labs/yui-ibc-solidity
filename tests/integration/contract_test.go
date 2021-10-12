@@ -148,6 +148,9 @@ func (suite *ContractTestSuite) TestChannel() {
 	balanceA2, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
 	suite.Require().NoError(err)
 	suite.Require().Equal(balance0.Int64(), balanceA2.Int64())
+
+	// close channel
+	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 }
 
 func TestContractTestSuite(t *testing.T) {
