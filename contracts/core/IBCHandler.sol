@@ -3,8 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./IClient.sol";
 import "./IBCClient.sol";
-import "./IBCChannelHandshake.sol";
-import "./IBCChannelPacket.sol";
+import "./IBCChannel.sol";
 import "./IBCModule.sol";
 import "./IBCMsgs.sol";
 import "./IBCIdentifier.sol";
@@ -62,7 +61,7 @@ contract IBCHandler {
     }
 
     function channelOpenInit(IBCMsgs.MsgChannelOpenInit memory msg_) public returns (string memory) {
-        string memory channelId = IBCChannelHandshake.channelOpenInit(host, msg_);
+        string memory channelId = IBCChannel.channelOpenInit(host, msg_);
         IModuleCallbacks module = lookupModuleByPortId(msg_.portId);
         module.onChanOpenInit(
             msg_.channel.ordering,
@@ -77,7 +76,7 @@ contract IBCHandler {
     }
 
     function channelOpenTry(IBCMsgs.MsgChannelOpenTry memory msg_) public returns (string memory) {
-        string memory channelId = IBCChannelHandshake.channelOpenTry(host, msg_);
+        string memory channelId = IBCChannel.channelOpenTry(host, msg_);
         IModuleCallbacks module = lookupModuleByPortId(msg_.portId);
         module.onChanOpenTry(
             msg_.channel.ordering,
@@ -93,22 +92,22 @@ contract IBCHandler {
     }
 
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck memory msg_) public {
-        IBCChannelHandshake.channelOpenAck(host, msg_);
+        IBCChannel.channelOpenAck(host, msg_);
         lookupModuleByPortId(msg_.portId).onChanOpenAck(msg_.portId, msg_.channelId, msg_.counterpartyVersion);
     }
 
     function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm memory msg_) public {
-        IBCChannelHandshake.channelOpenConfirm(host, msg_);
+        IBCChannel.channelOpenConfirm(host, msg_);
         lookupModuleByPortId(msg_.portId).onChanOpenConfirm(msg_.portId, msg_.channelId);
     }
 
     function channelCloseInit(IBCMsgs.MsgChannelCloseInit memory msg_) public {
-        IBCChannelHandshake.channelCloseInit(host, msg_);
+        IBCChannel.channelCloseInit(host, msg_);
         lookupModuleByPortId(msg_.portId).onChanCloseInit(msg_.portId, msg_.channelId);
     }
 
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm memory msg_) public {
-        IBCChannelHandshake.channelCloseConfirm(host, msg_);
+        IBCChannel.channelCloseConfirm(host, msg_);
         lookupModuleByPortId(msg_.portId).onChanCloseConfirm(msg_.portId, msg_.channelId);
     }
 
@@ -117,16 +116,16 @@ contract IBCHandler {
             IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel),
             msg.sender
         ));
-        IBCChannelPacket.sendPacket(host, packet);
+        IBCChannel.sendPacket(host, packet);
         emit SendPacket(packet);
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory acknowledgement) {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
         acknowledgement = module.onRecvPacket(msg_.packet);
-        IBCChannelPacket.recvPacket(host, msg_);
+        IBCChannel.recvPacket(host, msg_);
         if (acknowledgement.length > 0) {
-            IBCChannelPacket.writeAcknowledgement(host, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
+            IBCChannel.writeAcknowledgement(host, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
             emit WriteAcknowledgement(msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
         }
         emit RecvPacket(msg_.packet);
@@ -138,14 +137,14 @@ contract IBCHandler {
             IBCIdentifier.channelCapabilityPath(destinationPortId, destinationChannel),
             msg.sender
         ));
-        IBCChannelPacket.writeAcknowledgement(host, destinationPortId, destinationChannel, sequence, acknowledgement);
+        IBCChannel.writeAcknowledgement(host, destinationPortId, destinationChannel, sequence, acknowledgement);
         emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
         module.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement);
-        IBCChannelPacket.acknowledgePacket(host, msg_);
+        IBCChannel.acknowledgePacket(host, msg_);
         emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
     }
 

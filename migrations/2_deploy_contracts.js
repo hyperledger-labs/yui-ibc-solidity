@@ -3,8 +3,7 @@ const IBFT2Client = artifacts.require("IBFT2Client");
 const MockClient = artifacts.require("MockClient");
 const IBCClient = artifacts.require("IBCClient");
 const IBCConnection = artifacts.require("IBCConnection");
-const IBCChannelHandshake = artifacts.require("IBCChannelHandshake");
-const IBCChannelPacket = artifacts.require("IBCChannelPacket");
+const IBCChannel = artifacts.require("IBCChannel");
 const IBCHandler = artifacts.require("IBCHandler");
 const IBCMsgs = artifacts.require("IBCMsgs");
 const IBCIdentifier = artifacts.require("IBCIdentifier");
@@ -17,19 +16,16 @@ module.exports = function (deployer) {
     return deployer.link(IBCIdentifier, [IBCHost, IBFT2Client, IBCHandler]);
   });
   deployer.deploy(IBCMsgs).then(function() {
-    return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannelHandshake, IBCChannelPacket, IBCHandler, IBFT2Client]);
+    return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client]);
   });
   deployer.deploy(IBCClient).then(function() {
-    return deployer.link(IBCClient, [IBCHandler, IBCConnection, IBCChannelHandshake, IBCChannelPacket]);
+    return deployer.link(IBCClient, [IBCHandler, IBCConnection, IBCChannel]);
   });
   deployer.deploy(IBCConnection).then(function() {
-    return deployer.link(IBCConnection, [IBCHandler, IBCChannelHandshake, IBCChannelPacket]);
+    return deployer.link(IBCConnection, [IBCHandler, IBCChannel]);
   });
-  deployer.deploy(IBCChannelHandshake).then(function() {
-    return deployer.link(IBCChannelHandshake, [IBCHandler]);
-  });
-  deployer.deploy(IBCChannelPacket).then(function() {
-    return deployer.link(IBCChannelPacket, [IBCHandler]);
+  deployer.deploy(IBCChannel).then(function() {
+    return deployer.link(IBCChannel, [IBCHandler]);
   });
   deployer.deploy(IBFT2Client);
   deployer.deploy(MockClient);
