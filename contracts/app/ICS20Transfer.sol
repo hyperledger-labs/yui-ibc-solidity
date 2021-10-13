@@ -92,6 +92,10 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
 
     function onChanOpenConfirm(string calldata portId, string calldata channelId) external virtual override {}
 
+    function onChanCloseInit(string calldata portId, string calldata channelId) external virtual override {}
+
+    function onChanCloseConfirm(string calldata portId, string calldata channelId) external virtual override {}
+
     /// Internal functions ///
 
     function _transferFrom(address sender, address receiver, string memory denom, uint256 amount) virtual internal returns (bool);

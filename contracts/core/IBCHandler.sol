@@ -101,6 +101,16 @@ contract IBCHandler {
         lookupModuleByPortId(msg_.portId).onChanOpenConfirm(msg_.portId, msg_.channelId);
     }
 
+    function channelCloseInit(IBCMsgs.MsgChannelCloseInit memory msg_) public {
+        IBCChannel.channelCloseInit(host, msg_);
+        lookupModuleByPortId(msg_.portId).onChanCloseInit(msg_.portId, msg_.channelId);
+    }
+
+    function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm memory msg_) public {
+        IBCChannel.channelCloseConfirm(host, msg_);
+        lookupModuleByPortId(msg_.portId).onChanCloseConfirm(msg_.portId, msg_.channelId);
+    }
+
     function sendPacket(Packet.Data calldata packet) external {
         require(host.authenticateCapability(
             IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel),

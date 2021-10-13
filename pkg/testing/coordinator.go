@@ -153,6 +153,21 @@ func (c *Coordinator) CreateChannel(
 	return channelA, channelB
 }
 
+// CloseChannel constructs and executes channel closing messages in order to transition
+// the channel to the CLOSED state on chainA and chainB.
+// The function expects the channels to be successfully closed otherwise testing will fail.
+func (c *Coordinator) CloseChannel(
+	ctx context.Context,
+	chainA, chainB *Chain,
+	chanA, chanB TestChannel,
+) {
+	err := c.ChanCloseInit(ctx, chainA, chainB, chanA)
+	require.NoError(c.t, err)
+
+	err = c.ChanCloseConfirm(ctx, chainB, chainA, chanB, chanA)
+	require.NoError(c.t, err)
+}
+
 // ConnOpenInit initializes a connection on the source chain with the state INIT
 // using the OpenInit handshake call.
 //
@@ -286,7 +301,7 @@ func (c *Coordinator) ChanOpenInit(
 	return sourceChannel, counterpartyChannel, err
 }
 
-// ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
+// ChanOpenTry relays notice of a channel open attempt on chain A to chain B (this
 // code is executed on chain B).
 func (c *Coordinator) ChanOpenTry(
 	ctx context.Context,
@@ -311,7 +326,7 @@ func (c *Coordinator) ChanOpenTry(
 	)
 }
 
-// ConnOpenAck relays acceptance of a connection open attempt from chain B back
+// ChanOpenAck relays acceptance of a channel open attempt from chain B back
 // to chain A (this code is executed on chain A).
 func (c *Coordinator) ChanOpenAck(
 	ctx context.Context,
@@ -331,14 +346,51 @@ func (c *Coordinator) ChanOpenAck(
 	)
 }
 
-// ConnOpenConfirm confirms opening of a connection on chain A to chain B, after
-// which the connection is open on both chains (this code is executed on chain B).
+// ChanOpenConfirm confirms opening of a channel on chain A to chain B, after
+// which the channel is open on both chains (this code is executed on chain B).
 func (c *Coordinator) ChanOpenConfirm(
 	ctx context.Context,
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
 ) error {
 	if err := source.ChannelOpenConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		sourceChannel.CounterpartyClientID,
+	)
+}
+
+// ChanCloseInit closes a channel on chain A to chain B (this code is executed on chain A).
+func (c *Coordinator) ChanCloseInit(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel TestChannel,
+) error {
+	if err := source.ChannelCloseInit(ctx, sourceChannel); err != nil {
+		return err
+	}
+	source.UpdateHeader()
+
+	return c.UpdateClient(
+		ctx,
+		counterparty, source,
+		sourceChannel.CounterpartyClientID,
+	)
+}
+
+// ChanCloseConfirm confirms closing of a channel on chain A to chain B, after
+// which the channel is closed on both chains (this code is executed on chain B).
+func (c *Coordinator) ChanCloseConfirm(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+) error {
+	if err := source.ChannelCloseConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
 		return err
 	}
 	source.UpdateHeader()

@@ -600,6 +600,43 @@ func (chain *Chain) ChannelOpenConfirm(
 	)
 }
 
+func (chain *Chain) ChannelCloseInit(
+	ctx context.Context,
+	ch TestChannel,
+) error {
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCHandler.ChannelCloseInit(
+			chain.TxOpts(ctx, RelayerKeyIndex),
+			ibchandler.IBCMsgsMsgChannelCloseInit{
+				PortId:    ch.PortID,
+				ChannelId: ch.ID,
+			},
+		),
+	)
+}
+
+func (chain *Chain) ChannelCloseConfirm(
+	ctx context.Context,
+	counterparty *Chain,
+	ch, counterpartyCh TestChannel,
+) error {
+	proof, err := counterparty.QueryChannelProof(chain, ch.ClientID, counterpartyCh, nil)
+	if err != nil {
+		return err
+	}
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCHandler.ChannelCloseConfirm(
+			chain.TxOpts(ctx, RelayerKeyIndex),
+			ibchandler.IBCMsgsMsgChannelCloseConfirm{
+				PortId:      ch.PortID,
+				ChannelId:   ch.ID,
+				ProofInit:   proof.Data,
+				ProofHeight: proof.Height,
+			},
+		),
+	)
+}
+
 func (chain *Chain) SendPacket(
 	ctx context.Context,
 	packet channeltypes.Packet,

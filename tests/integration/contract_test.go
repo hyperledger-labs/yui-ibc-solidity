@@ -148,6 +148,19 @@ func (suite *ContractTestSuite) TestChannel() {
 	balanceA2, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
 	suite.Require().NoError(err)
 	suite.Require().Equal(balance0.Int64(), balanceA2.Int64())
+
+	// close channel
+	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
+	// confirm that the channel is CLOSED on chain A
+	chanData, ok, err := chainA.IBCHost.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
+	suite.Require().NoError(err)
+	suite.Require().True(ok)
+	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+	// confirm that the channel is CLOSED on chain B
+	chanData, ok, err = chainB.IBCHost.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
+	suite.Require().NoError(err)
+	suite.Require().True(ok)
+	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
 }
 
 func TestContractTestSuite(t *testing.T) {

@@ -5,10 +5,8 @@ import "./types/Channel.sol";
 import "./IBCConnection.sol";
 import "./IBCMsgs.sol";
 import "./IBCHost.sol";
-import "../lib/strings.sol";
 
 library IBCChannel {
-    using strings for *;
 
     function channelOpenInit(
         IBCHost host,
@@ -147,6 +145,64 @@ library IBCChannel {
         host.setChannel(msg_.portId, msg_.channelId, channel);
     }
 
+    function channelCloseInit(
+        IBCHost host,
+        IBCMsgs.MsgChannelCloseInit memory msg_
+    ) public {
+        host.onlyIBCModule();
+        Channel.Data memory channel;
+        ConnectionEnd.Data memory connection;
+        bool found;
+
+        (channel, found) = host.getChannel(msg_.portId, msg_.channelId);
+        require(found, "channel not found");
+        require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
+
+        // TODO authenticates a port binding
+
+        (connection, found) = host.getConnection(channel.connection_hops[0]);
+        require(found, "connection not found");
+        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
+
+        channel.state = Channel.State.STATE_CLOSED;
+        host.setChannel(msg_.portId, msg_.channelId, channel);
+    }
+
+    function channelCloseConfirm(
+        IBCHost host,
+        IBCMsgs.MsgChannelCloseConfirm memory msg_
+    ) public {
+        host.onlyIBCModule();
+        Channel.Data memory channel;
+        ConnectionEnd.Data memory connection;
+        bool found;
+
+        (channel, found) = host.getChannel(msg_.portId, msg_.channelId);
+        require(found, "channel not found");
+        require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
+
+        // TODO authenticates a port binding
+
+        (connection, found) = host.getConnection(channel.connection_hops[0]);
+        require(found, "connection not found");
+        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
+
+        ChannelCounterparty.Data memory expectedCounterparty = ChannelCounterparty.Data({
+            port_id: msg_.portId,
+            channel_id: msg_.channelId
+        });
+        Channel.Data memory expectedChannel = Channel.Data({
+            state: Channel.State.STATE_CLOSED,
+            ordering: channel.ordering,
+            counterparty: expectedCounterparty,
+            connection_hops: getCounterpartyHops(host, channel),
+            version: channel.version
+        });
+        require(IBCConnection.verifyChannelState(host, connection, msg_.proofHeight, msg_.proofInit, channel.counterparty.port_id, channel.counterparty.channel_id, Channel.encode(expectedChannel)), "failed to verify channel state");
+        channel.state = Channel.State.STATE_CLOSED;
+        host.setChannel(msg_.portId, msg_.channelId, channel);
+    }
+
     function sendPacket(IBCHost host, Packet.Data calldata packet) external {
         host.onlyIBCModule();
         Channel.Data memory channel;
@@ -160,8 +216,8 @@ library IBCChannel {
         (channel, found) = host.getChannel(packet.source_port, packet.source_channel);
         require(found, "channel not found");
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
-        require(packet.destination_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet destination port doesn't match the counterparty's port");
-        require(packet.destination_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet destination channel doesn't match the counterparty's channel");
+        require(hashString(packet.destination_port) == hashString(channel.counterparty.port_id), "packet destination port doesn't match the counterparty's port");
+        require(hashString(packet.destination_channel) == hashString(channel.counterparty.channel_id), "packet destination channel doesn't match the counterparty's channel");
         (connection, found) = host.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
         client = IBCClient.getClient(host, connection.client_id);
@@ -194,8 +250,8 @@ library IBCChannel {
         // TODO
         // Authenticate capability to ensure caller has authority to receive packet on this channel
 
-        require(msg_.packet.source_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet source port doesn't match the counterparty's port");
-        require(msg_.packet.source_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet source channel doesn't match the counterparty's channel");
+        require(hashString(msg_.packet.source_port) == hashString(channel.counterparty.port_id), "packet source port doesn't match the counterparty's port");
+        require(hashString(msg_.packet.source_channel) == hashString(channel.counterparty.channel_id), "packet source channel doesn't match the counterparty's channel");
 
         (connection, found) = host.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
@@ -248,8 +304,8 @@ library IBCChannel {
         require(found, "channel not found");
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
-        require(msg_.packet.destination_port.toSlice().equals(channel.counterparty.port_id.toSlice()), "packet destination port doesn't match the counterparty's port");
-        require(msg_.packet.destination_channel.toSlice().equals(channel.counterparty.channel_id.toSlice()), "packet destination channel doesn't match the counterparty's channel");
+        require(hashString(msg_.packet.destination_port) == hashString(channel.counterparty.port_id), "packet destination port doesn't match the counterparty's port");
+        require(hashString(msg_.packet.destination_channel) == hashString(channel.counterparty.channel_id), "packet destination channel doesn't match the counterparty's channel");
 
         (connection, found) = host.getConnection(channel.connection_hops[0]);
         require(found, "connection not found");
@@ -280,6 +336,10 @@ library IBCChannel {
         hops = new string[](1);
         hops[0] = connection.counterparty.connection_id;
         return hops;
+    }
+
+    function hashString(string memory s) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(s));
     }
 
 }
