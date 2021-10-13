@@ -152,6 +152,16 @@ func (suite ChainTestSuite) TestChannel() {
 
 	// close channel
 	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
+	// confirm that the channel is CLOSED on chain A
+	chanData, ok, err := chainA.IBCHost.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
+	suite.Require().NoError(err)
+	suite.Require().True(ok)
+	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+	// confirm that the channel is CLOSED on chain B
+	chanData, ok, err = chainB.IBCHost.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
+	suite.Require().NoError(err)
+	suite.Require().True(ok)
+	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
 }
 
 func TestChainTestSuite(t *testing.T) {
