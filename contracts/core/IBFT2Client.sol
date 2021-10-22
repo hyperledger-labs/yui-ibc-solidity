@@ -341,6 +341,8 @@ contract IBFT2Client is IClient {
         IBCHost host,
         string memory clientId,
         uint64 height,
+        uint64 delayPeriodTime,
+        uint64 delayPeriodBlocks,
         bytes memory prefix,
         bytes memory proof,
         string memory portId,
@@ -359,6 +361,9 @@ contract IBFT2Client is IClient {
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
+        if (!validateDelayPeriod(host, clientId, height, delayPeriodTime, delayPeriodBlocks)) {
+            return false;
+        }
         (consensusState, found) = getConsensusState(host, clientId, height);
         if (!found) {
             return false;
@@ -370,6 +375,8 @@ contract IBFT2Client is IClient {
         IBCHost host,
         string memory clientId,
         uint64 height,
+        uint64 delayPeriodTime,
+        uint64 delayPeriodBlocks,
         bytes memory prefix,
         bytes memory proof,
         string memory portId,
@@ -381,7 +388,13 @@ contract IBFT2Client is IClient {
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
         }
-        return verifyMembership(proof, mustGetConsensusState(host, clientId, height).root.toBytes32(), prefix, IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence), host.makePacketAcknowledgementCommitment(acknowledgement));
+        if (!validateDelayPeriod(host, clientId, height, delayPeriodTime, delayPeriodBlocks)) {
+            return false;
+        }
+        bytes32 stateRoot = mustGetConsensusState(host, clientId, height).root.toBytes32();
+        bytes32 ackCommitmentSlot = IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence);
+        bytes32 ackCommitment = host.makePacketAcknowledgementCommitment(acknowledgement);
+        return verifyMembership(proof, stateRoot, prefix, ackCommitmentSlot, ackCommitment);
     }
 
     /// helper functions ///
@@ -415,6 +428,20 @@ contract IBFT2Client is IClient {
         return true;
     }
 
+    function validateDelayPeriod(IBCHost host, string memory clientId, uint64 height, uint64 delayPeriodTime, uint64 delayPeriodBlocks) private view returns (bool) {
+        uint64 currentTime = uint64(block.timestamp * 1000 * 1000 * 1000);
+        uint64 validTime = mustGetProcessedTime(host, clientId, height) + delayPeriodTime;
+        if (currentTime < validTime) {
+            return false;
+        }
+        uint64 currentHeight = uint64(block.number);
+        uint64 validHeight = mustGetProcessedHeight(host, clientId, height) + delayPeriodBlocks;
+        if (currentHeight < validHeight) {
+            return false;
+        }
+        return true;
+    }
+
     // NOTE: this is a workaround to avoid the error `Stack too deep` in caller side
     function mustGetClientState(IBCHost host, string memory clientId) internal view returns (ClientState.Data memory) {
         (ClientState.Data memory clientState, bool found) = getClientState(host, clientId);
@@ -427,6 +454,18 @@ contract IBFT2Client is IClient {
         (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         require(found, "consensus state not found");
         return consensusState;
+    }
+
+    function mustGetProcessedTime(IBCHost host, string memory clientId, uint64 height) internal view returns (uint64) {
+        (uint256 processedTime, bool found) = host.getProcessedTime(clientId, height);
+        require(found, "processed time not found");
+        return uint64(processedTime) * 1000 * 1000 * 1000;
+    }
+
+    function mustGetProcessedHeight(IBCHost host, string memory clientId, uint64 height) internal view returns (uint64) {
+        (uint256 processedHeight, bool found) = host.getProcessedHeight(clientId, height);
+        require(found, "processed height not found");
+        return uint64(processedHeight);
     }
 
     function verifyMembership(

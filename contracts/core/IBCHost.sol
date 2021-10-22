@@ -14,6 +14,8 @@ contract IBCHost {
     mapping (string => string) clientTypes; // clientID => clientType
     mapping (string => bytes) clientStates;
     mapping (string => mapping(uint64 => bytes)) consensusStates;
+    mapping (string => mapping(uint64 => uint256)) processedTimes;
+    mapping (string => mapping(uint64 => uint256)) processedHeights;
     mapping (string => ConnectionEnd.Data) connections;
     mapping (string => mapping(string => Channel.Data)) channels;
     mapping (string => mapping(string => uint64)) nextSequenceSends;
@@ -94,6 +96,28 @@ contract IBCHost {
 
     function getConsensusState(string calldata clientId, uint64 height) external view returns (bytes memory, bool) {
         return (consensusStates[clientId][height], consensusStates[clientId][height].length > 0);
+    }
+
+    // Processed Time/Block
+
+    function setProcessedTime(string calldata clientId, uint64 height, uint256 processedTime) external {
+        onlyIBCModule();
+        processedTimes[clientId][height] = processedTime;
+    }
+
+    function getProcessedTime(string calldata clientId, uint64 height) external view returns (uint256, bool) {
+        uint256 processedTime = processedTimes[clientId][height];
+        return (processedTime, processedTime != 0);
+    }
+
+    function setProcessedHeight(string calldata clientId, uint64 height, uint256 processedHeight) external {
+        onlyIBCModule();
+        processedHeights[clientId][height] = processedHeight;
+    }
+
+    function getProcessedHeight(string calldata clientId, uint64 height) external view returns (uint256, bool) {
+        uint256 processedHeight = processedHeights[clientId][height];
+        return (processedHeight, processedHeight != 0);
     }
 
     // Connection
