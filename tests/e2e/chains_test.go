@@ -84,6 +84,16 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
 
+	// reset delay period on chainA
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.IBCHandler.SetExpectedTimePerBlock(
+			chainA.TxOpts(ctx, deployerA),
+			ibctesting.BlockTime,
+		)))
+	expectedTimePerBlockA, err := chainA.IBCHost.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime)
+
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Transfer.SendTransfer(
@@ -119,6 +129,16 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().Equal(int64(100), balance.Int64())
 
+	// double delay period on chainA
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.IBCHandler.SetExpectedTimePerBlock(
+			chainA.TxOpts(ctx, deployerA),
+			ibctesting.BlockTime/2,
+		)))
+	expectedTimePerBlockA, err = chainA.IBCHost.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime/2)
+
 	// try to transfer the token to chainA
 	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
 		chainB.ICS20Transfer.SendTransfer(
@@ -137,6 +157,8 @@ func (suite ChainTestSuite) TestChannel() {
 	// relay the packet
 	transferPacket, err = chainB.GetLastSentPacket(ctx, chanB.PortID, chanB.ID)
 	suite.Require().NoError(err)
+	suite.Require().Error(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
+	waitForDelayPeriod()
 	suite.Require().Error(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
 	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))

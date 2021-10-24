@@ -36,7 +36,8 @@ import (
 
 const (
 	DefaultChannelVersion        = "ics20-1"
-	DefaultDelayPeriod    uint64 = 2 * 1000 * 1000 * 1000 // 2 secs
+	BlockTime             uint64 = 1000 * 1000 * 1000 // 1[sec]
+	DefaultDelayPeriod    uint64 = 3 * BlockTime
 	DefaultPrefix                = "ibc"
 	TransferPort                 = "transfer"
 

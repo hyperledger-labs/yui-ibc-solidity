@@ -153,6 +153,12 @@ contract IBCHandler {
         host.claimCapability(IBCIdentifier.portCapabilityPath(portId), moduleAddress);
     }
 
+    function setExpectedTimePerBlock(uint64 expectedTimePerBlock_) external {
+        // TODO: consider better authn/authz for this operation
+        onlyOwner();
+        host.setExpectedTimePerBlock(expectedTimePerBlock_);
+    }
+
     function lookupModuleByPortId(string memory portId) internal view returns (IModuleCallbacks) {
         (address module, bool found) = host.getModuleOwner(IBCIdentifier.portCapabilityPath(portId));
         require(found);
