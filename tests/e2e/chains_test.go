@@ -106,7 +106,11 @@ func (suite ChainTestSuite) TestChannel() {
 	// relay the packet
 	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
+	suite.Require().Error(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, *transferPacket))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, *transferPacket))
+	suite.Require().Error(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1}))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1}))
 
 	// ensure that chainB has correct balance
@@ -133,7 +137,11 @@ func (suite ChainTestSuite) TestChannel() {
 	// relay the packet
 	transferPacket, err = chainB.GetLastSentPacket(ctx, chanB.PortID, chanB.ID)
 	suite.Require().NoError(err)
+	suite.Require().Error(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
+	suite.Require().Error(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1}))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1}))
 
 	// withdraw tokens from the bank
@@ -162,6 +170,10 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+}
+
+func waitForDelayPeriod() {
+	time.Sleep(time.Duration(ibctesting.DefaultDelayPeriod) * time.Nanosecond)
 }
 
 func TestChainTestSuite(t *testing.T) {
