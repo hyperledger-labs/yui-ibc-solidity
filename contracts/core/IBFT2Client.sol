@@ -235,7 +235,7 @@ contract IBFT2Client is IClient {
         string memory counterpartyClientIdentifier,
         bytes memory proof,
         bytes memory clientStateBytes
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -263,7 +263,7 @@ contract IBFT2Client is IClient {
         bytes memory prefix,
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -290,7 +290,7 @@ contract IBFT2Client is IClient {
         bytes memory proof,
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -318,7 +318,7 @@ contract IBFT2Client is IClient {
         string memory portId,
         string memory channelId,
         bytes memory channelBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -349,7 +349,7 @@ contract IBFT2Client is IClient {
         string memory channelId,
         uint64 sequence,
         bytes32 commitmentBytes
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -383,7 +383,7 @@ contract IBFT2Client is IClient {
         string memory channelId,
         uint64 sequence,
         bytes memory acknowledgement
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         ClientState.Data memory clientState = mustGetClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;

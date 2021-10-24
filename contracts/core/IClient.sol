@@ -33,7 +33,7 @@ interface IClient {
         string calldata counterpartyClientIdentifier,
         bytes calldata proof,
         bytes calldata clientStateBytes // serialized with pb
-    ) external view returns (bool);
+    ) external returns (bool);
 
     function verifyClientConsensusState(
         IBCHost host,
@@ -44,7 +44,7 @@ interface IClient {
         bytes calldata prefix,
         bytes calldata proof,
         bytes calldata consensusStateBytes // serialized with pb
-    ) external view returns (bool);
+    ) external returns (bool);
 
     function verifyConnectionState(
         IBCHost host,
@@ -54,7 +54,7 @@ interface IClient {
         bytes calldata proof,
         string calldata connectionId,
         bytes calldata connectionBytes // serialized with pb
-    ) external view returns (bool);
+    ) external returns (bool);
 
     function verifyChannelState(
         IBCHost host,
@@ -65,7 +65,7 @@ interface IClient {
         string calldata portId,
         string calldata channelId,
         bytes calldata channelBytes // serialized with pb
-    ) external view returns (bool);
+    ) external returns (bool);
 
     function verifyPacketCommitment(
         IBCHost host,
@@ -79,7 +79,7 @@ interface IClient {
         string calldata channelId,
         uint64 sequence,
         bytes32 commitmentBytes // serialized with pb
-    ) external view returns (bool);
+    ) external returns (bool);
 
     function verifyPacketAcknowledgement(
         IBCHost host,
@@ -93,5 +93,5 @@ interface IClient {
         string calldata channelId,
         uint64 sequence,
         bytes calldata acknowledgement // serialized with pb
-    ) external view returns (bool);
+    ) external returns (bool);
 }

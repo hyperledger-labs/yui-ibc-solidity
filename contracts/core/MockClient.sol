@@ -96,7 +96,7 @@ contract MockClient is IClient {
         string memory counterpartyClientIdentifier,
         bytes memory proof,
         bytes memory clientStateBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(clientStateBytes) == proof.toBytes32();
@@ -111,7 +111,7 @@ contract MockClient is IClient {
         bytes memory prefix,
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(consensusStateBytes) == proof.toBytes32();
@@ -125,7 +125,7 @@ contract MockClient is IClient {
         bytes memory proof,
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(connectionBytes) == proof.toBytes32();
@@ -140,7 +140,7 @@ contract MockClient is IClient {
         string memory portId,
         string memory channelId,
         bytes memory channelBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(channelBytes) == proof.toBytes32();
@@ -158,7 +158,7 @@ contract MockClient is IClient {
         string memory channelId,
         uint64 sequence,
         bytes32 commitmentBytes
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return commitmentBytes == proof.toBytes32();
@@ -176,7 +176,7 @@ contract MockClient is IClient {
         string memory channelId,
         uint64 sequence,
         bytes memory acknowledgement
-    ) public override view returns (bool) {
+    ) public override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return host.makePacketAcknowledgementCommitment(acknowledgement) == proof.toBytes32();
