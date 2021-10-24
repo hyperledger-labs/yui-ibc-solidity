@@ -158,12 +158,12 @@ library IBCConnection {
     }
 
     function verifyPacketCommitment(IBCHost host, ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes32 commitmentBytes) public view returns (bool) {
-        uint64 blockDelay = calcBlockDelay(connection.delay_period);
+        uint64 blockDelay = calcBlockDelay(host, connection.delay_period);
         return IBCClient.getClient(host, connection.client_id).verifyPacketCommitment(host, connection.client_id, height, connection.delay_period, blockDelay, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, commitmentBytes);
     }
 
     function verifyPacketAcknowledgement(IBCHost host, ConnectionEnd.Data memory connection, uint64 height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) public view returns (bool) {
-        uint64 blockDelay = calcBlockDelay(connection.delay_period);
+        uint64 blockDelay = calcBlockDelay(host, connection.delay_period);
         return IBCClient.getClient(host, connection.client_id).verifyPacketAcknowledgement(host, connection.client_id, height, connection.delay_period, blockDelay, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, acknowledgement);
     }
 
@@ -181,14 +181,9 @@ library IBCConnection {
         return versions;
     }
 
-    // TODO: this parameter should be able to be configured
-    function getExpectedTimePerBlock() private pure returns (uint64) {
-        return 30 * 1000 * 1000 * 1000; // in nsec
-    }
-
-    function calcBlockDelay(uint64 timeDelay) private pure returns (uint64) {
+    function calcBlockDelay(IBCHost host, uint64 timeDelay) private view returns (uint64) {
         uint64 blockDelay = 0;
-        uint64 expectedTimePerBlock = getExpectedTimePerBlock();
+        uint64 expectedTimePerBlock = host.getExpectedTimePerBlock();
         if (expectedTimePerBlock != 0) {
             blockDelay = (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
         }

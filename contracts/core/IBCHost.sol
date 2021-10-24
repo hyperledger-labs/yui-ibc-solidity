@@ -34,6 +34,8 @@ contract IBCHost {
     address owner;
     address ibcModule;
 
+    uint64 expectedTimePerBlock;
+
     constructor() public {
         owner = msg.sender;
     }
@@ -221,6 +223,15 @@ contract IBCHost {
 
     function hasPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bool) {
         return packetReceipts[portId][channelId][sequence];
+    }
+
+    function getExpectedTimePerBlock() external view returns (uint64) {
+        return expectedTimePerBlock;
+    }
+
+    function setExpectedTimePerBlock(uint64 expectedTimePerBlock_) external {
+        onlyIBCModule();
+        expectedTimePerBlock = expectedTimePerBlock_;
     }
 
     // capabilities
