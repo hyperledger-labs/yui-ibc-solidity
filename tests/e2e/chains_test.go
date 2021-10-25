@@ -46,6 +46,7 @@ func (suite ChainTestSuite) TestChannel() {
 	const (
 		relayer          = ibctesting.RelayerKeyIndex // the key-index of relayer on both chains
 		deployerA        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain A
+		deployerB        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain B
 		aliceA    uint32 = 1                          // the key-index of alice on chain A
 		bobB      uint32 = 2                          // the key-index of alice on chain B
 	)
@@ -84,7 +85,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
 
-	// reset delay period on chainA
+	// set expectedTimePerBlock = block time on chainA
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.IBCHandler.SetExpectedTimePerBlock(
 			chainA.TxOpts(ctx, deployerA),
@@ -93,6 +94,16 @@ func (suite ChainTestSuite) TestChannel() {
 	expectedTimePerBlockA, err := chainA.IBCHost.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
 	suite.Require().NoError(err)
 	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime)
+
+	// set expectedTimePerBlock = 0 on chainB
+	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
+		chainB.IBCHandler.SetExpectedTimePerBlock(
+			chainB.TxOpts(ctx, deployerB),
+			0,
+		)))
+	expectedTimePerBlockB, err := chainB.IBCHost.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
+	suite.Require().NoError(err)
+	suite.Require().Zero(expectedTimePerBlockB)
 
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
