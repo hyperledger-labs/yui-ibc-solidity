@@ -46,6 +46,7 @@ func (suite ChainTestSuite) TestChannel() {
 	const (
 		relayer          = ibctesting.RelayerKeyIndex // the key-index of relayer on both chains
 		deployerA        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain A
+		deployerB        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain B
 		aliceA    uint32 = 1                          // the key-index of alice on chain A
 		bobB      uint32 = 2                          // the key-index of alice on chain B
 	)
@@ -84,6 +85,26 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
 
+	// set expectedTimePerBlock = block time on chainA
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.IBCHandler.SetExpectedTimePerBlock(
+			chainA.TxOpts(ctx, deployerA),
+			ibctesting.BlockTime,
+		)))
+	expectedTimePerBlockA, err := chainA.IBCHost.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime)
+
+	// set expectedTimePerBlock = 0 on chainB
+	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
+		chainB.IBCHandler.SetExpectedTimePerBlock(
+			chainB.TxOpts(ctx, deployerB),
+			0,
+		)))
+	expectedTimePerBlockB, err := chainB.IBCHost.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
+	suite.Require().NoError(err)
+	suite.Require().Zero(expectedTimePerBlockB)
+
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Transfer.SendTransfer(
@@ -106,7 +127,11 @@ func (suite ChainTestSuite) TestChannel() {
 	// relay the packet
 	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
+	suite.Require().Error(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, *transferPacket))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, *transferPacket))
+	suite.Require().Error(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1}))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1}))
 
 	// ensure that chainB has correct balance
@@ -114,6 +139,16 @@ func (suite ChainTestSuite) TestChannel() {
 	balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bobB).From, expectedDenom)
 	suite.Require().NoError(err)
 	suite.Require().Equal(int64(100), balance.Int64())
+
+	// double delay period on chainA
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.IBCHandler.SetExpectedTimePerBlock(
+			chainA.TxOpts(ctx, deployerA),
+			ibctesting.BlockTime/2,
+		)))
+	expectedTimePerBlockA, err = chainA.IBCHost.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
+	suite.Require().NoError(err)
+	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime/2)
 
 	// try to transfer the token to chainA
 	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
@@ -133,7 +168,13 @@ func (suite ChainTestSuite) TestChannel() {
 	// relay the packet
 	transferPacket, err = chainB.GetLastSentPacket(ctx, chanB.PortID, chanB.ID)
 	suite.Require().NoError(err)
+	suite.Require().Error(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
+	waitForDelayPeriod()
+	suite.Require().Error(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
+	suite.Require().Error(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1}))
+	waitForDelayPeriod()
 	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1}))
 
 	// withdraw tokens from the bank
@@ -162,6 +203,10 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+}
+
+func waitForDelayPeriod() {
+	time.Sleep(time.Duration(ibctesting.DefaultDelayPeriod) * time.Nanosecond)
 }
 
 func TestChainTestSuite(t *testing.T) {

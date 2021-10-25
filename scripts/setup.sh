@@ -40,7 +40,8 @@ function chain() {
     pushd ./chains && docker-compose up -d ${network} && popd
     # XXX Wait for the first block to be created
     sleep 3
-    ${TRUFFLE} migrate --reset --network=${network}
+    ${TRUFFLE} compile
+    ${TRUFFLE} migrate --reset --compile-none --network=${network}
     ${TRUFFLE} exec ./scripts/confgen.js --network=${network}
 }
 

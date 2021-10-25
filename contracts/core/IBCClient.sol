@@ -19,6 +19,8 @@ library IBCClient {
         host.setClientType(clientId, msg_.clientType);
         host.setClientState(clientId, msg_.clientStateBytes);
         host.setConsensusState(clientId, msg_.height, msg_.consensusStateBytes);
+        host.setProcessedTime(clientId, msg_.height, block.timestamp);
+        host.setProcessedHeight(clientId, msg_.height, block.number);
     }
 
     /**
@@ -39,6 +41,8 @@ library IBCClient {
         //// persist states ////
         host.setClientState(msg_.clientId, clientStateBytes);
         host.setConsensusState(msg_.clientId, height, consensusStateBytes);
+        host.setProcessedTime(msg_.clientId, height, block.timestamp);
+        host.setProcessedHeight(msg_.clientId, height, block.number);
     }
 
     // TODO implements
