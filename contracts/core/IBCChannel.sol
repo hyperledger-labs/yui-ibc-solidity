@@ -1,4 +1,4 @@
-pragma solidity ^0.6.8;
+pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
 import "./types/Channel.sol";
@@ -229,7 +229,7 @@ library IBCChannel {
 
         nextSequenceSend = host.getNextSequenceSend(packet.source_port, packet.source_channel);
         require(nextSequenceSend > 0, "sequenceSend not found");
-        require(packet.sequence == nextSequenceSend, "packet sequence ≠ next send sequence");
+        require(packet.sequence == nextSequenceSend, "packet sequence != next send sequence");
 
         nextSequenceSend++;
         host.setNextSequenceSend(packet.source_port, packet.source_channel, nextSequenceSend);
@@ -268,7 +268,7 @@ library IBCChannel {
             host.setPacketReceipt(msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence);
         } else if (channel.ordering == Channel.Order.ORDER_ORDERED) {
             uint64 nextSequenceRecv = host.getNextSequenceRecv(msg_.packet.destination_port, msg_.packet.destination_channel);
-            require(nextSequenceRecv > 0 && nextSequenceRecv == msg_.packet.sequence, "packet sequence ≠ next receive sequence");
+            require(nextSequenceRecv > 0 && nextSequenceRecv == msg_.packet.sequence, "packet sequence != next receive sequence");
             host.setNextSequenceRecv(msg_.packet.destination_port, msg_.packet.destination_channel, nextSequenceRecv+1);
         } else {
             revert("unknown ordering type");
@@ -321,7 +321,7 @@ library IBCChannel {
         if (channel.ordering == Channel.Order.ORDER_ORDERED) {
             uint64 nextSequenceAck = host.getNextSequenceAck(msg_.packet.source_port, msg_.packet.source_channel);
             require(nextSequenceAck == 0, "sequence ack not found");
-            require(msg_.packet.sequence == nextSequenceAck, "packet sequence ≠ next ack sequence");
+            require(msg_.packet.sequence == nextSequenceAck, "packet sequence != next ack sequence");
             nextSequenceAck++;
             host.setNextSequenceAck(msg_.packet.source_port, msg_.packet.source_channel, nextSequenceAck);
         }

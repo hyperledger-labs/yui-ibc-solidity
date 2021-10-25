@@ -1,4 +1,4 @@
-pragma solidity ^0.6.8;
+pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
 import "./IICS20Transfer.sol";
@@ -20,7 +20,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
 
     mapping(string => address) channelEscrowAddresses;
 
-    constructor(IBCHost host_, IBCHandler ibcHandler_) public {
+    constructor(IBCHost host_, IBCHandler ibcHandler_) {
         ibcHost = host_;
         ibcHandler = ibcHandler_;
     }

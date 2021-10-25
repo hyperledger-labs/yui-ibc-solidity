@@ -2,7 +2,7 @@
 * @author Hamdi Allam hamdi.allam97@gmail.com
 * Please reach out with any questions or concerns
 */
-pragma solidity ^0.6.8;
+pragma solidity ^0.8.9;
 
 library RLP {
     uint8 constant STRING_SHORT_START = 0x80;
@@ -166,7 +166,7 @@ library RLP {
         // 1 byte for the length prefix according to RLP spec
         require(item.len <= 21, "Invalid RLPItem. Addresses are encoded in 20 bytes or less");
 
-        return address(toUint(item));
+        return address(uint160(toUint(item)));
     }
 
     function toUint(RLPItem memory item) internal pure returns (uint) {
@@ -204,7 +204,7 @@ library RLP {
     */
     function copy(uint src, uint dest, uint len) internal pure {
         // copy as many word sizes as possible
-        for (; len >= WORD_SIZE; len -= WORD_SIZE) {
+        for (; len > WORD_SIZE; len -= WORD_SIZE) {
             assembly {
                 mstore(dest, mload(src))
             }
