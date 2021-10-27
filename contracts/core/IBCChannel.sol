@@ -14,10 +14,8 @@ library IBCChannel {
     ) public returns (string memory) {
         host.onlyIBCModule();
         ConnectionEnd.Data memory connection;
-        bool found;
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
-        (connection, found) = host.getConnection(msg_.channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, msg_.channel);
         require(connection.versions.length == 1, "single version must be negotiated on connection before opening channel");
         require(msg_.channel.state == Channel.State.STATE_INIT, "channel state must STATE_INIT");
 
@@ -40,10 +38,8 @@ library IBCChannel {
     ) public returns (string memory) {
         host.onlyIBCModule();
         ConnectionEnd.Data memory connection;
-        bool found;
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
-        (connection, found) = host.getConnection(msg_.channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, msg_.channel);
         require(connection.versions.length == 1, "single version must be negotiated on connection before opening channel");
         require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");
 
@@ -80,16 +76,13 @@ library IBCChannel {
         host.onlyIBCModule();
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
-        bool found;
 
-        (channel, found) = host.getChannel(msg_.portId, msg_.channelId);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, msg_.portId, msg_.channelId);
         require(channel.state == Channel.State.STATE_INIT || channel.state == Channel.State.STATE_TRYOPEN, "invalid channel state");
 
         // TODO authenticates a port binding
 
-        (connection, found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, channel);
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         ChannelCounterparty.Data memory expectedCounterparty = ChannelCounterparty.Data({
@@ -117,16 +110,13 @@ library IBCChannel {
         host.onlyIBCModule();
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
-        bool found;
 
-        (channel, found) = host.getChannel(msg_.portId, msg_.channelId);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, msg_.portId, msg_.channelId);
         require(channel.state == Channel.State.STATE_TRYOPEN, "channel state is not TRYOPEN");
 
         // TODO authenticates a port binding
 
-        (connection, found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, channel);
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         ChannelCounterparty.Data memory expectedCounterparty = ChannelCounterparty.Data({
@@ -152,16 +142,13 @@ library IBCChannel {
         host.onlyIBCModule();
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
-        bool found;
 
-        (channel, found) = host.getChannel(msg_.portId, msg_.channelId);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, msg_.portId, msg_.channelId);
         require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
 
         // TODO authenticates a port binding
 
-        (connection, found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, channel);
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         channel.state = Channel.State.STATE_CLOSED;
@@ -175,16 +162,13 @@ library IBCChannel {
         host.onlyIBCModule();
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
-        bool found;
 
-        (channel, found) = host.getChannel(msg_.portId, msg_.channelId);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, msg_.portId, msg_.channelId);
         require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
 
         // TODO authenticates a port binding
 
-        (connection, found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, channel);
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         ChannelCounterparty.Data memory expectedCounterparty = ChannelCounterparty.Data({
@@ -213,13 +197,11 @@ library IBCChannel {
         uint64 nextSequenceSend;
         bool found;
 
-        (channel, found) = host.getChannel(packet.source_port, packet.source_channel);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, packet.source_port, packet.source_channel);
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
         require(hashString(packet.destination_port) == hashString(channel.counterparty.port_id), "packet destination port doesn't match the counterparty's port");
         require(hashString(packet.destination_channel) == hashString(channel.counterparty.channel_id), "packet destination channel doesn't match the counterparty's channel");
-        (connection, found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, channel);
         client = IBCClient.getClient(host, connection.client_id);
         (latestHeight, found) = client.getLatestHeight(host, connection.client_id);
         require(packet.timeout_height.revision_height == 0 || latestHeight < packet.timeout_height.revision_height, "receiving chain block height >= packet timeout height");
@@ -242,9 +224,7 @@ library IBCChannel {
         host.onlyIBCModule();
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
-        bool found;
-        (channel, found) = host.getChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, msg_.packet.destination_port, msg_.packet.destination_channel);
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
         // TODO
@@ -253,8 +233,7 @@ library IBCChannel {
         require(hashString(msg_.packet.source_port) == hashString(channel.counterparty.port_id), "packet source port doesn't match the counterparty's port");
         require(hashString(msg_.packet.source_channel) == hashString(channel.counterparty.channel_id), "packet source channel doesn't match the counterparty's channel");
 
-        (connection, found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, channel);
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         require(msg_.packet.timeout_height.revision_height == 0 || block.number < msg_.packet.timeout_height.revision_height, "block height >= packet timeout height");
@@ -282,8 +261,7 @@ library IBCChannel {
         Channel.Data memory channel;
         bytes32 ackHash;
         bool found;
-        (channel, found) = host.getChannel(destinationPortId, destinationChannel);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, destinationPortId, destinationChannel);
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
         (ackHash, found) = host.getPacketAcknowledgementCommitment(destinationPortId, destinationChannel, sequence);
@@ -300,15 +278,13 @@ library IBCChannel {
         ConnectionEnd.Data memory connection;
         bytes32 commitment;
         bool found;
-        (channel, found) = host.getChannel(msg_.packet.source_port, msg_.packet.source_channel);
-        require(found, "channel not found");
+        channel = mustGetChannel(host, msg_.packet.source_port, msg_.packet.source_channel);
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
         require(hashString(msg_.packet.destination_port) == hashString(channel.counterparty.port_id), "packet destination port doesn't match the counterparty's port");
         require(hashString(msg_.packet.destination_channel) == hashString(channel.counterparty.channel_id), "packet destination channel doesn't match the counterparty's channel");
 
-        (connection, found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        connection = mustGetConnection(host, channel);
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         (commitment, found) = host.getPacketCommitment(msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence);
@@ -331,11 +307,22 @@ library IBCChannel {
 
     function getCounterpartyHops(IBCHost host, Channel.Data memory channel) internal view returns (string[] memory hops) {
         require(channel.connection_hops.length == 1, "connection_hops length must be 1");
-        (ConnectionEnd.Data memory connection, bool found) = host.getConnection(channel.connection_hops[0]);
-        require(found, "connection not found");
+        ConnectionEnd.Data memory connection = mustGetConnection(host, channel);
         hops = new string[](1);
         hops[0] = connection.counterparty.connection_id;
         return hops;
+    }
+
+    function mustGetConnection(IBCHost host_, Channel.Data memory channel_) private view returns (ConnectionEnd.Data memory) {
+        (ConnectionEnd.Data memory connection, bool found) = host_.getConnection(channel_.connection_hops[0]);
+        require(found, "connection not found");
+        return connection;
+    }
+
+    function mustGetChannel(IBCHost host_, string memory portId_, string memory channelId_) private view returns (Channel.Data memory) {
+        (Channel.Data memory channel, bool found) = host_.getChannel(portId_, channelId_);
+        require(found, "channel not found");
+        return channel;
     }
 
     function hashString(string memory s) private pure returns (bytes32) {
