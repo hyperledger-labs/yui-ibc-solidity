@@ -1,5 +1,4 @@
 pragma solidity ^0.8.9;
-pragma experimental ABIEncoderV2;
 
 import "./IClient.sol";
 import "./IBCHost.sol";

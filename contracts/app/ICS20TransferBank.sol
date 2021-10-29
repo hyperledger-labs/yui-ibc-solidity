@@ -1,5 +1,4 @@
 pragma solidity ^0.8.9;
-pragma experimental ABIEncoderV2;
 
 import "./ICS20Transfer.sol";
 import "./IICS20Bank.sol";
