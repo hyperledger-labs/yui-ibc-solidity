@@ -1,4 +1,4 @@
-pragma solidity ^0.6.8;
+pragma solidity ^0.8.9;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 

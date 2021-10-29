@@ -36,7 +36,7 @@
  *      NOTE: We use a fork version of original library. The link is here: https://raw.githubusercontent.com/Arachnid/solidity-stringutils/3101baec6ec2ed009f81eb74db3cf3bd022214d4/src/strings.sol
  */
 
-pragma solidity >0.4.13 <0.7.0;
+pragma solidity ^0.8.9;
 
 library strings {
     struct slice {
@@ -213,7 +213,7 @@ library strings {
             }
             if (a != b) {
                 // Mask out irrelevant bytes and check again
-                uint256 mask = uint256(-1); // 0xffff...
+                uint256 mask = uint256(int256(-1)); // 0xffff...
                 if(shortest < 32) {
                   mask = ~(2 ** (8 * (32 - shortest + idx)) - 1);
                 }

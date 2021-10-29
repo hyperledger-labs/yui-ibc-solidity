@@ -1,5 +1,4 @@
-pragma solidity ^0.6.8;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.9;
 
 import "./IClient.sol";
 import "./IBCHost.sol";
@@ -108,7 +107,7 @@ contract IBFT2Client is IClient {
 
         //// check validity ////
         ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
-        require(parsedHeader.height > header.trusted_height, "header height ≤ consensus state height");
+        require(parsedHeader.height > header.trusted_height, "header height <= consensus state height");
         (validators, ok) = verify(consensusState, parsedHeader);
         require(ok, "failed to verify the header");
 

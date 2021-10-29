@@ -1,4 +1,4 @@
-pragma solidity ^0.6.8;
+pragma solidity ^0.8.9;
 
 interface IICS20Bank {
     function transferFrom(address from, address to, string calldata id, uint256 amount) external;
