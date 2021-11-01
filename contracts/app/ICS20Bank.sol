@@ -16,7 +16,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
     // Mapping from token ID to account balances
     mapping(string => mapping(address => uint256)) private _balances;
 
-    constructor() public {
+    constructor() {
         _setupRole(ADMIN_ROLE, _msgSender());
     }
 

@@ -31,7 +31,7 @@ contract IBFT2Client is IClient {
 
     protoTypes pts;
 
-    constructor() public {
+    constructor() {
         // TODO The typeUrl should be defined in types/IBFT2Client.sol
         // The schema of typeUrl follows cosmos/cosmos-sdk/codec/types/any.go
         pts = protoTypes({

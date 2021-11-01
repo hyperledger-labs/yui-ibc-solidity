@@ -25,7 +25,7 @@ contract MockClient is IClient {
 
     protoTypes pts;
 
-    constructor() public {
+    constructor() {
         // TODO The typeUrl should be defined in types/MockClient.sol
         // The schema of typeUrl follows cosmos/cosmos-sdk/codec/types/any.go
         pts = protoTypes({

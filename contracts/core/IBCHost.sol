@@ -36,7 +36,7 @@ contract IBCHost {
 
     uint64 expectedTimePerBlock;
 
-    constructor() public {
+    constructor() {
         owner = msg.sender;
     }
 
