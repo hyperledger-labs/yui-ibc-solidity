@@ -2870,10 +2870,12 @@ library ProtoBufRuntime {
     ) {
       realSize -= 1;
     }
-    int256 remainder = (x & (base << (realSize * BYTE_SIZE - BYTE_SIZE))) >>
-      (realSize * BYTE_SIZE - BYTE_SIZE);
-    if (remainder < 128) {
-      realSize += 1;
+    {
+      int256 remainder = (x & (base << (realSize * BYTE_SIZE - BYTE_SIZE))) >>
+        (realSize * BYTE_SIZE - BYTE_SIZE);
+      if (remainder < 128) {
+        realSize += 1;
+      }
     }
     return realSize;
   }
