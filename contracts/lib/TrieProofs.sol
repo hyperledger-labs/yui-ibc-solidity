@@ -1,11 +1,11 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
-
-import "./RLP.sol";
 
 /*
 Forked from: https://github.com/lorenzb/proveth/blob/master/onchain/ProvethVerifier.sol
 */
 
+import "./RLP.sol";
 
 library TrieProofs {
     using RLP for RLP.RLPItem;
