@@ -191,7 +191,7 @@ library IBCConnection {
     }
 
     // TODO implements
-    function isSupportedVersion(Version.Data memory proposedVersion) internal pure returns (bool) {
+    function isSupportedVersion(Version.Data memory) internal pure returns (bool) {
         return true;
     }
 

@@ -471,7 +471,7 @@ contract IBFT2Client is IClient {
     function verifyMembership(
         bytes memory proof,
         bytes32 root,
-        bytes memory prefix,
+        bytes memory,
         bytes32 slot,
         bytes32 expectedValue
     ) internal pure returns (bool) {
