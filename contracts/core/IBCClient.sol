@@ -46,7 +46,8 @@ library IBCClient {
     }
 
     // TODO implements
-    function validateSelfClient(IBCHost host, bytes calldata clientStateBytes) external view returns (bool) {
+    function validateSelfClient(IBCHost, bytes calldata) external view returns (bool) {
+        this; // this is a trick that suppresses "Warning: Function state mutability can be restricted to pure"
         return true;
     }
 

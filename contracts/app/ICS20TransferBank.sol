@@ -10,7 +10,7 @@ import "../core/types/App.sol";
 contract ICS20TransferBank is ICS20Transfer {
     IICS20Bank bank;
 
-    constructor(IBCHost host_, IBCHandler ibcHandler_, IICS20Bank bank_) ICS20Transfer(host_, ibcHandler_) public {
+    constructor(IBCHost host_, IBCHandler ibcHandler_, IICS20Bank bank_) ICS20Transfer(host_, ibcHandler_) {
         bank = bank_;
     }
 

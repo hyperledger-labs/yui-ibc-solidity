@@ -31,7 +31,7 @@ contract IBFT2Client is IClient {
 
     protoTypes pts;
 
-    constructor() public {
+    constructor() {
         // TODO The typeUrl should be defined in types/IBFT2Client.sol
         // The schema of typeUrl follows cosmos/cosmos-sdk/codec/types/any.go
         pts = protoTypes({
@@ -125,14 +125,14 @@ contract IBFT2Client is IClient {
         return (marshalClientState(clientState), marshalConsensusState(consensusState), parsedHeader.height);
     }
 
-    function marshalClientState(ClientState.Data memory clientState) internal view returns (bytes memory) {
+    function marshalClientState(ClientState.Data memory clientState) internal pure returns (bytes memory) {
         Any.Data memory anyClientState;
         anyClientState.type_url = "/ibc.lightclients.ibft2.v1.ClientState";
         anyClientState.value = ClientState.encode(clientState);
         return Any.encode(anyClientState);
     }
 
-    function marshalConsensusState(ConsensusState.Data memory consensusState) internal view returns (bytes memory) {
+    function marshalConsensusState(ConsensusState.Data memory consensusState) internal pure returns (bytes memory) {
         Any.Data memory anyConsensusState;
         anyConsensusState.type_url = "/ibc.lightclients.ibft2.v1.ConsensusState";
         anyConsensusState.value = ConsensusState.encode(consensusState);
@@ -235,7 +235,7 @@ contract IBFT2Client is IClient {
         string memory counterpartyClientIdentifier,
         bytes memory proof,
         bytes memory clientStateBytes
-    ) public override returns (bool) {
+    ) public override view returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -263,7 +263,7 @@ contract IBFT2Client is IClient {
         bytes memory prefix,
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
-    ) public override returns (bool) {
+    ) public override view returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -290,7 +290,7 @@ contract IBFT2Client is IClient {
         bytes memory proof,
         string memory connectionId,
         bytes memory connectionBytes // serialized with pb
-    ) public override returns (bool) {
+    ) public override view returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -318,7 +318,7 @@ contract IBFT2Client is IClient {
         string memory portId,
         string memory channelId,
         bytes memory channelBytes // serialized with pb
-    ) public override returns (bool) {
+    ) public override view returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -349,7 +349,7 @@ contract IBFT2Client is IClient {
         string memory channelId,
         uint64 sequence,
         bytes32 commitmentBytes
-    ) public override returns (bool) {
+    ) public override view returns (bool) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
         bool found;
@@ -383,7 +383,7 @@ contract IBFT2Client is IClient {
         string memory channelId,
         uint64 sequence,
         bytes memory acknowledgement
-    ) public override returns (bool) {
+    ) public override view returns (bool) {
         ClientState.Data memory clientState = mustGetClientState(host, clientId);
         if (!validateArgs(clientState, height, prefix, proof)) {
             return false;
@@ -471,7 +471,7 @@ contract IBFT2Client is IClient {
     function verifyMembership(
         bytes memory proof,
         bytes32 root,
-        bytes memory prefix,
+        bytes memory,
         bytes32 slot,
         bytes32 expectedValue
     ) internal pure returns (bool) {

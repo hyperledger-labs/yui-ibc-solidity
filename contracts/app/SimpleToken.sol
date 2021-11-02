@@ -10,7 +10,6 @@ contract SimpleToken is ERC20 {
         uint256 initSupply
     )
         ERC20(name, symbol)
-        public
     {
         _mint(msg.sender, initSupply);
     }

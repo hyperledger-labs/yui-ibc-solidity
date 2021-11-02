@@ -45,22 +45,22 @@ library strings {
         uint _ptr;
     }
 
-    function memcpy(uint dest, uint src, uint len) private pure {
+    function memcpy(uint dest_, uint src_, uint len_) private pure {
         // Copy word-length chunks while possible
-        for(; len >= 32; len -= 32) {
+        for(; len_ >= 32; len_ -= 32) {
             assembly {
-                mstore(dest, mload(src))
+                mstore(dest_, mload(src_))
             }
-            dest += 32;
-            src += 32;
+            dest_ += 32;
+            src_ += 32;
         }
 
         // Copy remaining bytes
-        uint mask = 256 ** (32 - len) - 1;
+        uint mask = 256 ** (32 - len_) - 1;
         assembly {
-            let srcpart := and(mload(src), not(mask))
-            let destpart := and(mload(dest), mask)
-            mstore(dest, or(destpart, srcpart))
+            let srcpart := and(mload(src_), not(mask))
+            let destpart := and(mload(dest_), mask)
+            mstore(dest_, or(destpart, srcpart))
         }
     }
 
