@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
-import "./ProtoBufRuntime.sol";
-import "./GoogleProtobufAny.sol";
+import "contracts/core/types/ProtoBufRuntime.sol";
+import "contracts/core/types/GoogleProtobufAny.sol";
 
 library IbcLightclientsMockV1ClientState {
 

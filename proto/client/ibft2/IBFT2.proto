@@ -4,6 +4,9 @@ package ibc.lightclients.ibft2.v1;
 
 option go_package = "pkg/ibc/client/ibft2";
 
+import "solidity-protobuf-extensions.proto";
+option (.solidity.file_options) = { dirpath: "contracts/core/types" };
+
 message ClientState {
   string chain_id = 1;
   bytes ibc_store_address = 2;

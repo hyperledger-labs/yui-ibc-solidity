@@ -2,6 +2,9 @@ syntax = "proto3";
 
 option go_package = "pkg/ibc/connection";
 
+import "solidity-protobuf-extensions.proto";
+option (.solidity.file_options) = { dirpath: "contracts/core/types" };
+
 // ConnectionEnd defines a stateful object on a chain connected to another
 // separate one.
 // NOTE: there must only be 2 defined ConnectionEnds to establish
