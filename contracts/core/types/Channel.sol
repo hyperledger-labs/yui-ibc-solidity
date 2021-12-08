@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
-import "contracts/core/types/ProtoBufRuntime.sol";
-import "contracts/core/types/GoogleProtobufAny.sol";
-import "contracts/core/types/Client.sol";
+import "./ProtoBufRuntime.sol";
+import "./GoogleProtobufAny.sol";
+import "./Client.sol";
 
 library Channel {
 
