@@ -2,13 +2,14 @@ syntax = "proto3";
 
 package ibc.lightclients.mock.v1;
 
-option go_package = "pkg/ibc/client/mock";
-
 import "solidity-protobuf-extensions.proto";
+import "client/Client.proto";
+
+option go_package = "pkg/ibc/client/mock";
 option (.solidity.file_options) = { dirpath: "contracts/core/types" };
 
 message ClientState {
-  uint64 latest_height = 1;
+  Height latest_height = 1;
 }
 
 message ConsensusState {
@@ -16,6 +17,6 @@ message ConsensusState {
 }
 
 message Header {
-  uint64 height = 1;
+  Height height = 1;
   uint64 timestamp = 2;
 }

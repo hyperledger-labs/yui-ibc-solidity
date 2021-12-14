@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "./types/Client.sol";
 import "./types/Connection.sol";
 import "./types/Channel.sol";
 
@@ -13,7 +14,7 @@ library IBCMsgs {
 
     struct MsgCreateClient {
         string clientType;
-        uint64 height;
+        Height.Data height;
         bytes clientStateBytes;
         bytes consensusStateBytes;
     }
@@ -41,8 +42,8 @@ library IBCMsgs {
         bytes proofInit; // proof that chainA stored connectionEnd in state (on ConnOpenInit)
         bytes proofClient; // proof that chainA stored a light client of chainB
         bytes proofConsensus; // proof that chainA stored chainB's consensus state at consensus height
-        uint64 proofHeight; // height at which relayer constructs proof of A storing connectionEnd in state
-        uint64 consensusHeight; // latest height of chain B which chain A has stored in its chain B client
+        Height.Data proofHeight; // height at which relayer constructs proof of A storing connectionEnd in state
+        Height.Data consensusHeight; // latest height of chain B which chain A has stored in its chain B client
     }
 
     struct MsgConnectionOpenAck {
@@ -53,14 +54,14 @@ library IBCMsgs {
         bytes proofTry; // proof that connectionEnd was added to ChainB state in ConnOpenTry
         bytes proofClient; // proof of client state on chainB for chainA
         bytes proofConsensus; // proof that chainB has stored ConsensusState of chainA on its client
-        uint64 proofHeight; // height that relayer constructed proofTry
+        Height.Data proofHeight; // height that relayer constructed proofTry
         uint64 consensusHeight; // latest height of chainA that chainB has stored on its chainA client
     }
 
     struct MsgConnectionOpenConfirm {
         string connectionId;
         bytes proofAck;
-        uint64 proofHeight;
+        Height.Data proofHeight;
     }
 
     /// Channel handshake ///
@@ -76,7 +77,7 @@ library IBCMsgs {
         Channel.Data channel;
         string counterpartyVersion;
         bytes proofInit;
-        uint64 proofHeight;
+        Height.Data proofHeight;
     }
 
     struct MsgChannelOpenAck {
@@ -85,14 +86,14 @@ library IBCMsgs {
         string counterpartyVersion;
         string counterpartyChannelId;
         bytes proofTry;
-        uint64 proofHeight;
+        Height.Data proofHeight;
     }
 
     struct MsgChannelOpenConfirm {
         string portId;
         string channelId;
         bytes proofAck;
-        uint64 proofHeight;
+        Height.Data proofHeight;
     }
 
     /// Channel closing ///
@@ -106,7 +107,7 @@ library IBCMsgs {
         string portId;
         string channelId;
         bytes proofInit;
-        uint64 proofHeight;
+        Height.Data proofHeight;
     }
 
     /// Packet ///
@@ -114,13 +115,13 @@ library IBCMsgs {
     struct MsgPacketRecv {
         Packet.Data packet;
         bytes proof;
-        uint64 proofHeight;
+        Height.Data proofHeight;
     }
 
     struct MsgPacketAcknowledgement {
         Packet.Data packet;
         bytes acknowledgement;
         bytes proof;
-        uint64 proofHeight;
+        Height.Data proofHeight;
     }
 }

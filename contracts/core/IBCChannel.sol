@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "./types/Client.sol";
 import "./types/Channel.sol";
 import "./IBCConnection.sol";
 import "./IBCMsgs.sol";
 import "./IBCHost.sol";
+import "./IBCHeight.sol";
 
 library IBCChannel {
+    using IBCHeight for Height.Data;
 
     function channelOpenInit(
         IBCHost host,
@@ -192,7 +195,7 @@ library IBCChannel {
         Channel.Data memory channel;
         ConnectionEnd.Data memory connection;
         IClient client;
-        uint64 latestHeight;
+        Height.Data memory latestHeight;
         uint64 latestTimestamp;
         uint64 nextSequenceSend;
         bool found;
@@ -204,7 +207,7 @@ library IBCChannel {
         connection = mustGetConnection(host, channel);
         client = IBCClient.getClient(host, connection.client_id);
         (latestHeight, found) = client.getLatestHeight(host, connection.client_id);
-        require(packet.timeout_height.revision_height == 0 || latestHeight < packet.timeout_height.revision_height, "receiving chain block height >= packet timeout height");
+        require(packet.timeout_height.isZero() || latestHeight.lt(packet.timeout_height), "receiving chain block height >= packet timeout height");
         (latestTimestamp, found) = client.getTimestampAtHeight(host, connection.client_id, latestHeight);
         require(found, "consensusState not found");
         require(packet.timeout_timestamp == 0 || latestTimestamp < packet.timeout_timestamp, "receiving chain block timestamp >= packet timeout timestamp");

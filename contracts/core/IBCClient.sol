@@ -30,7 +30,7 @@ library IBCClient {
         host.onlyIBCModule();
         bytes memory clientStateBytes;
         bytes memory consensusStateBytes;
-        uint64 height;
+        Height.Data memory height;
         bool found;
     
         (clientStateBytes, found) = host.getClientState(msg_.clientId);

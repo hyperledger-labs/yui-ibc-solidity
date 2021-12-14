@@ -2,13 +2,14 @@
 pragma solidity ^0.8.9;
 import "./ProtoBufRuntime.sol";
 import "./GoogleProtobufAny.sol";
+import "./Client.sol";
 
 library IbcLightclientsMockV1ClientState {
 
 
   //struct definition
   struct Data {
-    uint64 latest_height;
+    Height.Data latest_height;
   }
 
   // Decoder section
@@ -107,7 +108,7 @@ library IbcLightclientsMockV1ClientState {
     /**
      * if `r` is NULL, then only counting the number of fields.
      */
-    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
+    (Height.Data memory x, uint256 sz) = _decode_Height(p, bs);
     if (isNil(r)) {
       counters[1] += 1;
     } else {
@@ -115,6 +116,26 @@ library IbcLightclientsMockV1ClientState {
       if (counters[1] > 0) counters[1] -= 1;
     }
     return sz;
+  }
+
+  // struct decoder
+  /**
+   * @dev The decoder for reading a inner struct field
+   * @param p The offset of bytes array to start decode
+   * @param bs The bytes array to be decoded
+   * @return The decoded inner-struct
+   * @return The number of bytes used to decode
+   */
+  function _decode_Height(uint256 p, bytes memory bs)
+    internal
+    pure
+    returns (Height.Data memory, uint)
+  {
+    uint256 pointer = p;
+    (uint256 sz, uint256 bytesRead) = ProtoBufRuntime._decode_varint(pointer, bs);
+    pointer += bytesRead;
+    (Height.Data memory r, ) = Height._decode(pointer, bs, sz);
+    return (r, sz + bytesRead);
   }
 
 
@@ -150,15 +171,15 @@ library IbcLightclientsMockV1ClientState {
     uint256 offset = p;
     uint256 pointer = p;
     
-    if (r.latest_height != 0) {
+    
     pointer += ProtoBufRuntime._encode_key(
       1,
-      ProtoBufRuntime.WireType.Varint,
+      ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_uint64(r.latest_height, pointer, bs);
-    }
+    pointer += Height._encode_nested(r.latest_height, pointer, bs);
+    
     return pointer - offset;
   }
   // nested encoder
@@ -202,7 +223,7 @@ library IbcLightclientsMockV1ClientState {
     Data memory r
   ) internal pure returns (uint) {
     uint256 e;
-    e += 1 + ProtoBufRuntime._sz_uint64(r.latest_height);
+    e += 1 + ProtoBufRuntime._sz_lendelim(Height._estimate(r.latest_height));
     return e;
   }
   // empty checker
@@ -211,10 +232,6 @@ library IbcLightclientsMockV1ClientState {
     Data memory r
   ) internal pure returns (bool) {
     
-  if (r.latest_height != 0) {
-    return false;
-  }
-
     return true;
   }
 
@@ -226,7 +243,7 @@ library IbcLightclientsMockV1ClientState {
    * @param output The in-storage struct
    */
   function store(Data memory input, Data storage output) internal {
-    output.latest_height = input.latest_height;
+    Height.store(input.latest_height, output.latest_height);
 
   }
 
@@ -514,7 +531,7 @@ library IbcLightclientsMockV1Header {
 
   //struct definition
   struct Data {
-    uint64 height;
+    Height.Data height;
     uint64 timestamp;
   }
 
@@ -617,7 +634,7 @@ library IbcLightclientsMockV1Header {
     /**
      * if `r` is NULL, then only counting the number of fields.
      */
-    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
+    (Height.Data memory x, uint256 sz) = _decode_Height(p, bs);
     if (isNil(r)) {
       counters[1] += 1;
     } else {
@@ -654,6 +671,26 @@ library IbcLightclientsMockV1Header {
     return sz;
   }
 
+  // struct decoder
+  /**
+   * @dev The decoder for reading a inner struct field
+   * @param p The offset of bytes array to start decode
+   * @param bs The bytes array to be decoded
+   * @return The decoded inner-struct
+   * @return The number of bytes used to decode
+   */
+  function _decode_Height(uint256 p, bytes memory bs)
+    internal
+    pure
+    returns (Height.Data memory, uint)
+  {
+    uint256 pointer = p;
+    (uint256 sz, uint256 bytesRead) = ProtoBufRuntime._decode_varint(pointer, bs);
+    pointer += bytesRead;
+    (Height.Data memory r, ) = Height._decode(pointer, bs, sz);
+    return (r, sz + bytesRead);
+  }
+
 
   // Encoder section
 
@@ -687,15 +724,15 @@ library IbcLightclientsMockV1Header {
     uint256 offset = p;
     uint256 pointer = p;
     
-    if (r.height != 0) {
+    
     pointer += ProtoBufRuntime._encode_key(
       1,
-      ProtoBufRuntime.WireType.Varint,
+      ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_uint64(r.height, pointer, bs);
-    }
+    pointer += Height._encode_nested(r.height, pointer, bs);
+    
     if (r.timestamp != 0) {
     pointer += ProtoBufRuntime._encode_key(
       2,
@@ -748,7 +785,7 @@ library IbcLightclientsMockV1Header {
     Data memory r
   ) internal pure returns (uint) {
     uint256 e;
-    e += 1 + ProtoBufRuntime._sz_uint64(r.height);
+    e += 1 + ProtoBufRuntime._sz_lendelim(Height._estimate(r.height));
     e += 1 + ProtoBufRuntime._sz_uint64(r.timestamp);
     return e;
   }
@@ -758,10 +795,6 @@ library IbcLightclientsMockV1Header {
     Data memory r
   ) internal pure returns (bool) {
     
-  if (r.height != 0) {
-    return false;
-  }
-
   if (r.timestamp != 0) {
     return false;
   }
@@ -777,7 +810,7 @@ library IbcLightclientsMockV1Header {
    * @param output The in-storage struct
    */
   function store(Data memory input, Data storage output) internal {
-    output.height = input.height;
+    Height.store(input.height, output.height);
     output.timestamp = input.timestamp;
 
   }

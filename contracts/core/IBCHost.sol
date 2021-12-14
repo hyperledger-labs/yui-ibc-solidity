@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "./types/Client.sol";
 import "./types/Connection.sol";
 import "./types/Channel.sol";
 import "./IBCIdentifier.sol";
+import "./IBCHeight.sol";
 
 contract IBCHost {
+    using IBCHeight for Height.Data;
+
     // Commitments
     mapping (bytes32 => bytes32) commitments;
 
@@ -13,9 +17,9 @@ contract IBCHost {
     mapping (string => address) clientRegistry; // clientType => clientImpl
     mapping (string => string) clientTypes; // clientID => clientType
     mapping (string => bytes) clientStates;
-    mapping (string => mapping(uint64 => bytes)) consensusStates;
-    mapping (string => mapping(uint64 => uint256)) processedTimes;
-    mapping (string => mapping(uint64 => uint256)) processedHeights;
+    mapping (string => mapping(uint128 => bytes)) consensusStates;
+    mapping (string => mapping(uint128 => uint256)) processedTimes;
+    mapping (string => mapping(uint128 => uint256)) processedHeights;
     mapping (string => ConnectionEnd.Data) connections;
     mapping (string => mapping(string => Channel.Data)) channels;
     mapping (string => mapping(string => uint64)) nextSequenceSends;
@@ -90,35 +94,36 @@ contract IBCHost {
 
     // ConsensusState
 
-    function setConsensusState(string calldata clientId, uint64 height, bytes calldata consensusStateBytes) external {
+    function setConsensusState(string calldata clientId, Height.Data calldata height, bytes calldata consensusStateBytes) external {
         onlyIBCModule();
-        consensusStates[clientId][height] = consensusStateBytes;
+        consensusStates[clientId][height.toUint128()] = consensusStateBytes;
         commitments[IBCIdentifier.consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
     }
 
-    function getConsensusState(string calldata clientId, uint64 height) external view returns (bytes memory, bool) {
-        return (consensusStates[clientId][height], consensusStates[clientId][height].length > 0);
+    function getConsensusState(string calldata clientId, Height.Data calldata height) external view returns (bytes memory, bool) {
+        uint128 h = height.toUint128();
+        return (consensusStates[clientId][h], consensusStates[clientId][h].length > 0);
     }
 
     // Processed Time/Block
 
-    function setProcessedTime(string calldata clientId, uint64 height, uint256 processedTime) external {
+    function setProcessedTime(string calldata clientId, Height.Data calldata height, uint256 processedTime) external {
         onlyIBCModule();
-        processedTimes[clientId][height] = processedTime;
+        processedTimes[clientId][height.toUint128()] = processedTime;
     }
 
-    function getProcessedTime(string calldata clientId, uint64 height) external view returns (uint256, bool) {
-        uint256 processedTime = processedTimes[clientId][height];
+    function getProcessedTime(string calldata clientId, Height.Data calldata height) external view returns (uint256, bool) {
+        uint256 processedTime = processedTimes[clientId][height.toUint128()];
         return (processedTime, processedTime != 0);
     }
 
-    function setProcessedHeight(string calldata clientId, uint64 height, uint256 processedHeight) external {
+    function setProcessedHeight(string calldata clientId, Height.Data calldata height, uint256 processedHeight) external {
         onlyIBCModule();
-        processedHeights[clientId][height] = processedHeight;
+        processedHeights[clientId][height.toUint128()] = processedHeight;
     }
 
-    function getProcessedHeight(string calldata clientId, uint64 height) external view returns (uint256, bool) {
-        uint256 processedHeight = processedHeights[clientId][height];
+    function getProcessedHeight(string calldata clientId, Height.Data calldata height) external view returns (uint256, bool) {
+        uint256 processedHeight = processedHeights[clientId][height.toUint128()];
         return (processedHeight, processedHeight != 0);
     }
 
@@ -308,4 +313,5 @@ contract IBCHost {
         }
         return string(bstr);
     }
+
 }
