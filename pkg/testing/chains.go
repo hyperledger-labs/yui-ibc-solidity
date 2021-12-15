@@ -231,9 +231,9 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 	if height == nil {
 		switch counterparty.ClientType() {
 		case ibcclient.MockClient:
-			height = big.NewInt(int64(counterparty.GetMockClientState(counterpartyClientID).LatestHeight))
+			height = counterparty.GetMockClientState(counterpartyClientID).LatestHeight.ToBN()
 		case ibcclient.BesuIBFT2Client:
-			height = big.NewInt(int64(counterparty.GetIBFT2ClientState(counterpartyClientID).LatestHeight))
+			height = counterparty.GetIBFT2ClientState(counterpartyClientID).LatestHeight.ToBN()
 		default:
 			return nil, fmt.Errorf("unknown client type: '%v'", counterparty.ClientType())
 		}
@@ -248,7 +248,7 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 
 func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler.IBCMsgsMsgCreateClient {
 	clientState := mockclienttypes.ClientState{
-		LatestHeight: counterparty.LastHeader().Number.Uint64(),
+		LatestHeight: ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 	}
 	consensusState := mockclienttypes.ConsensusState{
 		Timestamp: counterparty.LastHeader().Time,
@@ -263,7 +263,7 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 	}
 	return ibchandler.IBCMsgsMsgCreateClient{
 		ClientType:          ibcclient.MockClient,
-		Height:              clientState.LatestHeight,
+		Height:              clientState.LatestHeight.ToCallData(),
 		ClientStateBytes:    clientStateBytes,
 		ConsensusStateBytes: consensusStateBytes,
 	}
@@ -273,7 +273,7 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 	clientState := ibft2clienttypes.ClientState{
 		ChainId:         counterparty.ChainIDString(),
 		IbcStoreAddress: counterparty.ContractConfig.GetIBCHostAddress().Bytes(),
-		LatestHeight:    counterparty.LastHeader().Number.Uint64(),
+		LatestHeight:    ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 	}
 	consensusState := ibft2clienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Time,
@@ -290,7 +290,7 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 	}
 	return ibchandler.IBCMsgsMsgCreateClient{
 		ClientType:          ibcclient.BesuIBFT2Client,
-		Height:              clientState.LatestHeight,
+		Height:              clientState.LatestHeight.ToCallData(),
 		ClientStateBytes:    clientStateBytes,
 		ConsensusStateBytes: consensusStateBytes,
 	}
@@ -299,7 +299,7 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
 	cs := counterparty.LastContractState.(client.ETHContractState)
 	header := mockclienttypes.Header{
-		Height:    cs.Header().Number.Uint64(),
+		Height:    ibcclient.NewHeightFromBN(cs.Header().Number),
 		Timestamp: cs.Header().Time,
 	}
 	bz, err := MarshalWithAny(&header)
@@ -407,7 +407,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	if err != nil {
 		return "", err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, big.NewInt(int64(proofConnection.Height)))
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
 	if err != nil {
 		return "", err
 	}
@@ -427,7 +427,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 				CounterpartyVersions: []ibchandler.VersionData{
 					{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
 				},
-				ProofHeight: proofConnection.Height,
+				ProofHeight: proofConnection.Height.ToCallData(),
 				ProofInit:   proofConnection.Data,
 				ProofClient: proofClient.Data,
 			},
@@ -448,7 +448,7 @@ func (chain *Chain) ConnectionOpenAck(
 	if err != nil {
 		return err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, big.NewInt(int64(proofConnection.Height)))
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
 	if err != nil {
 		return err
 	}
@@ -460,7 +460,7 @@ func (chain *Chain) ConnectionOpenAck(
 				CounterpartyConnectionID: counterpartyConnection.ID,
 				ClientStateBytes:         clientStateBytes,
 				Version:                  ibchandler.VersionData{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
-				ProofHeight:              proofConnection.Height,
+				ProofHeight:              proofConnection.Height.ToCallData(),
 				ProofTry:                 proofConnection.Data,
 				ProofClient:              proofClient.Data,
 			},
@@ -483,7 +483,7 @@ func (chain *Chain) ConnectionOpenConfirm(
 			ibchandler.IBCMsgsMsgConnectionOpenConfirm{
 				ConnectionId: connection.ID,
 				ProofAck:     proof.Data,
-				ProofHeight:  proof.Height,
+				ProofHeight:  proof.Height.ToCallData(),
 			},
 		),
 	)
@@ -546,7 +546,7 @@ func (chain *Chain) ChannelOpenTry(
 				},
 				CounterpartyVersion: counterpartyCh.Version,
 				ProofInit:           proof.Data,
-				ProofHeight:         proof.Height,
+				ProofHeight:         proof.Height.ToCallData(),
 			},
 		),
 	); err != nil {
@@ -573,7 +573,7 @@ func (chain *Chain) ChannelOpenAck(
 				CounterpartyVersion:   counterpartyCh.Version,
 				CounterpartyChannelId: counterpartyCh.ID,
 				ProofTry:              proof.Data,
-				ProofHeight:           proof.Height,
+				ProofHeight:           proof.Height.ToCallData(),
 			},
 		),
 	)
@@ -595,7 +595,7 @@ func (chain *Chain) ChannelOpenConfirm(
 				PortId:      ch.PortID,
 				ChannelId:   ch.ID,
 				ProofAck:    proof.Data,
-				ProofHeight: proof.Height,
+				ProofHeight: proof.Height.ToCallData(),
 			},
 		),
 	)
@@ -632,7 +632,7 @@ func (chain *Chain) ChannelCloseConfirm(
 				PortId:      ch.PortID,
 				ChannelId:   ch.ID,
 				ProofInit:   proof.Data,
-				ProofHeight: proof.Height,
+				ProofHeight: proof.Height.ToCallData(),
 			},
 		),
 	)
@@ -670,7 +670,7 @@ func (chain *Chain) HandlePacketRecv(
 			ibchandler.IBCMsgsMsgPacketRecv{
 				Packet:      packetToCallData(packet),
 				Proof:       proof.Data,
-				ProofHeight: proof.Height,
+				ProofHeight: proof.Height.ToCallData(),
 			},
 		),
 	)
@@ -698,7 +698,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 				Packet:          packetToCallData(packet),
 				Acknowledgement: acknowledgement,
 				Proof:           proof.Data,
-				ProofHeight:     proof.Height,
+				ProofHeight:     proof.Height.ToCallData(),
 			},
 		),
 	)
@@ -804,7 +804,7 @@ func (chain *Chain) FindPacket(
 					DestinationPort:    p.DestinationPort,
 					DestinationChannel: p.DestinationChannel,
 					Data:               p.Data,
-					TimeoutHeight:      channeltypes.Height(p.TimeoutHeight),
+					TimeoutHeight:      ibcclient.Height(p.TimeoutHeight),
 					TimeoutTimestamp:   p.TimeoutTimestamp,
 				}, nil
 			}
@@ -862,7 +862,7 @@ func (chain *Chain) PacketAcknowledgementCommitmentSlot(portID, channelID string
 // Querier
 
 type Proof struct {
-	Height uint64
+	Height *ibcclient.Height
 	Data   []byte
 }
 
@@ -874,7 +874,10 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	if err != nil {
 		return nil, err
 	}
-	return &Proof{Height: s.Header().Number.Uint64(), Data: s.ETHProof().StorageProofRLP[0]}, nil
+	return &Proof{
+		Height: ibcclient.NewHeightFromBN(s.Header().Number),
+		Data:   s.ETHProof().StorageProofRLP[0],
+	}, nil
 }
 
 func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {

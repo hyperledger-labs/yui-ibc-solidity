@@ -37,3 +37,6 @@ Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:. \
   $(find "${dir}" -maxdepth 1 -name '*.proto')
 
 done
+
+cp -r github.com/hyperledger-labs/yui-ibc-solidity/* ./
+rm -rf github.com

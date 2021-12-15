@@ -5,7 +5,7 @@ package ibc.lightclients.ibft2.v1;
 import "solidity-protobuf-extensions.proto";
 import "client/Client.proto";
 
-option go_package = "pkg/ibc/client/ibft2";
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/ibft2";
 option (.solidity.file_options) = { dirpath: "contracts/core/types" };
 
 message ClientState {

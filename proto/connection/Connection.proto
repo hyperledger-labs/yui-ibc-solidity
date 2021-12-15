@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "pkg/ibc/connection";
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection";
 
 import "solidity-protobuf-extensions.proto";
 option (.solidity.file_options) = { dirpath: "contracts/core/types" };
