@@ -24,7 +24,15 @@ endif
 
 .PHONY: proto
 proto:
-	protoc --go_out=. ./proto/*.proto
+ifndef SOLPB_DIR
+	$(error SOLPB_DIR is not specified)
+else
+	protoc --go_out=. \
+		-I./proto \
+		-I./third_party/proto \
+		-I$(SOLPB_DIR)/protobuf-solidity/src/protoc/include \
+		./proto/**/*.proto
+endif
 
 .PHONY: test
 test:
@@ -41,7 +49,17 @@ down:
 .PHONY: proto-gen
 proto-gen:
 	@echo "Generating Protobuf files"
-	docker run -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen sh ./scripts/protocgen.sh
+ifndef SOLPB_DIR
+	$(error SOLPB_DIR is not specified)
+else
+	docker run \
+		-v $(CURDIR):/workspace \
+		-v $(SOLPB_DIR):/solpb \
+		-e SOLPB_DIR=/solpb \
+		--workdir /workspace \
+		tendermintdev/sdk-proto-gen \
+		sh ./scripts/protocgen.sh
+endif
 
 .PHONY: integration-test
 integration-test:

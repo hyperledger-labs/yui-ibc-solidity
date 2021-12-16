@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 import "./ProtoBufRuntime.sol";
 import "./GoogleProtobufAny.sol";
+import "./Client.sol";
 
 library IbcLightclientsIbft2V1ClientState {
 
@@ -10,7 +11,7 @@ library IbcLightclientsIbft2V1ClientState {
   struct Data {
     string chain_id;
     bytes ibc_store_address;
-    uint64 latest_height;
+    Height.Data latest_height;
   }
 
   // Decoder section
@@ -169,7 +170,7 @@ library IbcLightclientsIbft2V1ClientState {
     /**
      * if `r` is NULL, then only counting the number of fields.
      */
-    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
+    (Height.Data memory x, uint256 sz) = _decode_Height(p, bs);
     if (isNil(r)) {
       counters[3] += 1;
     } else {
@@ -177,6 +178,26 @@ library IbcLightclientsIbft2V1ClientState {
       if (counters[3] > 0) counters[3] -= 1;
     }
     return sz;
+  }
+
+  // struct decoder
+  /**
+   * @dev The decoder for reading a inner struct field
+   * @param p The offset of bytes array to start decode
+   * @param bs The bytes array to be decoded
+   * @return The decoded inner-struct
+   * @return The number of bytes used to decode
+   */
+  function _decode_Height(uint256 p, bytes memory bs)
+    internal
+    pure
+    returns (Height.Data memory, uint)
+  {
+    uint256 pointer = p;
+    (uint256 sz, uint256 bytesRead) = ProtoBufRuntime._decode_varint(pointer, bs);
+    pointer += bytesRead;
+    (Height.Data memory r, ) = Height._decode(pointer, bs, sz);
+    return (r, sz + bytesRead);
   }
 
 
@@ -230,15 +251,15 @@ library IbcLightclientsIbft2V1ClientState {
     );
     pointer += ProtoBufRuntime._encode_bytes(r.ibc_store_address, pointer, bs);
     }
-    if (r.latest_height != 0) {
+    
     pointer += ProtoBufRuntime._encode_key(
       3,
-      ProtoBufRuntime.WireType.Varint,
+      ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_uint64(r.latest_height, pointer, bs);
-    }
+    pointer += Height._encode_nested(r.latest_height, pointer, bs);
+    
     return pointer - offset;
   }
   // nested encoder
@@ -284,7 +305,7 @@ library IbcLightclientsIbft2V1ClientState {
     uint256 e;
     e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.chain_id).length);
     e += 1 + ProtoBufRuntime._sz_lendelim(r.ibc_store_address.length);
-    e += 1 + ProtoBufRuntime._sz_uint64(r.latest_height);
+    e += 1 + ProtoBufRuntime._sz_lendelim(Height._estimate(r.latest_height));
     return e;
   }
   // empty checker
@@ -301,10 +322,6 @@ library IbcLightclientsIbft2V1ClientState {
     return false;
   }
 
-  if (r.latest_height != 0) {
-    return false;
-  }
-
     return true;
   }
 
@@ -318,7 +335,7 @@ library IbcLightclientsIbft2V1ClientState {
   function store(Data memory input, Data storage output) internal {
     output.chain_id = input.chain_id;
     output.ibc_store_address = input.ibc_store_address;
-    output.latest_height = input.latest_height;
+    Height.store(input.latest_height, output.latest_height);
 
   }
 
@@ -760,7 +777,7 @@ library IbcLightclientsIbft2V1Header {
   struct Data {
     bytes besu_header_rlp;
     bytes[] seals;
-    uint64 trusted_height;
+    Height.Data trusted_height;
     bytes account_state_proof;
   }
 
@@ -964,7 +981,7 @@ library IbcLightclientsIbft2V1Header {
     /**
      * if `r` is NULL, then only counting the number of fields.
      */
-    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
+    (Height.Data memory x, uint256 sz) = _decode_Height(p, bs);
     if (isNil(r)) {
       counters[3] += 1;
     } else {
@@ -999,6 +1016,26 @@ library IbcLightclientsIbft2V1Header {
       if (counters[4] > 0) counters[4] -= 1;
     }
     return sz;
+  }
+
+  // struct decoder
+  /**
+   * @dev The decoder for reading a inner struct field
+   * @param p The offset of bytes array to start decode
+   * @param bs The bytes array to be decoded
+   * @return The decoded inner-struct
+   * @return The number of bytes used to decode
+   */
+  function _decode_Height(uint256 p, bytes memory bs)
+    internal
+    pure
+    returns (Height.Data memory, uint)
+  {
+    uint256 pointer = p;
+    (uint256 sz, uint256 bytesRead) = ProtoBufRuntime._decode_varint(pointer, bs);
+    pointer += bytesRead;
+    (Height.Data memory r, ) = Height._decode(pointer, bs, sz);
+    return (r, sz + bytesRead);
   }
 
 
@@ -1054,15 +1091,15 @@ library IbcLightclientsIbft2V1Header {
       pointer += ProtoBufRuntime._encode_bytes(r.seals[i], pointer, bs);
     }
     }
-    if (r.trusted_height != 0) {
+    
     pointer += ProtoBufRuntime._encode_key(
       3,
-      ProtoBufRuntime.WireType.Varint,
+      ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_uint64(r.trusted_height, pointer, bs);
-    }
+    pointer += Height._encode_nested(r.trusted_height, pointer, bs);
+    
     if (r.account_state_proof.length != 0) {
     pointer += ProtoBufRuntime._encode_key(
       4,
@@ -1119,7 +1156,7 @@ library IbcLightclientsIbft2V1Header {
     for(i = 0; i < r.seals.length; i++) {
       e += 1 + ProtoBufRuntime._sz_lendelim(r.seals[i].length);
     }
-    e += 1 + ProtoBufRuntime._sz_uint64(r.trusted_height);
+    e += 1 + ProtoBufRuntime._sz_lendelim(Height._estimate(r.trusted_height));
     e += 1 + ProtoBufRuntime._sz_lendelim(r.account_state_proof.length);
     return e;
   }
@@ -1134,10 +1171,6 @@ library IbcLightclientsIbft2V1Header {
   }
 
   if (r.seals.length != 0) {
-    return false;
-  }
-
-  if (r.trusted_height != 0) {
     return false;
   }
 
@@ -1158,7 +1191,7 @@ library IbcLightclientsIbft2V1Header {
   function store(Data memory input, Data storage output) internal {
     output.besu_header_rlp = input.besu_header_rlp;
     output.seals = input.seals;
-    output.trusted_height = input.trusted_height;
+    Height.store(input.trusted_height, output.trusted_height);
     output.account_state_proof = input.account_state_proof;
 
   }

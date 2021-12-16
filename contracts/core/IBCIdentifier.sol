@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "./types/Client.sol";
+import "./IBCHeight.sol";
+
 library IBCIdentifier {
+    using IBCHeight for Height.Data;
 
     // constant values
 
@@ -19,8 +23,8 @@ library IBCIdentifier {
         return keccak256(abi.encodePacked(clientPrefix, clientId));
     }
 
-    function consensusCommitmentKey(string memory clientId, uint64 height) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(consensusStatePrefix, clientId, "/", height));
+    function consensusCommitmentKey(string memory clientId, Height.Data memory height) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(consensusStatePrefix, clientId, "/", height.toUint128()));
     }
 
     function connectionCommitmentKey(string memory connectionId) public pure returns (bytes32) {
@@ -45,7 +49,7 @@ library IBCIdentifier {
         return keccak256(abi.encodePacked(clientCommitmentKey(clientId), commitmentSlot));
     }
 
-    function consensusStateCommitmentSlot(string calldata clientId, uint64 height) external pure returns (bytes32) {
+    function consensusStateCommitmentSlot(string calldata clientId, Height.Data calldata height) external pure returns (bytes32) {
         return keccak256(abi.encodePacked(consensusCommitmentKey(clientId, height), commitmentSlot));
     }
 

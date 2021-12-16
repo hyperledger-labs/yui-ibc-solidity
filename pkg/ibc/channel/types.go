@@ -1,11 +1,13 @@
 package channel
 
+import client "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
+
 // NewPacket creates a new Packet instance.
 func NewPacket(
 	data []byte,
 	sequence uint64, sourcePort, sourceChannel,
 	destinationPort, destinationChannel string,
-	timeoutHeight Height, timeoutTimestamp uint64,
+	timeoutHeight client.Height, timeoutTimestamp uint64,
 ) Packet {
 	return Packet{
 		Data:               data,

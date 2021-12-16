@@ -1,6 +1,9 @@
 syntax = "proto3";
 
-option go_package = "pkg/ibc/app";
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/app";
+
+import "solidity-protobuf-extensions.proto";
+option (.solidity.file_options) = { dirpath: "contracts/core/types" };
 
 // FungibleTokenPacketData defines a struct for the packet payload
 // See FungibleTokenPacketData spec:

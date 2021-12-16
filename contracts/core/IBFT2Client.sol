@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
+import "./IBCHeight.sol";
+import "./types/Client.sol";
 import {
     IbcLightclientsIbft2V1ClientState as ClientState,
     IbcLightclientsIbft2V1ConsensusState as ConsensusState,
@@ -22,6 +24,7 @@ contract IBFT2Client is IClient {
     using RLP for RLP.RLPItem;
     using RLP for bytes;
     using Bytes for bytes;
+    using IBCHeight for Height.Data;
 
     struct protoTypes {
         bytes32 clientState;
@@ -43,7 +46,7 @@ contract IBFT2Client is IClient {
 
     struct ParsedBesuHeader {
         Header.Data base;
-        uint64 height;
+        Height.Data height;
         bytes32 stateRoot;
         uint64 time;
         RLP.RLPItem[] validators;
@@ -62,7 +65,7 @@ contract IBFT2Client is IClient {
     function getTimestampAtHeight(
         IBCHost host,
         string memory clientId,
-        uint64 height
+        Height.Data memory height
     ) public override view returns (uint64, bool) {
         (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         if (!found) {
@@ -74,10 +77,10 @@ contract IBFT2Client is IClient {
     function getLatestHeight(
         IBCHost host,
         string memory clientId
-    ) public override view returns (uint64, bool) {
+    ) public override view returns (Height.Data memory, bool) {
         (ClientState.Data memory clientState, bool found) = getClientState(host, clientId);
         if (!found) {
-            return (0, false);
+            return (Height.Data(0, 0), false);
         }
         return (clientState.latest_height, true);
     }
@@ -90,7 +93,7 @@ contract IBFT2Client is IClient {
         string memory clientId, 
         bytes memory clientStateBytes,
         bytes memory headerBytes
-    ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height) {
+    ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
         Header.Data memory header;
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
@@ -108,7 +111,7 @@ contract IBFT2Client is IClient {
 
         //// check validity ////
         ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
-        require(parsedHeader.height > header.trusted_height, "header height <= consensus state height");
+        require(parsedHeader.height.gt(header.trusted_height), "header height <= consensus state height");
         (validators, ok) = verify(consensusState, parsedHeader);
         require(ok, "failed to verify the header");
 
@@ -119,7 +122,7 @@ contract IBFT2Client is IClient {
         );
         consensusState.validators = validators;
 
-        if (parsedHeader.height > clientState.latest_height) {
+        if (parsedHeader.height.gt(clientState.latest_height)) {
             clientState.latest_height = parsedHeader.height;
         }
         return (marshalClientState(clientState), marshalConsensusState(consensusState), parsedHeader.height);
@@ -230,7 +233,7 @@ contract IBFT2Client is IClient {
     function verifyClientState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         bytes memory prefix,
         string memory counterpartyClientIdentifier,
         bytes memory proof,
@@ -257,9 +260,9 @@ contract IBFT2Client is IClient {
     function verifyClientConsensusState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         string memory counterpartyClientIdentifier,
-        uint64 consensusHeight,
+        Height.Data memory consensusHeight,
         bytes memory prefix,
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
@@ -285,7 +288,7 @@ contract IBFT2Client is IClient {
     function verifyConnectionState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         bytes memory prefix,
         bytes memory proof,
         string memory connectionId,
@@ -312,7 +315,7 @@ contract IBFT2Client is IClient {
     function verifyChannelState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         bytes memory prefix,
         bytes memory proof,
         string memory portId,
@@ -340,7 +343,7 @@ contract IBFT2Client is IClient {
     function verifyPacketCommitment(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         uint64 delayPeriodTime,
         uint64 delayPeriodBlocks,
         bytes memory prefix,
@@ -374,7 +377,7 @@ contract IBFT2Client is IClient {
     function verifyPacketAcknowledgement(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         uint64 delayPeriodTime,
         uint64 delayPeriodBlocks,
         bytes memory prefix,
@@ -408,7 +411,7 @@ contract IBFT2Client is IClient {
         return (ClientState.decode(Any.decode(clientStateBytes).value), true);
     }
 
-    function getConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory consensusState, bool found) {
+    function getConsensusState(IBCHost host, string memory clientId, Height.Data memory height) public view returns (ConsensusState.Data memory consensusState, bool found) {
         bytes memory consensusStateBytes;
         (consensusStateBytes, found) = host.getConsensusState(clientId, height);
         if (!found) {
@@ -417,8 +420,8 @@ contract IBFT2Client is IClient {
         return (ConsensusState.decode(Any.decode(consensusStateBytes).value), true);
     }
 
-    function validateArgs(ClientState.Data memory cs, uint64 height, bytes memory prefix, bytes memory proof) internal pure returns (bool) {
-        if (cs.latest_height < height) {
+    function validateArgs(ClientState.Data memory cs, Height.Data memory height, bytes memory prefix, bytes memory proof) internal pure returns (bool) {
+        if (cs.latest_height.lt(height)) {
             return false;
         } else if (prefix.length == 0) {
             return false;
@@ -428,7 +431,7 @@ contract IBFT2Client is IClient {
         return true;
     }
 
-    function validateDelayPeriod(IBCHost host, string memory clientId, uint64 height, uint64 delayPeriodTime, uint64 delayPeriodBlocks) private view returns (bool) {
+    function validateDelayPeriod(IBCHost host, string memory clientId, Height.Data memory height, uint64 delayPeriodTime, uint64 delayPeriodBlocks) private view returns (bool) {
         uint64 currentTime = uint64(block.timestamp * 1000 * 1000 * 1000);
         uint64 validTime = mustGetProcessedTime(host, clientId, height) + delayPeriodTime;
         if (currentTime < validTime) {
@@ -450,19 +453,19 @@ contract IBFT2Client is IClient {
     }
 
     // NOTE: this is a workaround to avoid the error `Stack too deep` in caller side
-    function mustGetConsensusState(IBCHost host, string memory clientId, uint64 height) internal view returns (ConsensusState.Data memory) {
+    function mustGetConsensusState(IBCHost host, string memory clientId, Height.Data memory height) internal view returns (ConsensusState.Data memory) {
         (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         require(found, "consensus state not found");
         return consensusState;
     }
 
-    function mustGetProcessedTime(IBCHost host, string memory clientId, uint64 height) internal view returns (uint64) {
+    function mustGetProcessedTime(IBCHost host, string memory clientId, Height.Data memory height) internal view returns (uint64) {
         (uint256 processedTime, bool found) = host.getProcessedTime(clientId, height);
         require(found, "processed time not found");
         return uint64(processedTime) * 1000 * 1000 * 1000;
     }
 
-    function mustGetProcessedHeight(IBCHost host, string memory clientId, uint64 height) internal view returns (uint64) {
+    function mustGetProcessedHeight(IBCHost host, string memory clientId, Height.Data memory height) internal view returns (uint64) {
         (uint256 processedHeight, bool found) = host.getProcessedHeight(clientId, height);
         require(found, "processed height not found");
         return uint64(processedHeight);
@@ -486,7 +489,7 @@ contract IBFT2Client is IClient {
         parsedHeader.base = header;
         RLP.RLPItem[] memory items = header.besu_header_rlp.toRLPItem().toList();
         parsedHeader.stateRoot = items[3].toBytes().toBytes32();
-        parsedHeader.height = uint64(items[8].toUint());
+        parsedHeader.height = Height.Data({ revision_number: 0, revision_height: uint64(items[8].toUint()) });
 
         require(items.length == 15, "items length must be 15");
         parsedHeader.time = uint64(items[11].toUint());

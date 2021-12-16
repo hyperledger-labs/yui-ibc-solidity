@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "./IBCHost.sol";
+import "./types/Client.sol";
 
 interface IClient {
 
@@ -11,25 +12,25 @@ interface IClient {
     function getTimestampAtHeight(
         IBCHost host,
         string calldata clientId,
-        uint64 height
+        Height.Data calldata height
     ) external view returns (uint64, bool);
 
     function getLatestHeight(
         IBCHost host,
         string calldata clientId
-    ) external view returns (uint64, bool);
+    ) external view returns (Height.Data memory, bool);
 
     function checkHeaderAndUpdateState(
         IBCHost host,
         string calldata clientId, 
         bytes calldata clientStateBytes,
         bytes calldata headerBytes
-    ) external view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height);
+    ) external view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height);
 
     function verifyClientState(
         IBCHost host,
         string calldata clientId,
-        uint64 height,
+        Height.Data calldata height,
         bytes calldata prefix,
         string calldata counterpartyClientIdentifier,
         bytes calldata proof,
@@ -39,9 +40,9 @@ interface IClient {
     function verifyClientConsensusState(
         IBCHost host,
         string calldata clientId,
-        uint64 height,
+        Height.Data calldata height,
         string calldata counterpartyClientIdentifier,
-        uint64 consensusHeight,
+        Height.Data calldata consensusHeight,
         bytes calldata prefix,
         bytes calldata proof,
         bytes calldata consensusStateBytes // serialized with pb
@@ -50,7 +51,7 @@ interface IClient {
     function verifyConnectionState(
         IBCHost host,
         string calldata clientId,
-        uint64 height,
+        Height.Data calldata height,
         bytes calldata prefix,
         bytes calldata proof,
         string calldata connectionId,
@@ -60,7 +61,7 @@ interface IClient {
     function verifyChannelState(
         IBCHost host,
         string calldata clientId,
-        uint64 height,
+        Height.Data calldata height,
         bytes calldata prefix,
         bytes calldata proof,
         string calldata portId,
@@ -71,7 +72,7 @@ interface IClient {
     function verifyPacketCommitment(
         IBCHost host,
         string calldata clientId,
-        uint64 height,
+        Height.Data calldata height,
         uint64 delayPeriodTime,
         uint64 delayPeriodBlocks,
         bytes calldata prefix,
@@ -85,7 +86,7 @@ interface IClient {
     function verifyPacketAcknowledgement(
         IBCHost host,
         string calldata clientId,
-        uint64 height,
+        Height.Data calldata height,
         uint64 delayPeriodTime,
         uint64 delayPeriodBlocks,
         bytes calldata prefix,

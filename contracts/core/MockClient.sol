@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
+import "./IBCHeight.sol";
+import "./types/Client.sol";
 import {
     IbcLightclientsMockV1ClientState as ClientState,
     IbcLightclientsMockV1ConsensusState as ConsensusState,
@@ -16,6 +18,7 @@ import "../lib/Bytes.sol";
 // WARNING: This client is intended to be used for testing purpose. Therefore, it is not generally available in a production, except in a fully trusted environment.
 contract MockClient is IClient {
     using Bytes for bytes;
+    using IBCHeight for Height.Data;
 
     struct protoTypes {
         bytes32 clientState;
@@ -41,7 +44,7 @@ contract MockClient is IClient {
     function getTimestampAtHeight(
         IBCHost host,
         string memory clientId,
-        uint64 height
+        Height.Data memory height
     ) public override view returns (uint64, bool) {
         (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         if (!found) {
@@ -53,10 +56,10 @@ contract MockClient is IClient {
     function getLatestHeight(
         IBCHost host,
         string memory clientId
-    ) public override view returns (uint64, bool) {
+    ) public override view returns (Height.Data memory, bool) {
         (ClientState.Data memory clientState, bool found) = getClientState(host, clientId);
         if (!found) {
-            return (0, false);
+            return (Height.Data(0, 0), false);
         }
         return (clientState.latest_height, true);
     }
@@ -69,7 +72,7 @@ contract MockClient is IClient {
         string memory,
         bytes memory clientStateBytes,
         bytes memory headerBytes
-    ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, uint64 height) {
+    ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
         uint64 timestamp;
         Any.Data memory anyClientState;
         Any.Data memory anyConsensusState;
@@ -78,7 +81,7 @@ contract MockClient is IClient {
         require(keccak256(abi.encodePacked(anyClientState.type_url)) == pts.clientState, "invalid client type");
         ClientState.Data memory clientState = ClientState.decode(anyClientState.value);
         (height, timestamp) = parseHeader(headerBytes);
-        if (height > clientState.latest_height) {
+        if (height.gt(clientState.latest_height)) {
             clientState.latest_height = height;
         }
 
@@ -91,7 +94,7 @@ contract MockClient is IClient {
     function verifyClientState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         bytes memory,
         string memory,
         bytes memory proof,
@@ -105,9 +108,9 @@ contract MockClient is IClient {
     function verifyClientConsensusState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         string memory,
-        uint64,
+        Height.Data memory,
         bytes memory,
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
@@ -120,7 +123,7 @@ contract MockClient is IClient {
     function verifyConnectionState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         bytes memory,
         bytes memory proof,
         string memory,
@@ -134,7 +137,7 @@ contract MockClient is IClient {
     function verifyChannelState(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         bytes memory,
         bytes memory proof,
         string memory,
@@ -149,7 +152,7 @@ contract MockClient is IClient {
     function verifyPacketCommitment(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         uint64,
         uint64,
         bytes memory,
@@ -167,7 +170,7 @@ contract MockClient is IClient {
     function verifyPacketAcknowledgement(
         IBCHost host,
         string memory clientId,
-        uint64 height,
+        Height.Data memory height,
         uint64,
         uint64,
         bytes memory,
@@ -191,7 +194,7 @@ contract MockClient is IClient {
         return (ClientState.decode(Any.decode(clientStateBytes).value), true);
     }
 
-    function getConsensusState(IBCHost host, string memory clientId, uint64 height) public view returns (ConsensusState.Data memory consensusState, bool found) {
+    function getConsensusState(IBCHost host, string memory clientId, Height.Data memory height) public view returns (ConsensusState.Data memory consensusState, bool found) {
         bytes memory consensusStateBytes;
         (consensusStateBytes, found) = host.getConsensusState(clientId, height);
         if (!found) {
@@ -200,7 +203,7 @@ contract MockClient is IClient {
         return (ConsensusState.decode(Any.decode(consensusStateBytes).value), true);
     }
 
-    function parseHeader(bytes memory headerBytes) internal view returns (uint64, uint64) {
+    function parseHeader(bytes memory headerBytes) internal view returns (Height.Data memory, uint64) {
         Any.Data memory any = Any.decode(headerBytes);
         require(keccak256(abi.encodePacked(any.type_url)) == pts.header, "invalid header type");
         Header.Data memory header = Header.decode(any.value);
