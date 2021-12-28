@@ -51,7 +51,6 @@ library FungibleTokenPacketData {
     returns (Data memory, uint)
   {
     Data memory r;
-    uint[5] memory counters;
     uint256 fieldId;
     ProtoBufRuntime.WireType wireType;
     uint256 bytesRead;
@@ -61,38 +60,31 @@ library FungibleTokenPacketData {
       (fieldId, wireType, bytesRead) = ProtoBufRuntime._decode_key(pointer, bs);
       pointer += bytesRead;
       if (fieldId == 1) {
-        pointer += _read_denom(pointer, bs, r, counters);
-      }
-      else if (fieldId == 2) {
-        pointer += _read_amount(pointer, bs, r, counters);
-      }
-      else if (fieldId == 3) {
-        pointer += _read_sender(pointer, bs, r, counters);
-      }
-      else if (fieldId == 4) {
-        pointer += _read_receiver(pointer, bs, r, counters);
-      }
-      
-      else {
+        pointer += _read_denom(pointer, bs, r);
+      } else
+      if (fieldId == 2) {
+        pointer += _read_amount(pointer, bs, r);
+      } else
+      if (fieldId == 3) {
+        pointer += _read_sender(pointer, bs, r);
+      } else
+      if (fieldId == 4) {
+        pointer += _read_receiver(pointer, bs, r);
+      } else
+      {
         if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed64(pointer, bs);
-          pointer += size;
+          pointer += 8;
         }
         if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed32(pointer, bs);
-          pointer += size;
+          pointer += 4;
         }
         if (wireType == ProtoBufRuntime.WireType.Varint) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_varint(pointer, bs);
+          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
           pointer += size;
         }
         if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_lendelim(pointer, bs);
-          pointer += size;
+          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
+          pointer += size + len;
         }
       }
 
@@ -107,25 +99,15 @@ library FungibleTokenPacketData {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_denom(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[5] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (string memory x, uint256 sz) = ProtoBufRuntime._decode_string(p, bs);
-    if (isNil(r)) {
-      counters[1] += 1;
-    } else {
-      r.denom = x;
-      if (counters[1] > 0) counters[1] -= 1;
-    }
+    r.denom = x;
     return sz;
   }
 
@@ -134,25 +116,15 @@ library FungibleTokenPacketData {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_amount(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[5] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
-    if (isNil(r)) {
-      counters[2] += 1;
-    } else {
-      r.amount = x;
-      if (counters[2] > 0) counters[2] -= 1;
-    }
+    r.amount = x;
     return sz;
   }
 
@@ -161,25 +133,15 @@ library FungibleTokenPacketData {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_sender(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[5] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (bytes memory x, uint256 sz) = ProtoBufRuntime._decode_bytes(p, bs);
-    if (isNil(r)) {
-      counters[3] += 1;
-    } else {
-      r.sender = x;
-      if (counters[3] > 0) counters[3] -= 1;
-    }
+    r.sender = x;
     return sz;
   }
 
@@ -188,25 +150,15 @@ library FungibleTokenPacketData {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_receiver(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[5] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (bytes memory x, uint256 sz) = ProtoBufRuntime._decode_bytes(p, bs);
-    if (isNil(r)) {
-      counters[4] += 1;
-    } else {
-      r.receiver = x;
-      if (counters[4] > 0) counters[4] -= 1;
-    }
+    r.receiver = x;
     return sz;
   }
 

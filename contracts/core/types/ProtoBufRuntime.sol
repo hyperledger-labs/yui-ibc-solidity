@@ -936,6 +936,19 @@ library ProtoBufRuntime {
     return _sz_varint(_encode_zigzag(i));
   }
 
+  // Element counters for packed repeated fields
+  function _count_packed_repeated_varint(uint256 p, uint256 len, bytes memory bs) internal pure returns (uint256) {
+    uint256 count = 0;
+    uint256 end = p + len;
+    while (p < end) {
+      uint256 sz;
+      (, sz) = _decode_varint(p, bs);
+      p += sz;
+      count += 1;
+    }
+    return count;
+  }
+
   // Soltype extensions
   /**
    * @dev Decode Solidity integer and/or fixed-size bytes array, filling from lowest bit.
