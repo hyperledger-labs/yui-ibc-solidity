@@ -59,6 +59,20 @@ library ConnectionEnd {
   }
 
 
+  /**
+   * @dev The estimator for an packed enum array
+   * @return The number of bytes encoded
+   */
+  function estimate_packed_repeated_State(
+    State[] memory a
+  ) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += ProtoBufRuntime._sz_enum(encode_State(a[i]));
+    }
+    return e;
+  }
+
   //struct definition
   struct Data {
     string client_id;
@@ -130,20 +144,7 @@ library ConnectionEnd {
         pointer += _read_delay_period(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -160,20 +161,7 @@ library ConnectionEnd {
         pointer += _read_unpacked_repeated_versions(pointer, bs, r, counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
     }
     return (r, sz);
@@ -603,20 +591,7 @@ library Counterparty {
         pointer += _read_prefix(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -918,20 +893,7 @@ library MerklePrefix {
         pointer += _read_key_prefix(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -1158,20 +1120,7 @@ library Version {
         pointer += _read_unpacked_repeated_features(pointer, bs, nil(), counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -1188,20 +1137,7 @@ library Version {
         pointer += _read_unpacked_repeated_features(pointer, bs, r, counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
     }
     return (r, sz);

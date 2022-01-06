@@ -69,20 +69,7 @@ library IbcLightclientsIbft2V1ClientState {
         pointer += _read_latest_height(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -393,20 +380,7 @@ library IbcLightclientsIbft2V1ConsensusState {
         pointer += _read_unpacked_repeated_validators(pointer, bs, nil(), counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -423,20 +397,7 @@ library IbcLightclientsIbft2V1ConsensusState {
         pointer += _read_unpacked_repeated_validators(pointer, bs, r, counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
     }
     return (r, sz);
@@ -766,20 +727,7 @@ library IbcLightclientsIbft2V1Header {
         pointer += _read_account_state_proof(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -796,20 +744,7 @@ library IbcLightclientsIbft2V1Header {
         pointer += _read_unpacked_repeated_seals(pointer, bs, r, counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
     }
     return (r, sz);

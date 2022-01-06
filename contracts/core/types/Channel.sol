@@ -69,6 +69,20 @@ library Channel {
   }
 
 
+  /**
+   * @dev The estimator for an packed enum array
+   * @return The number of bytes encoded
+   */
+  function estimate_packed_repeated_State(
+    State[] memory a
+  ) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += ProtoBufRuntime._sz_enum(encode_State(a[i]));
+    }
+    return e;
+  }
+
   // Solidity enum definitions
   enum Order {
     ORDER_NONE_UNSPECIFIED,
@@ -112,6 +126,20 @@ library Channel {
     revert();
   }
 
+
+  /**
+   * @dev The estimator for an packed enum array
+   * @return The number of bytes encoded
+   */
+  function estimate_packed_repeated_Order(
+    Order[] memory a
+  ) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += ProtoBufRuntime._sz_enum(encode_Order(a[i]));
+    }
+    return e;
+  }
 
   //struct definition
   struct Data {
@@ -184,20 +212,7 @@ library Channel {
         pointer += _read_version(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -214,20 +229,7 @@ library Channel {
         pointer += _read_unpacked_repeated_connection_hops(pointer, bs, r, counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
     }
     return (r, sz);
@@ -632,20 +634,7 @@ library ChannelCounterparty {
         pointer += _read_channel_id(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -924,20 +913,7 @@ library ChannelIdentifiedChannel {
         pointer += _read_channel_id(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -954,20 +930,7 @@ library ChannelIdentifiedChannel {
         pointer += _read_unpacked_repeated_connection_hops(pointer, bs, r, counters);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
     }
     return (r, sz);
@@ -1460,20 +1423,7 @@ library Packet {
         pointer += _read_timeout_timestamp(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -1947,20 +1897,7 @@ library PacketState {
         pointer += _read_data(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }

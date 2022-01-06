@@ -64,20 +64,7 @@ library Height {
         pointer += _read_revision_height(pointer, bs, r);
       } else
       {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          pointer += 8;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          pointer += 4;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          (, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size + len;
-        }
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
