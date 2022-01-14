@@ -112,6 +112,10 @@ library ProtoBufRuntime {
    * @param len The length of bytes to copy
    */
   function copyBytes(uint256 src, uint256 dest, uint256 len) internal pure {
+    if (len == 0) {
+      return;
+    }
+
     // Copy word-length chunks while possible
     for (; len > WORD_LENGTH; len -= WORD_LENGTH) {
       assembly {
