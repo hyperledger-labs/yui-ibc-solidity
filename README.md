@@ -44,7 +44,7 @@ $ make e2e-test
 
 To develop this project, you need the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf) to generate encoders and decoders in solidity from proto files.
 
-Currently, you need to use [this version](https://github.com/datachainlab/solidity-protobuf/tree/59460caf6e591fe44a2c2b2d97dc54b854b66fe7).
+Currently, you need to use [this version](https://github.com/datachainlab/solidity-protobuf/tree/e2f13f13eba54da40ddd3f1e9264fc1b42e41a3b).
 
 ## Maintainers
 
