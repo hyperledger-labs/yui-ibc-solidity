@@ -49,7 +49,6 @@ library Height {
     returns (Data memory, uint)
   {
     Data memory r;
-    uint[3] memory counters;
     uint256 fieldId;
     ProtoBufRuntime.WireType wireType;
     uint256 bytesRead;
@@ -59,33 +58,13 @@ library Height {
       (fieldId, wireType, bytesRead) = ProtoBufRuntime._decode_key(pointer, bs);
       pointer += bytesRead;
       if (fieldId == 1) {
-        pointer += _read_revision_number(pointer, bs, r, counters);
-      }
-      else if (fieldId == 2) {
-        pointer += _read_revision_height(pointer, bs, r, counters);
-      }
-      
-      else {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed64(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed32(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_lendelim(pointer, bs);
-          pointer += size;
-        }
+        pointer += _read_revision_number(pointer, bs, r);
+      } else
+      if (fieldId == 2) {
+        pointer += _read_revision_height(pointer, bs, r);
+      } else
+      {
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -99,25 +78,15 @@ library Height {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_revision_number(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[3] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
-    if (isNil(r)) {
-      counters[1] += 1;
-    } else {
-      r.revision_number = x;
-      if (counters[1] > 0) counters[1] -= 1;
-    }
+    r.revision_number = x;
     return sz;
   }
 
@@ -126,25 +95,15 @@ library Height {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_revision_height(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[3] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
-    if (isNil(r)) {
-      counters[2] += 1;
-    } else {
-      r.revision_height = x;
-      if (counters[2] > 0) counters[2] -= 1;
-    }
+    r.revision_height = x;
     return sz;
   }
 

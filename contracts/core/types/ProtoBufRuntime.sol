@@ -112,6 +112,10 @@ library ProtoBufRuntime {
    * @param len The length of bytes to copy
    */
   function copyBytes(uint256 src, uint256 dest, uint256 len) internal pure {
+    if (len == 0) {
+      return;
+    }
+
     // Copy word-length chunks while possible
     for (; len > WORD_LENGTH; len -= WORD_LENGTH) {
       assembly {
@@ -561,6 +565,32 @@ library ProtoBufRuntime {
     return (b, sz + len);
   }
 
+  /**
+   * @dev Skip the decoding of a single field
+   * @param wt The WireType of the field
+   * @param p The memory offset of `bs`
+   * @param bs The bytes array to be decoded
+   * @return The length of `bs` to skipped
+   */
+  function _skip_field_decode(WireType wt, uint256 p, bytes memory bs)
+    internal
+    pure
+    returns (uint256)
+  {
+    if (wt == ProtoBufRuntime.WireType.Fixed64) {
+      return 8;
+    } else if (wt == ProtoBufRuntime.WireType.Fixed32) {
+      return 4;
+    } else if (wt == ProtoBufRuntime.WireType.Varint) {
+      (, uint256 size) = ProtoBufRuntime._decode_varint(p, bs);
+      return size;
+    } else {
+      require(wt == ProtoBufRuntime.WireType.LengthDelim);
+      (uint256 len, uint256 size) = ProtoBufRuntime._decode_varint(p, bs);
+      return size + len;
+    }
+  }
+
   // Encoders
   /**
    * @dev Encode ProtoBuf key
@@ -934,6 +964,70 @@ library ProtoBufRuntime {
 
   function _sz_sint64(int64 i) internal pure returns (uint256) {
     return _sz_varint(_encode_zigzag(i));
+  }
+
+  /**
+   * `_estimate_packed_repeated_(uint32|uint64|int32|int64|sint32|sint64)`
+   */
+  function _estimate_packed_repeated_uint32(uint32[] memory a) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += _sz_uint32(a[i]);
+    }
+    return e;
+  }
+
+  function _estimate_packed_repeated_uint64(uint64[] memory a) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += _sz_uint64(a[i]);
+    }
+    return e;
+  }
+
+  function _estimate_packed_repeated_int32(int32[] memory a) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += _sz_int32(a[i]);
+    }
+    return e;
+  }
+
+  function _estimate_packed_repeated_int64(int64[] memory a) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += _sz_int64(a[i]);
+    }
+    return e;
+  }
+
+  function _estimate_packed_repeated_sint32(int32[] memory a) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += _sz_sint32(a[i]);
+    }
+    return e;
+  }
+
+  function _estimate_packed_repeated_sint64(int64[] memory a) internal pure returns (uint256) {
+    uint256 e = 0;
+    for (uint i = 0; i < a.length; i++) {
+      e += _sz_sint64(a[i]);
+    }
+    return e;
+  }
+
+  // Element counters for packed repeated fields
+  function _count_packed_repeated_varint(uint256 p, uint256 len, bytes memory bs) internal pure returns (uint256) {
+    uint256 count = 0;
+    uint256 end = p + len;
+    while (p < end) {
+      uint256 sz;
+      (, sz) = _decode_varint(p, bs);
+      p += sz;
+      count += 1;
+    }
+    return count;
   }
 
   // Soltype extensions

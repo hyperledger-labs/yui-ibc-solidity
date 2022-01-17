@@ -49,7 +49,6 @@ library IbcLightclientsMockV1ClientState {
     returns (Data memory, uint)
   {
     Data memory r;
-    uint[2] memory counters;
     uint256 fieldId;
     ProtoBufRuntime.WireType wireType;
     uint256 bytesRead;
@@ -59,30 +58,10 @@ library IbcLightclientsMockV1ClientState {
       (fieldId, wireType, bytesRead) = ProtoBufRuntime._decode_key(pointer, bs);
       pointer += bytesRead;
       if (fieldId == 1) {
-        pointer += _read_latest_height(pointer, bs, r, counters);
-      }
-      
-      else {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed64(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed32(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_lendelim(pointer, bs);
-          pointer += size;
-        }
+        pointer += _read_latest_height(pointer, bs, r);
+      } else
+      {
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -96,25 +75,15 @@ library IbcLightclientsMockV1ClientState {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_latest_height(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[2] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (Height.Data memory x, uint256 sz) = _decode_Height(p, bs);
-    if (isNil(r)) {
-      counters[1] += 1;
-    } else {
-      r.latest_height = x;
-      if (counters[1] > 0) counters[1] -= 1;
-    }
+    r.latest_height = x;
     return sz;
   }
 
@@ -318,7 +287,6 @@ library IbcLightclientsMockV1ConsensusState {
     returns (Data memory, uint)
   {
     Data memory r;
-    uint[2] memory counters;
     uint256 fieldId;
     ProtoBufRuntime.WireType wireType;
     uint256 bytesRead;
@@ -328,30 +296,10 @@ library IbcLightclientsMockV1ConsensusState {
       (fieldId, wireType, bytesRead) = ProtoBufRuntime._decode_key(pointer, bs);
       pointer += bytesRead;
       if (fieldId == 1) {
-        pointer += _read_timestamp(pointer, bs, r, counters);
-      }
-      
-      else {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed64(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed32(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_lendelim(pointer, bs);
-          pointer += size;
-        }
+        pointer += _read_timestamp(pointer, bs, r);
+      } else
+      {
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -365,25 +313,15 @@ library IbcLightclientsMockV1ConsensusState {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_timestamp(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[2] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
-    if (isNil(r)) {
-      counters[1] += 1;
-    } else {
-      r.timestamp = x;
-      if (counters[1] > 0) counters[1] -= 1;
-    }
+    r.timestamp = x;
     return sz;
   }
 
@@ -572,7 +510,6 @@ library IbcLightclientsMockV1Header {
     returns (Data memory, uint)
   {
     Data memory r;
-    uint[3] memory counters;
     uint256 fieldId;
     ProtoBufRuntime.WireType wireType;
     uint256 bytesRead;
@@ -582,33 +519,13 @@ library IbcLightclientsMockV1Header {
       (fieldId, wireType, bytesRead) = ProtoBufRuntime._decode_key(pointer, bs);
       pointer += bytesRead;
       if (fieldId == 1) {
-        pointer += _read_height(pointer, bs, r, counters);
-      }
-      else if (fieldId == 2) {
-        pointer += _read_timestamp(pointer, bs, r, counters);
-      }
-      
-      else {
-        if (wireType == ProtoBufRuntime.WireType.Fixed64) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed64(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Fixed32) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_fixed32(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.Varint) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_varint(pointer, bs);
-          pointer += size;
-        }
-        if (wireType == ProtoBufRuntime.WireType.LengthDelim) {
-          uint256 size;
-          (, size) = ProtoBufRuntime._decode_lendelim(pointer, bs);
-          pointer += size;
-        }
+        pointer += _read_height(pointer, bs, r);
+      } else
+      if (fieldId == 2) {
+        pointer += _read_timestamp(pointer, bs, r);
+      } else
+      {
+        pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
       }
 
     }
@@ -622,25 +539,15 @@ library IbcLightclientsMockV1Header {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_height(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[3] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (Height.Data memory x, uint256 sz) = _decode_Height(p, bs);
-    if (isNil(r)) {
-      counters[1] += 1;
-    } else {
-      r.height = x;
-      if (counters[1] > 0) counters[1] -= 1;
-    }
+    r.height = x;
     return sz;
   }
 
@@ -649,25 +556,15 @@ library IbcLightclientsMockV1Header {
    * @param p The offset of bytes array to start decode
    * @param bs The bytes array to be decoded
    * @param r The in-memory struct
-   * @param counters The counters for repeated fields
    * @return The number of bytes decoded
    */
   function _read_timestamp(
     uint256 p,
     bytes memory bs,
-    Data memory r,
-    uint[3] memory counters
+    Data memory r
   ) internal pure returns (uint) {
-    /**
-     * if `r` is NULL, then only counting the number of fields.
-     */
     (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
-    if (isNil(r)) {
-      counters[2] += 1;
-    } else {
-      r.timestamp = x;
-      if (counters[2] > 0) counters[2] -= 1;
-    }
+    r.timestamp = x;
     return sz;
   }
 

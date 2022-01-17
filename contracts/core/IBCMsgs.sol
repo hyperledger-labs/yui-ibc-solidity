@@ -55,7 +55,7 @@ library IBCMsgs {
         bytes proofClient; // proof of client state on chainB for chainA
         bytes proofConsensus; // proof that chainB has stored ConsensusState of chainA on its client
         Height.Data proofHeight; // height that relayer constructed proofTry
-        uint64 consensusHeight; // latest height of chainA that chainB has stored on its chainA client
+        Height.Data consensusHeight; // latest height of chainA that chainB has stored on its chainA client
     }
 
     struct MsgConnectionOpenConfirm {
