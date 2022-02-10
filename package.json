@@ -13,6 +13,7 @@
     "truffle-contract-size": "^2.0.1"
   },
   "scripts": {
+    "postinstall": "truffle compile",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jun Kimura",
