@@ -5,7 +5,7 @@ import "./types/Client.sol";
 
 library IBCHeight {
     function toUint128(Height.Data memory self) internal pure returns (uint128) {
-        return uint128(self.revision_number) << 64 + uint128(self.revision_height);
+        return (uint128(self.revision_number) << 64) | uint128(self.revision_height);
     }
 
     function isZero(Height.Data memory self) internal pure returns (bool) {
