@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
@@ -57,6 +58,11 @@ func (suite ChainTestSuite) TestChannel() {
 	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.BesuIBFT2Client)
 	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+
+	beforeLatestHeight := chainA.GetIBFT2ClientState(clientA).LatestHeight
+	beforeConsensusState, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(*beforeLatestHeight))
+	suite.Require().NoError(err)
+	suite.Require().True(ok)
 
 	/// Tests for Transfer module ///
 
@@ -203,6 +209,15 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+
+	afterLatestHeight := chainA.GetIBFT2ClientState(clientA).LatestHeight
+	suite.Require().Equal(afterLatestHeight.RevisionNumber, beforeLatestHeight.RevisionNumber)
+	suite.Require().True(afterLatestHeight.RevisionHeight > beforeLatestHeight.RevisionHeight)
+
+	beforeConsensusState2, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(*beforeLatestHeight))
+	suite.Require().NoError(err)
+	suite.Require().True(ok)
+	suite.Require().Equal(beforeConsensusState, beforeConsensusState2)
 }
 
 func waitForDelayPeriod() {
