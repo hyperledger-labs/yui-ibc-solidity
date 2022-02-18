@@ -6,7 +6,7 @@ import "solidity-protobuf-extensions.proto";
 import "client/Client.proto";
 
 option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/mock";
-option (.solidity.file_options) = { dirpath: "contracts/core/types" };
+option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/core/types" };
 
 message ClientState {
   Height latest_height = 1;
