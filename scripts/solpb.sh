@@ -7,7 +7,7 @@ if [ -z "$SOLPB_DIR" ]; then
 fi
 
 GEN_DIR="$(pwd)/generated"
-mkdir $(pwd)/generated
+mkdir "$GEN_DIR"
 for file in $(find ./proto -name '*.proto')
 do
   echo "Generating "$file
