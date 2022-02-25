@@ -40,6 +40,10 @@ After launch the chains, execute the following command:
 $ make e2e-test
 ```
 
+## Tutorial
+
+Tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/).
+
 ## For Developers
 
 To develop this project, you need the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf) to generate encoders and decoders in solidity from proto files.
