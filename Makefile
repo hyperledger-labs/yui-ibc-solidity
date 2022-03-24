@@ -2,10 +2,6 @@ NETWORK ?= development
 TRUFFLE ?= npx truffle
 ABIGEN ?= abigen
 
-.PHONY: build
-build:
-	go build -o ./build/cmd/ibcsol ./cmd
-
 .PHONY: config
 config:
 	export CONF_TPL="./pkg/consts/contract.go:./scripts/template/contract.go.tpl" && $(TRUFFLE) exec ./scripts/confgen.js --network=$(NETWORK)
