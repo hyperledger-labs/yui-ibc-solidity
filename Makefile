@@ -38,6 +38,10 @@ test:
 setup:
 	./scripts/setup.sh development
 
+.PHONY: setup-e2e
+setup-e2e:
+	./scripts/setup.sh testtwochainz
+
 .PHONY: down
 down:
 	./scripts/setup.sh down
