@@ -7,7 +7,6 @@ import "./IBCChannel.sol";
 import "./IBCModule.sol";
 import "./IBCMsgs.sol";
 import "./IBCIdentifier.sol";
-import "./types/Channel.sol";
 
 contract IBCHandler {
 
