@@ -268,24 +268,6 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().Equal(beforeConsensusState, beforeConsensusState2)
 }
 
-func (suite *ChainTestSuite) tryUntil(until time.Time, f func() error) error {
-	err := f()
-	if err == nil {
-		return nil
-	}
-	for time.Now().Before(until) {
-		err = f()
-		if err == nil {
-			return nil
-		}
-	}
-	return err
-}
-
-func waitForDelayPeriod() {
-	time.Sleep(time.Duration(ibctesting.DefaultDelayPeriod) * time.Nanosecond)
-}
-
 func TestChainTestSuite(t *testing.T) {
 	suite.Run(t, new(ChainTestSuite))
 }
