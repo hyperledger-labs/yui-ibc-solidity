@@ -33,7 +33,7 @@ type HeightData struct {
 }
 
 // IbcidentifierABI is the input ABI used to generate the binding from.
-const IbcidentifierABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"consensusCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"consensusStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"}],\"name\":\"portCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true}]"
+const IbcidentifierABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"consensusCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetReceiptCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"nextSequenceRecvCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"consensusStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetReceiptCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"nextSequenceRecvCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"}],\"name\":\"portCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true}]"
 
 // Ibcidentifier is an auto generated Go binding around an Ethereum contract.
 type Ibcidentifier struct {
@@ -456,6 +456,68 @@ func (_Ibcidentifier *IbcidentifierCallerSession) ConsensusStateCommitmentSlot(c
 	return _Ibcidentifier.Contract.ConsensusStateCommitmentSlot(&_Ibcidentifier.CallOpts, clientId, height)
 }
 
+// NextSequenceRecvCommitmentKey is a free data retrieval call binding the contract method 0xfceb03ab.
+//
+// Solidity: function nextSequenceRecvCommitmentKey(string portId, string channelId) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCaller) NextSequenceRecvCommitmentKey(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
+	var out []interface{}
+	err := _Ibcidentifier.contract.Call(opts, &out, "nextSequenceRecvCommitmentKey", portId, channelId)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// NextSequenceRecvCommitmentKey is a free data retrieval call binding the contract method 0xfceb03ab.
+//
+// Solidity: function nextSequenceRecvCommitmentKey(string portId, string channelId) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierSession) NextSequenceRecvCommitmentKey(portId string, channelId string) ([32]byte, error) {
+	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId)
+}
+
+// NextSequenceRecvCommitmentKey is a free data retrieval call binding the contract method 0xfceb03ab.
+//
+// Solidity: function nextSequenceRecvCommitmentKey(string portId, string channelId) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCallerSession) NextSequenceRecvCommitmentKey(portId string, channelId string) ([32]byte, error) {
+	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId)
+}
+
+// NextSequenceRecvCommitmentSlot is a free data retrieval call binding the contract method 0x5370d4d3.
+//
+// Solidity: function nextSequenceRecvCommitmentSlot(string portId, string channelId) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCaller) NextSequenceRecvCommitmentSlot(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
+	var out []interface{}
+	err := _Ibcidentifier.contract.Call(opts, &out, "nextSequenceRecvCommitmentSlot", portId, channelId)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// NextSequenceRecvCommitmentSlot is a free data retrieval call binding the contract method 0x5370d4d3.
+//
+// Solidity: function nextSequenceRecvCommitmentSlot(string portId, string channelId) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierSession) NextSequenceRecvCommitmentSlot(portId string, channelId string) ([32]byte, error) {
+	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId)
+}
+
+// NextSequenceRecvCommitmentSlot is a free data retrieval call binding the contract method 0x5370d4d3.
+//
+// Solidity: function nextSequenceRecvCommitmentSlot(string portId, string channelId) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCallerSession) NextSequenceRecvCommitmentSlot(portId string, channelId string) ([32]byte, error) {
+	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId)
+}
+
 // PacketAcknowledgementCommitmentKey is a free data retrieval call binding the contract method 0xe334f11b.
 //
 // Solidity: function packetAcknowledgementCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
@@ -578,6 +640,68 @@ func (_Ibcidentifier *IbcidentifierSession) PacketCommitmentSlot(portId string, 
 // Solidity: function packetCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
 func (_Ibcidentifier *IbcidentifierCallerSession) PacketCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
 	return _Ibcidentifier.Contract.PacketCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
+}
+
+// PacketReceiptCommitmentKey is a free data retrieval call binding the contract method 0x83c28eac.
+//
+// Solidity: function packetReceiptCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCaller) PacketReceiptCommitmentKey(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
+	var out []interface{}
+	err := _Ibcidentifier.contract.Call(opts, &out, "packetReceiptCommitmentKey", portId, channelId, sequence)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// PacketReceiptCommitmentKey is a free data retrieval call binding the contract method 0x83c28eac.
+//
+// Solidity: function packetReceiptCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierSession) PacketReceiptCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
+	return _Ibcidentifier.Contract.PacketReceiptCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
+}
+
+// PacketReceiptCommitmentKey is a free data retrieval call binding the contract method 0x83c28eac.
+//
+// Solidity: function packetReceiptCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCallerSession) PacketReceiptCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
+	return _Ibcidentifier.Contract.PacketReceiptCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
+}
+
+// PacketReceiptCommitmentSlot is a free data retrieval call binding the contract method 0x24cf0804.
+//
+// Solidity: function packetReceiptCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCaller) PacketReceiptCommitmentSlot(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
+	var out []interface{}
+	err := _Ibcidentifier.contract.Call(opts, &out, "packetReceiptCommitmentSlot", portId, channelId, sequence)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
+}
+
+// PacketReceiptCommitmentSlot is a free data retrieval call binding the contract method 0x24cf0804.
+//
+// Solidity: function packetReceiptCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierSession) PacketReceiptCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
+	return _Ibcidentifier.Contract.PacketReceiptCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
+}
+
+// PacketReceiptCommitmentSlot is a free data retrieval call binding the contract method 0x24cf0804.
+//
+// Solidity: function packetReceiptCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
+func (_Ibcidentifier *IbcidentifierCallerSession) PacketReceiptCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
+	return _Ibcidentifier.Contract.PacketReceiptCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
 }
 
 // PortCapabilityPath is a free data retrieval call binding the contract method 0x2570dae0.
