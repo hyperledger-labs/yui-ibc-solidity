@@ -25,7 +25,7 @@ contract IBCHost {
     mapping (string => mapping(string => uint64)) nextSequenceSends;
     mapping (string => mapping(string => uint64)) nextSequenceRecvs;
     mapping (string => mapping(string => uint64)) nextSequenceAcks;
-    mapping (string => mapping(string => mapping(uint64 => bool))) packetReceipts;
+    mapping (string => mapping(string => mapping(uint64 => uint8))) packetReceipts;
     mapping (bytes => address[]) capabilities;
     uint64 nextClientSequence;
     uint64 nextConnectionSequence;
@@ -172,6 +172,7 @@ contract IBCHost {
     function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) external {
         onlyIBCModule();
         nextSequenceRecvs[portId][channelId] = sequence;
+        commitments[IBCIdentifier.nextSequenceRecvCommitmentKey(portId, channelId)] = keccak256(abi.encodePacked(sequence));
     }
 
     function getNextSequenceRecv(string calldata portId, string calldata channelId) external view returns (uint64) {
@@ -223,11 +224,12 @@ contract IBCHost {
 
     function setPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external {
         onlyIBCModule();
-        packetReceipts[portId][channelId][sequence] = true;
+        packetReceipts[portId][channelId][sequence] = 1;
+        commitments[IBCIdentifier.packetReceiptCommitmentKey(portId, channelId, sequence)] = keccak256(abi.encodePacked(uint8(1)));
     }
 
     function hasPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bool) {
-        return packetReceipts[portId][channelId][sequence];
+        return packetReceipts[portId][channelId][sequence] == 1;
     }
 
     function getExpectedTimePerBlock() external view returns (uint64) {
