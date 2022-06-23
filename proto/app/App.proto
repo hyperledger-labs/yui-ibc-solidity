@@ -14,7 +14,7 @@ message FungibleTokenPacketData {
     // the token amount to be transferred
     uint64 amount = 2;
     // the sender address
-    bytes sender = 3;
+    string sender = 3;
     // the recipient address on the destination chain
-    bytes receiver = 4;
+    string receiver = 4;
 }

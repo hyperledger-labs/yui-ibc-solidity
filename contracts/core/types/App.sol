@@ -10,8 +10,8 @@ library FungibleTokenPacketData {
   struct Data {
     string denom;
     uint64 amount;
-    bytes sender;
-    bytes receiver;
+    string sender;
+    string receiver;
   }
 
   // Decoder section
@@ -127,7 +127,7 @@ library FungibleTokenPacketData {
     bytes memory bs,
     Data memory r
   ) internal pure returns (uint) {
-    (bytes memory x, uint256 sz) = ProtoBufRuntime._decode_bytes(p, bs);
+    (string memory x, uint256 sz) = ProtoBufRuntime._decode_string(p, bs);
     r.sender = x;
     return sz;
   }
@@ -144,7 +144,7 @@ library FungibleTokenPacketData {
     bytes memory bs,
     Data memory r
   ) internal pure returns (uint) {
-    (bytes memory x, uint256 sz) = ProtoBufRuntime._decode_bytes(p, bs);
+    (string memory x, uint256 sz) = ProtoBufRuntime._decode_string(p, bs);
     r.receiver = x;
     return sz;
   }
@@ -200,23 +200,23 @@ library FungibleTokenPacketData {
     );
     pointer += ProtoBufRuntime._encode_uint64(r.amount, pointer, bs);
     }
-    if (r.sender.length != 0) {
+    if (bytes(r.sender).length != 0) {
     pointer += ProtoBufRuntime._encode_key(
       3,
       ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_bytes(r.sender, pointer, bs);
+    pointer += ProtoBufRuntime._encode_string(r.sender, pointer, bs);
     }
-    if (r.receiver.length != 0) {
+    if (bytes(r.receiver).length != 0) {
     pointer += ProtoBufRuntime._encode_key(
       4,
       ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_bytes(r.receiver, pointer, bs);
+    pointer += ProtoBufRuntime._encode_string(r.receiver, pointer, bs);
     }
     return pointer - offset;
   }
@@ -263,8 +263,8 @@ library FungibleTokenPacketData {
     uint256 e;
     e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.denom).length);
     e += 1 + ProtoBufRuntime._sz_uint64(r.amount);
-    e += 1 + ProtoBufRuntime._sz_lendelim(r.sender.length);
-    e += 1 + ProtoBufRuntime._sz_lendelim(r.receiver.length);
+    e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.sender).length);
+    e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.receiver).length);
     return e;
   }
   // empty checker
@@ -281,11 +281,11 @@ library FungibleTokenPacketData {
     return false;
   }
 
-  if (r.sender.length != 0) {
+  if (bytes(r.sender).length != 0) {
     return false;
   }
 
-  if (r.receiver.length != 0) {
+  if (bytes(r.receiver).length != 0) {
     return false;
   }
 

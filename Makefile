@@ -38,6 +38,10 @@ test:
 setup:
 	./scripts/setup.sh development
 
+.PHONY: solpb
+solpb:
+	./scripts/solpb.sh
+
 .PHONY: setup-e2e
 setup-e2e:
 	./scripts/setup.sh testtwochainz
@@ -57,7 +61,7 @@ else
 		-v $(SOLPB_DIR):/solpb \
 		-e SOLPB_DIR=/solpb \
 		--workdir /workspace \
-		tendermintdev/sdk-proto-gen \
+		tendermintdev/sdk-proto-gen:v0.3 \
 		sh ./scripts/protocgen.sh
 endif
 
