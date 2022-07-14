@@ -18,10 +18,10 @@ jobs:
     - name: Resolve dependencies
       run: npm install
     - name: Run tests
-      run: forge test -vvv --use solc:0.8.9
+      run: forge test -vvvv --use solc:0.8.9
 
   integration-test:
-    name: Intergration test
+    name: Integration test
     needs: contract-test
     runs-on: ubuntu-latest
     steps:
