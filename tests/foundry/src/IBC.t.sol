@@ -42,8 +42,8 @@ contract IBCTest is Test {
         handler.createClient(IBCMsgs.MsgCreateClient({
             clientType: mockClientType,
             height: Height.Data({revision_number: 0, revision_height: 1}),
-            clientStateBytes: wrapMockClientState(IbcLightclientsMockV1ClientState.Data({latest_height: Height.Data({revision_number: 0, revision_height: 1})})),
-            consensusStateBytes: wrapMockConsensusState(IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp)}))
+            clientStateBytes: wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data({latest_height: Height.Data({revision_number: 0, revision_height: 1})})),
+            consensusStateBytes: wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp)}))
         }));
     }
 
@@ -108,35 +108,18 @@ contract IBCTest is Test {
         assert(address(mockClient) == client);
     }
 
-    function testSendPacket() public {
-        Packet.Data memory packet = Packet.Data({
-            sequence: 1,
-            source_port: portId,
-            source_channel: "channel-0",
-            destination_port: portId,
-            destination_channel: "channel-0",
-            data: bytes("{\"amount\": \"100\"}"),
-            timeout_height: Height.Data({revision_number: 0, revision_height: 100}),
-            timeout_timestamp: 0
-        });
+    /* gas benchmarks */
+
+    function testBenchmarkSendPacket() public {
+        Packet.Data memory packet = getPacket();
         handler.sendPacket(packet);
     }
 
     event MockRecv(bool ok);
 
-    function testRecvPacket() public {
-        Packet.Data memory packet = Packet.Data({
-            sequence: 1,
-            source_port: portId,
-            source_channel: "channel-0",
-            destination_port: portId,
-            destination_channel: "channel-0",
-            data: bytes("{\"amount\": \"100\"}"),
-            timeout_height: Height.Data({revision_number: 0, revision_height: 100}),
-            timeout_timestamp: 0
-        });
-
-        vm.expectEmit(true, false, false, true);
+    function testBenchmarkRecvPacket() public {
+        Packet.Data memory packet = getPacket();
+        vm.expectEmit(false, false, false, true);
         emit MockRecv(true);
         handler.recvPacket(IBCMsgs.MsgPacketRecv({
             packet: packet,
@@ -147,14 +130,14 @@ contract IBCTest is Test {
 
     /* internal functions */
 
-    function wrapMockClientState(IbcLightclientsMockV1ClientState.Data memory clientState) internal returns (bytes memory) {
+    function wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data memory clientState) internal returns (bytes memory) {
         Any.Data memory anyClientState;
         anyClientState.type_url = "/ibc.lightclients.mock.v1.ClientState";
         anyClientState.value = IbcLightclientsMockV1ClientState.encode(clientState);
         return Any.encode(anyClientState);
     }
 
-    function wrapMockConsensusState(IbcLightclientsMockV1ConsensusState.Data memory consensusState) internal returns (bytes memory) {
+    function wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data memory consensusState) internal returns (bytes memory) {
         Any.Data memory anyConsensusState;
         anyConsensusState.type_url = "/ibc.lightclients.mock.v1.ConsensusState";
         anyConsensusState.value = IbcLightclientsMockV1ConsensusState.encode(consensusState);
