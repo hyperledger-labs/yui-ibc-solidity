@@ -49,6 +49,10 @@ contract IBCHost {
         ibcModule = ibcModule_;
     }
 
+    function getIBCModule() external view returns (address) {
+        return ibcModule;
+    }
+
     function onlyIBCModule() public view {
         require(msg.sender == ibcModule);
     }

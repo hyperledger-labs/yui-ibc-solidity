@@ -1,9 +1,28 @@
 name: Test
 on: [push, pull_request]
 jobs:
-
-  test:
+  contract-test:
     name: Test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: nightly
+    - name: Resolve dependencies
+      run: npm install
+    - name: Run tests
+      run: forge test -vvvv --use solc:0.8.9
+
+  integration-test:
+    name: Integration test
+    needs: contract-test
     runs-on: ubuntu-latest
     steps:
 
