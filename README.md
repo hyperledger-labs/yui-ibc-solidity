@@ -3,11 +3,11 @@
 ![Test](https://github.com/hyperledger-labs/yui-ibc-solidity/workflows/Test/badge.svg)
 [![GoDoc](https://godoc.org/github.com/hyperledger-labs/yui-ibc-solidity?status.svg)](https://pkg.go.dev/github.com/hyperledger-labs/yui-ibc-solidity?tab=doc)
 
-IBC implementations in solidity.
+[IBC](https://github.com/cosmos/ibc) implementations in solidity.
 
 This is available not only for Ethereum and Hyperledger Besu, but also for Binance Smart Chain and other blockchains that run smart contract in EVM.
 
-NOTE: This is yet pre-alpha non-production-quality software.
+NOTE: This is yet pre-beta non-production-quality software.
 
 ## Features
 
@@ -19,7 +19,14 @@ NOTE: This is yet pre-alpha non-production-quality software.
 
 Please see [here](./docs/README.md).
 
-## Getting started
+In addition, tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/).
+
+## Related projects
+
+- A demo of trustless bridge between Harmony and Cosmos(Tendermint): https://github.com/datachainlab/harmony-cosmos-bridge-demo
+- A demo of trustless bridge between Celo and Cosmos: https://github.com/ChorusOne/celo-cosmos-bridge
+
+## Testing
 
 Launch two Besu chains with IBC Contract deployed with the following command:
 
@@ -32,17 +39,11 @@ An example of E2E working can be found here:
 - https://github.com/hyperledger-labs/yui-relayer/tree/main/tests/cases/tm2eth
 - https://github.com/hyperledger-labs/yui-relayer/blob/main/.github/workflows/test.yml
 
-## Example and Testing
-
 After launch the chains, execute the following command:
 
 ```
 $ make e2e-test
 ```
-
-## Tutorial
-
-Tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/).
 
 ## For Developers
 
