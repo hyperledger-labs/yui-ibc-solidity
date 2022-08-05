@@ -11,7 +11,7 @@ require (
 	github.com/datachainlab/solidity-protobuf/protobuf-solidity/src/protoc/go v0.0.0-20211215073805-59460caf6e59
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/gogo/protobuf v1.3.3
-	github.com/hyperledger-labs/yui-relayer v0.2.0-rc0
+	github.com/hyperledger-labs/yui-relayer v0.2.0-rc1
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef
@@ -36,7 +36,7 @@ require (
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/cosmos/ledger-go v0.9.2 // indirect
 	github.com/danieljoos/wincred v1.0.2 // indirect
-	github.com/datachainlab/ibc-mock-client v0.0.0-20220113022533-5baf3f100d16 // indirect
+	github.com/datachainlab/ibc-mock-client v0.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
