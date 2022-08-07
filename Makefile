@@ -2,9 +2,9 @@ NETWORK ?= development
 TRUFFLE ?= npx truffle
 ABIGEN ?= abigen
 
-.PHONY: rly
-rly:
-	go build -o build/rly ./relayer
+.PHONY: yrly
+yrly:
+	go build -o build/yrly ./relayer
 
 .PHONY: config
 config:
@@ -61,7 +61,7 @@ else
 		-v $(SOLPB_DIR):/solpb \
 		-e SOLPB_DIR=/solpb \
 		--workdir /workspace \
-		tendermintdev/sdk-proto-gen \
+		tendermintdev/sdk-proto-gen:v0.3 \
 		sh ./scripts/protocgen.sh
 endif
 
