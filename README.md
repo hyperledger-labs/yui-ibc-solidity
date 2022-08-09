@@ -3,23 +3,32 @@
 ![Test](https://github.com/hyperledger-labs/yui-ibc-solidity/workflows/Test/badge.svg)
 [![GoDoc](https://godoc.org/github.com/hyperledger-labs/yui-ibc-solidity?status.svg)](https://pkg.go.dev/github.com/hyperledger-labs/yui-ibc-solidity?tab=doc)
 
-[IBC](https://github.com/cosmos/ibc) implementations in solidity.
+[IBC](https://github.com/cosmos/ibc) implementations in Solidity.
 
-This is available not only for Ethereum and Hyperledger Besu, but also for Binance Smart Chain and other blockchains that run smart contract in EVM.
+This is available not only for Ethereum and Hyperledger Besu, but also for Polygon PoS and other blockchains that supports EVM.
 
 NOTE: This is yet pre-beta non-production-quality software.
 
 ## Features
 
 - Implementation of [ICS](https://github.com/cosmos/ibc/tree/master/spec/core)
-- Implementation of [ICS-20](https://github.com/cosmos/ibc/tree/master/spec/app/ics-020-fungible-token-transfer) that can integrate with ERC20 token
-- [IBFT 2.0 Light Client](./docs/ibft2-light-client.md)
+- Implementation of [ICS-20](https://github.com/cosmos/ibc/tree/master/spec/app/ics-020-fungible-token-transfer)
+- [ERC-20 Token Transfer](./contracts/app/ICS20TransferBank.sol)
 
 ## Documents
 
 Please see [here](./docs/README.md).
 
-In addition, tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/).
+In addition, a tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/).
+
+## Supported Light Client
+
+You can deploy a Light Client that implements [the IClient interface](./contracts/core/IClient.sol) to [integrate with IBC-Solidity](./docs/architecture.md#ibcclient).
+
+Here are some such examples:
+- [IBFT 2.0 Light Client](./contracts/core/IBFT2Client.sol)
+- [Tendermint Light Client](https://github.com/datachainlab/tendermint-sol/tree/use-ibc-sol-hmy)
+- [Mock Client](./contracts/core/MockClient.sol)
 
 ## Related projects
 
@@ -28,14 +37,14 @@ In addition, tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-so
 
 ## Testing
 
-Launch two Besu chains with IBC Contract deployed with the following command:
+Launch two Besu chains(ethereum-compatible) with the contracts deployed with the following command:
 
 ```sh
 # If NO_GEN_CODE is empty, setup-script will generate a proto3 marshaler in solidity
 $ NO_GEN_CODE=1 ./scripts/setup.sh testtwochainz
 ```
 
-An example of E2E working can be found here:
+An example of E2E with IBC-Relayer can be found here:
 - https://github.com/hyperledger-labs/yui-relayer/tree/main/tests/cases/tm2eth
 - https://github.com/hyperledger-labs/yui-relayer/blob/main/.github/workflows/test.yml
 
