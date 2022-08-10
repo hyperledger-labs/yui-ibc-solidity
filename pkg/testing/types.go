@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
+	commitmenttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment"
 	connectiontypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection"
 )
 
@@ -40,10 +41,10 @@ func connectionEndToPB(conn ibchost.ConnectionEndData) *connectiontypes.Connecti
 		Versions:    []*connectiontypes.Version{},
 		State:       connectiontypes.ConnectionEnd_State(conn.State),
 		DelayPeriod: conn.DelayPeriod,
-		Counterparty: &connectiontypes.Counterparty{
+		Counterparty: connectiontypes.Counterparty{
 			ClientId:     conn.Counterparty.ClientId,
 			ConnectionId: conn.Counterparty.ConnectionId,
-			Prefix:       (*connectiontypes.MerklePrefix)(&conn.Counterparty.Prefix),
+			Prefix:       commitmenttypes.MerklePrefix(conn.Counterparty.Prefix),
 		},
 	}
 	for _, v := range conn.Versions {
