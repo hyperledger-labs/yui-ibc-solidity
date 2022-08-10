@@ -96,27 +96,27 @@ func GetPrvKeyFromHDWallet(seed []byte, hp *HDPathLevel) (*ecdsa.PrivateKey, err
 		return nil, err
 	}
 	// This gives the path: m/{purpose}'
-	acc, err := masterKey.Child(hdkeychain.HardenedKeyStart + hp.Purpose)
+	acc, err := masterKey.Derive(hdkeychain.HardenedKeyStart + hp.Purpose)
 	if err != nil {
 		return nil, err
 	}
 	// This gives the path: m/{purpose}'/{coin_type}'
-	acc, err = acc.Child(hdkeychain.HardenedKeyStart + hp.CoinType)
+	acc, err = acc.Derive(hdkeychain.HardenedKeyStart + hp.CoinType)
 	if err != nil {
 		return nil, err
 	}
 	// This gives the path: m/{purpose}'/{coin_type}'/{account}'
-	acc, err = acc.Child(hdkeychain.HardenedKeyStart + hp.Account)
+	acc, err = acc.Derive(hdkeychain.HardenedKeyStart + hp.Account)
 	if err != nil {
 		return nil, err
 	}
 	// This gives the path: m/{purpose}'/{coin_type}'/{account}'/{change}
-	acc, err = acc.Child(0 + hp.Change)
+	acc, err = acc.Derive(0 + hp.Change)
 	if err != nil {
 		return nil, err
 	}
 	// This gives the path: m/{purpose}'/{coin_type}'/{account}'/{change}/{index}
-	acc, err = acc.Child(hp.Index)
+	acc, err = acc.Derive(hp.Index)
 	if err != nil {
 		return nil, err
 	}
