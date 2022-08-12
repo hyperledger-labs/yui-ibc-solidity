@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -31,6 +30,7 @@ import (
 	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
 	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/ibft2"
 	mockclienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/mock"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
 )
 
@@ -656,7 +656,7 @@ func (chain *Chain) HandlePacketRecv(
 	ch, counterpartyCh TestChannel,
 	packet channeltypes.Packet,
 ) error {
-	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence), nil)
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, commitment.PacketCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence), nil)
 	if err != nil {
 		return err
 	}
@@ -683,7 +683,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	packet channeltypes.Packet,
 	acknowledgement []byte,
 ) error {
-	proof, err := counterparty.QueryProof(chain, ch.ClientID, chain.PacketAcknowledgementCommitmentSlot(packet.DestinationPort, packet.DestinationChannel, packet.Sequence), nil)
+	proof, err := counterparty.QueryProof(chain, ch.ClientID, commitment.PacketAcknowledgementCommitmentSlot(packet.DestinationPort, packet.DestinationChannel, packet.Sequence), nil)
 	if err != nil {
 		return err
 	}
@@ -827,38 +827,6 @@ func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
 	}
 }
 
-// Slot calculator
-
-func (chain *Chain) ClientStateCommitmentSlot(clientID string) string {
-	key, err := chain.IBCIdentifier.ClientStateCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), clientID)
-	require.NoError(chain.t, err)
-	return "0x" + hex.EncodeToString(key[:])
-}
-
-func (chain *Chain) ConnectionStateCommitmentSlot(connectionID string) string {
-	key, err := chain.IBCIdentifier.ConnectionCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), connectionID)
-	require.NoError(chain.t, err)
-	return "0x" + hex.EncodeToString(key[:])
-}
-
-func (chain *Chain) ChannelStateCommitmentSlot(portID, channelID string) string {
-	key, err := chain.IBCIdentifier.ChannelCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), portID, channelID)
-	require.NoError(chain.t, err)
-	return "0x" + hex.EncodeToString(key[:])
-}
-
-func (chain *Chain) PacketCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.IBCIdentifier.PacketCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), portID, channelID, sequence)
-	require.NoError(chain.t, err)
-	return "0x" + hex.EncodeToString(key[:])
-}
-
-func (chain *Chain) PacketAcknowledgementCommitmentSlot(portID, channelID string, sequence uint64) string {
-	key, err := chain.IBCIdentifier.PacketAcknowledgementCommitmentSlot(chain.CallOpts(context.Background(), RelayerKeyIndex), portID, channelID, sequence)
-	require.NoError(chain.t, err)
-	return "0x" + hex.EncodeToString(key[:])
-}
-
 // Querier
 
 type Proof struct {
@@ -890,7 +858,7 @@ func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID s
 	} else if !found {
 		return nil, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
 	}
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ClientStateCommitmentSlot(counterpartyClientID), height)
+	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ClientStateCommitmentSlot(counterpartyClientID), height)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -903,7 +871,7 @@ func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID s
 }
 
 func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string, height *big.Int) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ConnectionStateCommitmentSlot(counterpartyConnectionID), height)
+	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ConnectionStateCommitmentSlot(counterpartyConnectionID), height)
 	if err != nil {
 		return nil, err
 	}
@@ -929,7 +897,7 @@ func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClient
 }
 
 func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID string, channel TestChannel, height *big.Int) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, chain.ChannelStateCommitmentSlot(channel.PortID, channel.ID), height)
+	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ChannelStateCommitmentSlot(channel.PortID, channel.ID), height)
 	if err != nil {
 		return nil, err
 	}

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./types/Client.sol";
-
 library IBCIdentifier {
 
     // Constant values
@@ -15,8 +13,8 @@ library IBCIdentifier {
         return keccak256(abi.encodePacked("clients/", clientId, "/clientState"));
     }
 
-    function consensusCommitmentKey(string memory clientId, Height.Data memory height) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked("clients/", clientId, "/consensusStates/", uint2str(height.revision_number), "-", uint2str(height.revision_height)));
+    function consensusCommitmentKey(string memory clientId, uint64 revisionNumber, uint64 revisionHeight) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked("clients/", clientId, "/consensusStates/", uint2str(revisionNumber), "-", uint2str(revisionHeight)));
     }
 
     function connectionCommitmentKey(string memory connectionId) public pure returns (bytes32) {
@@ -49,8 +47,8 @@ library IBCIdentifier {
         return keccak256(abi.encodePacked(clientCommitmentKey(clientId), commitmentSlot));
     }
 
-    function consensusStateCommitmentSlot(string calldata clientId, Height.Data calldata height) external pure returns (bytes32) {
-        return keccak256(abi.encodePacked(consensusCommitmentKey(clientId, height), commitmentSlot));
+    function consensusStateCommitmentSlot(string calldata clientId, uint64 revisionNumber, uint64 revisionHeight) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(consensusCommitmentKey(clientId, revisionNumber, revisionHeight), commitmentSlot));
     }
 
     function connectionCommitmentSlot(string calldata connectionId) external pure returns (bytes32) {
