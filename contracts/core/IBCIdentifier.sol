@@ -2,55 +2,45 @@
 pragma solidity ^0.8.9;
 
 import "./types/Client.sol";
-import "./IBCHeight.sol";
 
 library IBCIdentifier {
-    using IBCHeight for Height.Data;
 
-    // constant values
+    // Constant values
 
     uint256 constant commitmentSlot = 0;
-    uint8 constant clientPrefix = 0;
-    uint8 constant consensusStatePrefix = 1;
-    uint8 constant connectionPrefix = 2;
-    uint8 constant channelPrefix = 3;
-    uint8 constant packetPrefix = 4;
-    uint8 constant packetAckPrefix = 5;
-    uint8 constant packetReceiptPrefix = 6;
-    uint8 constant nextSequenceRecvPrefix = 7;
 
     // Commitment key generator
 
     function clientCommitmentKey(string memory clientId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(clientPrefix, clientId));
+        return keccak256(abi.encodePacked("clients/", clientId, "/clientState"));
     }
 
     function consensusCommitmentKey(string memory clientId, Height.Data memory height) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(consensusStatePrefix, clientId, "/", height.toUint128()));
+        return keccak256(abi.encodePacked("clients/", clientId, "/consensusStates/", uint2str(height.revision_number), "-", uint2str(height.revision_height)));
     }
 
     function connectionCommitmentKey(string memory connectionId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(connectionPrefix, connectionId));
+        return keccak256(abi.encodePacked("connections/", connectionId));
     }
 
     function channelCommitmentKey(string memory portId, string memory channelId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(channelPrefix, portId, "/", channelId));
+        return keccak256(abi.encodePacked("channelEnds/ports/", portId, "/channels/", channelId));
     }
 
     function packetCommitmentKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(packetPrefix, portId, "/", channelId, "/", sequence));
+        return keccak256(abi.encodePacked("commitments/ports/", portId, "/channels/", channelId, "/sequences/", uint2str(sequence)));
     }
 
     function packetAcknowledgementCommitmentKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(packetAckPrefix, portId, "/", channelId, "/", sequence));
+        return keccak256(abi.encodePacked("acks/ports/", portId, "/channels/", channelId, "/sequences/", uint2str(sequence)));
     }
 
     function packetReceiptCommitmentKey(string memory portId, string memory channelId, uint64 sequence) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(packetReceiptPrefix, portId, "/", channelId, "/", sequence));
+        return keccak256(abi.encodePacked("receipts/ports/", portId, "/channels/", channelId, "/sequences/", uint2str(sequence)));
     }
 
     function nextSequenceRecvCommitmentKey(string memory portId, string memory channelId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(nextSequenceRecvPrefix, portId, "/", channelId));
+        return keccak256(abi.encodePacked("nextSequenceRecv/ports/", portId, "/channels/", channelId));
     }
 
     // Slot calculator
@@ -95,5 +85,29 @@ library IBCIdentifier {
 
     function channelCapabilityPath(string calldata portId, string calldata channelId) external pure returns (bytes memory) {
         return abi.encodePacked(portId, "/", channelId);
+    }
+
+    // Utility functions
+
+    function uint2str(uint64 _i) internal pure returns (string memory _uintAsString) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint64 j = _i;
+        uint64 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint64 k = len;
+        while (_i != 0) {
+            k = k-1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
 }
