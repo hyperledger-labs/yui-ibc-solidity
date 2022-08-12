@@ -282,7 +282,7 @@ contract IBFT2Client is IClient {
         if (!found) {
             return false;
         }
-        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.consensusStateCommitmentSlot(counterpartyClientIdentifier, consensusHeight), keccak256(consensusStateBytes));
+        return verifyMembership(proof, consensusState.root.toBytes32(), prefix, IBCIdentifier.consensusStateCommitmentSlot(counterpartyClientIdentifier, consensusHeight.revision_number, consensusHeight.revision_height), keccak256(consensusStateBytes));
     }
 
     function verifyConnectionState(

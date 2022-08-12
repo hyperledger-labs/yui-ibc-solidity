@@ -101,7 +101,7 @@ contract IBCHost {
     function setConsensusState(string calldata clientId, Height.Data calldata height, bytes calldata consensusStateBytes) external {
         onlyIBCModule();
         consensusStates[clientId][height.toUint128()] = consensusStateBytes;
-        commitments[IBCIdentifier.consensusCommitmentKey(clientId, height)] = keccak256(consensusStateBytes);
+        commitments[IBCIdentifier.consensusCommitmentKey(clientId, height.revision_number, height.revision_height)] = keccak256(consensusStateBytes);
     }
 
     function getConsensusState(string calldata clientId, Height.Data calldata height) external view returns (bytes memory, bool) {
