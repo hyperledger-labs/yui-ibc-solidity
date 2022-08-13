@@ -1,4 +1,4 @@
-package relay
+package ethereum
 
 import (
 	connectiontypes "github.com/cosmos/ibc-go/v4/modules/core/03-connection/types"

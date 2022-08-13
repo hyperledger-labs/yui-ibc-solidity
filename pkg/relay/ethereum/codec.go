@@ -1,4 +1,4 @@
-package relay
+package ethereum
 
 import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
