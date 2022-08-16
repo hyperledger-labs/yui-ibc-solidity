@@ -34,15 +34,14 @@ type ChainTestSuite struct {
 }
 
 func (suite *ChainTestSuite) SetupTest() {
-	chainClientA, err := client.NewBesuClient("http://127.0.0.1:8645", clienttypes.BesuIBFT2Client)
+	clientA, err := client.NewETHClient("http://127.0.0.1:8645")
 	suite.Require().NoError(err)
-
-	chainClientB, err := client.NewBesuClient("http://127.0.0.1:8745", clienttypes.BesuIBFT2Client)
+	clientB, err := client.NewETHClient("http://127.0.0.1:8745")
 	suite.Require().NoError(err)
 
 	ibcID := uint64(time.Now().UnixNano())
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, *chainClientA, testchain0.Contract, mnemonicPhrase, ibcID)
-	suite.chainB = ibctesting.NewChain(suite.T(), 3018, *chainClientB, testchain1.Contract, mnemonicPhrase, ibcID)
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client), testchain0.Contract, mnemonicPhrase, ibcID)
+	suite.chainB = ibctesting.NewChain(suite.T(), 3018, clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client), testchain1.Contract, mnemonicPhrase, ibcID)
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 

@@ -106,6 +106,12 @@ func (c *Chain) Codec() codec.ProtoCodecMarshaler {
 	return c.codec
 }
 
+// TODO use e2e test codebase instead
+// Client returns the RPC client for ethereum
+func (c *Chain) Client() *ethclient.Client {
+	return c.client
+}
+
 // SetRelayInfo sets source's path and counterparty's info to the chain
 func (c *Chain) SetRelayInfo(p *core.PathEnd, _ *core.ProvableChain, _ *core.PathEnd) error {
 	if err := p.Validate(); err != nil {

@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
+	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
@@ -70,7 +71,7 @@ type Chain struct {
 	t *testing.T
 
 	// Core Modules
-	client        client.Client
+	client        *client.ETHClient
 	IBCHandler    ibchandler.Ibchandler
 	IBCHost       ibchost.Ibchost
 	IBCIdentifier ibcidentifier.Ibcidentifier
@@ -81,6 +82,7 @@ type Chain struct {
 	ICS20Bank     ics20bank.Ics20bank
 
 	chainID int64
+	lc      *LightClient
 
 	ContractConfig ContractConfig
 
@@ -88,7 +90,7 @@ type Chain struct {
 	keys           map[uint32]*ecdsa.PrivateKey
 
 	// State
-	LastContractState client.ContractState
+	LastLCState LightClientState
 
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
@@ -108,7 +110,7 @@ type ContractConfig interface {
 	GetICS20BankAddress() common.Address
 }
 
-func NewChain(t *testing.T, chainID int64, client client.Client, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
+func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightClient, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
 	ibcHost, err := ibchost.NewIbchost(config.GetIBCHostAddress(), client)
 	if err != nil {
 		t.Error(err)
@@ -138,6 +140,7 @@ func NewChain(t *testing.T, chainID int64, client client.Client, config Contract
 		t:              t,
 		client:         client,
 		chainID:        chainID,
+		lc:             lc,
 		ContractConfig: config,
 		mnemonicPhrase: mnemonicPhrase,
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
@@ -152,16 +155,16 @@ func NewChain(t *testing.T, chainID int64, client client.Client, config Contract
 	}
 }
 
-func (chain *Chain) Client() client.Client {
+func (chain *Chain) Client() *client.ETHClient {
 	return chain.client
 }
 
 func (chain *Chain) ClientType() string {
-	return chain.client.ClientType()
+	return chain.lc.ClientType()
 }
 
 func (chain *Chain) TxOpts(ctx context.Context, index uint32) *bind.TransactOpts {
-	return client.MakeGenTxOpts(big.NewInt(chain.chainID), chain.prvKey(index))(ctx)
+	return makeGenTxOpts(big.NewInt(chain.chainID), chain.prvKey(index))(ctx)
 }
 
 func (chain *Chain) CallOpts(ctx context.Context, index uint32) *bind.CallOpts {
@@ -227,7 +230,7 @@ func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientS
 	return &cs
 }
 
-func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (client.ContractState, error) {
+func (chain *Chain) GetLightClientState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (LightClientState, error) {
 	if height == nil {
 		switch counterparty.ClientType() {
 		case ibcclient.MockClient:
@@ -238,7 +241,7 @@ func (chain *Chain) GetContractState(counterparty *Chain, counterpartyClientID s
 			return nil, fmt.Errorf("unknown client type: '%v'", counterparty.ClientType())
 		}
 	}
-	return chain.client.GetContractState(
+	return chain.lc.GetState(
 		context.Background(),
 		chain.ContractConfig.GetIBCHostAddress(),
 		storageKeys,
@@ -278,7 +281,7 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 	consensusState := ibft2clienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Time,
 		Root:       counterparty.LastHeader().Root.Bytes(),
-		Validators: counterparty.LastContractState.(client.IBFT2ContractState).Validators(),
+		Validators: counterparty.LastLCState.(IBFT2State).Validators(),
 	}
 	clientStateBytes, err := MarshalWithAny(&clientState)
 	if err != nil {
@@ -297,7 +300,7 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 }
 
 func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
-	cs := counterparty.LastContractState.(client.ETHContractState)
+	cs := counterparty.LastLCState.(ETHState)
 	header := mockclienttypes.Header{
 		Height:    ibcclient.NewHeightFromBN(cs.Header().Number),
 		Timestamp: cs.Header().Time,
@@ -314,12 +317,12 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 
 func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
 	trustedHeight := chain.GetIBFT2ClientState(clientID).LatestHeight
-	cs := counterparty.LastContractState.(client.IBFT2ContractState)
+	cs := counterparty.LastLCState.(IBFT2State)
 	var header = ibft2clienttypes.Header{
 		BesuHeaderRlp:     cs.SealingHeaderRLP(),
 		Seals:             cs.CommitSeals,
 		TrustedHeight:     trustedHeight,
-		AccountStateProof: cs.ETHProof().AccountProofRLP,
+		AccountStateProof: cs.Proof().AccountProofRLP,
 	}
 	bz, err := MarshalWithAny(&header)
 	if err != nil {
@@ -335,12 +338,12 @@ func (chain *Chain) UpdateHeader() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		state, err := chain.client.GetContractState(ctx, chain.ContractConfig.GetIBCHostAddress(), nil, nil)
+		state, err := chain.lc.GetState(ctx, chain.ContractConfig.GetIBCHostAddress(), nil, nil)
 		if err != nil {
 			panic(err)
 		}
-		if chain.LastContractState == nil || state.Header().Number.Cmp(chain.LastHeader().Number) == 1 {
-			chain.LastContractState = state
+		if chain.LastLCState == nil || state.Header().Number.Cmp(chain.LastHeader().Number) == 1 {
+			chain.LastLCState = state
 			return
 		} else {
 			continue
@@ -838,13 +841,13 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	if !strings.HasPrefix(storageKey, "0x") {
 		return nil, fmt.Errorf("storageKey must be hex string")
 	}
-	s, err := chain.GetContractState(counterparty, counterpartyClientID, [][]byte{[]byte(storageKey)}, height)
+	s, err := chain.GetLightClientState(counterparty, counterpartyClientID, [][]byte{[]byte(storageKey)}, height)
 	if err != nil {
 		return nil, err
 	}
 	return &Proof{
 		Height: ibcclient.NewHeightFromBN(s.Header().Number),
-		Data:   s.ETHProof().StorageProofRLP[0],
+		Data:   s.Proof().StorageProofRLP[0],
 	}, nil
 }
 
@@ -923,7 +926,7 @@ func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID 
 }
 
 func (chain *Chain) LastHeader() *gethtypes.Header {
-	return chain.LastContractState.Header()
+	return chain.LastLCState.Header()
 }
 
 func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) error {
@@ -931,10 +934,10 @@ func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tran
 	if err != nil {
 		return err
 	}
-	if rc.Status() == 1 {
+	if rc.Status == 1 {
 		return nil
 	} else {
-		return fmt.Errorf("failed to call transaction: err='%v' rc='%v' reason='%v'", err, rc, rc.RevertReason())
+		return fmt.Errorf("failed to call transaction: err='%v' rc='%v'", err, rc)
 	}
 }
 
@@ -991,5 +994,26 @@ func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestCha
 		ClientID:             conn.ClientID,
 		CounterpartyClientID: conn.CounterpartyClientID,
 		Version:              conn.NextChannelVersion,
+	}
+}
+
+func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Context) *bind.TransactOpts {
+	signer := gethtypes.NewEIP155Signer(chainID)
+	addr := gethcrypto.PubkeyToAddress(prv.PublicKey)
+	return func(ctx context.Context) *bind.TransactOpts {
+		return &bind.TransactOpts{
+			From:     addr,
+			GasLimit: 6382056,
+			Signer: func(address common.Address, tx *gethtypes.Transaction) (*gethtypes.Transaction, error) {
+				if address != addr {
+					return nil, errors.New("not authorized to sign this account")
+				}
+				signature, err := gethcrypto.Sign(signer.Hash(tx).Bytes(), prv)
+				if err != nil {
+					return nil, err
+				}
+				return tx.WithSignature(signer, signature)
+			},
+		}
 	}
 }
