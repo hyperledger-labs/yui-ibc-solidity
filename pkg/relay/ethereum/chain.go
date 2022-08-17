@@ -15,8 +15,8 @@ import (
 	chantypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	committypes "github.com/cosmos/ibc-go/v4/modules/core/23-commitment/types"
 	"github.com/cosmos/ibc-go/v4/modules/core/exported"
-	"github.com/ethereum/go-ethereum/ethclient"
 
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
@@ -33,7 +33,7 @@ type Chain struct {
 	msgEventListener core.MsgEventListener
 
 	relayerPrvKey *ecdsa.PrivateKey
-	client        *ethclient.Client
+	client        *client.ETHClient
 	ibcHost       *ibchost.Ibchost
 	ibcHandler    *ibchandler.Ibchandler
 }
@@ -42,7 +42,7 @@ var _ core.ChainI = (*Chain)(nil)
 
 func NewChain(config ChainConfig) (*Chain, error) {
 	id := big.NewInt(config.EthChainId)
-	client, err := NewETHClient(config.RpcAddr)
+	client, err := client.NewETHClient(config.RpcAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -106,9 +106,8 @@ func (c *Chain) Codec() codec.ProtoCodecMarshaler {
 	return c.codec
 }
 
-// TODO use e2e test codebase instead
 // Client returns the RPC client for ethereum
-func (c *Chain) Client() *ethclient.Client {
+func (c *Chain) Client() *client.ETHClient {
 	return c.client
 }
 

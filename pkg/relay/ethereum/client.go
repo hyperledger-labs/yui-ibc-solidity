@@ -9,17 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 )
-
-func NewETHClient(endpoint string) (*ethclient.Client, error) {
-	conn, err := rpc.DialHTTP(endpoint)
-	if err != nil {
-		return nil, err
-	}
-	return ethclient.NewClient(conn), nil
-}
 
 func (chain *Chain) CallOpts(ctx context.Context, height int64) *bind.CallOpts {
 	opts := &bind.CallOpts{

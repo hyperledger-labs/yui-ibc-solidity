@@ -9,7 +9,6 @@ import (
 	"github.com/avast/retry-go"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -31,30 +30,39 @@ func NewETHClient(endpoint string) (*ETHClient, error) {
 	}, nil
 }
 
-func (cl *ETHClient) GetTransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error) {
+func (cl *ETHClient) GetTransactionReceipt(ctx context.Context, txHash common.Hash) (rc *gethtypes.Receipt, recoverable bool, err error) {
 	var r *Receipt
-	err := cl.rpcClient.CallContext(ctx, &r, "eth_getTransactionReceipt", txHash)
-	if err == nil {
-		if r == nil {
-			return nil, ethereum.NotFound
-		} else if len(r.RevertReason_) > 0 {
-			return nil, fmt.Errorf("revert: %v", r.RevertReason())
-		}
+	if err := cl.rpcClient.CallContext(ctx, &r, "eth_getTransactionReceipt", txHash); err != nil {
+		return &r.Receipt, true, err
 	}
-	return &r.Receipt, err
+	if r == nil {
+		return nil, true, ethereum.NotFound
+	} else if r.Status == gethtypes.ReceiptStatusSuccessful {
+		return &r.Receipt, false, nil
+	} else if r.HasRevertReason() {
+		reason, err := r.GetRevertReason()
+		return &r.Receipt, false, fmt.Errorf("revert: %v(parse-err=%v)", reason, err)
+	} else {
+		return &r.Receipt, false, fmt.Errorf("failed to execute a transaction: %v", r)
+	}
 }
 
-func (cl *ETHClient) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) (*types.Receipt, error) {
-	var receipt *types.Receipt
+func (cl *ETHClient) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) (*gethtypes.Receipt, error) {
+	var receipt *gethtypes.Receipt
 	err := retry.Do(
 		func() error {
-			rc, err := cl.GetTransactionReceipt(ctx, tx.Hash())
+			rc, recoverable, err := cl.GetTransactionReceipt(ctx, tx.Hash())
 			if err != nil {
-				return err
+				if recoverable {
+					return err
+				} else {
+					return retry.Unrecoverable(err)
+				}
 			}
 			receipt = rc
 			return nil
 		},
+		// TODO make these configurable
 		retry.Delay(1*time.Second),
 		retry.Attempts(10),
 	)
@@ -65,16 +73,16 @@ func (cl *ETHClient) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tra
 }
 
 type Receipt struct {
-	types.Receipt
-	RevertReason_ []byte `json:"revertReason,omitempty"`
+	gethtypes.Receipt
+	RevertReason []byte `json:"revertReason,omitempty"`
 }
 
-func (rc Receipt) RevertReason() string {
-	reason, err := parseRevertReason(rc.RevertReason_)
-	if err != nil {
-		panic(err)
-	}
-	return reason
+func (rc Receipt) HasRevertReason() bool {
+	return len(rc.RevertReason) > 0
+}
+
+func (rc Receipt) GetRevertReason() (string, error) {
+	return parseRevertReason(rc.RevertReason)
 }
 
 // A format of revertReason is:
