@@ -41,6 +41,9 @@ jobs:
     - name: Test
       run: go test -v ./pkg/...
 
+    - name: Build Relayer
+      run: make yrly
+
     - name: Resolve dependencies
       run: npm install
 

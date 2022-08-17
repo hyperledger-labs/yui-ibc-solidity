@@ -1,0 +1,20 @@
+syntax = "proto3";
+package relayer.chains.ethereum.config;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/relay";
+option (gogoproto.goproto_getters_all) = false;
+
+message ChainConfig {
+  string chain_id = 1;
+  int64  eth_chain_id = 2;
+  string rpc_addr = 3;
+
+  // use for relayer
+  string hdw_mnemonic = 4;
+  string hdw_path = 5;
+
+  string ibc_host_address = 6;
+  string ibc_handler_address = 7;
+}

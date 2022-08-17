@@ -2,6 +2,10 @@ NETWORK ?= development
 TRUFFLE ?= npx truffle
 ABIGEN ?= abigen
 
+.PHONY: yrly
+yrly:
+	go build -o build/yrly ./relayer
+
 .PHONY: config
 config:
 	export CONF_TPL="./pkg/consts/contract.go:./scripts/template/contract.go.tpl" && $(TRUFFLE) exec ./scripts/confgen.js --network=$(NETWORK)
@@ -57,7 +61,7 @@ else
 		-v $(SOLPB_DIR):/solpb \
 		-e SOLPB_DIR=/solpb \
 		--workdir /workspace \
-		tendermintdev/sdk-proto-gen \
+		tendermintdev/sdk-proto-gen:v0.3 \
 		sh ./scripts/protocgen.sh
 endif
 
