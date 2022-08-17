@@ -22,15 +22,12 @@ func TestRevertReasonParser(t *testing.T) {
 	require.Equal(t, "", s)
 
 	// 3. Invalid format
-	s, err = parseRevertReason([]byte{0})
+	_, err = parseRevertReason([]byte{0})
 	require.Error(t, err)
 }
 
 func hexToBytes(s string) []byte {
-	if strings.HasPrefix(s, "0x") {
-		s = s[2:]
-	}
-	reason, err := hex.DecodeString(s)
+	reason, err := hex.DecodeString(strings.TrimPrefix(s, "0x"))
 	if err != nil {
 		panic(err)
 	}

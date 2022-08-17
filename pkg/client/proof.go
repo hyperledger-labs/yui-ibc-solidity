@@ -66,11 +66,11 @@ func encodeRLP(proof []string) ([]byte, error) {
 	for _, p := range proof {
 		bz, err := hex.DecodeString(p[2:])
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		var val [][]byte
 		if err := rlp.DecodeBytes(bz, &val); err != nil {
-			panic(err)
+			return nil, err
 		}
 		target = append(target, val)
 	}
