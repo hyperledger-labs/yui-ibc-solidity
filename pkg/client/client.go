@@ -17,16 +17,43 @@ import (
 type ETHClient struct {
 	*ethclient.Client
 	rpcClient *rpc.Client
+	option    option
 }
 
-func NewETHClient(endpoint string) (*ETHClient, error) {
+type Option func(*option)
+
+type option struct {
+	retryOpts []retry.Option
+}
+
+func DefaultOption() *option {
+	return &option{
+		retryOpts: []retry.Option{
+			retry.Delay(1 * time.Second),
+			retry.Attempts(10),
+		},
+	}
+}
+
+func WithRetryOption(rops ...retry.Option) Option {
+	return func(opt *option) {
+		opt.retryOpts = rops
+	}
+}
+
+func NewETHClient(endpoint string, opts ...Option) (*ETHClient, error) {
 	rpcClient, err := rpc.DialHTTP(endpoint)
 	if err != nil {
 		return nil, err
 	}
+	opt := DefaultOption()
+	for _, o := range opts {
+		o(opt)
+	}
 	return &ETHClient{
 		rpcClient: rpcClient,
 		Client:    ethclient.NewClient(rpcClient),
+		option:    *opt,
 	}, nil
 }
 
@@ -62,9 +89,7 @@ func (cl *ETHClient) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tra
 			receipt = rc
 			return nil
 		},
-		// TODO make these configurable
-		retry.Delay(1*time.Second),
-		retry.Attempts(10),
+		cl.option.retryOpts...,
 	)
 	if err != nil {
 		return nil, err

@@ -37,7 +37,7 @@ func (cl ETHClient) GetStateProof(address common.Address, storageKeys [][]byte, 
 	for _, p := range proof.StorageProof {
 		bz, err := encodeRLP(p.Proof)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		encodedProof.StorageProofRLP = append(encodedProof.StorageProofRLP, bz)
 	}
