@@ -67,7 +67,7 @@ func (suite ChainTestSuite) TestChannel() {
 	var delayStartTimeForAck time.Time
 
 	beforeLatestHeight := chainA.GetIBFT2ClientState(clientA).LatestHeight
-	beforeConsensusState, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(*beforeLatestHeight))
+	beforeConsensusState, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(beforeLatestHeight))
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 
@@ -261,7 +261,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().Equal(afterLatestHeight.RevisionNumber, beforeLatestHeight.RevisionNumber)
 	suite.Require().True(afterLatestHeight.RevisionHeight > beforeLatestHeight.RevisionHeight)
 
-	beforeConsensusState2, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(*beforeLatestHeight))
+	beforeConsensusState2, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(beforeLatestHeight))
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(beforeConsensusState, beforeConsensusState2)

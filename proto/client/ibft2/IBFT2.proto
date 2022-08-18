@@ -2,16 +2,18 @@ syntax = "proto3";
 
 package ibc.lightclients.ibft2.v1;
 
+import "gogoproto/gogo.proto";
 import "solidity-protobuf-extensions.proto";
 import "client/Client.proto";
 
 option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/ibft2";
+option (gogoproto.goproto_getters_all)  = false;
 option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/core/types" };
 
 message ClientState {
   string chain_id = 1;
   bytes ibc_store_address = 2;
-  Height latest_height = 3;
+  Height latest_height = 3 [(gogoproto.nullable) = false];
 }
 
 message ConsensusState {
@@ -23,6 +25,6 @@ message ConsensusState {
 message Header {
   bytes besu_header_rlp = 1;
   repeated bytes seals = 2;
-  Height trusted_height = 3;
+  Height trusted_height = 3 [(gogoproto.nullable) = false];
   bytes account_state_proof = 4;
 }

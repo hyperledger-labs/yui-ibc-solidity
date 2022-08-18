@@ -833,7 +833,7 @@ func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
 // Querier
 
 type Proof struct {
-	Height *ibcclient.Height
+	Height ibcclient.Height
 	Data   []byte
 }
 

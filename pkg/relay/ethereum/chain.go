@@ -69,6 +69,11 @@ func NewChain(config ChainConfig) (*Chain, error) {
 	}, nil
 }
 
+// Config returns ChainConfig
+func (c *Chain) Config() ChainConfig {
+	return c.config
+}
+
 // Init ...
 func (c *Chain) Init(homePath string, timeout time.Duration, codec codec.ProtoCodecMarshaler, debug bool) error {
 	c.homePath = homePath
