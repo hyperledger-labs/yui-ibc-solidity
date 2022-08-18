@@ -1,0 +1,9 @@
+syntax = "proto3";
+package relayer.provers.ibft2.config;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/relay/ibft2";
+option (gogoproto.goproto_getters_all) = false;
+
+message ProverConfig {}
