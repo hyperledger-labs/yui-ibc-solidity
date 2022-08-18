@@ -3,7 +3,7 @@ package relayer.chains.ethereum.config;
 
 import "gogoproto/gogo.proto";
 
-option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/relay";
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/relay/ethereum";
 option (gogoproto.goproto_getters_all) = false;
 
 message ChainConfig {

@@ -1,12 +1,9 @@
-package relay
+package ethereum
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"time"
 
-	"github.com/avast/retry-go"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	conntypes "github.com/cosmos/ibc-go/v4/modules/core/03-connection/types"
@@ -61,7 +58,7 @@ func (c *Chain) SendMsgs(msgs []sdk.Msg) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := c.TxSync(ctx, tx); err != nil {
+		if _, err := c.client.WaitForReceiptAndGet(ctx, tx); err != nil {
 			return nil, err
 		}
 		if c.msgEventListener != nil {
@@ -267,38 +264,4 @@ func (c *Chain) TxAcknowledgement(opts *bind.TransactOpts, msg *chantypes.MsgAck
 		Proof:           msg.ProofAcked,
 		ProofHeight:     pbToHandlerHeight(msg.ProofHeight),
 	})
-}
-
-func (chain *Chain) TxSync(ctx context.Context, tx *gethtypes.Transaction) error {
-	var receipt *gethtypes.Receipt
-	err := retry.Do(
-		func() error {
-			rc, err := chain.client.TransactionReceipt(ctx, tx.Hash())
-			if err != nil {
-				return err
-			}
-			receipt = rc
-			return nil
-		},
-		// TODO make these configurable
-		retry.Delay(1*time.Second),
-		retry.Attempts(10),
-	)
-	if err != nil {
-		return err
-	}
-	if receipt.Status == gethtypes.ReceiptStatusSuccessful {
-		return nil
-	} else {
-		return fmt.Errorf("failed to call transaction: err='%v' rc='%v'", err, receipt)
-	}
-}
-
-func (chain *Chain) TxSyncIfNoError(ctx context.Context) func(tx *gethtypes.Transaction, err error) error {
-	return func(tx *gethtypes.Transaction, err error) error {
-		if err != nil {
-			return err
-		}
-		return chain.TxSync(ctx, tx)
-	}
 }

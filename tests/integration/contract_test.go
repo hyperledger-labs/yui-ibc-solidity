@@ -35,18 +35,19 @@ type ContractTestSuite struct {
 }
 
 func (suite *ContractTestSuite) SetupTest() {
-	chainClient, err := client.NewETHClient("http://127.0.0.1:8545", clienttypes.MockClient)
+	ethClient, err := client.NewETHClient("http://127.0.0.1:8545")
 	suite.Require().NoError(err)
 
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
-	suite.chainB = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.chainB = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
 func (suite *ContractTestSuite) TestIBCCompatibility() {
 	suite.T().Run("commitment path", func(t *testing.T) {
 		const (
-			testClientID     = "tendermint-0"
+			testClientID = "tendermint-0"
+
 			testConnectionID = "connection-0"
 			testPortID       = "port-0"
 			testChannelID    = "channel-0"

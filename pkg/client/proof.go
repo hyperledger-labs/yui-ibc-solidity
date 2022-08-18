@@ -9,12 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
-type ETHProof struct {
+type StateProof struct {
 	AccountProofRLP []byte
 	StorageProofRLP [][]byte
 }
 
-func (cl Client) GetETHProof(address common.Address, storageKeys [][]byte, blockNumber *big.Int) (*ETHProof, error) {
+func (cl ETHClient) GetStateProof(address common.Address, storageKeys [][]byte, blockNumber *big.Int) (*StateProof, error) {
 	bz, err := cl.getProof(address, storageKeys, "0x"+blockNumber.Text(16))
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (cl Client) GetETHProof(address common.Address, storageKeys [][]byte, block
 		return nil, err
 	}
 
-	var encodedProof ETHProof
+	var encodedProof StateProof
 	encodedProof.AccountProofRLP, err = encodeRLP(proof.AccountProof)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (cl Client) GetETHProof(address common.Address, storageKeys [][]byte, block
 	for _, p := range proof.StorageProof {
 		bz, err := encodeRLP(p.Proof)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		encodedProof.StorageProofRLP = append(encodedProof.StorageProofRLP, bz)
 	}
@@ -45,7 +45,7 @@ func (cl Client) GetETHProof(address common.Address, storageKeys [][]byte, block
 	return &encodedProof, nil
 }
 
-func (cl Client) getProof(address common.Address, storageKeys [][]byte, blockNumber string) ([]byte, error) {
+func (cl ETHClient) getProof(address common.Address, storageKeys [][]byte, blockNumber string) ([]byte, error) {
 	hashes := []common.Hash{}
 	for _, k := range storageKeys {
 		var h common.Hash
@@ -55,7 +55,7 @@ func (cl Client) getProof(address common.Address, storageKeys [][]byte, blockNum
 		hashes = append(hashes, h)
 	}
 	var msg json.RawMessage
-	if err := cl.conn.Call(&msg, "eth_getProof", address, hashes, blockNumber); err != nil {
+	if err := cl.rpcClient.Call(&msg, "eth_getProof", address, hashes, blockNumber); err != nil {
 		return nil, err
 	}
 	return msg, nil
@@ -66,11 +66,11 @@ func encodeRLP(proof []string) ([]byte, error) {
 	for _, p := range proof {
 		bz, err := hex.DecodeString(p[2:])
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		var val [][]byte
 		if err := rlp.DecodeBytes(bz, &val); err != nil {
-			panic(err)
+			return nil, err
 		}
 		target = append(target, val)
 	}
