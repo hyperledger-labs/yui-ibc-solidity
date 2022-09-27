@@ -14,8 +14,8 @@ const (
 	MockClient = "mock-client"
 )
 
-func NewHeightFromBN(n *big.Int) *Height {
-	return &Height{
+func NewHeightFromBN(n *big.Int) Height {
+	return Height{
 		RevisionNumber: 0,
 		RevisionHeight: n.Uint64(),
 	}

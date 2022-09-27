@@ -17,7 +17,7 @@ type Coordinator struct {
 
 func NewCoordinator(t *testing.T, chains ...*Chain) Coordinator {
 	for _, chain := range chains {
-		// initialize LastContractState of chain
+		// initialize LastLCState of chain
 		chain.UpdateHeader()
 	}
 	return Coordinator{t: t, chains: chains}

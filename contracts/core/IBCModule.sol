@@ -11,6 +11,6 @@ interface IModuleCallbacks {
     function onChanCloseInit(string calldata portId, string calldata channelId) external;
     function onChanCloseConfirm(string calldata portId, string calldata channelId) external;
 
-    function onRecvPacket(Packet.Data calldata) external returns(bytes memory);
-    function onAcknowledgementPacket(Packet.Data calldata, bytes calldata acknowledgement) external;
+    function onRecvPacket(Packet.Data calldata, address relayer) external returns(bytes memory);
+    function onAcknowledgementPacket(Packet.Data calldata, bytes calldata acknowledgement, address relayer) external;
 }

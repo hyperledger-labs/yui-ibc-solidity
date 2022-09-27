@@ -2,18 +2,22 @@ package tests
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
 	"testing"
 	"time"
 
+	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/consts"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,12 +35,62 @@ type ContractTestSuite struct {
 }
 
 func (suite *ContractTestSuite) SetupTest() {
-	chainClient, err := client.NewETHClient("http://127.0.0.1:8545", clienttypes.MockClient)
+	ethClient, err := client.NewETHClient("http://127.0.0.1:8545")
 	suite.Require().NoError(err)
 
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
-	suite.chainB = ibctesting.NewChain(suite.T(), 2018, *chainClient, consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.chainB = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), consts.Contract, mnemonicPhrase, uint64(time.Now().UnixNano()))
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
+}
+
+func (suite *ContractTestSuite) TestIBCCompatibility() {
+	suite.T().Run("commitment path", func(t *testing.T) {
+		const (
+			testClientID = "tendermint-0"
+
+			testConnectionID = "connection-0"
+			testPortID       = "port-0"
+			testChannelID    = "channel-0"
+		)
+		require := require.New(t)
+		ctx := context.Background()
+
+		// clientState
+		c, err := suite.chainA.IBCIdentifier.ClientStateCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID)
+		require.NoError(err)
+		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ClientStateCommitmentSlot(testClientID))
+
+		// consensusState
+		var cases = []uint64{0, 1, 10, 100}
+		for _, n := range cases {
+			for _, h := range cases {
+				testHeight := ibcclienttypes.NewHeight(n, h)
+				c, err = suite.chainA.IBCIdentifier.ConsensusStateCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID, testHeight.RevisionNumber, testHeight.RevisionHeight)
+				require.NoError(err)
+				require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ConsensusStateCommitmentSlot(testClientID, testHeight))
+			}
+		}
+		// connectionState
+		c, err = suite.chainA.IBCIdentifier.ConnectionCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testConnectionID)
+		require.NoError(err)
+		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ConnectionStateCommitmentSlot(testConnectionID))
+
+		// channelState
+		c, err = suite.chainA.IBCIdentifier.ChannelCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
+		require.NoError(err)
+		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ChannelStateCommitmentSlot(testPortID, testChannelID))
+
+		// packetState
+		var testSequence uint64 = 1
+		c, err = suite.chainA.IBCIdentifier.PacketCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		require.NoError(err)
+		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.PacketCommitmentSlot(testPortID, testChannelID, testSequence))
+
+		// acknowledgementState
+		c, err = suite.chainA.IBCIdentifier.PacketAcknowledgementCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		require.NoError(err)
+		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.PacketAcknowledgementCommitmentSlot(testPortID, testChannelID, testSequence))
+	})
 }
 
 func (suite *ContractTestSuite) TestChannel() {

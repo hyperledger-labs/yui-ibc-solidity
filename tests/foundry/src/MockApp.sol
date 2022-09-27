@@ -15,11 +15,11 @@ contract MockApp is IModuleCallbacks {
 
     /// Module callbacks ///
 
-    function onRecvPacket(Packet.Data calldata) external virtual override returns (bytes memory) {
+    function onRecvPacket(Packet.Data calldata, address relayer) external virtual override returns (bytes memory) {
         emit MockRecv(true);
     }
 
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external virtual override {}
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address relayer) external virtual override {}
 
     function onChanOpenInit(Channel.Order, string[] calldata, string calldata, string calldata channelId, ChannelCounterparty.Data calldata, string calldata) external virtual override {}
 

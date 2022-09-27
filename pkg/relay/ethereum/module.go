@@ -1,8 +1,7 @@
-package module
+package ethereum
 
 import (
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/relay"
 	"github.com/hyperledger-labs/yui-relayer/config"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +17,7 @@ func (Module) Name() string {
 
 // RegisterInterfaces register the module interfaces to protobuf Any.
 func (Module) RegisterInterfaces(registry codectypes.InterfaceRegistry) {
-	relay.RegisterInterfaces(registry)
+	RegisterInterfaces(registry)
 }
 
 // GetCmd returns the command

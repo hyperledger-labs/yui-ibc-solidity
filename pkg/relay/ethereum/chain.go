@@ -1,4 +1,4 @@
-package relay
+package ethereum
 
 import (
 	"context"
@@ -9,15 +9,14 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	transfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
-	clienttypes "github.com/cosmos/ibc-go/modules/core/02-client/types"
-	conntypes "github.com/cosmos/ibc-go/modules/core/03-connection/types"
-	chantypes "github.com/cosmos/ibc-go/modules/core/04-channel/types"
-	committypes "github.com/cosmos/ibc-go/modules/core/23-commitment/types"
-	"github.com/cosmos/ibc-go/modules/core/exported"
-	ibcexported "github.com/cosmos/ibc-go/modules/core/exported"
-	"github.com/ethereum/go-ethereum/ethclient"
+	transfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
+	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	conntypes "github.com/cosmos/ibc-go/v4/modules/core/03-connection/types"
+	chantypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
+	committypes "github.com/cosmos/ibc-go/v4/modules/core/23-commitment/types"
+	"github.com/cosmos/ibc-go/v4/modules/core/exported"
 
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
@@ -34,7 +33,7 @@ type Chain struct {
 	msgEventListener core.MsgEventListener
 
 	relayerPrvKey *ecdsa.PrivateKey
-	client        *ethclient.Client
+	client        *client.ETHClient
 	ibcHost       *ibchost.Ibchost
 	ibcHandler    *ibchandler.Ibchandler
 }
@@ -43,7 +42,7 @@ var _ core.ChainI = (*Chain)(nil)
 
 func NewChain(config ChainConfig) (*Chain, error) {
 	id := big.NewInt(config.EthChainId)
-	client, err := NewETHClient(config.RpcAddr)
+	client, err := client.NewETHClient(config.RpcAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +67,11 @@ func NewChain(config ChainConfig) (*Chain, error) {
 		ibcHost:    ibcHost,
 		ibcHandler: ibcHandler,
 	}, nil
+}
+
+// Config returns ChainConfig
+func (c *Chain) Config() ChainConfig {
+	return c.config
 }
 
 // Init ...
@@ -107,6 +111,11 @@ func (c *Chain) Codec() codec.ProtoCodecMarshaler {
 	return c.codec
 }
 
+// Client returns the RPC client for ethereum
+func (c *Chain) Client() *client.ETHClient {
+	return c.client
+}
+
 // SetRelayInfo sets source's path and counterparty's info to the chain
 func (c *Chain) SetRelayInfo(p *core.PathEnd, _ *core.ProvableChain, _ *core.PathEnd) error {
 	if err := p.Validate(); err != nil {
@@ -131,7 +140,7 @@ func (c *Chain) RegisterMsgEventListener(listener core.MsgEventListener) {
 }
 
 // QueryClientConsensusState retrevies the latest consensus state for a client in state at a given height
-func (c *Chain) QueryClientConsensusState(height int64, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
+func (c *Chain) QueryClientConsensusState(height int64, dstClientConsHeight exported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
 	s, found, err := c.ibcHost.GetConsensusState(c.CallOpts(context.Background(), height), c.pathEnd.ClientID, pbToHostHeight(dstClientConsHeight))
 	if err != nil {
 		return nil, err
