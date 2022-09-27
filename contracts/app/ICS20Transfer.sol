@@ -54,7 +54,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
 
     /// Module callbacks ///
 
-    function onRecvPacket(Packet.Data calldata packet) external virtual override returns (bytes memory acknowledgement) {
+    function onRecvPacket(Packet.Data calldata packet, address relayer) external virtual override returns (bytes memory acknowledgement) {
         FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
         strings.slice memory denom = data.denom.toSlice();
         strings.slice memory trimedDenom = data.denom.toSlice().beyond(
@@ -72,7 +72,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         }
     }
 
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement) external virtual override {
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address relayer) external virtual override {
         if (!_isSuccessAcknowledgement(acknowledgement)) {
             _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
         }
