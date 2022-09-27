@@ -47,9 +47,6 @@ jobs:
     - name: Resolve dependencies
       run: npm install
 
-    - name: apply the patch
-      run: sed -i -e 's/20000,/200000,/' ./node_modules/@trufflesuite/web3-provider-engine/subproviders/rpc.js
-
     - name: Setup ganache-cli
       run: NO_GEN_CODE=1 ./scripts/setup.sh development
 
