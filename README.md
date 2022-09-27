@@ -5,7 +5,9 @@
 
 [IBC](https://github.com/cosmos/ibc) implementations in Solidity.
 
-This is available not only for Ethereum and Hyperledger Besu, but also for Polygon PoS and other blockchains that supports EVM.
+**IBC compatibility:** [v4.0.0](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0)
+
+This is available not only for Ethereum and Hyperledger Besu, but also for Polygon PoS and other blockchains that supports EVM-compatible.
 
 NOTE: This is yet pre-beta non-production-quality software.
 
