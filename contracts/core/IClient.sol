@@ -25,7 +25,7 @@ interface IClient {
         string calldata clientId, 
         bytes calldata clientStateBytes,
         bytes calldata headerBytes
-    ) external view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height);
+    ) external returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height);
 
     function verifyClientState(
         IBCHost host,

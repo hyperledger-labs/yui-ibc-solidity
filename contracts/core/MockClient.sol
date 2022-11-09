@@ -20,23 +20,9 @@ contract MockClient is IClient {
     using Bytes for bytes;
     using IBCHeight for Height.Data;
 
-    struct protoTypes {
-        bytes32 clientState;
-        bytes32 consensusState;
-        bytes32 header;
-    }
-
-    protoTypes pts;
-
-    constructor() {
-        // TODO The typeUrl should be defined in types/MockClient.sol
-        // The schema of typeUrl follows cosmos/cosmos-sdk/codec/types/any.go
-        pts = protoTypes({
-            clientState: keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ClientState")),
-            consensusState: keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState")),
-            header: keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.Header"))
-        });
-    }
+    bytes32 private constant headerTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.Header"));
+    bytes32 private constant clientStateTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ClientState"));
+    bytes32 private constant consensusStateTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState"));
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
@@ -72,13 +58,13 @@ contract MockClient is IClient {
         string memory,
         bytes memory clientStateBytes,
         bytes memory headerBytes
-    ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
+    ) public override pure returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
         uint64 timestamp;
         Any.Data memory anyClientState;
         Any.Data memory anyConsensusState;
 
         anyClientState = Any.decode(clientStateBytes);
-        require(keccak256(abi.encodePacked(anyClientState.type_url)) == pts.clientState, "invalid client type");
+        require(keccak256(abi.encodePacked(anyClientState.type_url)) == clientStateTypeUrlHash, "invalid client type");
         ClientState.Data memory clientState = ClientState.decode(anyClientState.value);
         (height, timestamp) = parseHeader(headerBytes);
         if (height.gt(clientState.latest_height)) {
@@ -203,9 +189,9 @@ contract MockClient is IClient {
         return (ConsensusState.decode(Any.decode(consensusStateBytes).value), true);
     }
 
-    function parseHeader(bytes memory headerBytes) internal view returns (Height.Data memory, uint64) {
+    function parseHeader(bytes memory headerBytes) internal pure returns (Height.Data memory, uint64) {
         Any.Data memory any = Any.decode(headerBytes);
-        require(keccak256(abi.encodePacked(any.type_url)) == pts.header, "invalid header type");
+        require(keccak256(abi.encodePacked(any.type_url)) == headerTypeUrlHash, "invalid header type");
         Header.Data memory header = Header.decode(any.value);
         return (header.height, header.timestamp);
     }
