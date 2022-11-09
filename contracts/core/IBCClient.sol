@@ -36,7 +36,7 @@ library IBCClient {
         (clientStateBytes, found) = host.getClientState(msg_.clientId);
         require(found, "clientState not found");
 
-        (clientStateBytes, consensusStateBytes, height) = getClient(host, msg_.clientId).checkHeaderAndUpdateState(host, msg_.clientId, clientStateBytes, msg_.header);
+        (clientStateBytes, consensusStateBytes, height) = checkHeaderAndUpdateState(host, msg_.clientId, clientStateBytes, msg_.header);
     
         //// persist states ////
         host.setClientState(msg_.clientId, clientStateBytes);
@@ -68,5 +68,131 @@ library IBCClient {
             return (clientImpl, false);
         }
         return (IClient(addr), true);
+    }
+
+    function checkHeaderAndUpdateState(
+        IBCHost host,
+        string memory clientId,
+        bytes memory clientStateBytes,
+        bytes memory headerBytes
+    ) public returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.checkHeaderAndUpdateState.selector,
+                host, clientId, clientStateBytes, headerBytes));
+        assert(success);
+        return abi.decode(res, (bytes, bytes, Height.Data));
+    }
+
+    function verifyClientState(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        bytes memory prefix,
+        string memory counterpartyClientIdentifier,
+        bytes memory proof,
+        bytes memory clientStateBytes
+    ) public returns (bool) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.verifyClientState.selector,
+                host, clientId, height, prefix, counterpartyClientIdentifier, proof, clientStateBytes));
+        assert(success);
+        return abi.decode(res, (bool));
+    }
+
+    function verifyClientConsensusState(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        string memory counterpartyClientIdentifier,
+        Height.Data memory consensusHeight,
+        bytes memory prefix,
+        bytes memory proof,
+        bytes memory consensusStateBytes
+    ) public returns (bool) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.verifyClientConsensusState.selector,
+                host, clientId, height, counterpartyClientIdentifier, consensusHeight, prefix, proof, consensusStateBytes));
+        assert(success);
+        return abi.decode(res, (bool));
+    }
+
+    function verifyConnectionState(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        bytes calldata prefix,
+        bytes memory proof,
+        string memory connectionId,
+        bytes memory counterpartyConnectionBytes
+    ) public returns (bool) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.verifyConnectionState.selector,
+                host, clientId, height, prefix, proof, connectionId, counterpartyConnectionBytes));
+        assert(success);
+        return abi.decode(res, (bool));
+    }
+
+    function verifyChannelState(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        bytes memory prefix,
+        bytes memory proof,
+        string memory portId,
+        string memory channelId,
+        bytes memory channelBytes
+    ) public returns (bool) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.verifyChannelState.selector,
+                host, clientId, height, prefix, proof, portId, channelId, channelBytes));
+        assert(success);
+        return abi.decode(res, (bool));
+    }
+
+    function verifyPacketCommitment(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        uint64 delayPeriodTime,
+        uint64 delayPeriodBlocks,
+        bytes memory prefix,
+        bytes memory proof,
+        string memory portId,
+        string memory channelId,
+        uint64 sequence,
+        bytes32 commitmentBytes // serialized with pb
+    ) public returns (bool) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.verifyPacketCommitment.selector,
+                host, clientId, height, delayPeriodTime, delayPeriodBlocks, prefix, proof, portId, channelId, sequence, commitmentBytes));
+        assert(success);
+        return abi.decode(res, (bool));
+    }
+
+    function verifyPacketAcknowledgement(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        uint64 delayPeriodTime,
+        uint64 delayPeriodBlocks,
+        bytes memory prefix,
+        bytes memory proof,
+        string memory portId,
+        string memory channelId,
+        uint64 sequence,
+        bytes memory acknowledgement // serialized with pb
+    ) public returns (bool) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.verifyPacketAcknowledgement.selector,
+                host, clientId, height, delayPeriodTime, delayPeriodBlocks, prefix, proof, portId, channelId, sequence, acknowledgement));
+        assert(success);
+        return abi.decode(res, (bool));
     }
 }

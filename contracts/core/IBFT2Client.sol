@@ -26,23 +26,11 @@ contract IBFT2Client is IClient {
     using Bytes for bytes;
     using IBCHeight for Height.Data;
 
-    struct protoTypes {
-        bytes32 clientState;
-        bytes32 consensusState;
-        bytes32 header;
-    }
+    bytes32 private constant headerTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.Header"));
+    bytes32 private constant clientStateTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ClientState"));
+    bytes32 private constant consensusStateTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState"));
 
-    protoTypes pts;
-
-    constructor() {
-        // TODO The typeUrl should be defined in types/IBFT2Client.sol
-        // The schema of typeUrl follows cosmos/cosmos-sdk/codec/types/any.go
-        pts = protoTypes({
-            clientState: keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ClientState")),
-            consensusState: keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState")),
-            header: keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.Header"))
-        });
-    }
+    uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
     struct ParsedBesuHeader {
         Header.Data base;
@@ -56,8 +44,6 @@ contract IBFT2Client is IClient {
         uint64 numerator;
         uint64 denominator;
     }
-
-    uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
@@ -142,25 +128,25 @@ contract IBFT2Client is IClient {
         return Any.encode(anyConsensusState);
     }
 
-    function unmarshalHeader(bytes memory bz) internal view returns (Header.Data memory header, bool ok) {
+    function unmarshalHeader(bytes memory bz) internal pure returns (Header.Data memory header, bool ok) {
         Any.Data memory anyHeader = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyHeader.type_url)) != pts.header) {
+        if (keccak256(abi.encodePacked(anyHeader.type_url)) != headerTypeUrlHash) {
             return (header, false);
         }
         return (Header.decode(anyHeader.value), true);
     }
 
-    function unmarshalClientState(bytes memory bz) internal view returns (ClientState.Data memory clientState, bool ok) {
+    function unmarshalClientState(bytes memory bz) internal pure returns (ClientState.Data memory clientState, bool ok) {
         Any.Data memory anyClientState = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyClientState.type_url)) != pts.clientState) {
+        if (keccak256(abi.encodePacked(anyClientState.type_url)) != clientStateTypeUrlHash) {
             return (clientState, false);
         }
         return (ClientState.decode(anyClientState.value), true);
     }
 
-    function unmarshalConsensusState(bytes memory bz) internal view returns (ConsensusState.Data memory consensusState, bool ok) {
+    function unmarshalConsensusState(bytes memory bz) internal pure returns (ConsensusState.Data memory consensusState, bool ok) {
         Any.Data memory anyConsensusState = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != pts.consensusState) {
+        if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != consensusStateTypeUrlHash) {
             return (consensusState, false);
         }
         return (ConsensusState.decode(anyConsensusState.value), true);

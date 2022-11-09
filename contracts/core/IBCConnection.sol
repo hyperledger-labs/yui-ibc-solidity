@@ -142,30 +142,30 @@ library IBCConnection {
 
     // Verification functions
 
-    function verifyConnectionState(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, bytes memory proof, string memory connectionId, ConnectionEnd.Data memory counterpartyConnection) internal returns (bool) {
-        return IBCClient.getClient(host, connection.client_id).verifyConnectionState(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, connectionId, ConnectionEnd.encode(counterpartyConnection));
-    }
-
     function verifyClientState(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, bytes memory proof, bytes memory clientStateBytes) internal returns (bool) {
-        return IBCClient.getClient(host, connection.client_id).verifyClientState(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, connection.counterparty.client_id, proof, clientStateBytes);
+        return IBCClient.verifyClientState(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, connection.counterparty.client_id, proof, clientStateBytes);
     }
 
-    function verifyClientConsensusStateWithConnection(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, Height.Data memory consensusHeight, bytes memory proof, bytes memory consensusStateBytes) internal returns (bool) {
-        return IBCClient.getClient(host, connection.client_id).verifyClientConsensusState(host, connection.client_id, height, connection.counterparty.client_id, consensusHeight, connection.counterparty.prefix.key_prefix, proof, consensusStateBytes);
+    function verifyClientConsensusState(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, Height.Data memory consensusHeight, bytes memory proof, bytes memory consensusStateBytes) internal returns (bool) {
+        return IBCClient.verifyClientConsensusState(host, connection.client_id, height, connection.counterparty.client_id, consensusHeight, connection.counterparty.prefix.key_prefix, proof, consensusStateBytes);
+    }
+
+    function verifyConnectionState(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, bytes memory proof, string memory connectionId, ConnectionEnd.Data memory counterpartyConnection) internal returns (bool) {
+        return IBCClient.verifyConnectionState(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, connectionId, ConnectionEnd.encode(counterpartyConnection));
     }
 
     function verifyChannelState(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, bytes memory proof, string memory portId, string memory channelId, bytes memory channelBytes) public returns (bool) {
-        return IBCClient.getClient(host, connection.client_id).verifyChannelState(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, channelBytes);
+        return IBCClient.verifyChannelState(host, connection.client_id, height, connection.counterparty.prefix.key_prefix, proof, portId, channelId, channelBytes);
     }
 
     function verifyPacketCommitment(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes32 commitmentBytes) public returns (bool) {
         uint64 blockDelay = calcBlockDelay(host, connection.delay_period);
-        return IBCClient.getClient(host, connection.client_id).verifyPacketCommitment(host, connection.client_id, height, connection.delay_period, blockDelay, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, commitmentBytes);
+        return IBCClient.verifyPacketCommitment(host, connection.client_id, height, connection.delay_period, blockDelay, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, commitmentBytes);
     }
 
     function verifyPacketAcknowledgement(IBCHost host, ConnectionEnd.Data memory connection, Height.Data memory height, bytes memory proof, string memory portId, string memory channelId, uint64 sequence, bytes memory acknowledgement) public returns (bool) {
         uint64 blockDelay = calcBlockDelay(host, connection.delay_period);
-        return IBCClient.getClient(host, connection.client_id).verifyPacketAcknowledgement(host, connection.client_id, height, connection.delay_period, blockDelay, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, acknowledgement);
+        return IBCClient.verifyPacketAcknowledgement(host, connection.client_id, height, connection.delay_period, blockDelay, connection.counterparty.prefix.key_prefix, proof, portId, channelId, sequence, acknowledgement);
     }
 
     // Internal functions
