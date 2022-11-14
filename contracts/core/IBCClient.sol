@@ -6,7 +6,6 @@ import "./IBCHost.sol";
 import "./IBCMsgs.sol";
 
 library IBCClient {
-
     /**
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
@@ -29,20 +28,19 @@ library IBCClient {
     function updateClient(IBCHost host, IBCMsgs.MsgUpdateClient calldata msg_) external {
         host.onlyIBCModule();
         bytes memory clientStateBytes;
-        bytes memory consensusStateBytes;
-        Height.Data memory height;
         bool found;
-    
+
         (clientStateBytes, found) = host.getClientState(msg_.clientId);
         require(found, "clientState not found");
 
-        (clientStateBytes, consensusStateBytes, height) = checkHeaderAndUpdateState(host, msg_.clientId, clientStateBytes, msg_.header);
-    
-        //// persist states ////
-        host.setClientState(msg_.clientId, clientStateBytes);
-        host.setConsensusState(msg_.clientId, height, consensusStateBytes);
-        host.setProcessedTime(msg_.clientId, height, block.timestamp);
-        host.setProcessedHeight(msg_.clientId, height, block.number);
+        // this function call is intended to perform:
+        // 1. client message verification
+        // 2. check for duplicate height misbehaviour
+        // 3. if misbehaviour is found, update state accordingly and return
+        // 4. update state in a way that verified headers carrying one or more consensus states can be updated
+        // 5. persist the state internally
+        // 6. return an array of consensus heights
+        verifyClientMessageAndUpdateState(host, msg_.clientId, clientStateBytes, msg_.clientMessage);
     }
 
     // TODO implements
@@ -70,18 +68,18 @@ library IBCClient {
         return (IClient(addr), true);
     }
 
-    function checkHeaderAndUpdateState(
+    function verifyClientMessageAndUpdateState(
         IBCHost host,
         string memory clientId,
         bytes memory clientStateBytes,
-        bytes memory headerBytes
-    ) public returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
+        bytes memory clientMessageBytes
+    ) public returns (bool) {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
-                IClient.checkHeaderAndUpdateState.selector,
-                host, clientId, clientStateBytes, headerBytes));
+                IClient.verifyClientMessageAndUpdateState.selector,
+                host, clientId, clientStateBytes, clientMessageBytes));
         assert(success);
-        return abi.decode(res, (bytes, bytes, Height.Data));
+        return abi.decode(res, (bool));
     }
 
     function verifyClientState(

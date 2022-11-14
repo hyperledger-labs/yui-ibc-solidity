@@ -51,14 +51,30 @@ contract MockClient is IClient {
     }
 
     /**
-     * @dev checkHeaderAndUpdateState checks if the provided header is valid
+     * @dev verifyClientMessageAndUpdateState is intended to perform:
+     * 1. client message verification
+     * 2. check for duplicate height misbehaviour
+     * 3. if misbehaviour is found, update state accordingly and return
+     * 4. update state in a way that verified headers carrying one or more consensus states can be updated
+     * 5. persist the state internally
+     * 6. return an array of consensus heights
      */
-    function checkHeaderAndUpdateState(
-        IBCHost,
-        string memory,
+    function verifyClientMessageAndUpdateState(
+        IBCHost host,
+        string memory clientId,
         bytes memory clientStateBytes,
-        bytes memory headerBytes
-    ) public override pure returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
+        bytes memory clientMessageBytes
+    ) public override returns (bool) {
+        // verify clientMessageBytes
+
+        // check for misbehaviour
+
+        // updates state upon misbehaviour, freezing the ClientState.
+        // This method should only be called when misbehaviour is detected
+        // as it does not perform any misbehaviour checks.
+
+        // if client message is verified and there is no misbehaviour, update state
+        Height.Data memory height;
         uint64 timestamp;
         Any.Data memory anyClientState;
         Any.Data memory anyConsensusState;
@@ -66,7 +82,7 @@ contract MockClient is IClient {
         anyClientState = Any.decode(clientStateBytes);
         require(keccak256(abi.encodePacked(anyClientState.type_url)) == clientStateTypeUrlHash, "invalid client type");
         ClientState.Data memory clientState = ClientState.decode(anyClientState.value);
-        (height, timestamp) = parseHeader(headerBytes);
+        (height, timestamp) = parseHeader(clientMessageBytes);
         if (height.gt(clientState.latest_height)) {
             clientState.latest_height = height;
         }
@@ -74,7 +90,12 @@ contract MockClient is IClient {
         anyClientState.value = ClientState.encode(clientState);
         anyConsensusState.type_url = "/ibc.lightclients.mock.v1.ConsensusState";
         anyConsensusState.value = ConsensusState.encode(ConsensusState.Data({timestamp: timestamp}));
-        return (Any.encode(anyClientState), Any.encode(anyConsensusState), height);
+
+        host.setClientState(clientId, Any.encode(anyClientState));
+        host.setConsensusState(clientId, height, Any.encode(anyConsensusState));
+        host.setProcessedTime(clientId, height, block.timestamp);
+        host.setProcessedHeight(clientId, height, block.number);
+        return true;
     }
 
     function verifyClientState(

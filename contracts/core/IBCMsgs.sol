@@ -21,7 +21,7 @@ library IBCMsgs {
 
     struct MsgUpdateClient {
         string clientId;
-        bytes header;
+        bytes clientMessage;
     }
 
     /// Connection handshake ///
