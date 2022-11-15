@@ -20,12 +20,12 @@ interface IClient {
         string calldata clientId
     ) external view returns (Height.Data memory, bool);
 
-    function checkHeaderAndUpdateState(
+    function verifyClientMessageAndUpdateState(
         IBCHost host,
-        string calldata clientId, 
+        string calldata clientId,
         bytes calldata clientStateBytes,
-        bytes calldata headerBytes
-    ) external returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height);
+        bytes calldata clientMessageBytes
+    ) external returns (bool);
 
     function verifyClientState(
         IBCHost host,

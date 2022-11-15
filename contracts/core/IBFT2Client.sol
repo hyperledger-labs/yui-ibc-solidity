@@ -71,15 +71,12 @@ contract IBFT2Client is IClient {
         return (clientState.latest_height, true);
     }
 
-    /**
-     * @dev checkHeaderAndUpdateState checks if the provided header is valid
-     */
-    function checkHeaderAndUpdateState(
+    function verifyClientMessageAndUpdateState(
         IBCHost host,
-        string memory clientId, 
+        string memory clientId,
         bytes memory clientStateBytes,
-        bytes memory headerBytes
-    ) public override view returns (bytes memory newClientStateBytes, bytes memory newConsensusStateBytes, Height.Data memory height) {
+        bytes memory clientMessageBytes
+    ) public override returns (bool) {
         Header.Data memory header;
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
@@ -89,19 +86,25 @@ contract IBFT2Client is IClient {
         (clientState, ok) = unmarshalClientState(clientStateBytes);
         require(ok, "client state is invalid");
 
-        (header, ok) = unmarshalHeader(headerBytes);
+        (header, ok) = unmarshalHeader(clientMessageBytes);
         require(ok, "header is invalid");
 
         (consensusState, ok) = getConsensusState(host, clientId, header.trusted_height);
         require(ok, "consensusState not found");
 
-        //// check validity ////
+        // check if the provided client message is valid
         ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
         require(parsedHeader.height.gt(header.trusted_height), "header height <= consensus state height");
         (validators, ok) = verify(consensusState, parsedHeader);
         require(ok, "failed to verify the header");
 
-        //// update ////
+        // check for duplicate height misbehaviour
+
+        // updates state upon misbehaviour, freezing the ClientState.
+        // This method should only be called when misbehaviour is detected
+        // as it does not perform any misbehaviour checks.
+
+        // if client message is verified and there is no misbehaviour, update state
         consensusState.timestamp = parsedHeader.time;
         consensusState.root = abi.encodePacked(
             verifyStorageProof(Bytes.toAddress(clientState.ibc_store_address), parsedHeader.stateRoot, header.account_state_proof)
@@ -111,7 +114,16 @@ contract IBFT2Client is IClient {
         if (parsedHeader.height.gt(clientState.latest_height)) {
             clientState.latest_height = parsedHeader.height;
         }
-        return (marshalClientState(clientState), marshalConsensusState(consensusState), parsedHeader.height);
+
+        host.setClientState(clientId, marshalClientState(clientState));
+        host.setConsensusState(
+            clientId,
+            parsedHeader.height,
+            marshalConsensusState(consensusState)
+        );
+        host.setProcessedTime(clientId, parsedHeader.height, block.timestamp);
+        host.setProcessedHeight(clientId, parsedHeader.height, block.number);
+        return true;
     }
 
     function marshalClientState(ClientState.Data memory clientState) internal pure returns (bytes memory) {
