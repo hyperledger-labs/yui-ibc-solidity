@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection";
 
 import "solidity-protobuf-extensions.proto";
-option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/core/types" };
+option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
 
 import "gogoproto/gogo.proto";
 import "commitment/Commitment.proto";

@@ -5,13 +5,13 @@ import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
 import "./IBCHeight.sol";
-import "./types/Client.sol";
+import "../proto/Client.sol";
 import {
     IbcLightclientsIbft2V1ClientState as ClientState,
     IbcLightclientsIbft2V1ConsensusState as ConsensusState,
     IbcLightclientsIbft2V1Header as Header
-} from "./types/IBFT2.sol";
-import {GoogleProtobufAny as Any} from "./types/GoogleProtobufAny.sol";
+} from "../proto/IBFT2.sol";
+import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 import "../lib/ECRecovery.sol";
 import "../lib/Bytes.sol";
 import "../lib/TrieProofs.sol";

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./types/Client.sol";
-import "./types/Connection.sol";
+import "../proto/Client.sol";
+import "../proto/Connection.sol";
 import "./IBCClient.sol";
 import "./IBCMsgs.sol";
 import "./IBCHost.sol";

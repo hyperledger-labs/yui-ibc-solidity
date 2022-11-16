@@ -8,7 +8,7 @@ import "client/Client.proto";
 
 option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/ibft2";
 option (gogoproto.goproto_getters_all)  = false;
-option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/core/types" };
+option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
 
 message ClientState {
   string chain_id = 1;

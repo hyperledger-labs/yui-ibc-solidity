@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "./IBCHost.sol";
-import "./types/Client.sol";
+import "../proto/Client.sol";
 
 interface IClient {
 

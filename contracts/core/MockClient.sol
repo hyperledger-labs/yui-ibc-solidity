@@ -5,13 +5,13 @@ import "./IClient.sol";
 import "./IBCHost.sol";
 import "./IBCMsgs.sol";
 import "./IBCHeight.sol";
-import "./types/Client.sol";
+import "../proto/Client.sol";
 import {
     IbcLightclientsMockV1ClientState as ClientState,
     IbcLightclientsMockV1ConsensusState as ConsensusState,
     IbcLightclientsMockV1Header as Header
-} from "./types/MockClient.sol";
-import {GoogleProtobufAny as Any} from "./types/GoogleProtobufAny.sol";
+} from "../proto/MockClient.sol";
+import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 import "../lib/Bytes.sol";
 
 // MockClient implements https://github.com/datachainlab/ibc-mock-client
