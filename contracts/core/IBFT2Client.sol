@@ -26,13 +26,13 @@ contract IBFT2Client is IClient {
     using Bytes for bytes;
     using IBCHeight for Height.Data;
 
-    bytes32 private constant headerTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.Header"));
-    bytes32 private constant clientStateTypeUrlHash =
-        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ClientState"));
-    bytes32 private constant consensusStateTypeUrlHash =
-        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState"));
-
+    uint256 private constant COMMITMENT_SLOT = 0;
     uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
+    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.Header"));
+    bytes32 private constant CLIENT_STATE_TYPE_URL_HASH =
+        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ClientState"));
+    bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
+        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState"));
 
     struct ParsedBesuHeader {
         Header.Data base;
@@ -135,6 +135,51 @@ contract IBFT2Client is IClient {
         return true;
     }
 
+    /**
+     * @dev verifyMembership is a generic proof verification method which verifies a proof of the existence of a value at a given CommitmentPath at the specified height.
+     * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
+     */
+    function verifyMembership(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        uint64 delayTimePeriod,
+        uint64 delayBlockPeriod,
+        bytes memory proof,
+        bytes memory prefix,
+        bytes memory path,
+        bytes memory value
+    ) external view override returns (bool) {
+        ClientState.Data memory clientState;
+        ConsensusState.Data memory consensusState;
+        bool found;
+
+        (clientState, found) = getClientState(host, clientId);
+        if (!found) {
+            return false;
+        }
+        if (!validateArgs(clientState, height, prefix, proof)) {
+            return false;
+        }
+        if (
+            (delayTimePeriod != 0 || delayBlockPeriod != 0)
+                && !validateDelayPeriod(host, clientId, height, delayTimePeriod, delayBlockPeriod)
+        ) {
+            return false;
+        }
+        (consensusState, found) = getConsensusState(host, clientId, height);
+        if (!found) {
+            return false;
+        }
+        return verifyMembership(
+            proof,
+            consensusState.root.toBytes32(),
+            prefix,
+            keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT)),
+            keccak256(value)
+        );
+    }
+
     function marshalClientState(ClientState.Data memory clientState) internal pure returns (bytes memory) {
         Any.Data memory anyClientState;
         anyClientState.type_url = "/ibc.lightclients.ibft2.v1.ClientState";
@@ -151,7 +196,7 @@ contract IBFT2Client is IClient {
 
     function unmarshalHeader(bytes memory bz) internal pure returns (Header.Data memory header, bool ok) {
         Any.Data memory anyHeader = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyHeader.type_url)) != headerTypeUrlHash) {
+        if (keccak256(abi.encodePacked(anyHeader.type_url)) != HEADER_TYPE_URL_HASH) {
             return (header, false);
         }
         return (Header.decode(anyHeader.value), true);
@@ -163,7 +208,7 @@ contract IBFT2Client is IClient {
         returns (ClientState.Data memory clientState, bool ok)
     {
         Any.Data memory anyClientState = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyClientState.type_url)) != clientStateTypeUrlHash) {
+        if (keccak256(abi.encodePacked(anyClientState.type_url)) != CLIENT_STATE_TYPE_URL_HASH) {
             return (clientState, false);
         }
         return (ClientState.decode(anyClientState.value), true);
@@ -175,7 +220,7 @@ contract IBFT2Client is IClient {
         returns (ConsensusState.Data memory consensusState, bool ok)
     {
         Any.Data memory anyConsensusState = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != consensusStateTypeUrlHash) {
+        if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != CONSENSUS_STATE_TYPE_URL_HASH) {
             return (consensusState, false);
         }
         return (ConsensusState.decode(anyConsensusState.value), true);
@@ -258,210 +303,6 @@ contract IBFT2Client is IClient {
             }
         }
         return (validators, success > untrustedVals.length * 2 / 3);
-    }
-
-    /// State verification functions ///
-
-    function verifyClientState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        bytes memory prefix,
-        string memory counterpartyClientIdentifier,
-        bytes memory proof,
-        bytes memory clientStateBytes
-    ) public view override returns (bool) {
-        ClientState.Data memory clientState;
-        ConsensusState.Data memory consensusState;
-        bool found;
-
-        (clientState, found) = getClientState(host, clientId);
-        if (!found) {
-            return false;
-        }
-        if (!validateArgs(clientState, height, prefix, proof)) {
-            return false;
-        }
-        (consensusState, found) = getConsensusState(host, clientId, height);
-        if (!found) {
-            return false;
-        }
-        return verifyMembership(
-            proof,
-            consensusState.root.toBytes32(),
-            prefix,
-            IBCIdentifier.clientStateCommitmentSlot(counterpartyClientIdentifier),
-            keccak256(clientStateBytes)
-        );
-    }
-
-    function verifyClientConsensusState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        string memory counterpartyClientIdentifier,
-        Height.Data memory consensusHeight,
-        bytes memory prefix,
-        bytes memory proof,
-        bytes memory consensusStateBytes // serialized with pb
-    ) public view override returns (bool) {
-        ClientState.Data memory clientState;
-        ConsensusState.Data memory consensusState;
-        bool found;
-
-        (clientState, found) = getClientState(host, clientId);
-        if (!found) {
-            return false;
-        }
-        if (!validateArgs(clientState, height, prefix, proof)) {
-            return false;
-        }
-        (consensusState, found) = getConsensusState(host, clientId, height);
-        if (!found) {
-            return false;
-        }
-        return verifyMembership(
-            proof,
-            consensusState.root.toBytes32(),
-            prefix,
-            IBCIdentifier.consensusStateCommitmentSlot(
-                counterpartyClientIdentifier, consensusHeight.revision_number, consensusHeight.revision_height
-            ),
-            keccak256(consensusStateBytes)
-        );
-    }
-
-    function verifyConnectionState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        bytes memory prefix,
-        bytes memory proof,
-        string memory connectionId,
-        bytes memory connectionBytes // serialized with pb
-    ) public view override returns (bool) {
-        ClientState.Data memory clientState;
-        ConsensusState.Data memory consensusState;
-        bool found;
-
-        (clientState, found) = getClientState(host, clientId);
-        if (!found) {
-            return false;
-        }
-        if (!validateArgs(clientState, height, prefix, proof)) {
-            return false;
-        }
-        (consensusState, found) = getConsensusState(host, clientId, height);
-        if (!found) {
-            return false;
-        }
-        return verifyMembership(
-            proof,
-            consensusState.root.toBytes32(),
-            prefix,
-            IBCIdentifier.connectionCommitmentSlot(connectionId),
-            keccak256(connectionBytes)
-        );
-    }
-
-    function verifyChannelState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        bytes memory prefix,
-        bytes memory proof,
-        string memory portId,
-        string memory channelId,
-        bytes memory channelBytes // serialized with pb
-    ) public view override returns (bool) {
-        ClientState.Data memory clientState;
-        ConsensusState.Data memory consensusState;
-        bool found;
-
-        (clientState, found) = getClientState(host, clientId);
-        if (!found) {
-            return false;
-        }
-        if (!validateArgs(clientState, height, prefix, proof)) {
-            return false;
-        }
-        (consensusState, found) = getConsensusState(host, clientId, height);
-        if (!found) {
-            return false;
-        }
-        return verifyMembership(
-            proof,
-            consensusState.root.toBytes32(),
-            prefix,
-            IBCIdentifier.channelCommitmentSlot(portId, channelId),
-            keccak256(channelBytes)
-        );
-    }
-
-    function verifyPacketCommitment(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        uint64 delayPeriodTime,
-        uint64 delayPeriodBlocks,
-        bytes memory prefix,
-        bytes memory proof,
-        string memory portId,
-        string memory channelId,
-        uint64 sequence,
-        bytes32 commitmentBytes
-    ) public view override returns (bool) {
-        ClientState.Data memory clientState;
-        ConsensusState.Data memory consensusState;
-        bool found;
-
-        (clientState, found) = getClientState(host, clientId);
-        if (!found) {
-            return false;
-        }
-        if (!validateArgs(clientState, height, prefix, proof)) {
-            return false;
-        }
-        if (!validateDelayPeriod(host, clientId, height, delayPeriodTime, delayPeriodBlocks)) {
-            return false;
-        }
-        (consensusState, found) = getConsensusState(host, clientId, height);
-        if (!found) {
-            return false;
-        }
-        return verifyMembership(
-            proof,
-            consensusState.root.toBytes32(),
-            prefix,
-            IBCIdentifier.packetCommitmentSlot(portId, channelId, sequence),
-            commitmentBytes
-        );
-    }
-
-    function verifyPacketAcknowledgement(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        uint64 delayPeriodTime,
-        uint64 delayPeriodBlocks,
-        bytes memory prefix,
-        bytes memory proof,
-        string memory portId,
-        string memory channelId,
-        uint64 sequence,
-        bytes memory acknowledgement
-    ) public view override returns (bool) {
-        ClientState.Data memory clientState = mustGetClientState(host, clientId);
-        if (!validateArgs(clientState, height, prefix, proof)) {
-            return false;
-        }
-        if (!validateDelayPeriod(host, clientId, height, delayPeriodTime, delayPeriodBlocks)) {
-            return false;
-        }
-        bytes32 stateRoot = mustGetConsensusState(host, clientId, height).root.toBytes32();
-        bytes32 ackCommitmentSlot = IBCIdentifier.packetAcknowledgementCommitmentSlot(portId, channelId, sequence);
-        bytes32 ackCommitment = host.makePacketAcknowledgementCommitment(acknowledgement);
-        return verifyMembership(proof, stateRoot, prefix, ackCommitmentSlot, ackCommitment);
     }
 
     /// helper functions ///

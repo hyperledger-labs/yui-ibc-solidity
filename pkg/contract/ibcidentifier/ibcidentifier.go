@@ -27,7 +27,7 @@ var (
 )
 
 // IbcidentifierABI is the input ABI used to generate the binding from.
-const IbcidentifierABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"revisionNumber\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revisionHeight\",\"type\":\"uint64\"}],\"name\":\"consensusCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetReceiptCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"nextSequenceRecvCommitmentKey\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"revisionNumber\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revisionHeight\",\"type\":\"uint64\"}],\"name\":\"consensusStateCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetReceiptCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"nextSequenceRecvCommitmentSlot\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"}],\"name\":\"portCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true}]"
+const IbcidentifierABI = "[{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"clientStatePath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"revisionNumber\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revisionHeight\",\"type\":\"uint64\"}],\"name\":\"consensusStatePath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"connectionId\",\"type\":\"string\"}],\"name\":\"connectionPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetCommitmentPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetAcknowledgementCommitmentPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"}],\"name\":\"packetReceiptCommitmentPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"nextSequenceRecvCommitmentPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"}],\"name\":\"portCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"channelCapabilityPath\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"pure\",\"type\":\"function\",\"constant\":true}]"
 
 // Ibcidentifier is an auto generated Go binding around an Ethereum contract.
 type Ibcidentifier struct {
@@ -202,500 +202,252 @@ func (_Ibcidentifier *IbcidentifierCallerSession) ChannelCapabilityPath(portId s
 	return _Ibcidentifier.Contract.ChannelCapabilityPath(&_Ibcidentifier.CallOpts, portId, channelId)
 }
 
-// ChannelCommitmentKey is a free data retrieval call binding the contract method 0xc6c9159c.
+// ChannelPath is a free data retrieval call binding the contract method 0xf0381c21.
 //
-// Solidity: function channelCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ChannelCommitmentKey(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
+// Solidity: function channelPath(string portId, string channelId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) ChannelPath(opts *bind.CallOpts, portId string, channelId string) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "channelCommitmentKey", portId, channelId)
+	err := _Ibcidentifier.contract.Call(opts, &out, "channelPath", portId, channelId)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ChannelCommitmentKey is a free data retrieval call binding the contract method 0xc6c9159c.
+// ChannelPath is a free data retrieval call binding the contract method 0xf0381c21.
 //
-// Solidity: function channelCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ChannelCommitmentKey(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ChannelCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId)
+// Solidity: function channelPath(string portId, string channelId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) ChannelPath(portId string, channelId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.ChannelPath(&_Ibcidentifier.CallOpts, portId, channelId)
 }
 
-// ChannelCommitmentKey is a free data retrieval call binding the contract method 0xc6c9159c.
+// ChannelPath is a free data retrieval call binding the contract method 0xf0381c21.
 //
-// Solidity: function channelCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ChannelCommitmentKey(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ChannelCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId)
+// Solidity: function channelPath(string portId, string channelId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) ChannelPath(portId string, channelId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.ChannelPath(&_Ibcidentifier.CallOpts, portId, channelId)
 }
 
-// ChannelCommitmentSlot is a free data retrieval call binding the contract method 0x3560a02d.
+// ClientStatePath is a free data retrieval call binding the contract method 0xd3b78910.
 //
-// Solidity: function channelCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ChannelCommitmentSlot(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
+// Solidity: function clientStatePath(string clientId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) ClientStatePath(opts *bind.CallOpts, clientId string) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "channelCommitmentSlot", portId, channelId)
+	err := _Ibcidentifier.contract.Call(opts, &out, "clientStatePath", clientId)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ChannelCommitmentSlot is a free data retrieval call binding the contract method 0x3560a02d.
+// ClientStatePath is a free data retrieval call binding the contract method 0xd3b78910.
 //
-// Solidity: function channelCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ChannelCommitmentSlot(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ChannelCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId)
+// Solidity: function clientStatePath(string clientId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) ClientStatePath(clientId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.ClientStatePath(&_Ibcidentifier.CallOpts, clientId)
 }
 
-// ChannelCommitmentSlot is a free data retrieval call binding the contract method 0x3560a02d.
+// ClientStatePath is a free data retrieval call binding the contract method 0xd3b78910.
 //
-// Solidity: function channelCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ChannelCommitmentSlot(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ChannelCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId)
+// Solidity: function clientStatePath(string clientId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) ClientStatePath(clientId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.ClientStatePath(&_Ibcidentifier.CallOpts, clientId)
 }
 
-// ClientCommitmentKey is a free data retrieval call binding the contract method 0xc7ddc606.
+// ConnectionPath is a free data retrieval call binding the contract method 0x5fe6557a.
 //
-// Solidity: function clientCommitmentKey(string clientId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ClientCommitmentKey(opts *bind.CallOpts, clientId string) ([32]byte, error) {
+// Solidity: function connectionPath(string connectionId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) ConnectionPath(opts *bind.CallOpts, connectionId string) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "clientCommitmentKey", clientId)
+	err := _Ibcidentifier.contract.Call(opts, &out, "connectionPath", connectionId)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ClientCommitmentKey is a free data retrieval call binding the contract method 0xc7ddc606.
+// ConnectionPath is a free data retrieval call binding the contract method 0x5fe6557a.
 //
-// Solidity: function clientCommitmentKey(string clientId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ClientCommitmentKey(clientId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ClientCommitmentKey(&_Ibcidentifier.CallOpts, clientId)
+// Solidity: function connectionPath(string connectionId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) ConnectionPath(connectionId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.ConnectionPath(&_Ibcidentifier.CallOpts, connectionId)
 }
 
-// ClientCommitmentKey is a free data retrieval call binding the contract method 0xc7ddc606.
+// ConnectionPath is a free data retrieval call binding the contract method 0x5fe6557a.
 //
-// Solidity: function clientCommitmentKey(string clientId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ClientCommitmentKey(clientId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ClientCommitmentKey(&_Ibcidentifier.CallOpts, clientId)
+// Solidity: function connectionPath(string connectionId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) ConnectionPath(connectionId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.ConnectionPath(&_Ibcidentifier.CallOpts, connectionId)
 }
 
-// ClientStateCommitmentSlot is a free data retrieval call binding the contract method 0xb0cbb120.
+// ConsensusStatePath is a free data retrieval call binding the contract method 0x6dfb92e3.
 //
-// Solidity: function clientStateCommitmentSlot(string clientId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ClientStateCommitmentSlot(opts *bind.CallOpts, clientId string) ([32]byte, error) {
+// Solidity: function consensusStatePath(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) ConsensusStatePath(opts *bind.CallOpts, clientId string, revisionNumber uint64, revisionHeight uint64) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "clientStateCommitmentSlot", clientId)
+	err := _Ibcidentifier.contract.Call(opts, &out, "consensusStatePath", clientId, revisionNumber, revisionHeight)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ClientStateCommitmentSlot is a free data retrieval call binding the contract method 0xb0cbb120.
+// ConsensusStatePath is a free data retrieval call binding the contract method 0x6dfb92e3.
 //
-// Solidity: function clientStateCommitmentSlot(string clientId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ClientStateCommitmentSlot(clientId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ClientStateCommitmentSlot(&_Ibcidentifier.CallOpts, clientId)
+// Solidity: function consensusStatePath(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) ConsensusStatePath(clientId string, revisionNumber uint64, revisionHeight uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.ConsensusStatePath(&_Ibcidentifier.CallOpts, clientId, revisionNumber, revisionHeight)
 }
 
-// ClientStateCommitmentSlot is a free data retrieval call binding the contract method 0xb0cbb120.
+// ConsensusStatePath is a free data retrieval call binding the contract method 0x6dfb92e3.
 //
-// Solidity: function clientStateCommitmentSlot(string clientId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ClientStateCommitmentSlot(clientId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ClientStateCommitmentSlot(&_Ibcidentifier.CallOpts, clientId)
+// Solidity: function consensusStatePath(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) ConsensusStatePath(clientId string, revisionNumber uint64, revisionHeight uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.ConsensusStatePath(&_Ibcidentifier.CallOpts, clientId, revisionNumber, revisionHeight)
 }
 
-// ConnectionCommitmentKey is a free data retrieval call binding the contract method 0xa9dd3eb3.
+// NextSequenceRecvCommitmentPath is a free data retrieval call binding the contract method 0x5209b2dd.
 //
-// Solidity: function connectionCommitmentKey(string connectionId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ConnectionCommitmentKey(opts *bind.CallOpts, connectionId string) ([32]byte, error) {
+// Solidity: function nextSequenceRecvCommitmentPath(string portId, string channelId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) NextSequenceRecvCommitmentPath(opts *bind.CallOpts, portId string, channelId string) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "connectionCommitmentKey", connectionId)
+	err := _Ibcidentifier.contract.Call(opts, &out, "nextSequenceRecvCommitmentPath", portId, channelId)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ConnectionCommitmentKey is a free data retrieval call binding the contract method 0xa9dd3eb3.
+// NextSequenceRecvCommitmentPath is a free data retrieval call binding the contract method 0x5209b2dd.
 //
-// Solidity: function connectionCommitmentKey(string connectionId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ConnectionCommitmentKey(connectionId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConnectionCommitmentKey(&_Ibcidentifier.CallOpts, connectionId)
+// Solidity: function nextSequenceRecvCommitmentPath(string portId, string channelId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) NextSequenceRecvCommitmentPath(portId string, channelId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId)
 }
 
-// ConnectionCommitmentKey is a free data retrieval call binding the contract method 0xa9dd3eb3.
+// NextSequenceRecvCommitmentPath is a free data retrieval call binding the contract method 0x5209b2dd.
 //
-// Solidity: function connectionCommitmentKey(string connectionId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ConnectionCommitmentKey(connectionId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConnectionCommitmentKey(&_Ibcidentifier.CallOpts, connectionId)
+// Solidity: function nextSequenceRecvCommitmentPath(string portId, string channelId) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) NextSequenceRecvCommitmentPath(portId string, channelId string) ([]byte, error) {
+	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId)
 }
 
-// ConnectionCommitmentSlot is a free data retrieval call binding the contract method 0x8b89bf24.
+// PacketAcknowledgementCommitmentPath is a free data retrieval call binding the contract method 0xc53bb5b3.
 //
-// Solidity: function connectionCommitmentSlot(string connectionId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ConnectionCommitmentSlot(opts *bind.CallOpts, connectionId string) ([32]byte, error) {
+// Solidity: function packetAcknowledgementCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) PacketAcknowledgementCommitmentPath(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "connectionCommitmentSlot", connectionId)
+	err := _Ibcidentifier.contract.Call(opts, &out, "packetAcknowledgementCommitmentPath", portId, channelId, sequence)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ConnectionCommitmentSlot is a free data retrieval call binding the contract method 0x8b89bf24.
+// PacketAcknowledgementCommitmentPath is a free data retrieval call binding the contract method 0xc53bb5b3.
 //
-// Solidity: function connectionCommitmentSlot(string connectionId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ConnectionCommitmentSlot(connectionId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConnectionCommitmentSlot(&_Ibcidentifier.CallOpts, connectionId)
+// Solidity: function packetAcknowledgementCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) PacketAcknowledgementCommitmentPath(portId string, channelId string, sequence uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.PacketAcknowledgementCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
 }
 
-// ConnectionCommitmentSlot is a free data retrieval call binding the contract method 0x8b89bf24.
+// PacketAcknowledgementCommitmentPath is a free data retrieval call binding the contract method 0xc53bb5b3.
 //
-// Solidity: function connectionCommitmentSlot(string connectionId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ConnectionCommitmentSlot(connectionId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConnectionCommitmentSlot(&_Ibcidentifier.CallOpts, connectionId)
+// Solidity: function packetAcknowledgementCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) PacketAcknowledgementCommitmentPath(portId string, channelId string, sequence uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.PacketAcknowledgementCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
 }
 
-// ConsensusCommitmentKey is a free data retrieval call binding the contract method 0x7af6aa78.
+// PacketCommitmentPath is a free data retrieval call binding the contract method 0x20eda6aa.
 //
-// Solidity: function consensusCommitmentKey(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ConsensusCommitmentKey(opts *bind.CallOpts, clientId string, revisionNumber uint64, revisionHeight uint64) ([32]byte, error) {
+// Solidity: function packetCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) PacketCommitmentPath(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "consensusCommitmentKey", clientId, revisionNumber, revisionHeight)
+	err := _Ibcidentifier.contract.Call(opts, &out, "packetCommitmentPath", portId, channelId, sequence)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ConsensusCommitmentKey is a free data retrieval call binding the contract method 0x7af6aa78.
+// PacketCommitmentPath is a free data retrieval call binding the contract method 0x20eda6aa.
 //
-// Solidity: function consensusCommitmentKey(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ConsensusCommitmentKey(clientId string, revisionNumber uint64, revisionHeight uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConsensusCommitmentKey(&_Ibcidentifier.CallOpts, clientId, revisionNumber, revisionHeight)
+// Solidity: function packetCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) PacketCommitmentPath(portId string, channelId string, sequence uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.PacketCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
 }
 
-// ConsensusCommitmentKey is a free data retrieval call binding the contract method 0x7af6aa78.
+// PacketCommitmentPath is a free data retrieval call binding the contract method 0x20eda6aa.
 //
-// Solidity: function consensusCommitmentKey(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ConsensusCommitmentKey(clientId string, revisionNumber uint64, revisionHeight uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConsensusCommitmentKey(&_Ibcidentifier.CallOpts, clientId, revisionNumber, revisionHeight)
+// Solidity: function packetCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) PacketCommitmentPath(portId string, channelId string, sequence uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.PacketCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
 }
 
-// ConsensusStateCommitmentSlot is a free data retrieval call binding the contract method 0xc138de23.
+// PacketReceiptCommitmentPath is a free data retrieval call binding the contract method 0x11118772.
 //
-// Solidity: function consensusStateCommitmentSlot(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) ConsensusStateCommitmentSlot(opts *bind.CallOpts, clientId string, revisionNumber uint64, revisionHeight uint64) ([32]byte, error) {
+// Solidity: function packetReceiptCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCaller) PacketReceiptCommitmentPath(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([]byte, error) {
 	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "consensusStateCommitmentSlot", clientId, revisionNumber, revisionHeight)
+	err := _Ibcidentifier.contract.Call(opts, &out, "packetReceiptCommitmentPath", portId, channelId, sequence)
 
 	if err != nil {
-		return *new([32]byte), err
+		return *new([]byte), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 
 	return out0, err
 
 }
 
-// ConsensusStateCommitmentSlot is a free data retrieval call binding the contract method 0xc138de23.
+// PacketReceiptCommitmentPath is a free data retrieval call binding the contract method 0x11118772.
 //
-// Solidity: function consensusStateCommitmentSlot(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) ConsensusStateCommitmentSlot(clientId string, revisionNumber uint64, revisionHeight uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConsensusStateCommitmentSlot(&_Ibcidentifier.CallOpts, clientId, revisionNumber, revisionHeight)
+// Solidity: function packetReceiptCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierSession) PacketReceiptCommitmentPath(portId string, channelId string, sequence uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.PacketReceiptCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
 }
 
-// ConsensusStateCommitmentSlot is a free data retrieval call binding the contract method 0xc138de23.
+// PacketReceiptCommitmentPath is a free data retrieval call binding the contract method 0x11118772.
 //
-// Solidity: function consensusStateCommitmentSlot(string clientId, uint64 revisionNumber, uint64 revisionHeight) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) ConsensusStateCommitmentSlot(clientId string, revisionNumber uint64, revisionHeight uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.ConsensusStateCommitmentSlot(&_Ibcidentifier.CallOpts, clientId, revisionNumber, revisionHeight)
-}
-
-// NextSequenceRecvCommitmentKey is a free data retrieval call binding the contract method 0xfceb03ab.
-//
-// Solidity: function nextSequenceRecvCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) NextSequenceRecvCommitmentKey(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "nextSequenceRecvCommitmentKey", portId, channelId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// NextSequenceRecvCommitmentKey is a free data retrieval call binding the contract method 0xfceb03ab.
-//
-// Solidity: function nextSequenceRecvCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) NextSequenceRecvCommitmentKey(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId)
-}
-
-// NextSequenceRecvCommitmentKey is a free data retrieval call binding the contract method 0xfceb03ab.
-//
-// Solidity: function nextSequenceRecvCommitmentKey(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) NextSequenceRecvCommitmentKey(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId)
-}
-
-// NextSequenceRecvCommitmentSlot is a free data retrieval call binding the contract method 0x5370d4d3.
-//
-// Solidity: function nextSequenceRecvCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) NextSequenceRecvCommitmentSlot(opts *bind.CallOpts, portId string, channelId string) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "nextSequenceRecvCommitmentSlot", portId, channelId)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// NextSequenceRecvCommitmentSlot is a free data retrieval call binding the contract method 0x5370d4d3.
-//
-// Solidity: function nextSequenceRecvCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) NextSequenceRecvCommitmentSlot(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId)
-}
-
-// NextSequenceRecvCommitmentSlot is a free data retrieval call binding the contract method 0x5370d4d3.
-//
-// Solidity: function nextSequenceRecvCommitmentSlot(string portId, string channelId) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) NextSequenceRecvCommitmentSlot(portId string, channelId string) ([32]byte, error) {
-	return _Ibcidentifier.Contract.NextSequenceRecvCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId)
-}
-
-// PacketAcknowledgementCommitmentKey is a free data retrieval call binding the contract method 0xe334f11b.
-//
-// Solidity: function packetAcknowledgementCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) PacketAcknowledgementCommitmentKey(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "packetAcknowledgementCommitmentKey", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketAcknowledgementCommitmentKey is a free data retrieval call binding the contract method 0xe334f11b.
-//
-// Solidity: function packetAcknowledgementCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) PacketAcknowledgementCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketAcknowledgementCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketAcknowledgementCommitmentKey is a free data retrieval call binding the contract method 0xe334f11b.
-//
-// Solidity: function packetAcknowledgementCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) PacketAcknowledgementCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketAcknowledgementCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketAcknowledgementCommitmentSlot is a free data retrieval call binding the contract method 0xc50839ec.
-//
-// Solidity: function packetAcknowledgementCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) PacketAcknowledgementCommitmentSlot(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "packetAcknowledgementCommitmentSlot", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketAcknowledgementCommitmentSlot is a free data retrieval call binding the contract method 0xc50839ec.
-//
-// Solidity: function packetAcknowledgementCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) PacketAcknowledgementCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketAcknowledgementCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketAcknowledgementCommitmentSlot is a free data retrieval call binding the contract method 0xc50839ec.
-//
-// Solidity: function packetAcknowledgementCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) PacketAcknowledgementCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketAcknowledgementCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentKey is a free data retrieval call binding the contract method 0xdae1b0f8.
-//
-// Solidity: function packetCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) PacketCommitmentKey(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "packetCommitmentKey", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketCommitmentKey is a free data retrieval call binding the contract method 0xdae1b0f8.
-//
-// Solidity: function packetCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) PacketCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentKey is a free data retrieval call binding the contract method 0xdae1b0f8.
-//
-// Solidity: function packetCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) PacketCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentSlot is a free data retrieval call binding the contract method 0xb0db45ba.
-//
-// Solidity: function packetCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) PacketCommitmentSlot(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "packetCommitmentSlot", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketCommitmentSlot is a free data retrieval call binding the contract method 0xb0db45ba.
-//
-// Solidity: function packetCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) PacketCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketCommitmentSlot is a free data retrieval call binding the contract method 0xb0db45ba.
-//
-// Solidity: function packetCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) PacketCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketReceiptCommitmentKey is a free data retrieval call binding the contract method 0x83c28eac.
-//
-// Solidity: function packetReceiptCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) PacketReceiptCommitmentKey(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "packetReceiptCommitmentKey", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketReceiptCommitmentKey is a free data retrieval call binding the contract method 0x83c28eac.
-//
-// Solidity: function packetReceiptCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) PacketReceiptCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketReceiptCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketReceiptCommitmentKey is a free data retrieval call binding the contract method 0x83c28eac.
-//
-// Solidity: function packetReceiptCommitmentKey(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) PacketReceiptCommitmentKey(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketReceiptCommitmentKey(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketReceiptCommitmentSlot is a free data retrieval call binding the contract method 0x24cf0804.
-//
-// Solidity: function packetReceiptCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCaller) PacketReceiptCommitmentSlot(opts *bind.CallOpts, portId string, channelId string, sequence uint64) ([32]byte, error) {
-	var out []interface{}
-	err := _Ibcidentifier.contract.Call(opts, &out, "packetReceiptCommitmentSlot", portId, channelId, sequence)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// PacketReceiptCommitmentSlot is a free data retrieval call binding the contract method 0x24cf0804.
-//
-// Solidity: function packetReceiptCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierSession) PacketReceiptCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketReceiptCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
-}
-
-// PacketReceiptCommitmentSlot is a free data retrieval call binding the contract method 0x24cf0804.
-//
-// Solidity: function packetReceiptCommitmentSlot(string portId, string channelId, uint64 sequence) pure returns(bytes32)
-func (_Ibcidentifier *IbcidentifierCallerSession) PacketReceiptCommitmentSlot(portId string, channelId string, sequence uint64) ([32]byte, error) {
-	return _Ibcidentifier.Contract.PacketReceiptCommitmentSlot(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
+// Solidity: function packetReceiptCommitmentPath(string portId, string channelId, uint64 sequence) pure returns(bytes)
+func (_Ibcidentifier *IbcidentifierCallerSession) PacketReceiptCommitmentPath(portId string, channelId string, sequence uint64) ([]byte, error) {
+	return _Ibcidentifier.Contract.PacketReceiptCommitmentPath(&_Ibcidentifier.CallOpts, portId, channelId, sequence)
 }
 
 // PortCapabilityPath is a free data retrieval call binding the contract method 0x2570dae0.

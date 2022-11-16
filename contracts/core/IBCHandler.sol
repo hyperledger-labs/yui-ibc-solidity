@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "./IClient.sol";
 import "./IBCClient.sol";
+import "./IBCConnection.sol";
 import "./IBCChannel.sol";
 import "./IBCModule.sol";
 import "./IBCMsgs.sol";

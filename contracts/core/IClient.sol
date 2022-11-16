@@ -33,73 +33,19 @@ interface IClient {
         bytes calldata clientMessageBytes
     ) external returns (bool);
 
-    function verifyClientState(
+    /**
+     * @dev verifyMembership is a generic proof verification method which verifies a proof of the existence of a value at a given CommitmentPath at the specified height.
+     * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
+     */
+    function verifyMembership(
         IBCHost host,
         string calldata clientId,
         Height.Data calldata height,
-        bytes calldata prefix,
-        string calldata counterpartyClientIdentifier,
+        uint64 delayTimePeriod,
+        uint64 delayBlockPeriod,
         bytes calldata proof,
-        bytes calldata clientStateBytes // serialized with pb
-    ) external returns (bool);
-
-    function verifyClientConsensusState(
-        IBCHost host,
-        string calldata clientId,
-        Height.Data calldata height,
-        string calldata counterpartyClientIdentifier,
-        Height.Data calldata consensusHeight,
         bytes calldata prefix,
-        bytes calldata proof,
-        bytes calldata consensusStateBytes // serialized with pb
-    ) external returns (bool);
-
-    function verifyConnectionState(
-        IBCHost host,
-        string calldata clientId,
-        Height.Data calldata height,
-        bytes calldata prefix,
-        bytes calldata proof,
-        string calldata connectionId,
-        bytes calldata connectionBytes // serialized with pb
-    ) external returns (bool);
-
-    function verifyChannelState(
-        IBCHost host,
-        string calldata clientId,
-        Height.Data calldata height,
-        bytes calldata prefix,
-        bytes calldata proof,
-        string calldata portId,
-        string calldata channelId,
-        bytes calldata channelBytes // serialized with pb
-    ) external returns (bool);
-
-    function verifyPacketCommitment(
-        IBCHost host,
-        string calldata clientId,
-        Height.Data calldata height,
-        uint64 delayPeriodTime,
-        uint64 delayPeriodBlocks,
-        bytes calldata prefix,
-        bytes calldata proof,
-        string calldata portId,
-        string calldata channelId,
-        uint64 sequence,
-        bytes32 commitmentBytes // serialized with pb
-    ) external returns (bool);
-
-    function verifyPacketAcknowledgement(
-        IBCHost host,
-        string calldata clientId,
-        Height.Data calldata height,
-        uint64 delayPeriodTime,
-        uint64 delayPeriodBlocks,
-        bytes calldata prefix,
-        bytes calldata proof,
-        string calldata portId,
-        string calldata channelId,
-        uint64 sequence,
-        bytes calldata acknowledgement // serialized with pb
+        bytes calldata path,
+        bytes calldata value
     ) external returns (bool);
 }

@@ -33,13 +33,6 @@ library IBCClient {
         (clientStateBytes, found) = host.getClientState(msg_.clientId);
         require(found, "clientState not found");
 
-        // this function call is intended to perform:
-        // 1. client message verification
-        // 2. check for duplicate height misbehaviour
-        // 3. if misbehaviour is found, update state accordingly and return
-        // 4. update state in a way that verified headers carrying one or more consensus states can be updated
-        // 5. persist the state internally
-        // 6. return an array of consensus heights
         verifyClientMessageAndUpdateState(host, msg_.clientId, clientStateBytes, msg_.clientMessage);
     }
 
@@ -73,183 +66,185 @@ library IBCClient {
         string memory clientId,
         bytes memory clientStateBytes,
         bytes memory clientMessageBytes
-    ) public returns (bool) {
+    ) internal returns (bool) {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
                 IClient.verifyClientMessageAndUpdateState.selector, host, clientId, clientStateBytes, clientMessageBytes
             )
         );
-        assert(success);
+        require(success);
+        return abi.decode(res, (bool));
+    }
+
+    // Verification functions
+
+    function verifyMembership(
+        IBCHost host,
+        string memory clientId,
+        Height.Data memory height,
+        uint64 delayTimePeriod,
+        uint64 delayBlockPeriod,
+        bytes memory proof,
+        bytes memory prefix,
+        bytes memory path,
+        bytes memory value
+    ) private returns (bool) {
+        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
+            abi.encodeWithSelector(
+                IClient.verifyMembership.selector,
+                host,
+                clientId,
+                height,
+                delayTimePeriod,
+                delayBlockPeriod,
+                proof,
+                prefix,
+                path,
+                value
+            )
+        );
+        require(success);
         return abi.decode(res, (bool));
     }
 
     function verifyClientState(
         IBCHost host,
-        string memory clientId,
+        ConnectionEnd.Data memory connection,
         Height.Data memory height,
-        bytes memory prefix,
-        string memory counterpartyClientIdentifier,
         bytes memory proof,
         bytes memory clientStateBytes
-    ) public returns (bool) {
-        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
-            abi.encodeWithSelector(
-                IClient.verifyClientState.selector,
-                host,
-                clientId,
-                height,
-                prefix,
-                counterpartyClientIdentifier,
-                proof,
-                clientStateBytes
-            )
+    ) internal returns (bool) {
+        return verifyMembership(
+            host,
+            connection.client_id,
+            height,
+            0,
+            0,
+            proof,
+            connection.counterparty.prefix.key_prefix,
+            IBCIdentifier.clientStatePath(connection.counterparty.client_id),
+            clientStateBytes
         );
-        assert(success);
-        return abi.decode(res, (bool));
     }
 
     function verifyClientConsensusState(
         IBCHost host,
-        string memory clientId,
+        ConnectionEnd.Data memory connection,
         Height.Data memory height,
-        string memory counterpartyClientIdentifier,
         Height.Data memory consensusHeight,
-        bytes memory prefix,
         bytes memory proof,
         bytes memory consensusStateBytes
-    ) public returns (bool) {
-        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
-            abi.encodeWithSelector(
-                IClient.verifyClientConsensusState.selector,
-                host,
-                clientId,
-                height,
-                counterpartyClientIdentifier,
-                consensusHeight,
-                prefix,
-                proof,
-                consensusStateBytes
-            )
+    ) internal returns (bool) {
+        return verifyMembership(
+            host,
+            connection.client_id,
+            height,
+            0,
+            0,
+            proof,
+            connection.counterparty.prefix.key_prefix,
+            IBCIdentifier.consensusStatePath(
+                connection.counterparty.client_id, consensusHeight.revision_number, consensusHeight.revision_height
+            ),
+            consensusStateBytes
         );
-        assert(success);
-        return abi.decode(res, (bool));
     }
 
     function verifyConnectionState(
         IBCHost host,
-        string memory clientId,
+        ConnectionEnd.Data memory connection,
         Height.Data memory height,
-        bytes calldata prefix,
         bytes memory proof,
         string memory connectionId,
-        bytes memory counterpartyConnectionBytes
-    ) public returns (bool) {
-        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
-            abi.encodeWithSelector(
-                IClient.verifyConnectionState.selector,
-                host,
-                clientId,
-                height,
-                prefix,
-                proof,
-                connectionId,
-                counterpartyConnectionBytes
-            )
+        ConnectionEnd.Data memory counterpartyConnection
+    ) internal returns (bool) {
+        return verifyMembership(
+            host,
+            connection.client_id,
+            height,
+            0,
+            0,
+            proof,
+            connection.counterparty.prefix.key_prefix,
+            IBCIdentifier.connectionPath(connectionId),
+            ConnectionEnd.encode(counterpartyConnection)
         );
-        assert(success);
-        return abi.decode(res, (bool));
     }
 
     function verifyChannelState(
         IBCHost host,
-        string memory clientId,
+        ConnectionEnd.Data memory connection,
         Height.Data memory height,
-        bytes memory prefix,
         bytes memory proof,
         string memory portId,
         string memory channelId,
         bytes memory channelBytes
-    ) public returns (bool) {
-        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
-            abi.encodeWithSelector(
-                IClient.verifyChannelState.selector,
-                host,
-                clientId,
-                height,
-                prefix,
-                proof,
-                portId,
-                channelId,
-                channelBytes
-            )
+    ) internal returns (bool) {
+        return verifyMembership(
+            host,
+            connection.client_id,
+            height,
+            0,
+            0,
+            proof,
+            connection.counterparty.prefix.key_prefix,
+            IBCIdentifier.channelPath(portId, channelId),
+            channelBytes
         );
-        assert(success);
-        return abi.decode(res, (bool));
     }
 
     function verifyPacketCommitment(
         IBCHost host,
-        string memory clientId,
+        ConnectionEnd.Data memory connection,
         Height.Data memory height,
-        uint64 delayPeriodTime,
-        uint64 delayPeriodBlocks,
-        bytes memory prefix,
         bytes memory proof,
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes32 commitmentBytes // serialized with pb
-    ) public returns (bool) {
-        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
-            abi.encodeWithSelector(
-                IClient.verifyPacketCommitment.selector,
-                host,
-                clientId,
-                height,
-                delayPeriodTime,
-                delayPeriodBlocks,
-                prefix,
-                proof,
-                portId,
-                channelId,
-                sequence,
-                commitmentBytes
-            )
+        bytes32 commitmentBytes
+    ) internal returns (bool) {
+        return verifyMembership(
+            host,
+            connection.client_id,
+            height,
+            connection.delay_period,
+            calcBlockDelay(host, connection.delay_period),
+            proof,
+            connection.counterparty.prefix.key_prefix,
+            IBCIdentifier.packetCommitmentPath(portId, channelId, sequence),
+            abi.encodePacked(commitmentBytes)
         );
-        assert(success);
-        return abi.decode(res, (bool));
     }
 
     function verifyPacketAcknowledgement(
         IBCHost host,
-        string memory clientId,
+        ConnectionEnd.Data memory connection,
         Height.Data memory height,
-        uint64 delayPeriodTime,
-        uint64 delayPeriodBlocks,
-        bytes memory prefix,
         bytes memory proof,
         string memory portId,
         string memory channelId,
         uint64 sequence,
-        bytes memory acknowledgement // serialized with pb
-    ) public returns (bool) {
-        (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
-            abi.encodeWithSelector(
-                IClient.verifyPacketAcknowledgement.selector,
-                host,
-                clientId,
-                height,
-                delayPeriodTime,
-                delayPeriodBlocks,
-                prefix,
-                proof,
-                portId,
-                channelId,
-                sequence,
-                acknowledgement
-            )
+        bytes32 acknowledgementCommitmentBytes
+    ) internal returns (bool) {
+        return verifyMembership(
+            host,
+            connection.client_id,
+            height,
+            connection.delay_period,
+            calcBlockDelay(host, connection.delay_period),
+            proof,
+            connection.counterparty.prefix.key_prefix,
+            IBCIdentifier.packetAcknowledgementCommitmentPath(portId, channelId, sequence),
+            abi.encodePacked(acknowledgementCommitmentBytes)
         );
-        assert(success);
-        return abi.decode(res, (bool));
+    }
+
+    function calcBlockDelay(IBCHost host, uint64 timeDelay) private view returns (uint64) {
+        uint64 blockDelay = 0;
+        uint64 expectedTimePerBlock = host.getExpectedTimePerBlock();
+        if (expectedTimePerBlock != 0) {
+            blockDelay = (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
+        }
+        return blockDelay;
     }
 }

@@ -89,7 +89,7 @@ contract IBCHost {
     function setClientState(string calldata clientId, bytes calldata clientStateBytes) external {
         onlyIBCModule();
         clientStates[clientId] = clientStateBytes;
-        commitments[IBCIdentifier.clientCommitmentKey(clientId)] = keccak256(clientStateBytes);
+        commitments[keccak256(IBCIdentifier.clientStatePath(clientId))] = keccak256(clientStateBytes);
     }
 
     function getClientState(string calldata clientId) external view returns (bytes memory, bool) {
@@ -105,8 +105,9 @@ contract IBCHost {
     ) external {
         onlyIBCModule();
         consensusStates[clientId][height.toUint128()] = consensusStateBytes;
-        commitments[IBCIdentifier.consensusCommitmentKey(clientId, height.revision_number, height.revision_height)] =
-            keccak256(consensusStateBytes);
+        commitments[keccak256(
+            IBCIdentifier.consensusStatePath(clientId, height.revision_number, height.revision_height)
+        )] = keccak256(consensusStateBytes);
     }
 
     function getConsensusState(string calldata clientId, Height.Data calldata height)
@@ -162,7 +163,7 @@ contract IBCHost {
             connections[connectionId].versions.push(connection.versions[i]);
         }
         connections[connectionId].counterparty = connection.counterparty;
-        commitments[IBCIdentifier.connectionCommitmentKey(connectionId)] = keccak256(ConnectionEnd.encode(connection));
+        commitments[keccak256(IBCIdentifier.connectionPath(connectionId))] = keccak256(ConnectionEnd.encode(connection));
     }
 
     function getConnection(string calldata connectionId)
@@ -181,7 +182,7 @@ contract IBCHost {
     function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) public {
         onlyIBCModule();
         channels[portId][channelId] = channel;
-        commitments[IBCIdentifier.channelCommitmentKey(portId, channelId)] = keccak256(Channel.encode(channel));
+        commitments[keccak256(IBCIdentifier.channelPath(portId, channelId))] = keccak256(Channel.encode(channel));
     }
 
     function getChannel(string calldata portId, string calldata channelId)
@@ -209,7 +210,7 @@ contract IBCHost {
     function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) external {
         onlyIBCModule();
         nextSequenceRecvs[portId][channelId] = sequence;
-        commitments[IBCIdentifier.nextSequenceRecvCommitmentKey(portId, channelId)] =
+        commitments[keccak256(IBCIdentifier.nextSequenceRecvCommitmentPath(portId, channelId))] =
             keccak256(abi.encodePacked(sequence));
     }
 
@@ -233,12 +234,13 @@ contract IBCHost {
         Packet.Data memory packet
     ) public {
         onlyIBCModule();
-        commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
+        commitments[keccak256(IBCIdentifier.packetCommitmentPath(portId, channelId, sequence))] =
+            keccak256(abi.encodePacked(makePacketCommitment(packet)));
     }
 
     function deletePacketCommitment(string calldata portId, string calldata channelId, uint64 sequence) external {
         onlyIBCModule();
-        delete commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
+        delete commitments[keccak256(IBCIdentifier.packetCommitmentPath(portId, channelId, sequence))];
     }
 
     function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
@@ -246,12 +248,11 @@ contract IBCHost {
         view
         returns (bytes32, bool)
     {
-        bytes32 commitment = commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
+        bytes32 commitment = commitments[keccak256(IBCIdentifier.packetCommitmentPath(portId, channelId, sequence))];
         return (commitment, commitment != bytes32(0));
     }
 
     function makePacketCommitment(Packet.Data memory packet) public pure returns (bytes32) {
-        // TODO serialize uint64 to bytes(big-endian)
         return sha256(
             abi.encodePacked(
                 packet.timeout_timestamp,
@@ -269,8 +270,8 @@ contract IBCHost {
         bytes calldata acknowledgement
     ) external {
         onlyIBCModule();
-        commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)] =
-            makePacketAcknowledgementCommitment(acknowledgement);
+        commitments[keccak256(IBCIdentifier.packetAcknowledgementCommitmentPath(portId, channelId, sequence))] =
+            keccak256(abi.encodePacked(sha256(acknowledgement)));
     }
 
     function getPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence)
@@ -278,18 +279,15 @@ contract IBCHost {
         view
         returns (bytes32, bool)
     {
-        bytes32 commitment = commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)];
+        bytes32 commitment =
+            commitments[keccak256(IBCIdentifier.packetAcknowledgementCommitmentPath(portId, channelId, sequence))];
         return (commitment, commitment != bytes32(0));
-    }
-
-    function makePacketAcknowledgementCommitment(bytes memory acknowledgement) public pure returns (bytes32) {
-        return sha256(acknowledgement);
     }
 
     function setPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external {
         onlyIBCModule();
         packetReceipts[portId][channelId][sequence] = 1;
-        commitments[IBCIdentifier.packetReceiptCommitmentKey(portId, channelId, sequence)] =
+        commitments[keccak256(IBCIdentifier.packetReceiptCommitmentPath(portId, channelId, sequence))] =
             keccak256(abi.encodePacked(uint8(1)));
     }
 

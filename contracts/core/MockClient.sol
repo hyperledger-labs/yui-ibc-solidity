@@ -20,10 +20,10 @@ contract MockClient is IClient {
     using Bytes for bytes;
     using IBCHeight for Height.Data;
 
-    bytes32 private constant headerTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.Header"));
-    bytes32 private constant clientStateTypeUrlHash =
+    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.Header"));
+    bytes32 private constant CLIENT_STATE_TYPE_URL_HASH =
         keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ClientState"));
-    bytes32 private constant consensusStateTypeUrlHash =
+    bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
         keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState"));
 
     /**
@@ -78,7 +78,9 @@ contract MockClient is IClient {
         Any.Data memory anyConsensusState;
 
         anyClientState = Any.decode(clientStateBytes);
-        require(keccak256(abi.encodePacked(anyClientState.type_url)) == clientStateTypeUrlHash, "invalid client type");
+        require(
+            keccak256(abi.encodePacked(anyClientState.type_url)) == CLIENT_STATE_TYPE_URL_HASH, "invalid client type"
+        );
         ClientState.Data memory clientState = ClientState.decode(anyClientState.value);
         (height, timestamp) = parseHeader(clientMessageBytes);
         if (height.gt(clientState.latest_height)) {
@@ -96,98 +98,20 @@ contract MockClient is IClient {
         return true;
     }
 
-    function verifyClientState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        bytes memory,
-        string memory,
-        bytes memory proof,
-        bytes memory clientStateBytes // serialized with pb
-    ) public view override returns (bool) {
-        (, bool found) = host.getConsensusState(clientId, height);
-        require(found, "consensus state not found");
-        return sha256(clientStateBytes) == proof.toBytes32();
-    }
-
-    function verifyClientConsensusState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        string memory,
-        Height.Data memory,
-        bytes memory,
-        bytes memory proof,
-        bytes memory consensusStateBytes // serialized with pb
-    ) public view override returns (bool) {
-        (, bool found) = host.getConsensusState(clientId, height);
-        require(found, "consensus state not found");
-        return sha256(consensusStateBytes) == proof.toBytes32();
-    }
-
-    function verifyConnectionState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        bytes memory,
-        bytes memory proof,
-        string memory,
-        bytes memory connectionBytes // serialized with pb
-    ) public view override returns (bool) {
-        (, bool found) = host.getConsensusState(clientId, height);
-        require(found, "consensus state not found");
-        return sha256(connectionBytes) == proof.toBytes32();
-    }
-
-    function verifyChannelState(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        bytes memory,
-        bytes memory proof,
-        string memory,
-        string memory,
-        bytes memory channelBytes // serialized with pb
-    ) public view override returns (bool) {
-        (, bool found) = host.getConsensusState(clientId, height);
-        require(found, "consensus state not found");
-        return sha256(channelBytes) == proof.toBytes32();
-    }
-
-    function verifyPacketCommitment(
+    function verifyMembership(
         IBCHost host,
         string memory clientId,
         Height.Data memory height,
         uint64,
         uint64,
-        bytes memory,
         bytes memory proof,
-        string memory,
-        string memory,
-        uint64,
-        bytes32 commitmentBytes
-    ) public view override returns (bool) {
+        bytes memory,
+        bytes memory,
+        bytes memory value
+    ) external view override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
-        return commitmentBytes == proof.toBytes32();
-    }
-
-    function verifyPacketAcknowledgement(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height,
-        uint64,
-        uint64,
-        bytes memory,
-        bytes memory proof,
-        string memory,
-        string memory,
-        uint64,
-        bytes memory acknowledgement
-    ) public view override returns (bool) {
-        (, bool found) = host.getConsensusState(clientId, height);
-        require(found, "consensus state not found");
-        return host.makePacketAcknowledgementCommitment(acknowledgement) == proof.toBytes32();
+        return sha256(value) == proof.toBytes32();
     }
 
     function getClientState(IBCHost host, string memory clientId)
@@ -213,12 +137,16 @@ contract MockClient is IClient {
         if (!found) {
             return (consensusState, false);
         }
-        return (ConsensusState.decode(Any.decode(consensusStateBytes).value), true);
+        Any.Data memory any = Any.decode(consensusStateBytes);
+        require(
+            keccak256(abi.encodePacked(any.type_url)) == CONSENSUS_STATE_TYPE_URL_HASH, "invalid consensus state type"
+        );
+        return (ConsensusState.decode(any.value), true);
     }
 
     function parseHeader(bytes memory headerBytes) internal pure returns (Height.Data memory, uint64) {
         Any.Data memory any = Any.decode(headerBytes);
-        require(keccak256(abi.encodePacked(any.type_url)) == headerTypeUrlHash, "invalid header type");
+        require(keccak256(abi.encodePacked(any.type_url)) == HEADER_TYPE_URL_HASH, "invalid header type");
         Header.Data memory header = Header.decode(any.value);
         return (header.height, header.timestamp);
     }

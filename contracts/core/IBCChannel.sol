@@ -3,8 +3,8 @@ pragma solidity ^0.8.9;
 
 import "../proto/Client.sol";
 import "../proto/Channel.sol";
-import "./IBCConnection.sol";
 import "./IBCMsgs.sol";
+import "./IBCClient.sol";
 import "./IBCHost.sol";
 import "./IBCHeight.sol";
 
@@ -58,7 +58,7 @@ library IBCChannel {
             version: msg_.counterpartyVersion
         });
         require(
-            IBCConnection.verifyChannelState(
+            IBCClient.verifyChannelState(
                 host,
                 connection,
                 msg_.proofHeight,
@@ -105,7 +105,7 @@ library IBCChannel {
             version: msg_.counterpartyVersion
         });
         require(
-            IBCConnection.verifyChannelState(
+            IBCClient.verifyChannelState(
                 host,
                 connection,
                 msg_.proofHeight,
@@ -145,7 +145,7 @@ library IBCChannel {
             version: channel.version
         });
         require(
-            IBCConnection.verifyChannelState(
+            IBCClient.verifyChannelState(
                 host,
                 connection,
                 msg_.proofHeight,
@@ -200,7 +200,7 @@ library IBCChannel {
             version: channel.version
         });
         require(
-            IBCConnection.verifyChannelState(
+            IBCClient.verifyChannelState(
                 host,
                 connection,
                 msg_.proofHeight,
@@ -293,7 +293,7 @@ library IBCChannel {
 
         bytes32 commitment = host.makePacketCommitment(msg_.packet);
         require(
-            IBCConnection.verifyPacketCommitment(
+            IBCClient.verifyPacketCommitment(
                 host,
                 connection,
                 msg_.proofHeight,
@@ -378,10 +378,13 @@ library IBCChannel {
             host.getPacketCommitment(msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence);
         require(found, "packet commitment not found");
 
-        require(commitment == host.makePacketCommitment(msg_.packet), "commitment bytes are not equal");
+        require(
+            commitment == keccak256(abi.encodePacked(host.makePacketCommitment(msg_.packet))),
+            "commitment bytes are not equal"
+        );
 
         require(
-            IBCConnection.verifyPacketAcknowledgement(
+            IBCClient.verifyPacketAcknowledgement(
                 host,
                 connection,
                 msg_.proofHeight,
@@ -389,7 +392,7 @@ library IBCChannel {
                 msg_.packet.destination_port,
                 msg_.packet.destination_channel,
                 msg_.packet.sequence,
-                msg_.acknowledgement
+                sha256(msg_.acknowledgement)
             ),
             "failed to verify packet acknowledgement commitment"
         );
