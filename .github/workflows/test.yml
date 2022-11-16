@@ -19,6 +19,8 @@ jobs:
       run: npm install
     - name: Run tests
       run: forge test -vvvv --use solc:0.8.9
+    - name: Check code formatting
+      run: make check-fmt
 
   integration-test:
     name: Integration test

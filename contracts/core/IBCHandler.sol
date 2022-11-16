@@ -9,14 +9,15 @@ import "./IBCMsgs.sol";
 import "./IBCIdentifier.sol";
 
 contract IBCHandler {
-
     address owner;
     IBCHost host;
 
     /// Event definitions ///
     event SendPacket(Packet.Data packet);
     event RecvPacket(Packet.Data packet);
-    event WriteAcknowledgement(string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement);
+    event WriteAcknowledgement(
+        string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement
+    );
     event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
 
     constructor(IBCHost host_) {
@@ -111,10 +112,11 @@ contract IBCHandler {
     }
 
     function sendPacket(Packet.Data calldata packet) external {
-        require(host.authenticateCapability(
-            IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel),
-            msg.sender
-        ));
+        require(
+            host.authenticateCapability(
+                IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel), msg.sender
+            )
+        );
         IBCChannel.sendPacket(host, packet);
         emit SendPacket(packet);
     }
@@ -124,18 +126,32 @@ contract IBCHandler {
         acknowledgement = module.onRecvPacket(msg_.packet, msg.sender);
         IBCChannel.recvPacket(host, msg_);
         if (acknowledgement.length > 0) {
-            IBCChannel.writeAcknowledgement(host, msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
-            emit WriteAcknowledgement(msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement);
+            IBCChannel.writeAcknowledgement(
+                host,
+                msg_.packet.destination_port,
+                msg_.packet.destination_channel,
+                msg_.packet.sequence,
+                acknowledgement
+            );
+            emit WriteAcknowledgement(
+                msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement
+                );
         }
         emit RecvPacket(msg_.packet);
         return acknowledgement;
     }
 
-    function writeAcknowledgement(string calldata destinationPortId, string calldata destinationChannel, uint64 sequence, bytes calldata acknowledgement) external {
-        require(host.authenticateCapability(
-            IBCIdentifier.channelCapabilityPath(destinationPortId, destinationChannel),
-            msg.sender
-        ));
+    function writeAcknowledgement(
+        string calldata destinationPortId,
+        string calldata destinationChannel,
+        uint64 sequence,
+        bytes calldata acknowledgement
+    ) external {
+        require(
+            host.authenticateCapability(
+                IBCIdentifier.channelCapabilityPath(destinationPortId, destinationChannel), msg.sender
+            )
+        );
         IBCChannel.writeAcknowledgement(host, destinationPortId, destinationChannel, sequence, acknowledgement);
         emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
@@ -164,7 +180,11 @@ contract IBCHandler {
         return IModuleCallbacks(module);
     }
 
-    function lookupModuleByChannel(string memory portId, string memory channelId) internal view returns (IModuleCallbacks) {
+    function lookupModuleByChannel(string memory portId, string memory channelId)
+        internal
+        view
+        returns (IModuleCallbacks)
+    {
         (address module, bool found) = host.getModuleOwner(IBCIdentifier.channelCapabilityPath(portId, channelId));
         require(found);
         return IModuleCallbacks(module);

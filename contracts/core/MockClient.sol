@@ -21,17 +21,20 @@ contract MockClient is IClient {
     using IBCHeight for Height.Data;
 
     bytes32 private constant headerTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.Header"));
-    bytes32 private constant clientStateTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ClientState"));
-    bytes32 private constant consensusStateTypeUrlHash = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState"));
+    bytes32 private constant clientStateTypeUrlHash =
+        keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ClientState"));
+    bytes32 private constant consensusStateTypeUrlHash =
+        keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState"));
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
      */
-    function getTimestampAtHeight(
-        IBCHost host,
-        string memory clientId,
-        Height.Data memory height
-    ) public override view returns (uint64, bool) {
+    function getTimestampAtHeight(IBCHost host, string memory clientId, Height.Data memory height)
+        public
+        view
+        override
+        returns (uint64, bool)
+    {
         (ConsensusState.Data memory consensusState, bool found) = getConsensusState(host, clientId, height);
         if (!found) {
             return (0, false);
@@ -42,10 +45,12 @@ contract MockClient is IClient {
     /**
      * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
      */
-    function getLatestHeight(
-        IBCHost host,
-        string memory clientId
-    ) public override view returns (Height.Data memory, bool) {
+    function getLatestHeight(IBCHost host, string memory clientId)
+        public
+        view
+        override
+        returns (Height.Data memory, bool)
+    {
         (ClientState.Data memory clientState, bool found) = getClientState(host, clientId);
         if (!found) {
             return (Height.Data(0, 0), false);
@@ -99,7 +104,7 @@ contract MockClient is IClient {
         string memory,
         bytes memory proof,
         bytes memory clientStateBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public view override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(clientStateBytes) == proof.toBytes32();
@@ -114,7 +119,7 @@ contract MockClient is IClient {
         bytes memory,
         bytes memory proof,
         bytes memory consensusStateBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public view override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(consensusStateBytes) == proof.toBytes32();
@@ -128,7 +133,7 @@ contract MockClient is IClient {
         bytes memory proof,
         string memory,
         bytes memory connectionBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public view override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(connectionBytes) == proof.toBytes32();
@@ -143,7 +148,7 @@ contract MockClient is IClient {
         string memory,
         string memory,
         bytes memory channelBytes // serialized with pb
-    ) public override view returns (bool) {
+    ) public view override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return sha256(channelBytes) == proof.toBytes32();
@@ -161,7 +166,7 @@ contract MockClient is IClient {
         string memory,
         uint64,
         bytes32 commitmentBytes
-    ) public override view returns (bool) {
+    ) public view override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return commitmentBytes == proof.toBytes32();
@@ -179,13 +184,17 @@ contract MockClient is IClient {
         string memory,
         uint64,
         bytes memory acknowledgement
-    ) public override view returns (bool) {
+    ) public view override returns (bool) {
         (, bool found) = host.getConsensusState(clientId, height);
         require(found, "consensus state not found");
         return host.makePacketAcknowledgementCommitment(acknowledgement) == proof.toBytes32();
     }
 
-    function getClientState(IBCHost host, string memory clientId) public view returns (ClientState.Data memory clientState, bool found) {
+    function getClientState(IBCHost host, string memory clientId)
+        public
+        view
+        returns (ClientState.Data memory clientState, bool found)
+    {
         bytes memory clientStateBytes;
         (clientStateBytes, found) = host.getClientState(clientId);
         if (!found) {
@@ -194,7 +203,11 @@ contract MockClient is IClient {
         return (ClientState.decode(Any.decode(clientStateBytes).value), true);
     }
 
-    function getConsensusState(IBCHost host, string memory clientId, Height.Data memory height) public view returns (ConsensusState.Data memory consensusState, bool found) {
+    function getConsensusState(IBCHost host, string memory clientId, Height.Data memory height)
+        public
+        view
+        returns (ConsensusState.Data memory consensusState, bool found)
+    {
         bytes memory consensusStateBytes;
         (consensusStateBytes, found) = host.getConsensusState(clientId, height);
         if (!found) {

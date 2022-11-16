@@ -13,11 +13,13 @@ library IBCHeight {
     }
 
     function lt(Height.Data memory self, Height.Data memory other) internal pure returns (bool) {
-        return self.revision_number < other.revision_number || (self.revision_number == other.revision_number && self.revision_height < other.revision_height);
+        return self.revision_number < other.revision_number
+            || (self.revision_number == other.revision_number && self.revision_height < other.revision_height);
     }
 
     function lte(Height.Data memory self, Height.Data memory other) internal pure returns (bool) {
-        return self.revision_number < other.revision_number || (self.revision_number == other.revision_number && self.revision_height <= other.revision_height);
+        return self.revision_number < other.revision_number
+            || (self.revision_number == other.revision_number && self.revision_height <= other.revision_height);
     }
 
     function eq(Height.Data memory self, Height.Data memory other) internal pure returns (bool) {
@@ -25,10 +27,12 @@ library IBCHeight {
     }
 
     function gt(Height.Data memory self, Height.Data memory other) internal pure returns (bool) {
-        return self.revision_number > other.revision_number || (self.revision_number == other.revision_number && self.revision_height > other.revision_height);
+        return self.revision_number > other.revision_number
+            || (self.revision_number == other.revision_number && self.revision_height > other.revision_height);
     }
 
     function gte(Height.Data memory self, Height.Data memory other) internal pure returns (bool) {
-        return self.revision_number > other.revision_number || (self.revision_number == other.revision_number && self.revision_height >= other.revision_height);
+        return self.revision_number > other.revision_number
+            || (self.revision_number == other.revision_number && self.revision_height >= other.revision_height);
     }
 }

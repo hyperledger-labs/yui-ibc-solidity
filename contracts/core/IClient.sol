@@ -5,23 +5,18 @@ import "./IBCHost.sol";
 import "../proto/Client.sol";
 
 interface IClient {
-
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
      */
-    function getTimestampAtHeight(
-        IBCHost host,
-        string calldata clientId,
-        Height.Data calldata height
-    ) external view returns (uint64, bool);
+    function getTimestampAtHeight(IBCHost host, string calldata clientId, Height.Data calldata height)
+        external
+        view
+        returns (uint64, bool);
 
     /**
      * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
      */
-    function getLatestHeight(
-        IBCHost host,
-        string calldata clientId
-    ) external view returns (Height.Data memory, bool);
+    function getLatestHeight(IBCHost host, string calldata clientId) external view returns (Height.Data memory, bool);
 
     /**
      * @dev verifyClientMessageAndUpdateState is intended to perform the followings:

@@ -1,6 +1,7 @@
 NETWORK ?= development
 TRUFFLE ?= npx truffle
 ABIGEN ?= abigen
+FORGE ?= forge
 
 .PHONY: yrly
 yrly:
@@ -33,6 +34,17 @@ else
 		-I$(SOLPB_DIR)/protobuf-solidity/src/protoc/include \
 		./proto/**/*.proto
 endif
+
+.PHONY: fmt
+fmt:
+	@$(FORGE) fmt $(FORGE_FMT_OPTS) \
+		./contracts/app \
+		./contracts/core \
+		./tests/foundry/lib/src
+
+.PHONY: fmt
+check-fmt:
+	@$(MAKE) FORGE_FMT_OPTS=--check fmt
 
 .PHONY: test
 test:

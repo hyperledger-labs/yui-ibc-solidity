@@ -6,10 +6,8 @@ import "../proto/Connection.sol";
 import "../proto/Channel.sol";
 
 /*
-IBCMsgs defines Datagrams in ics-026.
-*/
+IBCMsgs defines Datagrams in ics-026.*/
 library IBCMsgs {
-
     /// Client ///
 
     struct MsgCreateClient {
