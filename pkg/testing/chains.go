@@ -310,8 +310,8 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 		panic(err)
 	}
 	return ibchandler.IBCMsgsMsgUpdateClient{
-		ClientId: clientID,
-		Header:   bz,
+		ClientId:      clientID,
+		ClientMessage: bz,
 	}
 }
 
@@ -329,8 +329,8 @@ func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID 
 		panic(err)
 	}
 	return ibchandler.IBCMsgsMsgUpdateClient{
-		ClientId: clientID,
-		Header:   bz,
+		ClientId:      clientID,
+		ClientMessage: bz,
 	}
 }
 

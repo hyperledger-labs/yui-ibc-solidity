@@ -107,8 +107,8 @@ func (c *Chain) TxUpdateClient(opts *bind.TransactOpts, msg *clienttypes.MsgUpda
 		return nil, err
 	}
 	return c.ibcHandler.UpdateClient(opts, ibchandler.IBCMsgsMsgUpdateClient{
-		ClientId: msg.ClientId,
-		Header:   headerBytes,
+		ClientId:      msg.ClientId,
+		ClientMessage: headerBytes,
 	})
 }
 
