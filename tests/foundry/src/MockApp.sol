@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../../../contracts/core/types/Channel.sol";
+import "../../../contracts/proto/Channel.sol";
 import "../../../contracts/core/IBCModule.sol";
 import "../../../contracts/core/IBCHandler.sol";
 import "../../../contracts/core/IBCHost.sol";
-import "../../../contracts/core/types/App.sol";
+import "../../../contracts/proto/App.sol";
 import "../../../contracts/lib/strings.sol";
 import "../../../contracts/lib/Bytes.sol";
 import "openzeppelin-solidity/contracts/utils/Context.sol";

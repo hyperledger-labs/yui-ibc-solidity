@@ -6,9 +6,9 @@ import "../../../contracts/core/IBCHost.sol";
 import "../../../contracts/core/IBCHandler.sol";
 import "../../../contracts/core/IBCIdentifier.sol";
 import "../../../contracts/core/MockClient.sol";
-import "../../../contracts/core/types/MockClient.sol";
-import "../../../contracts/core/types/Connection.sol";
-import "../../../contracts/core/types/Channel.sol";
+import "../../../contracts/proto/MockClient.sol";
+import "../../../contracts/proto/Connection.sol";
+import "../../../contracts/proto/Channel.sol";
 
 import "./MockApp.sol";
 

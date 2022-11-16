@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client";
 
 import "solidity-protobuf-extensions.proto";
-option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/core/types" };
+option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
 
 // Height is a monotonically increasing data type
 // that can be compared against another Height for the purposes of updating and

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./types/Client.sol";
-import "./types/Connection.sol";
-import "./types/Channel.sol";
+import "../proto/Client.sol";
+import "../proto/Connection.sol";
+import "../proto/Channel.sol";
 
 /*
 IBCMsgs defines Datagrams in ics-026.

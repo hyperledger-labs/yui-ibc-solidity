@@ -5,7 +5,7 @@ import "./ICS20Transfer.sol";
 import "./IICS20Bank.sol";
 import "../core/IBCHandler.sol";
 import "../core/IBCHost.sol";
-import "../core/types/App.sol";
+import "../proto/App.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
     IICS20Bank bank;
