@@ -60,6 +60,9 @@ contract IBFT2Client is IClient {
         return (consensusState.timestamp, true);
     }
 
+    /**
+     * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
+     */
     function getLatestHeight(
         IBCHost host,
         string memory clientId
@@ -71,6 +74,14 @@ contract IBFT2Client is IClient {
         return (clientState.latest_height, true);
     }
 
+    /**
+     * @dev verifyClientMessageAndUpdateState is intended to perform the followings:
+     * 1. verify a given client message(e.g. header)
+     * 2. check misbehaviour such like duplicate block height
+     * 3. if misbehaviour is found, update state accordingly and return
+     * 4. update state(s) with the client message
+     * 5. persist the state(s) on the host
+     */
     function verifyClientMessageAndUpdateState(
         IBCHost host,
         string memory clientId,
@@ -86,23 +97,18 @@ contract IBFT2Client is IClient {
         (clientState, ok) = unmarshalClientState(clientStateBytes);
         require(ok, "client state is invalid");
 
+        // TODO add misbehaviour check support
         (header, ok) = unmarshalHeader(clientMessageBytes);
         require(ok, "header is invalid");
+        // check if the provided client message is valid
+        ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
+        require(parsedHeader.height.gt(header.trusted_height), "header height <= consensus state height");
 
         (consensusState, ok) = getConsensusState(host, clientId, header.trusted_height);
         require(ok, "consensusState not found");
 
-        // check if the provided client message is valid
-        ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
-        require(parsedHeader.height.gt(header.trusted_height), "header height <= consensus state height");
         (validators, ok) = verify(consensusState, parsedHeader);
         require(ok, "failed to verify the header");
-
-        // check for duplicate height misbehaviour
-
-        // updates state upon misbehaviour, freezing the ClientState.
-        // This method should only be called when misbehaviour is detected
-        // as it does not perform any misbehaviour checks.
 
         // if client message is verified and there is no misbehaviour, update state
         consensusState.timestamp = parsedHeader.time;

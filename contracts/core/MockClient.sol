@@ -39,6 +39,9 @@ contract MockClient is IClient {
         return (consensusState.timestamp, true);
     }
 
+    /**
+     * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
+     */
     function getLatestHeight(
         IBCHost host,
         string memory clientId
@@ -51,13 +54,12 @@ contract MockClient is IClient {
     }
 
     /**
-     * @dev verifyClientMessageAndUpdateState is intended to perform:
-     * 1. client message verification
-     * 2. check for duplicate height misbehaviour
+     * @dev verifyClientMessageAndUpdateState is intended to perform the followings:
+     * 1. verify a given client message(e.g. header)
+     * 2. check misbehaviour such like duplicate block height
      * 3. if misbehaviour is found, update state accordingly and return
-     * 4. update state in a way that verified headers carrying one or more consensus states can be updated
-     * 5. persist the state internally
-     * 6. return an array of consensus heights
+     * 4. update state(s) with the client message
+     * 5. persist the state(s) on the host
      */
     function verifyClientMessageAndUpdateState(
         IBCHost host,
@@ -65,15 +67,6 @@ contract MockClient is IClient {
         bytes memory clientStateBytes,
         bytes memory clientMessageBytes
     ) public override returns (bool) {
-        // verify clientMessageBytes
-
-        // check for misbehaviour
-
-        // updates state upon misbehaviour, freezing the ClientState.
-        // This method should only be called when misbehaviour is detected
-        // as it does not perform any misbehaviour checks.
-
-        // if client message is verified and there is no misbehaviour, update state
         Height.Data memory height;
         uint64 timestamp;
         Any.Data memory anyClientState;
