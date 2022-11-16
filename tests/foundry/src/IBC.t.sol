@@ -39,12 +39,7 @@ contract IBCTest is Test {
     }
 
     function setUpMockClient() internal {
-        handler.createClient(IBCMsgs.MsgCreateClient({
-            clientType: mockClientType,
-            height: Height.Data({revision_number: 0, revision_height: 1}),
-            clientStateBytes: wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data({latest_height: Height.Data({revision_number: 0, revision_height: 1})})),
-            consensusStateBytes: wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp)}))
-        }));
+        createMockClient(1);
     }
 
     function setUpConnection() internal {
@@ -128,7 +123,37 @@ contract IBCTest is Test {
         }));
     }
 
+    function testBenchmarkUpdateMockClient() public {
+        updateMockClient(2);
+    }
+
     /* internal functions */
+
+    function createMockClient(uint64 revision_height) internal {
+        handler.createClient(IBCMsgs.MsgCreateClient({
+            clientType: mockClientType,
+            height: Height.Data({revision_number: 0, revision_height: revision_height}),
+            clientStateBytes: wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data({latest_height: Height.Data({revision_number: 0, revision_height: revision_height})})),
+            consensusStateBytes: wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp)}))
+        }));
+    }
+
+    function updateMockClient(uint64 next_revision_height) internal {
+        handler.updateClient(IBCMsgs.MsgUpdateClient({
+            clientId: "mock-client-0",
+            clientMessage: wrapAnyMockHeader(IbcLightclientsMockV1Header.Data({
+                height: Height.Data({revision_number: 0, revision_height: next_revision_height}),
+                timestamp: uint64(block.timestamp)
+            }))
+        }));
+    }
+
+    function wrapAnyMockHeader(IbcLightclientsMockV1Header.Data memory header) internal returns (bytes memory) {
+        Any.Data memory anyHeader;
+        anyHeader.type_url = "/ibc.lightclients.mock.v1.Header";
+        anyHeader.value = IbcLightclientsMockV1Header.encode(header);
+        return Any.encode(anyHeader);
+    }
 
     function wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data memory clientState) internal returns (bytes memory) {
         Any.Data memory anyClientState;
