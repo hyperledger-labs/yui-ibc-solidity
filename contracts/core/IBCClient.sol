@@ -76,8 +76,9 @@ library IBCClient {
     ) public returns (bool) {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
-                IClient.verifyClientMessageAndUpdateState.selector,
-                host, clientId, clientStateBytes, clientMessageBytes));
+                IClient.verifyClientMessageAndUpdateState.selector, host, clientId, clientStateBytes, clientMessageBytes
+            )
+        );
         assert(success);
         return abi.decode(res, (bool));
     }
@@ -94,7 +95,15 @@ library IBCClient {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
                 IClient.verifyClientState.selector,
-                host, clientId, height, prefix, counterpartyClientIdentifier, proof, clientStateBytes));
+                host,
+                clientId,
+                height,
+                prefix,
+                counterpartyClientIdentifier,
+                proof,
+                clientStateBytes
+            )
+        );
         assert(success);
         return abi.decode(res, (bool));
     }
@@ -112,7 +121,16 @@ library IBCClient {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
                 IClient.verifyClientConsensusState.selector,
-                host, clientId, height, counterpartyClientIdentifier, consensusHeight, prefix, proof, consensusStateBytes));
+                host,
+                clientId,
+                height,
+                counterpartyClientIdentifier,
+                consensusHeight,
+                prefix,
+                proof,
+                consensusStateBytes
+            )
+        );
         assert(success);
         return abi.decode(res, (bool));
     }
@@ -129,7 +147,15 @@ library IBCClient {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
                 IClient.verifyConnectionState.selector,
-                host, clientId, height, prefix, proof, connectionId, counterpartyConnectionBytes));
+                host,
+                clientId,
+                height,
+                prefix,
+                proof,
+                connectionId,
+                counterpartyConnectionBytes
+            )
+        );
         assert(success);
         return abi.decode(res, (bool));
     }
@@ -147,7 +173,16 @@ library IBCClient {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
                 IClient.verifyChannelState.selector,
-                host, clientId, height, prefix, proof, portId, channelId, channelBytes));
+                host,
+                clientId,
+                height,
+                prefix,
+                proof,
+                portId,
+                channelId,
+                channelBytes
+            )
+        );
         assert(success);
         return abi.decode(res, (bool));
     }
@@ -168,7 +203,19 @@ library IBCClient {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
                 IClient.verifyPacketCommitment.selector,
-                host, clientId, height, delayPeriodTime, delayPeriodBlocks, prefix, proof, portId, channelId, sequence, commitmentBytes));
+                host,
+                clientId,
+                height,
+                delayPeriodTime,
+                delayPeriodBlocks,
+                prefix,
+                proof,
+                portId,
+                channelId,
+                sequence,
+                commitmentBytes
+            )
+        );
         assert(success);
         return abi.decode(res, (bool));
     }
@@ -189,7 +236,19 @@ library IBCClient {
         (bool success, bytes memory res) = address(getClient(host, clientId)).delegatecall(
             abi.encodeWithSelector(
                 IClient.verifyPacketAcknowledgement.selector,
-                host, clientId, height, delayPeriodTime, delayPeriodBlocks, prefix, proof, portId, channelId, sequence, acknowledgement));
+                host,
+                clientId,
+                height,
+                delayPeriodTime,
+                delayPeriodBlocks,
+                prefix,
+                proof,
+                portId,
+                channelId,
+                sequence,
+                acknowledgement
+            )
+        );
         assert(success);
         return abi.decode(res, (bool));
     }

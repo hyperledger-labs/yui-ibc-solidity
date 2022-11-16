@@ -11,22 +11,22 @@ contract IBCHost {
     using IBCHeight for Height.Data;
 
     // Commitments
-    mapping (bytes32 => bytes32) commitments;
+    mapping(bytes32 => bytes32) commitments;
 
     // Store
-    mapping (string => address) clientRegistry; // clientType => clientImpl
-    mapping (string => string) clientTypes; // clientID => clientType
-    mapping (string => bytes) clientStates;
-    mapping (string => mapping(uint128 => bytes)) consensusStates;
-    mapping (string => mapping(uint128 => uint256)) processedTimes;
-    mapping (string => mapping(uint128 => uint256)) processedHeights;
-    mapping (string => ConnectionEnd.Data) connections;
-    mapping (string => mapping(string => Channel.Data)) channels;
-    mapping (string => mapping(string => uint64)) nextSequenceSends;
-    mapping (string => mapping(string => uint64)) nextSequenceRecvs;
-    mapping (string => mapping(string => uint64)) nextSequenceAcks;
-    mapping (string => mapping(string => mapping(uint64 => uint8))) packetReceipts;
-    mapping (bytes => address[]) capabilities;
+    mapping(string => address) clientRegistry; // clientType => clientImpl
+    mapping(string => string) clientTypes; // clientID => clientType
+    mapping(string => bytes) clientStates;
+    mapping(string => mapping(uint128 => bytes)) consensusStates;
+    mapping(string => mapping(uint128 => uint256)) processedTimes;
+    mapping(string => mapping(uint128 => uint256)) processedHeights;
+    mapping(string => ConnectionEnd.Data) connections;
+    mapping(string => mapping(string => Channel.Data)) channels;
+    mapping(string => mapping(string => uint64)) nextSequenceSends;
+    mapping(string => mapping(string => uint64)) nextSequenceRecvs;
+    mapping(string => mapping(string => uint64)) nextSequenceAcks;
+    mapping(string => mapping(string => mapping(uint64 => uint8))) packetReceipts;
+    mapping(bytes => address[]) capabilities;
     uint64 nextClientSequence;
     uint64 nextConnectionSequence;
     uint64 nextChannelSequence;
@@ -98,13 +98,22 @@ contract IBCHost {
 
     // ConsensusState
 
-    function setConsensusState(string calldata clientId, Height.Data calldata height, bytes calldata consensusStateBytes) external {
+    function setConsensusState(
+        string calldata clientId,
+        Height.Data calldata height,
+        bytes calldata consensusStateBytes
+    ) external {
         onlyIBCModule();
         consensusStates[clientId][height.toUint128()] = consensusStateBytes;
-        commitments[IBCIdentifier.consensusCommitmentKey(clientId, height.revision_number, height.revision_height)] = keccak256(consensusStateBytes);
+        commitments[IBCIdentifier.consensusCommitmentKey(clientId, height.revision_number, height.revision_height)] =
+            keccak256(consensusStateBytes);
     }
 
-    function getConsensusState(string calldata clientId, Height.Data calldata height) external view returns (bytes memory, bool) {
+    function getConsensusState(string calldata clientId, Height.Data calldata height)
+        external
+        view
+        returns (bytes memory, bool)
+    {
         uint128 h = height.toUint128();
         return (consensusStates[clientId][h], consensusStates[clientId][h].length > 0);
     }
@@ -116,17 +125,27 @@ contract IBCHost {
         processedTimes[clientId][height.toUint128()] = processedTime;
     }
 
-    function getProcessedTime(string calldata clientId, Height.Data calldata height) external view returns (uint256, bool) {
+    function getProcessedTime(string calldata clientId, Height.Data calldata height)
+        external
+        view
+        returns (uint256, bool)
+    {
         uint256 processedTime = processedTimes[clientId][height.toUint128()];
         return (processedTime, processedTime != 0);
     }
 
-    function setProcessedHeight(string calldata clientId, Height.Data calldata height, uint256 processedHeight) external {
+    function setProcessedHeight(string calldata clientId, Height.Data calldata height, uint256 processedHeight)
+        external
+    {
         onlyIBCModule();
         processedHeights[clientId][height.toUint128()] = processedHeight;
     }
 
-    function getProcessedHeight(string calldata clientId, Height.Data calldata height) external view returns (uint256, bool) {
+    function getProcessedHeight(string calldata clientId, Height.Data calldata height)
+        external
+        view
+        returns (uint256, bool)
+    {
         uint256 processedHeight = processedHeights[clientId][height.toUint128()];
         return (processedHeight, processedHeight != 0);
     }
@@ -146,8 +165,15 @@ contract IBCHost {
         commitments[IBCIdentifier.connectionCommitmentKey(connectionId)] = keccak256(ConnectionEnd.encode(connection));
     }
 
-    function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory connection, bool) {
-        return (connections[connectionId], connections[connectionId].state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED);
+    function getConnection(string calldata connectionId)
+        external
+        view
+        returns (ConnectionEnd.Data memory connection, bool)
+    {
+        return (
+            connections[connectionId],
+            connections[connectionId].state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED
+        );
     }
 
     // Channel
@@ -158,8 +184,15 @@ contract IBCHost {
         commitments[IBCIdentifier.channelCommitmentKey(portId, channelId)] = keccak256(Channel.encode(channel));
     }
 
-    function getChannel(string calldata portId, string calldata channelId) external view returns (Channel.Data memory channel, bool) {
-        return (channels[portId][channelId], channels[portId][channelId].state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
+    function getChannel(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (Channel.Data memory channel, bool)
+    {
+        return (
+            channels[portId][channelId],
+            channels[portId][channelId].state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED
+        );
     }
 
     // Packet
@@ -176,7 +209,8 @@ contract IBCHost {
     function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) external {
         onlyIBCModule();
         nextSequenceRecvs[portId][channelId] = sequence;
-        commitments[IBCIdentifier.nextSequenceRecvCommitmentKey(portId, channelId)] = keccak256(abi.encodePacked(sequence));
+        commitments[IBCIdentifier.nextSequenceRecvCommitmentKey(portId, channelId)] =
+            keccak256(abi.encodePacked(sequence));
     }
 
     function getNextSequenceRecv(string calldata portId, string calldata channelId) external view returns (uint64) {
@@ -192,7 +226,12 @@ contract IBCHost {
         return nextSequenceAcks[portId][channelId];
     }
 
-    function setPacketCommitment(string memory portId, string memory channelId, uint64 sequence, Packet.Data memory packet) public {
+    function setPacketCommitment(
+        string memory portId,
+        string memory channelId,
+        uint64 sequence,
+        Packet.Data memory packet
+    ) public {
         onlyIBCModule();
         commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)] = makePacketCommitment(packet);
     }
@@ -202,22 +241,43 @@ contract IBCHost {
         delete commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
     }
 
-    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bytes32, bool) {
+    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
+        external
+        view
+        returns (bytes32, bool)
+    {
         bytes32 commitment = commitments[IBCIdentifier.packetCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));
     }
 
     function makePacketCommitment(Packet.Data memory packet) public pure returns (bytes32) {
         // TODO serialize uint64 to bytes(big-endian)
-        return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, sha256(packet.data)));
+        return sha256(
+            abi.encodePacked(
+                packet.timeout_timestamp,
+                packet.timeout_height.revision_number,
+                packet.timeout_height.revision_height,
+                sha256(packet.data)
+            )
+        );
     }
 
-    function setPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence, bytes calldata acknowledgement) external {
+    function setPacketAcknowledgementCommitment(
+        string calldata portId,
+        string calldata channelId,
+        uint64 sequence,
+        bytes calldata acknowledgement
+    ) external {
         onlyIBCModule();
-        commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)] = makePacketAcknowledgementCommitment(acknowledgement);
+        commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)] =
+            makePacketAcknowledgementCommitment(acknowledgement);
     }
 
-    function getPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bytes32, bool) {
+    function getPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence)
+        external
+        view
+        returns (bytes32, bool)
+    {
         bytes32 commitment = commitments[IBCIdentifier.packetAcknowledgementCommitmentKey(portId, channelId, sequence)];
         return (commitment, commitment != bytes32(0));
     }
@@ -229,10 +289,15 @@ contract IBCHost {
     function setPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external {
         onlyIBCModule();
         packetReceipts[portId][channelId][sequence] = 1;
-        commitments[IBCIdentifier.packetReceiptCommitmentKey(portId, channelId, sequence)] = keccak256(abi.encodePacked(uint8(1)));
+        commitments[IBCIdentifier.packetReceiptCommitmentKey(portId, channelId, sequence)] =
+            keccak256(abi.encodePacked(uint8(1)));
     }
 
-    function hasPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence) external view returns (bool) {
+    function hasPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence)
+        external
+        view
+        returns (bool)
+    {
         return packetReceipts[portId][channelId][sequence] == 1;
     }
 
@@ -311,7 +376,7 @@ contract IBCHost {
         bytes memory bstr = new bytes(len);
         uint64 k = len;
         while (_i != 0) {
-            k = k-1;
+            k = k - 1;
             uint8 temp = (48 + uint8(_i - _i / 10 * 10));
             bytes1 b1 = bytes1(temp);
             bstr[k] = b1;
@@ -319,5 +384,4 @@ contract IBCHost {
         }
         return string(bstr);
     }
-
 }

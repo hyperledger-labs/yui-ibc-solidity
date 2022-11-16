@@ -14,7 +14,11 @@ contract ICS20TransferBank is ICS20Transfer {
         bank = bank_;
     }
 
-    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount) override internal returns (bool) {
+    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
+        internal
+        override
+        returns (bool)
+    {
         try bank.transferFrom(sender, receiver, denom, amount) {
             return true;
         } catch (bytes memory) {
@@ -22,7 +26,7 @@ contract ICS20TransferBank is ICS20Transfer {
         }
     }
 
-    function _mint(address account, string memory denom, uint256 amount) override internal returns (bool) {
+    function _mint(address account, string memory denom, uint256 amount) internal override returns (bool) {
         try bank.mint(account, denom, amount) {
             return true;
         } catch (bytes memory) {
@@ -30,12 +34,11 @@ contract ICS20TransferBank is ICS20Transfer {
         }
     }
 
-    function _burn(address account, string memory denom, uint256 amount) override internal returns (bool) {
+    function _burn(address account, string memory denom, uint256 amount) internal override returns (bool) {
         try bank.burn(account, denom, amount) {
             return true;
         } catch (bytes memory) {
             return false;
         }
     }
-
 }
