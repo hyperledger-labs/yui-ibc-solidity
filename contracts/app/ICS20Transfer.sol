@@ -9,7 +9,7 @@ import "../core/IBCHost.sol";
 import "../proto/App.sol";
 import "../lib/strings.sol";
 import "../lib/Bytes.sol";
-import "openzeppelin-solidity/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 
 abstract contract ICS20Transfer is Context, IICS20Transfer {
     using strings for *;
