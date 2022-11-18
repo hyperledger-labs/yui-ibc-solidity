@@ -8,12 +8,13 @@ import "./IBCChannel.sol";
 import "./IBCModule.sol";
 import "./IBCMsgs.sol";
 import "./IBCIdentifier.sol";
+import "./IBCHost.sol";
 
-contract IBCHandler {
-    address owner;
-    IBCHost host;
+contract IBCHandler is IBCHost {
+    address immutable owner;
 
-    /// Event definitions ///
+    /* Event definitions */
+
     event SendPacket(Packet.Data packet);
     event RecvPacket(Packet.Data packet);
     event WriteAcknowledgement(
@@ -21,48 +22,77 @@ contract IBCHandler {
     );
     event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
 
-    constructor(IBCHost host_) {
+    constructor(address ibcClientAddress_, address ibcConnectionAddress_, address ibcChannelAddress_) {
         owner = msg.sender;
-        host = host_;
+        ibcClientAddress = ibcClientAddress_;
+        ibcConnectionAddress = ibcConnectionAddress_;
+        ibcChannelAddress = ibcChannelAddress_;
     }
 
-    function getHostAddress() external view returns (address) {
-        return address(host);
-    }
+    /* Client/Module/Settings accessors */
 
     function registerClient(string calldata clientType, IClient client) external {
-        require(msg.sender == owner);
-        return IBCClient.registerClient(host, clientType, client);
+        onlyOwner();
+        require(address(clientRegistry[clientType]) == address(0), "clientImpl already exists");
+        clientRegistry[clientType] = address(client);
     }
 
-    /// Handler interface implementations ///
+    function bindPort(string memory portId, address moduleAddress) public {
+        onlyOwner();
+        claimCapability(IBCIdentifier.portCapabilityPath(portId), moduleAddress);
+    }
+
+    function setExpectedTimePerBlock(uint64 expectedTimePerBlock_) external {
+        // TODO: consider better authn/authz for this operation
+        onlyOwner();
+        expectedTimePerBlock = expectedTimePerBlock_;
+    }
+
+    /* Handshake interface */
 
     function createClient(IBCMsgs.MsgCreateClient calldata msg_) external {
-        return IBCClient.createClient(host, msg_);
+        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IBCClient.createClient.selector, msg_));
+        require(success);
     }
 
     function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
-        return IBCClient.updateClient(host, msg_);
+        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IBCClient.updateClient.selector, msg_));
+        require(success);
     }
 
-    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit memory msg_) public returns (string memory) {
-        return IBCConnection.connectionOpenInit(host, msg_);
+    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_) public returns (string memory) {
+        (bool success, bytes memory res) =
+            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IBCConnection.connectionOpenInit.selector, msg_));
+        require(success);
+        return abi.decode(res, (string));
     }
 
-    function connectionOpenTry(IBCMsgs.MsgConnectionOpenTry memory msg_) public returns (string memory) {
-        return IBCConnection.connectionOpenTry(host, msg_);
+    function connectionOpenTry(IBCMsgs.MsgConnectionOpenTry calldata msg_) public returns (string memory) {
+        (bool success, bytes memory res) =
+            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IBCConnection.connectionOpenTry.selector, msg_));
+        require(success);
+        return abi.decode(res, (string));
     }
 
-    function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck memory msg_) public {
-        return IBCConnection.connectionOpenAck(host, msg_);
+    function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) public {
+        (bool success,) =
+            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IBCConnection.connectionOpenAck.selector, msg_));
+        require(success);
     }
 
-    function connectionOpenConfirm(IBCMsgs.MsgConnectionOpenConfirm memory msg_) public {
-        return IBCConnection.connectionOpenConfirm(host, msg_);
+    function connectionOpenConfirm(IBCMsgs.MsgConnectionOpenConfirm calldata msg_) public {
+        (bool success,) = ibcConnectionAddress.delegatecall(
+            abi.encodeWithSelector(IBCConnection.connectionOpenConfirm.selector, msg_)
+        );
+        require(success);
     }
 
-    function channelOpenInit(IBCMsgs.MsgChannelOpenInit memory msg_) public returns (string memory) {
-        string memory channelId = IBCChannel.channelOpenInit(host, msg_);
+    function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) public returns (string memory) {
+        (bool success, bytes memory res) =
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenInit.selector, msg_));
+        require(success);
+        string memory channelId = abi.decode(res, (string));
+
         IModuleCallbacks module = lookupModuleByPortId(msg_.portId);
         module.onChanOpenInit(
             msg_.channel.ordering,
@@ -72,12 +102,19 @@ contract IBCHandler {
             msg_.channel.counterparty,
             msg_.channel.version
         );
-        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
+        claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
         return channelId;
     }
 
-    function channelOpenTry(IBCMsgs.MsgChannelOpenTry memory msg_) public returns (string memory) {
-        string memory channelId = IBCChannel.channelOpenTry(host, msg_);
+    function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) public returns (string memory) {
+        string memory channelId;
+        {
+            // avoid "Stack too deep" error
+            (bool success, bytes memory res) =
+                ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenTry.selector, msg_));
+            require(success);
+            channelId = abi.decode(res, (string));
+        }
         IModuleCallbacks module = lookupModuleByPortId(msg_.portId);
         module.onChanOpenTry(
             msg_.channel.ordering,
@@ -88,52 +125,67 @@ contract IBCHandler {
             msg_.channel.version,
             msg_.counterpartyVersion
         );
-        host.claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
+        claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
         return channelId;
     }
 
-    function channelOpenAck(IBCMsgs.MsgChannelOpenAck memory msg_) public {
-        IBCChannel.channelOpenAck(host, msg_);
+    function channelOpenAck(IBCMsgs.MsgChannelOpenAck calldata msg_) public {
+        (bool success,) =
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenAck.selector, msg_));
+        require(success);
         lookupModuleByPortId(msg_.portId).onChanOpenAck(msg_.portId, msg_.channelId, msg_.counterpartyVersion);
     }
 
-    function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm memory msg_) public {
-        IBCChannel.channelOpenConfirm(host, msg_);
+    function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm calldata msg_) public {
+        (bool success,) =
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenConfirm.selector, msg_));
+        require(success);
         lookupModuleByPortId(msg_.portId).onChanOpenConfirm(msg_.portId, msg_.channelId);
     }
 
-    function channelCloseInit(IBCMsgs.MsgChannelCloseInit memory msg_) public {
-        IBCChannel.channelCloseInit(host, msg_);
+    function channelCloseInit(IBCMsgs.MsgChannelCloseInit calldata msg_) public {
+        (bool success,) =
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelCloseInit.selector, msg_));
+        require(success);
         lookupModuleByPortId(msg_.portId).onChanCloseInit(msg_.portId, msg_.channelId);
     }
 
-    function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm memory msg_) public {
-        IBCChannel.channelCloseConfirm(host, msg_);
+    function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) public {
+        (bool success,) =
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelCloseConfirm.selector, msg_));
+        require(success);
         lookupModuleByPortId(msg_.portId).onChanCloseConfirm(msg_.portId, msg_.channelId);
     }
 
+    /* Packet handlers */
+
     function sendPacket(Packet.Data calldata packet) external {
         require(
-            host.authenticateCapability(
+            authenticateCapability(
                 IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel), msg.sender
             )
         );
-        IBCChannel.sendPacket(host, packet);
+        (bool success,) = ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.sendPacket.selector, packet));
+        require(success);
         emit SendPacket(packet);
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory acknowledgement) {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
         acknowledgement = module.onRecvPacket(msg_.packet, msg.sender);
-        IBCChannel.recvPacket(host, msg_);
+        (bool success,) = ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.recvPacket.selector, msg_));
+        require(success);
         if (acknowledgement.length > 0) {
-            IBCChannel.writeAcknowledgement(
-                host,
-                msg_.packet.destination_port,
-                msg_.packet.destination_channel,
-                msg_.packet.sequence,
-                acknowledgement
+            (success,) = ibcChannelAddress.delegatecall(
+                abi.encodeWithSelector(
+                    IBCChannel.writeAcknowledgement.selector,
+                    msg_.packet.destination_port,
+                    msg_.packet.destination_channel,
+                    msg_.packet.sequence,
+                    acknowledgement
+                )
             );
+            require(success);
             emit WriteAcknowledgement(
                 msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement
                 );
@@ -149,34 +201,36 @@ contract IBCHandler {
         bytes calldata acknowledgement
     ) external {
         require(
-            host.authenticateCapability(
+            authenticateCapability(
                 IBCIdentifier.channelCapabilityPath(destinationPortId, destinationChannel), msg.sender
             )
         );
-        IBCChannel.writeAcknowledgement(host, destinationPortId, destinationChannel, sequence, acknowledgement);
+        (bool success,) = ibcChannelAddress.delegatecall(
+            abi.encodeWithSelector(
+                IBCChannel.writeAcknowledgement.selector,
+                destinationPortId,
+                destinationChannel,
+                sequence,
+                acknowledgement
+            )
+        );
+        require(success);
         emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
         module.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement, msg.sender);
-        IBCChannel.acknowledgePacket(host, msg_);
+        (bool success,) =
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.acknowledgePacket.selector, msg_));
+        require(success);
         emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
     }
 
-    function bindPort(string memory portId, address moduleAddress) public {
-        onlyOwner();
-        host.claimCapability(IBCIdentifier.portCapabilityPath(portId), moduleAddress);
-    }
-
-    function setExpectedTimePerBlock(uint64 expectedTimePerBlock_) external {
-        // TODO: consider better authn/authz for this operation
-        onlyOwner();
-        host.setExpectedTimePerBlock(expectedTimePerBlock_);
-    }
+    /* Internal functions */
 
     function lookupModuleByPortId(string memory portId) internal view returns (IModuleCallbacks) {
-        (address module, bool found) = host.getModuleOwner(IBCIdentifier.portCapabilityPath(portId));
+        (address module, bool found) = getModuleOwner(IBCIdentifier.portCapabilityPath(portId));
         require(found);
         return IModuleCallbacks(module);
     }
@@ -186,12 +240,12 @@ contract IBCHandler {
         view
         returns (IModuleCallbacks)
     {
-        (address module, bool found) = host.getModuleOwner(IBCIdentifier.channelCapabilityPath(portId, channelId));
+        (address module, bool found) = getModuleOwner(IBCIdentifier.channelCapabilityPath(portId, channelId));
         require(found);
         return IModuleCallbacks(module);
     }
 
     function onlyOwner() internal view {
-        require(msg.sender == owner);
+        require(owner == msg.sender);
     }
 }

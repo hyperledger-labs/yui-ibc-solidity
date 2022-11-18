@@ -4,13 +4,12 @@ pragma solidity ^0.8.9;
 import "./ICS20Transfer.sol";
 import "./IICS20Bank.sol";
 import "../core/IBCHandler.sol";
-import "../core/IBCHost.sol";
 import "../proto/App.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
     IICS20Bank bank;
 
-    constructor(IBCHost host_, IBCHandler ibcHandler_, IICS20Bank bank_) ICS20Transfer(host_, ibcHandler_) {
+    constructor(IBCHandler ibcHandler_, IICS20Bank bank_) ICS20Transfer(ibcHandler_) {
         bank = bank_;
     }
 

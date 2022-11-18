@@ -15,8 +15,9 @@ contract MockApp is IModuleCallbacks {
 
     /// Module callbacks ///
 
-    function onRecvPacket(Packet.Data calldata, address relayer) external virtual override returns (bytes memory) {
+    function onRecvPacket(Packet.Data calldata, address) external virtual override returns (bytes memory) {
         emit MockRecv(true);
+        return bytes("1");
     }
 
     function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address relayer) external virtual override {}

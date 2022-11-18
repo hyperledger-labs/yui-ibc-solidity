@@ -5,7 +5,6 @@ import "./IICS20Transfer.sol";
 import "../proto/Channel.sol";
 import "../core/IBCModule.sol";
 import "../core/IBCHandler.sol";
-import "../core/IBCHost.sol";
 import "../proto/App.sol";
 import "../lib/strings.sol";
 import "../lib/Bytes.sol";
@@ -16,12 +15,10 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
     using Bytes for *;
 
     IBCHandler ibcHandler;
-    IBCHost ibcHost;
 
     mapping(string => address) channelEscrowAddresses;
 
-    constructor(IBCHost host_, IBCHandler ibcHandler_) {
-        ibcHost = host_;
+    constructor(IBCHandler ibcHandler_) {
         ibcHandler = ibcHandler_;
     }
 
@@ -146,15 +143,14 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         string memory sourceChannel,
         uint64 timeoutHeight
     ) internal virtual {
-        (Channel.Data memory channel, bool found) = ibcHost.getChannel(sourcePort, sourceChannel);
-        require(found, "channel not found");
+        (,, ChannelCounterparty.Data memory counterparty,) = ibcHandler.channels(sourcePort, sourceChannel);
         ibcHandler.sendPacket(
             Packet.Data({
-                sequence: ibcHost.getNextSequenceSend(sourcePort, sourceChannel),
+                sequence: ibcHandler.nextSequenceSends(sourcePort, sourceChannel),
                 source_port: sourcePort,
                 source_channel: sourceChannel,
-                destination_port: channel.counterparty.port_id,
-                destination_channel: channel.counterparty.channel_id,
+                destination_port: counterparty.port_id,
+                destination_channel: counterparty.channel_id,
                 data: FungibleTokenPacketData.encode(data),
                 timeout_height: Height.Data({revision_number: 0, revision_height: timeoutHeight}),
                 timeout_timestamp: 0
