@@ -7,7 +7,7 @@ import "./IBCConnection.sol";
 import "./IBCChannel.sol";
 import "./IBCModule.sol";
 import "./IBCMsgs.sol";
-import "./IBCIdentifier.sol";
+import "./IBCCommitment.sol";
 import "./IBCHost.sol";
 
 contract IBCHandler is IBCHost {
@@ -37,9 +37,9 @@ contract IBCHandler is IBCHost {
         clientRegistry[clientType] = address(client);
     }
 
-    function bindPort(string memory portId, address moduleAddress) public {
+    function bindPort(string calldata portId, address moduleAddress) external {
         onlyOwner();
-        claimCapability(IBCIdentifier.portCapabilityPath(portId), moduleAddress);
+        claimCapability(portCapabilityPath(portId), moduleAddress);
     }
 
     function setExpectedTimePerBlock(uint64 expectedTimePerBlock_) external {
@@ -102,7 +102,7 @@ contract IBCHandler is IBCHost {
             msg_.channel.counterparty,
             msg_.channel.version
         );
-        claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
+        claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
         return channelId;
     }
 
@@ -125,7 +125,7 @@ contract IBCHandler is IBCHost {
             msg_.channel.version,
             msg_.counterpartyVersion
         );
-        claimCapability(IBCIdentifier.channelCapabilityPath(msg_.portId, channelId), address(module));
+        claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
         return channelId;
     }
 
@@ -160,11 +160,7 @@ contract IBCHandler is IBCHost {
     /* Packet handlers */
 
     function sendPacket(Packet.Data calldata packet) external {
-        require(
-            authenticateCapability(
-                IBCIdentifier.channelCapabilityPath(packet.source_port, packet.source_channel), msg.sender
-            )
-        );
+        require(authenticateCapability(channelCapabilityPath(packet.source_port, packet.source_channel), msg.sender));
         (bool success,) = ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.sendPacket.selector, packet));
         require(success);
         emit SendPacket(packet);
@@ -200,11 +196,7 @@ contract IBCHandler is IBCHost {
         uint64 sequence,
         bytes calldata acknowledgement
     ) external {
-        require(
-            authenticateCapability(
-                IBCIdentifier.channelCapabilityPath(destinationPortId, destinationChannel), msg.sender
-            )
-        );
+        require(authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel), msg.sender));
         (bool success,) = ibcChannelAddress.delegatecall(
             abi.encodeWithSelector(
                 IBCChannel.writeAcknowledgement.selector,
@@ -227,10 +219,20 @@ contract IBCHandler is IBCHost {
         emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
     }
 
+    /* Capabilities */
+
+    function portCapabilityPath(string memory portId) public pure returns (bytes memory) {
+        return abi.encodePacked(portId);
+    }
+
+    function channelCapabilityPath(string memory portId, string memory channelId) public pure returns (bytes memory) {
+        return abi.encodePacked(portId, "/", channelId);
+    }
+
     /* Internal functions */
 
     function lookupModuleByPortId(string memory portId) internal view returns (IModuleCallbacks) {
-        (address module, bool found) = getModuleOwner(IBCIdentifier.portCapabilityPath(portId));
+        (address module, bool found) = getModuleOwner(portCapabilityPath(portId));
         require(found);
         return IModuleCallbacks(module);
     }
@@ -240,7 +242,7 @@ contract IBCHandler is IBCHost {
         view
         returns (IModuleCallbacks)
     {
-        (address module, bool found) = getModuleOwner(IBCIdentifier.channelCapabilityPath(portId, channelId));
+        (address module, bool found) = getModuleOwner(channelCapabilityPath(portId, channelId));
         require(found);
         return IModuleCallbacks(module);
     }

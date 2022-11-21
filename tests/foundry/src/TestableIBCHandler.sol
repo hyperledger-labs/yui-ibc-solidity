@@ -16,12 +16,12 @@ contract TestableIBCHandler is IBCHandler {
             connections[connectionId].versions.push(connection.versions[i]);
         }
         connections[connectionId].counterparty = connection.counterparty;
-        commitments[keccak256(IBCIdentifier.connectionPath(connectionId))] = keccak256(ConnectionEnd.encode(connection));
+        commitments[keccak256(IBCCommitment.connectionPath(connectionId))] = keccak256(ConnectionEnd.encode(connection));
     }
 
     function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) external {
         channels[portId][channelId] = channel;
-        commitments[keccak256(IBCIdentifier.channelPath(portId, channelId))] = keccak256(Channel.encode(channel));
+        commitments[keccak256(IBCCommitment.channelPath(portId, channelId))] = keccak256(Channel.encode(channel));
     }
 
     function setNextSequenceSend(string calldata portId, string calldata channelId, uint64 sequence) external {
@@ -30,7 +30,7 @@ contract TestableIBCHandler is IBCHandler {
 
     function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) external {
         nextSequenceRecvs[portId][channelId] = sequence;
-        commitments[keccak256(IBCIdentifier.nextSequenceRecvCommitmentPath(portId, channelId))] =
+        commitments[keccak256(IBCCommitment.nextSequenceRecvCommitmentPath(portId, channelId))] =
             keccak256(abi.encodePacked(sequence));
     }
 

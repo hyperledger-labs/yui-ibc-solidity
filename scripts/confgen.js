@@ -1,7 +1,7 @@
 const IBFT2Client = artifacts.require("IBFT2Client");
 const MockClient = artifacts.require("MockClient");
 const IBCHandler = artifacts.require("IBCHandler");
-const IBCIdentifier = artifacts.require("IBCIdentifier");
+const IBCCommitment = artifacts.require("IBCCommitment");
 const SimpleToken = artifacts.require("SimpleToken");
 const ICS20TransferBank = artifacts.require("ICS20TransferBank");
 const ICS20Bank = artifacts.require("ICS20Bank");
@@ -35,7 +35,7 @@ module.exports = function(callback) {
       IBCHandlerAddress: IBCHandler.address,
       IBFT2ClientAddress: IBFT2Client.address,
       MockClientAddress: MockClient.address,
-      IBCIdentifierAddress: IBCIdentifier.address,
+      IBCCommitmentAddress: IBCCommitment.address,
       SimpleTokenAddress: SimpleToken.address,
       ICS20TransferBankAddress: ICS20TransferBank.address,
       ICS20BankAddress: ICS20Bank.address

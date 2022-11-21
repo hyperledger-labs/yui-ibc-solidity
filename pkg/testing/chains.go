@@ -74,7 +74,7 @@ type Chain struct {
 	client        *client.ETHClient
 	IBCHandler    ibchandler.Ibchandler
 	IBCHost       ibchost.Ibchost
-	IBCIdentifier ibcidentifier.Ibcidentifier
+	IBCCommitment ibcidentifier.Ibcidentifier
 
 	// App Modules
 	SimpleToken   simpletoken.Simpletoken
@@ -101,7 +101,7 @@ type Chain struct {
 type ContractConfig interface {
 	GetIBCHostAddress() common.Address
 	GetIBCHandlerAddress() common.Address
-	GetIBCIdentifierAddress() common.Address
+	GetIBCCommitmentAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
 	GetMockClientAddress() common.Address
 
@@ -119,7 +119,7 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 	if err != nil {
 		t.Error(err)
 	}
-	ibcIdentifier, err := ibcidentifier.NewIbcidentifier(config.GetIBCIdentifierAddress(), client)
+	ibcIdentifier, err := ibcidentifier.NewIbcidentifier(config.GetIBCCommitmentAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -148,7 +148,7 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 
 		IBCHost:       *ibcHost,
 		IBCHandler:    *ibcHandler,
-		IBCIdentifier: *ibcIdentifier,
+		IBCCommitment: *ibcIdentifier,
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,

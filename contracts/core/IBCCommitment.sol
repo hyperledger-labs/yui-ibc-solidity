@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-library IBCIdentifier {
+library IBCCommitment {
     // commitment path
 
     function clientStatePath(string calldata clientId) external pure returns (bytes memory) {
@@ -57,20 +57,6 @@ library IBCIdentifier {
         returns (bytes memory)
     {
         return abi.encodePacked("nextSequenceRecv/ports/", portId, "/channels/", channelId);
-    }
-
-    // CapabilityPath
-
-    function portCapabilityPath(string calldata portId) external pure returns (bytes memory) {
-        return abi.encodePacked(portId);
-    }
-
-    function channelCapabilityPath(string calldata portId, string calldata channelId)
-        external
-        pure
-        returns (bytes memory)
-    {
-        return abi.encodePacked(portId, "/", channelId);
     }
 
     // Utility functions

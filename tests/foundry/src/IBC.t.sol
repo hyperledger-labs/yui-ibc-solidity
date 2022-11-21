@@ -6,7 +6,7 @@ import "../../../contracts/core/IBCHandler.sol";
 import "../../../contracts/core/IBCClient.sol";
 import "../../../contracts/core/IBCConnection.sol";
 import "../../../contracts/core/IBCChannel.sol";
-import "../../../contracts/core/IBCIdentifier.sol";
+import "../../../contracts/core/IBCCommitment.sol";
 import "../../../contracts/core/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
@@ -83,8 +83,8 @@ contract IBCTest is Test {
     function setUpMockApp() internal {
         mockApp = new MockApp();
         handler.bindPort(portId, address(mockApp));
-        handler.claimCapabilityDirectly(IBCIdentifier.channelCapabilityPath(portId, "channel-0"), address(mockApp));
-        handler.claimCapabilityDirectly(IBCIdentifier.channelCapabilityPath(portId, "channel-0"), address(this));
+        handler.claimCapabilityDirectly(handler.channelCapabilityPath(portId, "channel-0"), address(mockApp));
+        handler.claimCapabilityDirectly(handler.channelCapabilityPath(portId, "channel-0"), address(this));
     }
 
     /* gas benchmarks */

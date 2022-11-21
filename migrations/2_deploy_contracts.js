@@ -5,14 +5,14 @@ const IBCConnection = artifacts.require("IBCConnection");
 const IBCChannel = artifacts.require("IBCChannel");
 const IBCHandler = artifacts.require("IBCHandler");
 const IBCMsgs = artifacts.require("IBCMsgs");
-const IBCIdentifier = artifacts.require("IBCIdentifier");
+const IBCCommitment = artifacts.require("IBCCommitment");
 const SimpleToken = artifacts.require("SimpleToken");
 const ICS20TransferBank = artifacts.require("ICS20TransferBank");
 const ICS20Bank = artifacts.require("ICS20Bank");
 
 module.exports = async function (deployer) {
-  await deployer.deploy(IBCIdentifier);
-  await deployer.link(IBCIdentifier, [IBCHandler, IBCClient, IBCConnection, IBCChannel, IBFT2Client]);
+  await deployer.deploy(IBCCommitment);
+  await deployer.link(IBCCommitment, [IBCHandler, IBCClient, IBCConnection, IBCChannel, IBFT2Client]);
 
   await deployer.deploy(IBCMsgs);
   await deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client]);

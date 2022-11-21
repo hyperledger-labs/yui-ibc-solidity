@@ -6,7 +6,7 @@ import "../proto/Channel.sol";
 import "./IBCMsgs.sol";
 import "./IBCHeight.sol";
 import "./IBCHost.sol";
-import "./IBCIdentifier.sol";
+import "./IBCCommitment.sol";
 
 contract IBCChannel is IBCHost {
     using IBCHeight for Height.Data;
@@ -227,7 +227,7 @@ contract IBCChannel is IBCHost {
 
         nextSequenceSends[packet.source_port][packet.source_channel]++;
         commitments[keccak256(
-            IBCIdentifier.packetCommitmentPath(packet.source_port, packet.source_channel, packet.sequence)
+            IBCCommitment.packetCommitmentPath(packet.source_port, packet.source_channel, packet.sequence)
         )] = keccak256(
             abi.encodePacked(
                 sha256(
@@ -276,7 +276,7 @@ contract IBCChannel is IBCHost {
                 connection,
                 msg_.proofHeight,
                 msg_.proof,
-                IBCIdentifier.packetCommitmentPath(
+                IBCCommitment.packetCommitmentPath(
                     msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
                 ),
                 sha256(
@@ -322,7 +322,7 @@ contract IBCChannel is IBCHost {
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
         bytes32 ackCommitmentKey = keccak256(
-            IBCIdentifier.packetAcknowledgementCommitmentPath(destinationPortId, destinationChannel, sequence)
+            IBCCommitment.packetAcknowledgementCommitmentPath(destinationPortId, destinationChannel, sequence)
         );
         bytes32 ackCommitment = commitments[ackCommitmentKey];
         require(ackCommitment == bytes32(0), "acknowledgement for packet already exists");
@@ -347,7 +347,7 @@ contract IBCChannel is IBCHost {
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         bytes32 packetCommitmentKey = keccak256(
-            IBCIdentifier.packetCommitmentPath(
+            IBCCommitment.packetCommitmentPath(
                 msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
             )
         );
@@ -375,7 +375,7 @@ contract IBCChannel is IBCHost {
                 connection,
                 msg_.proofHeight,
                 msg_.proof,
-                IBCIdentifier.packetAcknowledgementCommitmentPath(
+                IBCCommitment.packetAcknowledgementCommitmentPath(
                     msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
                 ),
                 sha256(msg_.acknowledgement)
@@ -411,7 +411,7 @@ contract IBCChannel is IBCHost {
             0,
             proof,
             connection.counterparty.prefix.key_prefix,
-            IBCIdentifier.channelPath(portId, channelId),
+            IBCCommitment.channelPath(portId, channelId),
             channelBytes
         );
     }

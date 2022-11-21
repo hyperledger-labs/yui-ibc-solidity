@@ -5,7 +5,7 @@ import "../proto/Client.sol";
 import "../proto/Connection.sol";
 import "./IBCMsgs.sol";
 import "./IBCHost.sol";
-import "./IBCIdentifier.sol";
+import "./IBCCommitment.sol";
 
 contract IBCConnection is IBCHost {
     string private constant commitmentPrefix = "ibc";
@@ -61,7 +61,7 @@ contract IBCConnection is IBCHost {
             verifyClientState(
                 connection,
                 msg_.proofHeight,
-                IBCIdentifier.clientStatePath(connection.counterparty.client_id),
+                IBCCommitment.clientStatePath(connection.counterparty.client_id),
                 msg_.proofClient,
                 msg_.clientStateBytes
             ),
@@ -114,7 +114,7 @@ contract IBCConnection is IBCHost {
             verifyClientState(
                 connection,
                 msg_.proofHeight,
-                IBCIdentifier.clientStatePath(connection.counterparty.client_id),
+                IBCCommitment.clientStatePath(connection.counterparty.client_id),
                 msg_.proofClient,
                 msg_.clientStateBytes
             ),
@@ -183,7 +183,7 @@ contract IBCConnection is IBCHost {
             0,
             proof,
             connection.counterparty.prefix.key_prefix,
-            IBCIdentifier.consensusStatePath(
+            IBCCommitment.consensusStatePath(
                 connection.counterparty.client_id, consensusHeight.revision_number, consensusHeight.revision_height
             ),
             consensusStateBytes
@@ -204,7 +204,7 @@ contract IBCConnection is IBCHost {
             0,
             proof,
             connection.counterparty.prefix.key_prefix,
-            IBCIdentifier.connectionPath(connectionId),
+            IBCCommitment.connectionPath(connectionId),
             ConnectionEnd.encode(counterpartyConnection)
         );
     }

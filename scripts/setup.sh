@@ -14,7 +14,7 @@ function after_common() {
     srcs=(
         "IBCHost"
         "IBCHandler"
-        "IBCIdentifier"
+        "IBCCommitment"
         "SimpleToken"
         "ICS20TransferBank"
         "ICS20Bank"

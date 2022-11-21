@@ -16,7 +16,7 @@ pragma solidity ^0.8.9;
 // import "../lib/Bytes.sol";
 // import "../lib/TrieProofs.sol";
 // import "../lib/RLP.sol";
-// import "./IBCIdentifier.sol";
+// import "./IBCCommitment.sol";
 
 contract IBFT2Client {}
 

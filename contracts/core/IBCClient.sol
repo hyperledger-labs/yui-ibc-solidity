@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import "./IClient.sol";
 import "./IBCMsgs.sol";
 import "./IBCHost.sol";
-import "./IBCIdentifier.sol";
+import "./IBCCommitment.sol";
 
 contract IBCClient is IBCHost {
     /**
@@ -19,10 +19,10 @@ contract IBCClient is IBCHost {
         (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) =
             IClient(clientImpl).createClient(clientId, msg_.height, msg_.clientStateBytes, msg_.consensusStateBytes);
         require(ok);
-        commitments[keccak256(IBCIdentifier.clientStatePath(clientId))] = clientStateCommitment;
+        commitments[keccak256(IBCCommitment.clientStatePath(clientId))] = clientStateCommitment;
         for (uint256 i = 0; i < updates.length; i++) {
             commitments[keccak256(
-                IBCIdentifier.consensusStatePath(
+                IBCCommitment.consensusStatePath(
                     clientId, updates[i].height.revision_number, updates[i].height.revision_height
                 )
             )] = updates[i].consensusStateCommitment;
@@ -33,7 +33,7 @@ contract IBCClient is IBCHost {
      * @dev updateClient updates the consensus state and the state root from a provided header
      */
     function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
-        require(commitments[keccak256(IBCIdentifier.clientStatePath(msg_.clientId))] != bytes32(0));
+        require(commitments[keccak256(IBCCommitment.clientStatePath(msg_.clientId))] != bytes32(0));
         getClient(msg_.clientId).verifyClientMessageAndUpdateState(msg_.clientId, msg_.clientMessage);
     }
 }

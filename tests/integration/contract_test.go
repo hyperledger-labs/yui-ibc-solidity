@@ -54,7 +54,7 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 		ctx := context.Background()
 
 		// clientState
-		path, err := suite.chainA.IBCIdentifier.ClientStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID)
+		path, err := suite.chainA.IBCCommitment.ClientStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID)
 		require.NoError(err)
 		require.Equal(host.FullClientStateKey(testClientID), path)
 
@@ -63,29 +63,29 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 		for _, n := range cases {
 			for _, h := range cases {
 				testHeight := ibcclienttypes.NewHeight(n, h)
-				path, err := suite.chainA.IBCIdentifier.ConsensusStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID, testHeight.RevisionNumber, testHeight.RevisionHeight)
+				path, err := suite.chainA.IBCCommitment.ConsensusStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID, testHeight.RevisionNumber, testHeight.RevisionHeight)
 				require.NoError(err)
 				require.Equal(host.FullConsensusStateKey(testClientID, testHeight), path)
 			}
 		}
 		// connectionState
-		path, err = suite.chainA.IBCIdentifier.ConnectionPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testConnectionID)
+		path, err = suite.chainA.IBCCommitment.ConnectionPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testConnectionID)
 		require.NoError(err)
 		require.Equal(host.ConnectionKey(testConnectionID), path)
 
 		// channelState
-		path, err = suite.chainA.IBCIdentifier.ChannelPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
+		path, err = suite.chainA.IBCCommitment.ChannelPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
 		require.NoError(err)
 		require.Equal(host.ChannelKey(testPortID, testChannelID), path)
 
 		// packetCommitment
 		var testSequence uint64 = 1
-		path, err = suite.chainA.IBCIdentifier.PacketCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		path, err = suite.chainA.IBCCommitment.PacketCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
 		require.Equal(host.PacketCommitmentKey(testPortID, testChannelID, testSequence), path)
 
 		// acknowledgementCommitment
-		path, err = suite.chainA.IBCIdentifier.PacketAcknowledgementCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		path, err = suite.chainA.IBCCommitment.PacketAcknowledgementCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
 		require.Equal(host.PacketAcknowledgementKey(testPortID, testChannelID, testSequence), path)
 	})
