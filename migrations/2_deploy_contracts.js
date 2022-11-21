@@ -12,10 +12,10 @@ const ICS20Bank = artifacts.require("ICS20Bank");
 
 module.exports = async function (deployer) {
   await deployer.deploy(IBCCommitment);
-  await deployer.link(IBCCommitment, [IBCHandler, IBCClient, IBCConnection, IBCChannel, IBFT2Client]);
+  await deployer.link(IBCCommitment, [IBCHandler, IBCClient, IBCConnection, IBCChannel]);
 
   await deployer.deploy(IBCMsgs);
-  await deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client]);
+  await deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler]);
 
   await deployer.deploy(IBCClient);
   await deployer.deploy(IBCConnection);

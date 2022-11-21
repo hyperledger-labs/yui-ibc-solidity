@@ -77,10 +77,7 @@ contract MockClient is IClient {
      */
     function getLatestHeight(string calldata clientId) external view override returns (Height.Data memory, bool) {
         ClientState.Data storage clientState = clientStates[clientId];
-        return (
-            clientState.latest_height,
-            clientState.latest_height.revision_number != 0 && clientState.latest_height.revision_height != 0
-        );
+        return (clientState.latest_height, clientState.latest_height.revision_height != 0);
     }
 
     /**

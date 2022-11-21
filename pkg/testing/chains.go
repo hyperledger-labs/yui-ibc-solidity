@@ -754,7 +754,6 @@ func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, err
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("getLastId:", values[0].(string))
 	return values[0].(string), nil
 }
 
