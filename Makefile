@@ -40,7 +40,7 @@ fmt:
 	@$(FORGE) fmt $(FORGE_FMT_OPTS) \
 		./contracts/app \
 		./contracts/core \
-		./tests/foundry/lib/src
+		./tests/foundry/src
 
 .PHONY: fmt
 check-fmt:

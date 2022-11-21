@@ -184,6 +184,7 @@ func (c Coordinator) ConnOpenInit(
 
 	// initialize connection on source
 	if connID, err := source.ConnectionOpenInit(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
+		fmt.Println("ConnectionOpenInit failed", err)
 		return sourceConnection, counterpartyConnection, err
 	} else {
 		sourceConnection.ID = connID

@@ -15,6 +15,8 @@ function after_common() {
         "IBCHost"
         "IBCHandler"
         "IBCCommitment"
+        "MockClient"
+        "IBFT2Client"
         "SimpleToken"
         "ICS20TransferBank"
         "ICS20Bank"

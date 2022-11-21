@@ -17,6 +17,7 @@ contract IBCConnection is IBCHost {
     function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_) public returns (string memory) {
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
+        require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
         connection.client_id = msg_.clientId;
         setVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_INIT;
@@ -33,6 +34,7 @@ contract IBCConnection is IBCHost {
 
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
+        require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
         connection.client_id = msg_.clientId;
         setVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_TRYOPEN;
@@ -212,10 +214,10 @@ contract IBCConnection is IBCHost {
     /* Internal functions */
 
     function setVersions(Version.Data[] storage versions) internal {
+        versions.push(Version.Data({identifier: "1", features: new string[](2)}));
         Version.Data storage version = versions[0];
-        version.identifier = "1";
-        version.features.push("ORDER_ORDERED");
-        version.features.push("ORDER_UNORDERED");
+        version.features[0] = "ORDER_ORDERED";
+        version.features[1] = "ORDER_UNORDERED";
     }
 
     // TODO implements
@@ -241,7 +243,7 @@ contract IBCConnection is IBCHost {
     function copyVersion(Version.Data memory src, Version.Data storage dst) internal {
         dst.identifier = src.identifier;
         for (uint256 i = 0; i < src.features.length; i++) {
-            dst.features.push(src.features[i]);
+            dst.features[i] = src.features[i];
         }
     }
 }

@@ -21,11 +21,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitment"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcidentifier"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/mockclient"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/simpletoken"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
@@ -57,14 +58,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	parsedHostABI, err := abi.JSON(strings.NewReader(ibchost.IbchostABI))
-	if err != nil {
-		panic(err)
-	}
 	abiSendPacket = parsedHandlerABI.Events["SendPacket"]
-	abiGeneratedClientIdentifier = parsedHostABI.Events["GeneratedClientIdentifier"]
-	abiGeneratedConnectionIdentifier = parsedHostABI.Events["GeneratedConnectionIdentifier"]
-	abiGeneratedChannelIdentifier = parsedHostABI.Events["GeneratedChannelIdentifier"]
+	abiGeneratedClientIdentifier = parsedHandlerABI.Events["GeneratedClientIdentifier"]
+	abiGeneratedConnectionIdentifier = parsedHandlerABI.Events["GeneratedConnectionIdentifier"]
+	abiGeneratedChannelIdentifier = parsedHandlerABI.Events["GeneratedChannelIdentifier"]
 }
 
 type Chain struct {
@@ -73,8 +70,11 @@ type Chain struct {
 	// Core Modules
 	client        *client.ETHClient
 	IBCHandler    ibchandler.Ibchandler
-	IBCHost       ibchost.Ibchost
-	IBCCommitment ibcidentifier.Ibcidentifier
+	IBCCommitment ibccommitment.Ibccommitment
+
+	// Client Modules
+	MockClient  mockclient.Mockclient
+	IBFT2Client ibft2client.Ibft2client
 
 	// App Modules
 	SimpleToken   simpletoken.Simpletoken
@@ -99,7 +99,6 @@ type Chain struct {
 }
 
 type ContractConfig interface {
-	GetIBCHostAddress() common.Address
 	GetIBCHandlerAddress() common.Address
 	GetIBCCommitmentAddress() common.Address
 	GetIBFT2ClientAddress() common.Address
@@ -111,15 +110,19 @@ type ContractConfig interface {
 }
 
 func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightClient, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
-	ibcHost, err := ibchost.NewIbchost(config.GetIBCHostAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
 	ibcHandler, err := ibchandler.NewIbchandler(config.GetIBCHandlerAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
-	ibcIdentifier, err := ibcidentifier.NewIbcidentifier(config.GetIBCCommitmentAddress(), client)
+	ibcCommitment, err := ibccommitment.NewIbccommitment(config.GetIBCCommitmentAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	mockClient, err := mockclient.NewMockclient(config.GetMockClientAddress(), client)
+	if err != nil {
+		t.Error(err)
+	}
+	ibft2Client, err := ibft2client.NewIbft2client(config.GetIBFT2ClientAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -146,9 +149,12 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
 		IBCID:          ibcID,
 
-		IBCHost:       *ibcHost,
 		IBCHandler:    *ibcHandler,
-		IBCCommitment: *ibcIdentifier,
+		IBCCommitment: *ibcCommitment,
+
+		MockClient:  *mockClient,
+		IBFT2Client: *ibft2Client,
+
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
@@ -201,33 +207,32 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 }
 
 func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.ClientState {
-	ctx := context.Background()
-	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
-	if err != nil {
-		require.NoError(chain.t, err)
-	} else if !found {
-		panic("clientState not found")
-	}
-	var cs ibft2clienttypes.ClientState
-	if err := UnmarshalWithAny(bz, &cs); err != nil {
-		panic(err)
-	}
-	return &cs
+	panic("not impl")
+	// ctx := context.Background()
+	// bz, found, err := chain.IBFT2Client.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
+	// if err != nil {
+	// 	require.NoError(chain.t, err)
+	// } else if !found {
+	// 	panic("clientState not found")
+	// }
+	// var cs ibft2clienttypes.ClientState
+	// if err := UnmarshalWithAny(bz, &cs); err != nil {
+	// 	panic(err)
+	// }
+	// return &cs
 }
 
 func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientState {
 	ctx := context.Background()
-	bz, found, err := chain.IBCHost.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
+	clientState, found, err := chain.MockClient.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
 	if err != nil {
 		require.NoError(chain.t, err)
 	} else if !found {
 		panic("clientState not found")
 	}
-	var cs mockclienttypes.ClientState
-	if err := UnmarshalWithAny(bz, &cs); err != nil {
-		panic(err)
+	return &mockclienttypes.ClientState{
+		LatestHeight: ibcclient.Height(clientState.LatestHeight),
 	}
-	return &cs
 }
 
 func (chain *Chain) GetLightClientState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (LightClientState, error) {
@@ -243,7 +248,7 @@ func (chain *Chain) GetLightClientState(counterparty *Chain, counterpartyClientI
 	}
 	return chain.lc.GetState(
 		context.Background(),
-		chain.ContractConfig.GetIBCHostAddress(),
+		chain.ContractConfig.GetIBCHandlerAddress(),
 		storageKeys,
 		height,
 	)
@@ -275,7 +280,7 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandler.IBCMsgsMsgCreateClient {
 	clientState := ibft2clienttypes.ClientState{
 		ChainId:         counterparty.ChainIDString(),
-		IbcStoreAddress: counterparty.ContractConfig.GetIBCHostAddress().Bytes(),
+		IbcStoreAddress: counterparty.ContractConfig.GetIBCHandlerAddress().Bytes(),
 		LatestHeight:    ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 	}
 	consensusState := ibft2clienttypes.ConsensusState{
@@ -338,7 +343,7 @@ func (chain *Chain) UpdateHeader() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		state, err := chain.lc.GetState(ctx, chain.ContractConfig.GetIBCHostAddress(), nil, nil)
+		state, err := chain.lc.GetState(ctx, chain.ContractConfig.GetIBCHandlerAddress(), nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -731,7 +736,7 @@ func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, err
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
-			chain.ContractConfig.GetIBCHostAddress(),
+			chain.ContractConfig.GetIBCHandlerAddress(),
 		},
 		Topics: [][]common.Hash{{
 			event.ID,
@@ -749,6 +754,7 @@ func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, err
 	if err != nil {
 		return "", err
 	}
+	fmt.Println("getLastId:", values[0].(string))
 	return values[0].(string), nil
 }
 
@@ -757,7 +763,7 @@ func (chain *Chain) GetLastSentPacket(
 	sourcePortID string,
 	sourceChannel string,
 ) (*channeltypes.Packet, error) {
-	seq, err := chain.IBCHost.GetNextSequenceSend(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
+	seq, err := chain.IBCHandler.NextSequenceSends(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
 	if err != nil {
 		return nil, err
 	}
@@ -854,25 +860,27 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 }
 
 func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
-	cs, found, err := counterparty.IBCHost.GetClientState(
-		counterparty.CallOpts(context.Background(), RelayerKeyIndex),
-		counterpartyClientID,
-	)
-	if err != nil {
-		return nil, nil, err
-	} else if !found {
-		return nil, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
-	}
 	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ClientStateCommitmentSlot(counterpartyClientID), height)
 	if err != nil {
 		return nil, nil, err
 	}
 	switch counterparty.ClientType() {
 	case ibcclient.MockClient:
-		h := sha256.Sum256(cs)
+		cs := counterparty.GetMockClientState(counterpartyClientID)
+		any, err := PackAny(cs)
+		if err != nil {
+			return nil, nil, err
+		}
+		bz, err := proto.Marshal(any)
+		if err != nil {
+			return nil, nil, err
+		}
+		h := sha256.Sum256(bz)
 		proof.Data = h[:]
+		return bz, proof, nil
+	default:
+		panic("not supported")
 	}
-	return cs, proof, nil
 }
 
 func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string, height *big.Int) (*Proof, error) {
@@ -882,7 +890,7 @@ func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClient
 	}
 	switch counterparty.ClientType() {
 	case ibcclient.MockClient:
-		conn, found, err := counterparty.IBCHost.GetConnection(
+		conn, found, err := counterparty.IBCHandler.GetConnection(
 			counterparty.CallOpts(context.Background(), RelayerKeyIndex),
 			counterpartyConnectionID,
 		)
@@ -908,7 +916,7 @@ func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID 
 	}
 	switch counterparty.ClientType() {
 	case ibcclient.MockClient:
-		ch, found, err := counterparty.IBCHost.GetChannel(
+		ch, found, err := counterparty.IBCHandler.GetChannel(
 			counterparty.CallOpts(context.Background(), RelayerKeyIndex),
 			channel.PortID, channel.ID,
 		)

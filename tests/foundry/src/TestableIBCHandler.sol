@@ -4,8 +4,9 @@ pragma solidity ^0.8.9;
 import "../../../contracts/core/IBCHandler.sol";
 
 contract TestableIBCHandler is IBCHandler {
-
-    constructor(address ibcClientAddress_, address ibcConnectionAddress_, address ibcChannelAddress_) IBCHandler(ibcClientAddress_, ibcConnectionAddress_, ibcChannelAddress_) {}
+    constructor(address ibcClientAddress_, address ibcConnectionAddress_, address ibcChannelAddress_)
+        IBCHandler(ibcClientAddress_, ibcConnectionAddress_, ibcChannelAddress_)
+    {}
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) external {
         connections[connectionId].client_id = connection.client_id;
@@ -36,6 +37,18 @@ contract TestableIBCHandler is IBCHandler {
 
     function setNextSequenceAck(string calldata portId, string calldata channelId, uint64 sequence) external {
         nextSequenceAcks[portId][channelId] = sequence;
+    }
+
+    function setNextClientSequence(uint64 sequence) external {
+        nextClientSequence = sequence;
+    }
+
+    function setNextConnectionSequence(uint64 sequence) external {
+        nextConnectionSequence = sequence;
+    }
+
+    function setNextChannelSequence(uint64 sequence) external {
+        nextChannelSequence = sequence;
     }
 
     function claimCapabilityDirectly(bytes calldata name, address addr) external {

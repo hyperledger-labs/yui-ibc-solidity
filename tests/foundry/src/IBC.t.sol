@@ -57,6 +57,7 @@ contract IBCTest is Test {
             })
         });
         handler.setConnection("connection-0", connection);
+        handler.setNextConnectionSequence(1);
     }
 
     function setUpChannel() internal {
@@ -65,14 +66,12 @@ contract IBCTest is Test {
         Channel.Data memory channel = Channel.Data({
             state: Channel.State.STATE_OPEN,
             ordering: Channel.Order.ORDER_UNORDERED,
-            counterparty: ChannelCounterparty.Data({
-                port_id: portId,
-                channel_id: "channel-0"
-            }),
+            counterparty: ChannelCounterparty.Data({port_id: portId, channel_id: "channel-0"}),
             connection_hops: hops,
             version: "1"
         });
         handler.setChannel(portId, "channel-0", channel);
+        handler.setNextChannelSequence(1);
         handler.setNextSequenceSend(portId, "channel-0", 1);
         handler.setNextSequenceRecv(portId, "channel-0", 1);
         handler.setNextSequenceAck(portId, "channel-0", 1);
@@ -85,6 +84,22 @@ contract IBCTest is Test {
         handler.bindPort(portId, address(mockApp));
         handler.claimCapabilityDirectly(handler.channelCapabilityPath(portId, "channel-0"), address(mockApp));
         handler.claimCapabilityDirectly(handler.channelCapabilityPath(portId, "channel-0"), address(this));
+    }
+
+    /* test cases */
+
+    function testConnectionOpenInit() public {
+        IBCMsgs.MsgConnectionOpenInit memory msg_ = IBCMsgs.MsgConnectionOpenInit({
+            clientId: "mock-client-1",
+            counterparty: Counterparty.Data({
+                client_id: "mock-client-1",
+                connection_id: "",
+                prefix: MerklePrefix.Data({key_prefix: bytes("ibc")})
+            }),
+            delayPeriod: 0
+        });
+        string memory connectionId = handler.connectionOpenInit(msg_);
+        assertEq(connectionId, "connection-1");
     }
 
     /* gas benchmarks */
@@ -108,32 +123,46 @@ contract IBCTest is Test {
         Packet.Data memory packet = getPacket();
         vm.expectEmit(false, false, false, true);
         emit MockRecv(true);
-        handler.recvPacket(IBCMsgs.MsgPacketRecv({
-            packet: packet,
-            proof: abi.encodePacked(sha256(abi.encodePacked(testPacketCommitment))),
-            proofHeight: Height.Data({revision_number: 0, revision_height: 1})
-        }));
+        handler.recvPacket(
+            IBCMsgs.MsgPacketRecv({
+                packet: packet,
+                proof: abi.encodePacked(sha256(abi.encodePacked(testPacketCommitment))),
+                proofHeight: Height.Data({revision_number: 0, revision_height: 1})
+            })
+        );
     }
 
     /* internal functions */
 
     function createMockClient(uint64 revision_height) internal {
-        handler.createClient(IBCMsgs.MsgCreateClient({
-            clientType: mockClientType,
-            height: Height.Data({revision_number: 0, revision_height: revision_height}),
-            clientStateBytes: wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data({latest_height: Height.Data({revision_number: 0, revision_height: revision_height})})),
-            consensusStateBytes: wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp)}))
-        }));
+        handler.createClient(
+            IBCMsgs.MsgCreateClient({
+                clientType: mockClientType,
+                height: Height.Data({revision_number: 0, revision_height: revision_height}),
+                clientStateBytes: wrapAnyMockClientState(
+                    IbcLightclientsMockV1ClientState.Data({
+                        latest_height: Height.Data({revision_number: 0, revision_height: revision_height})
+                    })
+                    ),
+                consensusStateBytes: wrapAnyMockConsensusState(
+                    IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp)})
+                    )
+            })
+        );
     }
 
     function updateMockClient(uint64 next_revision_height) internal {
-        handler.updateClient(IBCMsgs.MsgUpdateClient({
-            clientId: "mock-client-0",
-            clientMessage: wrapAnyMockHeader(IbcLightclientsMockV1Header.Data({
-                height: Height.Data({revision_number: 0, revision_height: next_revision_height}),
-                timestamp: uint64(block.timestamp)
-            }))
-        }));
+        handler.updateClient(
+            IBCMsgs.MsgUpdateClient({
+                clientId: "mock-client-0",
+                clientMessage: wrapAnyMockHeader(
+                    IbcLightclientsMockV1Header.Data({
+                        height: Height.Data({revision_number: 0, revision_height: next_revision_height}),
+                        timestamp: uint64(block.timestamp)
+                    })
+                    )
+            })
+        );
     }
 
     function wrapAnyMockHeader(IbcLightclientsMockV1Header.Data memory header) internal pure returns (bytes memory) {
@@ -143,14 +172,22 @@ contract IBCTest is Test {
         return Any.encode(anyHeader);
     }
 
-    function wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data memory clientState) internal pure returns (bytes memory) {
+    function wrapAnyMockClientState(IbcLightclientsMockV1ClientState.Data memory clientState)
+        internal
+        pure
+        returns (bytes memory)
+    {
         Any.Data memory anyClientState;
         anyClientState.type_url = "/ibc.lightclients.mock.v1.ClientState";
         anyClientState.value = IbcLightclientsMockV1ClientState.encode(clientState);
         return Any.encode(anyClientState);
     }
 
-    function wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data memory consensusState) internal pure returns (bytes memory) {
+    function wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data memory consensusState)
+        internal
+        pure
+        returns (bytes memory)
+    {
         Any.Data memory anyConsensusState;
         anyConsensusState.type_url = "/ibc.lightclients.mock.v1.ConsensusState";
         anyConsensusState.value = IbcLightclientsMockV1ConsensusState.encode(consensusState);
@@ -162,10 +199,7 @@ contract IBCTest is Test {
         string[] memory features = new string[](2);
         features[0] = "ORDER_ORDERED";
         features[1] = "ORDER_UNORDERED";
-        versions[0] = Version.Data({
-            identifier: "1",
-            features: features
-        });
+        versions[0] = Version.Data({identifier: "1", features: features});
         return versions;
     }
 
@@ -183,6 +217,13 @@ contract IBCTest is Test {
     }
 
     function makePacketCommitment(Packet.Data memory packet) internal pure returns (bytes32) {
-        return sha256(abi.encodePacked(packet.timeout_timestamp, packet.timeout_height.revision_number, packet.timeout_height.revision_height, sha256(packet.data)));
+        return sha256(
+            abi.encodePacked(
+                packet.timeout_timestamp,
+                packet.timeout_height.revision_number,
+                packet.timeout_height.revision_height,
+                sha256(packet.data)
+            )
+        );
     }
 }

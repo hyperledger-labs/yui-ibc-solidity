@@ -20,13 +20,36 @@ contract MockApp is IModuleCallbacks {
         return bytes("1");
     }
 
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address relayer) external virtual override {}
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address relayer)
+        external
+        virtual
+        override
+    {}
 
-    function onChanOpenInit(Channel.Order, string[] calldata, string calldata, string calldata channelId, ChannelCounterparty.Data calldata, string calldata) external virtual override {}
+    function onChanOpenInit(
+        Channel.Order,
+        string[] calldata,
+        string calldata,
+        string calldata channelId,
+        ChannelCounterparty.Data calldata,
+        string calldata
+    ) external virtual override {}
 
-    function onChanOpenTry(Channel.Order, string[] calldata, string calldata, string calldata channelId, ChannelCounterparty.Data calldata, string calldata, string calldata) external virtual override {}
+    function onChanOpenTry(
+        Channel.Order,
+        string[] calldata,
+        string calldata,
+        string calldata channelId,
+        ChannelCounterparty.Data calldata,
+        string calldata,
+        string calldata
+    ) external virtual override {}
 
-    function onChanOpenAck(string calldata portId, string calldata channelId, string calldata counterpartyVersion) external virtual override {}
+    function onChanOpenAck(string calldata portId, string calldata channelId, string calldata counterpartyVersion)
+        external
+        virtual
+        override
+    {}
 
     function onChanOpenConfirm(string calldata portId, string calldata channelId) external virtual override {}
 

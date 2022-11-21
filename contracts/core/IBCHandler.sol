@@ -250,4 +250,20 @@ contract IBCHandler is IBCHost {
     function onlyOwner() internal view {
         require(owner == msg.sender);
     }
+
+    /* State accessors */
+
+    function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory, bool) {
+        ConnectionEnd.Data memory connection = connections[connectionId];
+        return (connection, connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED);
+    }
+
+    function getChannel(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (Channel.Data memory, bool)
+    {
+        Channel.Data memory channel = channels[portId][channelId];
+        return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
+    }
 }

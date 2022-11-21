@@ -138,6 +138,13 @@ contract MockClient is IClient {
         return sha256(value) == proof.toBytes32();
     }
 
+    /* State accessors */
+
+    function getClientState(string calldata clientId) external view returns (ClientState.Data memory, bool) {
+        ClientState.Data memory clientState = clientStates[clientId];
+        return (clientState, clientState.latest_height.revision_height != 0);
+    }
+
     /* Internal functions */
 
     function parseHeader(bytes memory bz) internal pure returns (Height.Data memory, uint64) {
