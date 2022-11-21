@@ -266,4 +266,12 @@ contract IBCHandler is IBCHost {
         Channel.Data memory channel = channels[portId][channelId];
         return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
+
+    function getNextSequenceSend(string calldata portId, string calldata channelId) external view returns (uint64) {
+        return nextSequenceSends[portId][channelId];
+    }
+
+    function getExpectedTimePerBlock() external view returns (uint64) {
+        return expectedTimePerBlock;
+    }
 }

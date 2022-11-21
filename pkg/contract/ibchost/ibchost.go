@@ -26,14 +26,8 @@ var (
 	_ = event.NewSubscription
 )
 
-// ChannelCounterpartyData is an auto generated low-level Go binding around an user-defined struct.
-type ChannelCounterpartyData struct {
-	PortId    string
-	ChannelId string
-}
-
 // IbchostABI is the input ABI used to generate the binding from.
-const IbchostABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"GeneratedChannelIdentifier\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"GeneratedClientIdentifier\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"GeneratedConnectionIdentifier\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"channels\",\"outputs\":[{\"internalType\":\"enumChannel.State\",\"name\":\"state\",\"type\":\"uint8\"},{\"internalType\":\"enumChannel.Order\",\"name\":\"ordering\",\"type\":\"uint8\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"counterparty\",\"type\":\"tuple\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"nextSequenceSends\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
+const IbchostABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"GeneratedChannelIdentifier\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"GeneratedClientIdentifier\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"GeneratedConnectionIdentifier\",\"type\":\"event\"}]"
 
 // Ibchost is an auto generated Go binding around an Ethereum contract.
 type Ibchost struct {
@@ -175,92 +169,6 @@ func (_Ibchost *IbchostTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.
 // Transact invokes the (paid) contract method with params as input values.
 func (_Ibchost *IbchostTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Ibchost.Contract.contract.Transact(opts, method, params...)
-}
-
-// Channels is a free data retrieval call binding the contract method 0x5b3de260.
-//
-// Solidity: function channels(string , string ) view returns(uint8 state, uint8 ordering, (string,string) counterparty, string version)
-func (_Ibchost *IbchostCaller) Channels(opts *bind.CallOpts, arg0 string, arg1 string) (struct {
-	State        uint8
-	Ordering     uint8
-	Counterparty ChannelCounterpartyData
-	Version      string
-}, error) {
-	var out []interface{}
-	err := _Ibchost.contract.Call(opts, &out, "channels", arg0, arg1)
-
-	outstruct := new(struct {
-		State        uint8
-		Ordering     uint8
-		Counterparty ChannelCounterpartyData
-		Version      string
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.State = out[0].(uint8)
-	outstruct.Ordering = out[1].(uint8)
-	outstruct.Counterparty = out[2].(ChannelCounterpartyData)
-	outstruct.Version = out[3].(string)
-
-	return *outstruct, err
-
-}
-
-// Channels is a free data retrieval call binding the contract method 0x5b3de260.
-//
-// Solidity: function channels(string , string ) view returns(uint8 state, uint8 ordering, (string,string) counterparty, string version)
-func (_Ibchost *IbchostSession) Channels(arg0 string, arg1 string) (struct {
-	State        uint8
-	Ordering     uint8
-	Counterparty ChannelCounterpartyData
-	Version      string
-}, error) {
-	return _Ibchost.Contract.Channels(&_Ibchost.CallOpts, arg0, arg1)
-}
-
-// Channels is a free data retrieval call binding the contract method 0x5b3de260.
-//
-// Solidity: function channels(string , string ) view returns(uint8 state, uint8 ordering, (string,string) counterparty, string version)
-func (_Ibchost *IbchostCallerSession) Channels(arg0 string, arg1 string) (struct {
-	State        uint8
-	Ordering     uint8
-	Counterparty ChannelCounterpartyData
-	Version      string
-}, error) {
-	return _Ibchost.Contract.Channels(&_Ibchost.CallOpts, arg0, arg1)
-}
-
-// NextSequenceSends is a free data retrieval call binding the contract method 0x821cb5d0.
-//
-// Solidity: function nextSequenceSends(string , string ) view returns(uint64)
-func (_Ibchost *IbchostCaller) NextSequenceSends(opts *bind.CallOpts, arg0 string, arg1 string) (uint64, error) {
-	var out []interface{}
-	err := _Ibchost.contract.Call(opts, &out, "nextSequenceSends", arg0, arg1)
-
-	if err != nil {
-		return *new(uint64), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint64)).(*uint64)
-
-	return out0, err
-
-}
-
-// NextSequenceSends is a free data retrieval call binding the contract method 0x821cb5d0.
-//
-// Solidity: function nextSequenceSends(string , string ) view returns(uint64)
-func (_Ibchost *IbchostSession) NextSequenceSends(arg0 string, arg1 string) (uint64, error) {
-	return _Ibchost.Contract.NextSequenceSends(&_Ibchost.CallOpts, arg0, arg1)
-}
-
-// NextSequenceSends is a free data retrieval call binding the contract method 0x821cb5d0.
-//
-// Solidity: function nextSequenceSends(string , string ) view returns(uint64)
-func (_Ibchost *IbchostCallerSession) NextSequenceSends(arg0 string, arg1 string) (uint64, error) {
-	return _Ibchost.Contract.NextSequenceSends(&_Ibchost.CallOpts, arg0, arg1)
 }
 
 // IbchostGeneratedChannelIdentifierIterator is returned from FilterGeneratedChannelIdentifier and is used to iterate over the raw logs and unpacked data for GeneratedChannelIdentifier events raised by the Ibchost contract.

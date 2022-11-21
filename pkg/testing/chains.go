@@ -207,19 +207,18 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 }
 
 func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.ClientState {
-	panic("not impl")
-	// ctx := context.Background()
-	// bz, found, err := chain.IBFT2Client.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
-	// if err != nil {
-	// 	require.NoError(chain.t, err)
-	// } else if !found {
-	// 	panic("clientState not found")
-	// }
-	// var cs ibft2clienttypes.ClientState
-	// if err := UnmarshalWithAny(bz, &cs); err != nil {
-	// 	panic(err)
-	// }
-	// return &cs
+	ctx := context.Background()
+	cs, found, err := chain.IBFT2Client.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
+	if err != nil {
+		require.NoError(chain.t, err)
+	} else if !found {
+		panic("clientState not found")
+	}
+	return &ibft2clienttypes.ClientState{
+		ChainId:         cs.ChainId,
+		IbcStoreAddress: cs.IbcStoreAddress,
+		LatestHeight:    ibcclient.Height(cs.LatestHeight),
+	}
 }
 
 func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientState {
@@ -762,7 +761,7 @@ func (chain *Chain) GetLastSentPacket(
 	sourcePortID string,
 	sourceChannel string,
 ) (*channeltypes.Packet, error) {
-	seq, err := chain.IBCHandler.NextSequenceSends(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
+	seq, err := chain.IBCHandler.GetNextSequenceSend(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
 	if err != nil {
 		return nil, err
 	}
@@ -876,6 +875,17 @@ func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID s
 		}
 		h := sha256.Sum256(bz)
 		proof.Data = h[:]
+		return bz, proof, nil
+	case ibcclient.BesuIBFT2Client:
+		cs := counterparty.GetIBFT2ClientState(counterpartyClientID)
+		any, err := PackAny(cs)
+		if err != nil {
+			return nil, nil, err
+		}
+		bz, err := proto.Marshal(any)
+		if err != nil {
+			return nil, nil, err
+		}
 		return bz, proof, nil
 	default:
 		panic("not supported")

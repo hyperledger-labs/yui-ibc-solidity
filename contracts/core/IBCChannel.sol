@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../proto/Client.sol";
 import "../proto/Channel.sol";
 import "./IBCMsgs.sol";
 import "./IBCHeight.sol";
@@ -30,6 +29,7 @@ contract IBCChannel is IBCHost {
         nextSequenceSends[msg_.portId][channelId] = 1;
         nextSequenceRecvs[msg_.portId][channelId] = 1;
         nextSequenceAcks[msg_.portId][channelId] = 1;
+        updateChannelCommitment(msg_.portId, channelId);
         return channelId;
     }
 
@@ -72,6 +72,7 @@ contract IBCChannel is IBCHost {
         nextSequenceSends[msg_.portId][channelId] = 1;
         nextSequenceRecvs[msg_.portId][channelId] = 1;
         nextSequenceAcks[msg_.portId][channelId] = 1;
+        updateChannelCommitment(msg_.portId, channelId);
         return channelId;
     }
 
@@ -111,6 +112,7 @@ contract IBCChannel is IBCHost {
         channel.state = Channel.State.STATE_OPEN;
         channel.version = msg_.counterpartyVersion;
         channel.counterparty.channel_id = msg_.counterpartyChannelId;
+        updateChannelCommitment(msg_.portId, msg_.channelId);
     }
 
     function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm calldata msg_) external {
@@ -144,6 +146,7 @@ contract IBCChannel is IBCHost {
             "failed to verify channel state"
         );
         channel.state = Channel.State.STATE_OPEN;
+        updateChannelCommitment(msg_.portId, msg_.channelId);
     }
 
     function channelCloseInit(IBCMsgs.MsgChannelCloseInit calldata msg_) external {
@@ -156,6 +159,7 @@ contract IBCChannel is IBCHost {
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         channel.state = Channel.State.STATE_CLOSED;
+        updateChannelCommitment(msg_.portId, msg_.channelId);
     }
 
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) external {
@@ -189,6 +193,12 @@ contract IBCChannel is IBCHost {
             "failed to verify channel state"
         );
         channel.state = Channel.State.STATE_CLOSED;
+        updateChannelCommitment(msg_.portId, msg_.channelId);
+    }
+
+    function updateChannelCommitment(string memory portId, string memory channelId) private {
+        commitments[keccak256(IBCCommitment.channelPath(portId, channelId))] =
+            keccak256(Channel.encode(channels[portId][channelId]));
     }
 
     /* Packet handlers */
@@ -398,8 +408,8 @@ contract IBCChannel is IBCHost {
 
     function verifyChannelState(
         ConnectionEnd.Data storage connection,
-        Height.Data memory height,
-        bytes memory proof,
+        Height.Data calldata height,
+        bytes calldata proof,
         string memory portId,
         string memory channelId,
         bytes memory channelBytes
@@ -418,8 +428,8 @@ contract IBCChannel is IBCHost {
 
     function verifyPacketCommitment(
         ConnectionEnd.Data storage connection,
-        Height.Data memory height,
-        bytes memory proof,
+        Height.Data calldata height,
+        bytes calldata proof,
         bytes memory path,
         bytes32 commitmentBytes
     ) private returns (bool) {
@@ -437,8 +447,8 @@ contract IBCChannel is IBCHost {
 
     function verifyPacketAcknowledgement(
         ConnectionEnd.Data storage connection,
-        Height.Data memory height,
-        bytes memory proof,
+        Height.Data calldata height,
+        bytes calldata proof,
         bytes memory path,
         bytes32 acknowledgementCommitmentBytes
     ) private returns (bool) {

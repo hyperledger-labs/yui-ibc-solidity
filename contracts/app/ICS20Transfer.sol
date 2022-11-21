@@ -143,14 +143,15 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         string memory sourceChannel,
         uint64 timeoutHeight
     ) internal virtual {
-        (,, ChannelCounterparty.Data memory counterparty,) = ibcHandler.channels(sourcePort, sourceChannel);
+        (Channel.Data memory channel, bool found) = ibcHandler.getChannel(sourcePort, sourceChannel);
+        require(found, "channel not found");
         ibcHandler.sendPacket(
             Packet.Data({
-                sequence: ibcHandler.nextSequenceSends(sourcePort, sourceChannel),
+                sequence: ibcHandler.getNextSequenceSend(sourcePort, sourceChannel),
                 source_port: sourcePort,
                 source_channel: sourceChannel,
-                destination_port: counterparty.port_id,
-                destination_channel: counterparty.channel_id,
+                destination_port: channel.counterparty.port_id,
+                destination_channel: channel.counterparty.channel_id,
                 data: FungibleTokenPacketData.encode(data),
                 timeout_height: Height.Data({revision_number: 0, revision_height: timeoutHeight}),
                 timeout_timestamp: 0

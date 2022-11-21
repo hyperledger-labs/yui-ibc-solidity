@@ -16,8 +16,8 @@ contract IBCHost {
     mapping(string => address) internal clientImpls; // clientID => clientImpl
 
     mapping(string => ConnectionEnd.Data) internal connections;
-    mapping(string => mapping(string => Channel.Data)) public channels;
-    mapping(string => mapping(string => uint64)) public nextSequenceSends;
+    mapping(string => mapping(string => Channel.Data)) internal channels;
+    mapping(string => mapping(string => uint64)) internal nextSequenceSends;
     mapping(string => mapping(string => uint64)) internal nextSequenceRecvs;
     mapping(string => mapping(string => uint64)) internal nextSequenceAcks;
     mapping(string => mapping(string => mapping(uint64 => uint8))) internal packetReceipts;

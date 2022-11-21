@@ -33,8 +33,8 @@ contract IBFT2Client is IClient {
 
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
-    mapping(string => mapping(uint128 => uint64)) internal processedTimes;
-    mapping(string => mapping(uint128 => uint64)) internal processedHeights;
+    mapping(string => mapping(uint128 => uint256)) internal processedTimes;
+    mapping(string => mapping(uint128 => uint256)) internal processedHeights;
 
     struct ParsedBesuHeader {
         Header.Data base;
@@ -109,6 +109,7 @@ contract IBFT2Client is IClient {
     {
         Header.Data memory header;
         bytes[] memory validators;
+        uint128 newHeight;
 
         /* Validation */
 
@@ -121,6 +122,7 @@ contract IBFT2Client is IClient {
         // check if the provided client message is valid
         ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
         require(parsedHeader.height.gt(header.trusted_height), "header height <= consensus state height");
+        newHeight = parsedHeader.height.toUint128();
 
         /* State verification */
 
@@ -135,7 +137,7 @@ contract IBFT2Client is IClient {
             clientState.latest_height = parsedHeader.height;
         }
         // if client message is verified and there is no misbehaviour, update state
-        consensusState = consensusStates[clientId][parsedHeader.height.toUint128()];
+        consensusState = consensusStates[clientId][newHeight];
         consensusState.timestamp = parsedHeader.time;
         consensusState.root = abi.encodePacked(
             verifyStorageProof(
@@ -150,6 +152,9 @@ contract IBFT2Client is IClient {
             consensusStateCommitment: keccak256(marshalConsensusState(consensusState)),
             height: parsedHeader.height
         });
+
+        processedTimes[clientId][newHeight] = block.timestamp;
+        processedHeights[clientId][newHeight] = block.number;
 
         return (keccak256(marshalClientState(clientState)), updates, true);
     }
@@ -185,7 +190,7 @@ contract IBFT2Client is IClient {
 
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         assert(consensusState.timestamp != 0);
-        return verifyMembership(
+        return verifyMembership( // TODO
             proof,
             consensusState.root.toBytes32(),
             keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT)),
@@ -344,12 +349,12 @@ contract IBFT2Client is IClient {
     ) private view returns (bool) {
         uint128 heightU128 = height.toUint128();
         uint64 currentTime = uint64(block.timestamp * 1000 * 1000 * 1000);
-        uint64 validTime = processedTimes[clientId][heightU128] + delayPeriodTime;
+        uint64 validTime = uint64(processedTimes[clientId][heightU128]) * 1000 * 1000 * 1000 + delayPeriodTime;
         if (currentTime < validTime) {
             return false;
         }
         uint64 currentHeight = uint64(block.number);
-        uint64 validHeight = processedHeights[clientId][heightU128] + delayPeriodBlocks;
+        uint64 validHeight = uint64(processedHeights[clientId][heightU128]) + delayPeriodBlocks;
         if (currentHeight < validHeight) {
             return false;
         }
@@ -391,5 +396,21 @@ contract IBFT2Client is IClient {
         bytes32 proofPath = keccak256(abi.encodePacked(account));
         bytes memory accountRLP = accountStateProof.verify(stateRoot, proofPath); // reverts if proof is invalid
         return bytes32(accountRLP.toRLPItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
+    }
+
+    /* State accessors */
+
+    function getClientState(string calldata clientId) external view returns (ClientState.Data memory, bool) {
+        ClientState.Data memory clientState = clientStates[clientId];
+        return (clientState, clientState.latest_height.revision_height != 0);
+    }
+
+    function getConsensusState(string calldata clientId, Height.Data calldata height)
+        external
+        view
+        returns (ConsensusState.Data memory, bool)
+    {
+        ConsensusState.Data memory consensusState = consensusStates[clientId][height.toUint128()];
+        return (consensusState, consensusState.timestamp != 0);
     }
 }

@@ -23,6 +23,7 @@ contract IBCConnection is IBCHost {
         connection.state = ConnectionEnd.State.STATE_INIT;
         connection.delay_period = msg_.delayPeriod;
         connection.counterparty = msg_.counterparty;
+        updateConnectionCommitment(connectionId);
         return connectionId;
     }
 
@@ -71,6 +72,7 @@ contract IBCConnection is IBCHost {
         );
         // TODO we should also verify a consensus state
 
+        updateConnectionCommitment(connectionId);
         return connectionId;
     }
 
@@ -127,6 +129,7 @@ contract IBCConnection is IBCHost {
         connection.state = ConnectionEnd.State.STATE_OPEN;
         copyVersions(expectedConnection.versions, connection.versions);
         connection.counterparty.connection_id = msg_.counterpartyConnectionID;
+        updateConnectionCommitment(msg_.connectionId);
     }
 
     function connectionOpenConfirm(IBCMsgs.MsgConnectionOpenConfirm calldata msg_) public {
@@ -155,6 +158,12 @@ contract IBCConnection is IBCHost {
         );
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
+        updateConnectionCommitment(msg_.connectionId);
+    }
+
+    function updateConnectionCommitment(string memory connectionId) private {
+        commitments[keccak256(IBCCommitment.connectionPath(connectionId))] =
+            keccak256(ConnectionEnd.encode(connections[connectionId]));
     }
 
     /* Verification functions */

@@ -10,7 +10,7 @@ import (
 
 	"github.com/avast/retry-go"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
@@ -67,7 +67,7 @@ func (suite ChainTestSuite) TestChannel() {
 	var delayStartTimeForAck time.Time
 
 	beforeLatestHeight := chainA.GetIBFT2ClientState(clientA).LatestHeight
-	beforeConsensusState, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(beforeLatestHeight))
+	beforeConsensusState, ok, err := chainA.IBFT2Client.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibft2client.HeightData(beforeLatestHeight))
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 
@@ -104,7 +104,7 @@ func (suite ChainTestSuite) TestChannel() {
 			chainA.TxOpts(ctx, deployerA),
 			ibctesting.BlockTime,
 		)))
-	expectedTimePerBlockA, err := chainA.IBCHost.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
+	expectedTimePerBlockA, err := chainA.IBCHandler.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
 	suite.Require().NoError(err)
 	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime)
 
@@ -114,7 +114,7 @@ func (suite ChainTestSuite) TestChannel() {
 			chainB.TxOpts(ctx, deployerB),
 			0,
 		)))
-	expectedTimePerBlockB, err := chainB.IBCHost.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
+	expectedTimePerBlockB, err := chainB.IBCHandler.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
 	suite.Require().NoError(err)
 	suite.Require().Zero(expectedTimePerBlockB)
 
@@ -175,7 +175,7 @@ func (suite ChainTestSuite) TestChannel() {
 			chainA.TxOpts(ctx, deployerA),
 			ibctesting.BlockTime/delayPeriodExtensionA,
 		)))
-	expectedTimePerBlockA, err = chainA.IBCHost.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
+	expectedTimePerBlockA, err = chainA.IBCHandler.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
 	suite.Require().NoError(err)
 	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime/delayPeriodExtensionA)
 
@@ -185,7 +185,7 @@ func (suite ChainTestSuite) TestChannel() {
 			chainB.TxOpts(ctx, deployerB),
 			ibctesting.BlockTime/delayPeriodExtensionB,
 		)))
-	expectedTimePerBlockB, err = chainB.IBCHost.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
+	expectedTimePerBlockB, err = chainB.IBCHandler.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
 	suite.Require().NoError(err)
 	suite.Require().Equal(expectedTimePerBlockB, ibctesting.BlockTime/delayPeriodExtensionB)
 
@@ -247,12 +247,12 @@ func (suite ChainTestSuite) TestChannel() {
 	// close channel
 	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 	// confirm that the channel is CLOSED on chain A
-	chanData, ok, err := chainA.IBCHost.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
+	chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
 	// confirm that the channel is CLOSED on chain B
-	chanData, ok, err = chainB.IBCHost.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
+	chanData, ok, err = chainB.IBCHandler.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
@@ -261,7 +261,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().Equal(afterLatestHeight.RevisionNumber, beforeLatestHeight.RevisionNumber)
 	suite.Require().True(afterLatestHeight.RevisionHeight > beforeLatestHeight.RevisionHeight)
 
-	beforeConsensusState2, ok, err := chainA.IBCHost.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibchost.HeightData(beforeLatestHeight))
+	beforeConsensusState2, ok, err := chainA.IBFT2Client.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibft2client.HeightData(beforeLatestHeight))
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(beforeConsensusState, beforeConsensusState2)

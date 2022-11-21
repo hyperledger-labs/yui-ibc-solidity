@@ -18,7 +18,26 @@ contract IBCClient is IBCHost {
         clientImpls[clientId] = clientImpl;
         (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) =
             IClient(clientImpl).createClient(clientId, msg_.height, msg_.clientStateBytes, msg_.consensusStateBytes);
-        require(ok);
+        require(ok, "failed to create client");
+        updateCommitments(clientId, clientStateCommitment, updates);
+    }
+
+    /**
+     * @dev updateClient updates the consensus state and the state root from a provided header
+     */
+    function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
+        require(commitments[keccak256(IBCCommitment.clientStatePath(msg_.clientId))] != bytes32(0));
+        (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) =
+            getClient(msg_.clientId).verifyClientMessageAndUpdateState(msg_.clientId, msg_.clientMessage);
+        require(ok, "failed to update client");
+        updateCommitments(msg_.clientId, clientStateCommitment, updates);
+    }
+
+    function updateCommitments(
+        string memory clientId,
+        bytes32 clientStateCommitment,
+        ConsensusStateUpdates[] memory updates
+    ) private {
         commitments[keccak256(IBCCommitment.clientStatePath(clientId))] = clientStateCommitment;
         for (uint256 i = 0; i < updates.length; i++) {
             commitments[keccak256(
@@ -27,13 +46,5 @@ contract IBCClient is IBCHost {
                 )
             )] = updates[i].consensusStateCommitment;
         }
-    }
-
-    /**
-     * @dev updateClient updates the consensus state and the state root from a provided header
-     */
-    function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
-        require(commitments[keccak256(IBCCommitment.clientStatePath(msg_.clientId))] != bytes32(0));
-        getClient(msg_.clientId).verifyClientMessageAndUpdateState(msg_.clientId, msg_.clientMessage);
     }
 }
