@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
@@ -10,13 +9,12 @@ import (
 	"time"
 
 	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/consts"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
-
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -56,40 +54,40 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 		ctx := context.Background()
 
 		// clientState
-		c, err := suite.chainA.IBCIdentifier.ClientStateCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID)
+		path, err := suite.chainA.IBCIdentifier.ClientStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID)
 		require.NoError(err)
-		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ClientStateCommitmentSlot(testClientID))
+		require.Equal(host.FullClientStateKey(testClientID), path)
 
 		// consensusState
 		var cases = []uint64{0, 1, 10, 100}
 		for _, n := range cases {
 			for _, h := range cases {
 				testHeight := ibcclienttypes.NewHeight(n, h)
-				c, err = suite.chainA.IBCIdentifier.ConsensusStateCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID, testHeight.RevisionNumber, testHeight.RevisionHeight)
+				path, err := suite.chainA.IBCIdentifier.ConsensusStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID, testHeight.RevisionNumber, testHeight.RevisionHeight)
 				require.NoError(err)
-				require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ConsensusStateCommitmentSlot(testClientID, testHeight))
+				require.Equal(host.FullConsensusStateKey(testClientID, testHeight), path)
 			}
 		}
 		// connectionState
-		c, err = suite.chainA.IBCIdentifier.ConnectionCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testConnectionID)
+		path, err = suite.chainA.IBCIdentifier.ConnectionPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testConnectionID)
 		require.NoError(err)
-		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ConnectionStateCommitmentSlot(testConnectionID))
+		require.Equal(host.ConnectionKey(testConnectionID), path)
 
 		// channelState
-		c, err = suite.chainA.IBCIdentifier.ChannelCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
+		path, err = suite.chainA.IBCIdentifier.ChannelPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
 		require.NoError(err)
-		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.ChannelStateCommitmentSlot(testPortID, testChannelID))
+		require.Equal(host.ChannelKey(testPortID, testChannelID), path)
 
-		// packetState
+		// packetCommitment
 		var testSequence uint64 = 1
-		c, err = suite.chainA.IBCIdentifier.PacketCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		path, err = suite.chainA.IBCIdentifier.PacketCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
-		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.PacketCommitmentSlot(testPortID, testChannelID, testSequence))
+		require.Equal(host.PacketCommitmentKey(testPortID, testChannelID, testSequence), path)
 
-		// acknowledgementState
-		c, err = suite.chainA.IBCIdentifier.PacketAcknowledgementCommitmentSlot(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		// acknowledgementCommitment
+		path, err = suite.chainA.IBCIdentifier.PacketAcknowledgementCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
-		require.Equal("0x"+hex.EncodeToString(c[:]), commitment.PacketAcknowledgementCommitmentSlot(testPortID, testChannelID, testSequence))
+		require.Equal(host.PacketAcknowledgementKey(testPortID, testChannelID, testSequence), path)
 	})
 }
 

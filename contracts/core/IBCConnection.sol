@@ -59,13 +59,13 @@ library IBCConnection {
         });
 
         require(
-            verifyConnectionState(
+            IBCClient.verifyConnectionState(
                 host, connection, msg_.proofHeight, msg_.proofInit, msg_.counterparty.connection_id, expectedConnection
             ),
             "failed to verify connection state"
         );
         require(
-            verifyClientState(host, connection, msg_.proofHeight, msg_.proofClient, msg_.clientStateBytes),
+            IBCClient.verifyClientState(host, connection, msg_.proofHeight, msg_.proofClient, msg_.clientStateBytes),
             "failed to verify clientState"
         );
         // TODO we should also verify a consensus state
@@ -111,13 +111,13 @@ library IBCConnection {
         });
 
         require(
-            verifyConnectionState(
+            IBCClient.verifyConnectionState(
                 host, connection, msg_.proofHeight, msg_.proofTry, msg_.counterpartyConnectionID, expectedConnection
             ),
             "failed to verify connection state"
         );
         require(
-            verifyClientState(host, connection, msg_.proofHeight, msg_.proofClient, msg_.clientStateBytes),
+            IBCClient.verifyClientState(host, connection, msg_.proofHeight, msg_.proofClient, msg_.clientStateBytes),
             "failed to verify clientState"
         );
         // TODO we should also verify a consensus state
@@ -150,7 +150,7 @@ library IBCConnection {
         });
 
         require(
-            verifyConnectionState(
+            IBCClient.verifyConnectionState(
                 host,
                 connection,
                 msg_.proofHeight,
@@ -165,138 +165,6 @@ library IBCConnection {
         host.setConnection(msg_.connectionId, connection);
     }
 
-    // Verification functions
-
-    function verifyClientState(
-        IBCHost host,
-        ConnectionEnd.Data memory connection,
-        Height.Data memory height,
-        bytes memory proof,
-        bytes memory clientStateBytes
-    ) internal returns (bool) {
-        return IBCClient.verifyClientState(
-            host,
-            connection.client_id,
-            height,
-            connection.counterparty.prefix.key_prefix,
-            connection.counterparty.client_id,
-            proof,
-            clientStateBytes
-        );
-    }
-
-    function verifyClientConsensusState(
-        IBCHost host,
-        ConnectionEnd.Data memory connection,
-        Height.Data memory height,
-        Height.Data memory consensusHeight,
-        bytes memory proof,
-        bytes memory consensusStateBytes
-    ) internal returns (bool) {
-        return IBCClient.verifyClientConsensusState(
-            host,
-            connection.client_id,
-            height,
-            connection.counterparty.client_id,
-            consensusHeight,
-            connection.counterparty.prefix.key_prefix,
-            proof,
-            consensusStateBytes
-        );
-    }
-
-    function verifyConnectionState(
-        IBCHost host,
-        ConnectionEnd.Data memory connection,
-        Height.Data memory height,
-        bytes memory proof,
-        string memory connectionId,
-        ConnectionEnd.Data memory counterpartyConnection
-    ) internal returns (bool) {
-        return IBCClient.verifyConnectionState(
-            host,
-            connection.client_id,
-            height,
-            connection.counterparty.prefix.key_prefix,
-            proof,
-            connectionId,
-            ConnectionEnd.encode(counterpartyConnection)
-        );
-    }
-
-    function verifyChannelState(
-        IBCHost host,
-        ConnectionEnd.Data memory connection,
-        Height.Data memory height,
-        bytes memory proof,
-        string memory portId,
-        string memory channelId,
-        bytes memory channelBytes
-    ) public returns (bool) {
-        return IBCClient.verifyChannelState(
-            host,
-            connection.client_id,
-            height,
-            connection.counterparty.prefix.key_prefix,
-            proof,
-            portId,
-            channelId,
-            channelBytes
-        );
-    }
-
-    function verifyPacketCommitment(
-        IBCHost host,
-        ConnectionEnd.Data memory connection,
-        Height.Data memory height,
-        bytes memory proof,
-        string memory portId,
-        string memory channelId,
-        uint64 sequence,
-        bytes32 commitmentBytes
-    ) public returns (bool) {
-        uint64 blockDelay = calcBlockDelay(host, connection.delay_period);
-        return IBCClient.verifyPacketCommitment(
-            host,
-            connection.client_id,
-            height,
-            connection.delay_period,
-            blockDelay,
-            connection.counterparty.prefix.key_prefix,
-            proof,
-            portId,
-            channelId,
-            sequence,
-            commitmentBytes
-        );
-    }
-
-    function verifyPacketAcknowledgement(
-        IBCHost host,
-        ConnectionEnd.Data memory connection,
-        Height.Data memory height,
-        bytes memory proof,
-        string memory portId,
-        string memory channelId,
-        uint64 sequence,
-        bytes memory acknowledgement
-    ) public returns (bool) {
-        uint64 blockDelay = calcBlockDelay(host, connection.delay_period);
-        return IBCClient.verifyPacketAcknowledgement(
-            host,
-            connection.client_id,
-            height,
-            connection.delay_period,
-            blockDelay,
-            connection.counterparty.prefix.key_prefix,
-            proof,
-            portId,
-            channelId,
-            sequence,
-            acknowledgement
-        );
-    }
-
     // Internal functions
 
     function getVersions() internal pure returns (Version.Data[] memory) {
@@ -306,15 +174,6 @@ library IBCConnection {
         features[1] = "ORDER_UNORDERED";
         versions[0] = Version.Data({identifier: "1", features: features});
         return versions;
-    }
-
-    function calcBlockDelay(IBCHost host, uint64 timeDelay) private view returns (uint64) {
-        uint64 blockDelay = 0;
-        uint64 expectedTimePerBlock = host.getExpectedTimePerBlock();
-        if (expectedTimePerBlock != 0) {
-            blockDelay = (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
-        }
-        return blockDelay;
     }
 
     // TODO implements

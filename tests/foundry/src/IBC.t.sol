@@ -118,7 +118,7 @@ contract IBCTest is Test {
         emit MockRecv(true);
         handler.recvPacket(IBCMsgs.MsgPacketRecv({
             packet: packet,
-            proof: abi.encodePacked(testPacketCommitment),
+            proof: abi.encodePacked(sha256(abi.encodePacked(testPacketCommitment))),
             proofHeight: Height.Data({revision_number: 0, revision_height: 1})
         }));
     }

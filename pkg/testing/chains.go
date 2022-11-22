@@ -665,7 +665,8 @@ func (chain *Chain) HandlePacketRecv(
 	}
 	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		proof.Data = commitPacket(packet)
+		h := sha256.Sum256(commitPacket(packet))
+		proof.Data = h[:]
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.RecvPacket(
@@ -692,7 +693,8 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	}
 	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		proof.Data = commitAcknowledgement(acknowledgement)
+		h := sha256.Sum256(commitAcknowledgement(acknowledgement))
+		proof.Data = h[:]
 	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.AcknowledgePacket(

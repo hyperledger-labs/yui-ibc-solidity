@@ -13,7 +13,7 @@ const ICS20Bank = artifacts.require("ICS20Bank");
 
 module.exports = function (deployer) {
   deployer.deploy(IBCIdentifier).then(function() {
-    return deployer.link(IBCIdentifier, [IBCHost, IBFT2Client, IBCHandler]);
+    return deployer.link(IBCIdentifier, [IBCHost, IBCHandler, IBCConnection, IBCChannel, IBFT2Client]);
   });
   deployer.deploy(IBCMsgs).then(function() {
     return deployer.link(IBCMsgs, [IBCClient, IBCConnection, IBCChannel, IBCHandler, IBFT2Client]);
@@ -22,7 +22,7 @@ module.exports = function (deployer) {
     return deployer.link(IBCClient, [IBCHandler, IBCConnection, IBCChannel]);
   });
   deployer.deploy(IBCConnection).then(function() {
-    return deployer.link(IBCConnection, [IBCHandler, IBCChannel]);
+    return deployer.link(IBCConnection, [IBCHandler]);
   });
   deployer.deploy(IBCChannel).then(function() {
     return deployer.link(IBCChannel, [IBCHandler]);
