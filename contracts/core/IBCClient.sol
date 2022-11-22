@@ -28,7 +28,7 @@ contract IBCClient is IBCHost {
     function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
         require(commitments[keccak256(IBCCommitment.clientStatePath(msg_.clientId))] != bytes32(0));
         (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) =
-            getClient(msg_.clientId).verifyClientMessageAndUpdateState(msg_.clientId, msg_.clientMessage);
+            getClient(msg_.clientId).updateClient(msg_.clientId, msg_.clientMessage);
         require(ok, "failed to update client");
         updateCommitments(msg_.clientId, clientStateCommitment, updates);
     }

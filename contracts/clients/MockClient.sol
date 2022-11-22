@@ -87,14 +87,14 @@ contract MockClient is IClient {
     }
 
     /**
-     * @dev verifyClientMessageAndUpdateState is intended to perform the followings:
+     * @dev updateClient is intended to perform the followings:
      * 1. verify a given client message(e.g. header)
      * 2. check misbehaviour such like duplicate block height
      * 3. if misbehaviour is found, update state accordingly and return
      * 4. update state(s) with the client message
      * 5. persist the state(s) on the host
      */
-    function verifyClientMessageAndUpdateState(string calldata clientId, bytes calldata clientMessageBytes)
+    function updateClient(string calldata clientId, bytes calldata clientMessageBytes)
         external
         onlyIBCModule
         override
