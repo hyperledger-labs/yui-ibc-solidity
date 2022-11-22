@@ -12,8 +12,8 @@ import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";
 
-import "./TestableIBCHandler.sol";
-import "./MockApp.sol";
+import "./TestableIBCHandler.t.sol";
+import "./MockApp.t.sol";
 
 // TODO split setup code into other contracts
 contract IBCTest is Test {
