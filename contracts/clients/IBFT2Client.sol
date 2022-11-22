@@ -54,6 +54,9 @@ contract IBFT2Client is IClient {
         ibcModule = ibcModule_;
     }
 
+    /**
+     * @dev createClient creates a new client with the given state
+     */
     function createClient(
         string calldata clientId,
         Height.Data calldata height,

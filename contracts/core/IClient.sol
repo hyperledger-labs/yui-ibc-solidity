@@ -4,6 +4,9 @@ pragma solidity ^0.8.9;
 import "../proto/Client.sol";
 
 interface IClient {
+    /**
+     * @dev createClient creates a new client with the given state
+     */
     function createClient(
         string calldata clientId,
         Height.Data calldata height,
