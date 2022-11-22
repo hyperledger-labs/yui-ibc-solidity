@@ -31,7 +31,7 @@ contract IBCTest is Test {
         address ibcChannel = address(new IBCChannel());
         handler = new TestableIBCHandler(ibcClient, ibcConnection, ibcChannel);
 
-        mockClient = new MockClient();
+        mockClient = new MockClient(address(handler));
         handler.registerClient(mockClientType, mockClient);
 
         setUpMockClient();

@@ -22,8 +22,8 @@ module.exports = async function (deployer) {
   await deployer.deploy(IBCChannel);
   await deployer.deploy(IBCHandler, IBCClient.address, IBCConnection.address, IBCChannel.address);
 
-  await deployer.deploy(MockClient);
-  await deployer.deploy(IBFT2Client);
+  await deployer.deploy(MockClient, IBCHandler.address);
+  await deployer.deploy(IBFT2Client, IBCHandler.address);
   await deployer.deploy(SimpleToken, "simple", "simple", 1000000);
   await deployer.deploy(ICS20Bank);
   await deployer.deploy(ICS20TransferBank, IBCHandler.address, ICS20Bank.address);

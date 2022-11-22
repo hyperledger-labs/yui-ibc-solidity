@@ -24,15 +24,20 @@ contract MockClient is IClient {
     bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
         keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState"));
 
-    mapping(string => ClientState.Data) clientStates;
-    mapping(string => mapping(uint128 => ConsensusState.Data)) consensusStates;
+    address internal ibcModule;
+    mapping(string => ClientState.Data) internal clientStates;
+    mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
+
+    constructor(address ibcModule_) {
+        ibcModule = ibcModule_;
+    }
 
     function createClient(
         string calldata clientId,
         Height.Data calldata height,
         bytes calldata clientStateBytes,
         bytes calldata consensusStateBytes
-    ) external override returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) {
+    ) external onlyIBCModule override returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
 
@@ -88,6 +93,7 @@ contract MockClient is IClient {
      */
     function verifyClientMessageAndUpdateState(string calldata clientId, bytes calldata clientMessageBytes)
         external
+        onlyIBCModule
         override
         returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok)
     {
@@ -175,5 +181,10 @@ contract MockClient is IClient {
             return (consensusState, false);
         }
         return (ConsensusState.decode(anyConsensusState.value), true);
+    }
+
+    modifier onlyIBCModule() {
+        require(msg.sender == ibcModule);
+        _;
     }
 }

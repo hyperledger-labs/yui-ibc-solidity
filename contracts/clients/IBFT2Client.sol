@@ -31,6 +31,7 @@ contract IBFT2Client is IClient {
     bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
         keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState"));
 
+    address internal ibcModule;
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
     mapping(string => mapping(uint128 => uint256)) internal processedTimes;
@@ -49,12 +50,16 @@ contract IBFT2Client is IClient {
         uint64 denominator;
     }
 
+    constructor(address ibcModule_) {
+        ibcModule = ibcModule_;
+    }
+
     function createClient(
         string calldata clientId,
         Height.Data calldata height,
         bytes calldata clientStateBytes,
         bytes calldata consensusStateBytes
-    ) external override returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) {
+    ) external onlyIBCModule override returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
 
@@ -104,6 +109,7 @@ contract IBFT2Client is IClient {
      */
     function verifyClientMessageAndUpdateState(string calldata clientId, bytes calldata clientMessageBytes)
         external
+        onlyIBCModule
         override
         returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok)
     {
@@ -412,5 +418,10 @@ contract IBFT2Client is IClient {
     {
         ConsensusState.Data memory consensusState = consensusStates[clientId][height.toUint128()];
         return (consensusState, consensusState.timestamp != 0);
+    }
+
+    modifier onlyIBCModule() {
+        require(msg.sender == ibcModule);
+        _;
     }
 }
