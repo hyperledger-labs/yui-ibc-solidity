@@ -7,7 +7,7 @@ import "../../../contracts/core/IBCClient.sol";
 import "../../../contracts/core/IBCConnection.sol";
 import "../../../contracts/core/IBCChannel.sol";
 import "../../../contracts/core/IBCCommitment.sol";
-import "../../../contracts/core/MockClient.sol";
+import "../../../contracts/clients/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";

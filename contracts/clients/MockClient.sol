@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./IClient.sol";
-import "./IBCHost.sol";
-import "./IBCMsgs.sol";
-import "./IBCHeight.sol";
+import "../core/IClient.sol";
+import "../core/IBCHeight.sol";
 import "../proto/Client.sol";
 import {
     IbcLightclientsMockV1ClientState as ClientState,
