@@ -11,7 +11,7 @@ import "./IBCCommitment.sol";
 import "./IBCHost.sol";
 
 contract IBCHandler is IBCHost {
-    address immutable owner;
+    address owner;
 
     /* Event definitions */
 
