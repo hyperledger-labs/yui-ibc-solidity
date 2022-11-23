@@ -53,6 +53,13 @@ interface IClient {
         bytes calldata path,
         bytes calldata value
     ) external returns (bool);
+
+    function getClientState(string calldata clientId) external view returns (bytes memory, bool);
+
+    function getConsensusState(string calldata clientId, Height.Data calldata height)
+        external
+        view
+        returns (bytes memory, bool);
 }
 
 struct ConsensusStateUpdates {

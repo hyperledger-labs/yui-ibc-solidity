@@ -38,22 +38,8 @@ type HeightData struct {
 	RevisionHeight uint64
 }
 
-// IbcLightclientsIbft2V1ClientStateData is an auto generated low-level Go binding around an user-defined struct.
-type IbcLightclientsIbft2V1ClientStateData struct {
-	ChainId         string
-	IbcStoreAddress []byte
-	LatestHeight    HeightData
-}
-
-// IbcLightclientsIbft2V1ConsensusStateData is an auto generated low-level Go binding around an user-defined struct.
-type IbcLightclientsIbft2V1ConsensusStateData struct {
-	Timestamp  uint64
-	Root       []byte
-	Validators [][]byte
-}
-
 // Ibft2clientABI is the input ABI used to generate the binding from.
-const Ibft2clientABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"ibcModule_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"clientStateBytes\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"consensusStateBytes\",\"type\":\"bytes\"}],\"name\":\"createClient\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"clientStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"consensusStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"internalType\":\"structConsensusStateUpdates[]\",\"name\":\"updates\",\"type\":\"tuple[]\"},{\"internalType\":\"bool\",\"name\":\"ok\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"getTimestampAtHeight\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getLatestHeight\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"clientMessageBytes\",\"type\":\"bytes\"}],\"name\":\"updateClient\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"clientStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"consensusStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"internalType\":\"structConsensusStateUpdates[]\",\"name\":\"updates\",\"type\":\"tuple[]\"},{\"internalType\":\"bool\",\"name\":\"ok\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"delayTimePeriod\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"delayBlockPeriod\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"prefix\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"path\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"value\",\"type\":\"bytes\"}],\"name\":\"verifyMembership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getClientState\",\"outputs\":[{\"components\":[{\"internalType\":\"string\",\"name\":\"chain_id\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"ibc_store_address\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"latest_height\",\"type\":\"tuple\"}],\"internalType\":\"structIbcLightclientsIbft2V1ClientState.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"getConsensusState\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"timestamp\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"root\",\"type\":\"bytes\"},{\"internalType\":\"bytes[]\",\"name\":\"validators\",\"type\":\"bytes[]\"}],\"internalType\":\"structIbcLightclientsIbft2V1ConsensusState.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true}]"
+const Ibft2clientABI = "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"ibcModule_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"clientStateBytes\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"consensusStateBytes\",\"type\":\"bytes\"}],\"name\":\"createClient\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"clientStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"consensusStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"internalType\":\"structConsensusStateUpdates[]\",\"name\":\"updates\",\"type\":\"tuple[]\"},{\"internalType\":\"bool\",\"name\":\"ok\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"getTimestampAtHeight\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getLatestHeight\",\"outputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"clientMessageBytes\",\"type\":\"bytes\"}],\"name\":\"updateClient\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"clientStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"bytes32\",\"name\":\"consensusStateCommitment\",\"type\":\"bytes32\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"internalType\":\"structConsensusStateUpdates[]\",\"name\":\"updates\",\"type\":\"tuple[]\"},{\"internalType\":\"bool\",\"name\":\"ok\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"delayTimePeriod\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"delayBlockPeriod\",\"type\":\"uint64\"},{\"internalType\":\"bytes\",\"name\":\"proof\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"prefix\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"path\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"value\",\"type\":\"bytes\"}],\"name\":\"verifyMembership\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"}],\"name\":\"getClientState\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"clientStateBytes\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"clientId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"height\",\"type\":\"tuple\"}],\"name\":\"getConsensusState\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"consensusStateBytes\",\"type\":\"bytes\"},{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\",\"constant\":true}]"
 
 // Ibft2client is an auto generated Go binding around an Ethereum contract.
 type Ibft2client struct {
@@ -199,16 +185,16 @@ func (_Ibft2client *Ibft2clientTransactorRaw) Transact(opts *bind.TransactOpts, 
 
 // GetClientState is a free data retrieval call binding the contract method 0x76c81c42.
 //
-// Solidity: function getClientState(string clientId) view returns((string,bytes,(uint64,uint64)), bool)
-func (_Ibft2client *Ibft2clientCaller) GetClientState(opts *bind.CallOpts, clientId string) (IbcLightclientsIbft2V1ClientStateData, bool, error) {
+// Solidity: function getClientState(string clientId) view returns(bytes clientStateBytes, bool)
+func (_Ibft2client *Ibft2clientCaller) GetClientState(opts *bind.CallOpts, clientId string) ([]byte, bool, error) {
 	var out []interface{}
 	err := _Ibft2client.contract.Call(opts, &out, "getClientState", clientId)
 
 	if err != nil {
-		return *new(IbcLightclientsIbft2V1ClientStateData), *new(bool), err
+		return *new([]byte), *new(bool), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(IbcLightclientsIbft2V1ClientStateData)).(*IbcLightclientsIbft2V1ClientStateData)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 	out1 := *abi.ConvertType(out[1], new(bool)).(*bool)
 
 	return out0, out1, err
@@ -217,30 +203,30 @@ func (_Ibft2client *Ibft2clientCaller) GetClientState(opts *bind.CallOpts, clien
 
 // GetClientState is a free data retrieval call binding the contract method 0x76c81c42.
 //
-// Solidity: function getClientState(string clientId) view returns((string,bytes,(uint64,uint64)), bool)
-func (_Ibft2client *Ibft2clientSession) GetClientState(clientId string) (IbcLightclientsIbft2V1ClientStateData, bool, error) {
+// Solidity: function getClientState(string clientId) view returns(bytes clientStateBytes, bool)
+func (_Ibft2client *Ibft2clientSession) GetClientState(clientId string) ([]byte, bool, error) {
 	return _Ibft2client.Contract.GetClientState(&_Ibft2client.CallOpts, clientId)
 }
 
 // GetClientState is a free data retrieval call binding the contract method 0x76c81c42.
 //
-// Solidity: function getClientState(string clientId) view returns((string,bytes,(uint64,uint64)), bool)
-func (_Ibft2client *Ibft2clientCallerSession) GetClientState(clientId string) (IbcLightclientsIbft2V1ClientStateData, bool, error) {
+// Solidity: function getClientState(string clientId) view returns(bytes clientStateBytes, bool)
+func (_Ibft2client *Ibft2clientCallerSession) GetClientState(clientId string) ([]byte, bool, error) {
 	return _Ibft2client.Contract.GetClientState(&_Ibft2client.CallOpts, clientId)
 }
 
 // GetConsensusState is a free data retrieval call binding the contract method 0x6cf44bf4.
 //
-// Solidity: function getConsensusState(string clientId, (uint64,uint64) height) view returns((uint64,bytes,bytes[]), bool)
-func (_Ibft2client *Ibft2clientCaller) GetConsensusState(opts *bind.CallOpts, clientId string, height HeightData) (IbcLightclientsIbft2V1ConsensusStateData, bool, error) {
+// Solidity: function getConsensusState(string clientId, (uint64,uint64) height) view returns(bytes consensusStateBytes, bool)
+func (_Ibft2client *Ibft2clientCaller) GetConsensusState(opts *bind.CallOpts, clientId string, height HeightData) ([]byte, bool, error) {
 	var out []interface{}
 	err := _Ibft2client.contract.Call(opts, &out, "getConsensusState", clientId, height)
 
 	if err != nil {
-		return *new(IbcLightclientsIbft2V1ConsensusStateData), *new(bool), err
+		return *new([]byte), *new(bool), err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(IbcLightclientsIbft2V1ConsensusStateData)).(*IbcLightclientsIbft2V1ConsensusStateData)
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
 	out1 := *abi.ConvertType(out[1], new(bool)).(*bool)
 
 	return out0, out1, err
@@ -249,15 +235,15 @@ func (_Ibft2client *Ibft2clientCaller) GetConsensusState(opts *bind.CallOpts, cl
 
 // GetConsensusState is a free data retrieval call binding the contract method 0x6cf44bf4.
 //
-// Solidity: function getConsensusState(string clientId, (uint64,uint64) height) view returns((uint64,bytes,bytes[]), bool)
-func (_Ibft2client *Ibft2clientSession) GetConsensusState(clientId string, height HeightData) (IbcLightclientsIbft2V1ConsensusStateData, bool, error) {
+// Solidity: function getConsensusState(string clientId, (uint64,uint64) height) view returns(bytes consensusStateBytes, bool)
+func (_Ibft2client *Ibft2clientSession) GetConsensusState(clientId string, height HeightData) ([]byte, bool, error) {
 	return _Ibft2client.Contract.GetConsensusState(&_Ibft2client.CallOpts, clientId, height)
 }
 
 // GetConsensusState is a free data retrieval call binding the contract method 0x6cf44bf4.
 //
-// Solidity: function getConsensusState(string clientId, (uint64,uint64) height) view returns((uint64,bytes,bytes[]), bool)
-func (_Ibft2client *Ibft2clientCallerSession) GetConsensusState(clientId string, height HeightData) (IbcLightclientsIbft2V1ConsensusStateData, bool, error) {
+// Solidity: function getConsensusState(string clientId, (uint64,uint64) height) view returns(bytes consensusStateBytes, bool)
+func (_Ibft2client *Ibft2clientCallerSession) GetConsensusState(clientId string, height HeightData) ([]byte, bool, error) {
 	return _Ibft2client.Contract.GetConsensusState(&_Ibft2client.CallOpts, clientId, height)
 }
 

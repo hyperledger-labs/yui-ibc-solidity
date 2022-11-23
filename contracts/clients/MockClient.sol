@@ -18,11 +18,15 @@ contract MockClient is IClient {
     using Bytes for bytes;
     using IBCHeight for Height.Data;
 
-    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.Header"));
+    string private constant HEADER_TYPE_URL = "/ibc.lightclients.mock.v1.Header";
+    string private constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.mock.v1.ClientState";
+    string private constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.mock.v1.ConsensusState";
+
+    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked(HEADER_TYPE_URL));
     bytes32 private constant CLIENT_STATE_TYPE_URL_HASH =
-        keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ClientState"));
+        keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
     bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
-        keccak256(abi.encodePacked("/ibc.lightclients.mock.v1.ConsensusState"));
+        keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
 
     address internal ibcModule;
     mapping(string => ClientState.Data) internal clientStates;
@@ -144,9 +148,31 @@ contract MockClient is IClient {
 
     /* State accessors */
 
-    function getClientState(string calldata clientId) external view returns (ClientState.Data memory, bool) {
-        ClientState.Data memory clientState = clientStates[clientId];
-        return (clientState, clientState.latest_height.revision_height != 0);
+    function getClientState(
+        string calldata clientId
+    ) external view returns (bytes memory clientStateBytes, bool) {
+        ClientState.Data storage clientState = clientStates[clientId];
+        if (clientState.latest_height.revision_height == 0) {
+            return (clientStateBytes, false);
+        }
+        return (Any.encode(Any.Data({
+            type_url: CLIENT_STATE_TYPE_URL,
+            value: ClientState.encode(clientState)
+        })), true);
+    }
+
+    function getConsensusState(
+        string calldata clientId,
+        Height.Data calldata height
+    ) external view returns (bytes memory consensusStateBytes, bool) {
+        ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
+        if (consensusState.timestamp == 0) {
+            return (consensusStateBytes, false);
+        }
+        return (Any.encode(Any.Data({
+            type_url: CONSENSUS_STATE_TYPE_URL,
+            value: ConsensusState.encode(consensusState)
+        })), true);
     }
 
     /* Internal functions */
@@ -162,7 +188,7 @@ contract MockClient is IClient {
         return (header.height, header.timestamp);
     }
 
-    function unmarshalClientState(bytes memory bz)
+    function unmarshalClientState(bytes calldata bz)
         internal
         pure
         returns (ClientState.Data memory clientState, bool ok)
@@ -174,7 +200,7 @@ contract MockClient is IClient {
         return (ClientState.decode(anyClientState.value), true);
     }
 
-    function unmarshalConsensusState(bytes memory bz)
+    function unmarshalConsensusState(bytes calldata bz)
         internal
         pure
         returns (ConsensusState.Data memory consensusState, bool ok)

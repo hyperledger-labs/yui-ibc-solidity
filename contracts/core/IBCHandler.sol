@@ -253,8 +253,20 @@ contract IBCHandler is IBCHost {
 
     /* State accessors */
 
+    function getClientState(string calldata clientId) external view returns (bytes memory, bool) {
+        return getClient(clientId).getClientState(clientId);
+    }
+
+    function getConsensusState(string calldata clientId, Height.Data calldata height)
+        external
+        view
+        returns (bytes memory consensusStateBytes, bool)
+    {
+        return getClient(clientId).getConsensusState(clientId, height);
+    }
+
     function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory, bool) {
-        ConnectionEnd.Data memory connection = connections[connectionId];
+        ConnectionEnd.Data storage connection = connections[connectionId];
         return (connection, connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
@@ -263,7 +275,7 @@ contract IBCHandler is IBCHost {
         view
         returns (Channel.Data memory, bool)
     {
-        Channel.Data memory channel = channels[portId][channelId];
+        Channel.Data storage channel = channels[portId][channelId];
         return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 

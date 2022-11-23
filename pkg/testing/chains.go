@@ -208,30 +208,32 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 
 func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.ClientState {
 	ctx := context.Background()
-	cs, found, err := chain.IBFT2Client.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
+	bz, found, err := chain.IBCHandler.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
 	if err != nil {
 		require.NoError(chain.t, err)
 	} else if !found {
 		panic("clientState not found")
 	}
-	return &ibft2clienttypes.ClientState{
-		ChainId:         cs.ChainId,
-		IbcStoreAddress: cs.IbcStoreAddress,
-		LatestHeight:    ibcclient.Height(cs.LatestHeight),
+	var cs ibft2clienttypes.ClientState
+	if err := UnmarshalWithAny(bz, &cs); err != nil {
+		panic(err)
 	}
+	return &cs
 }
 
 func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientState {
 	ctx := context.Background()
-	clientState, found, err := chain.MockClient.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
+	bz, found, err := chain.IBCHandler.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
 	if err != nil {
 		require.NoError(chain.t, err)
 	} else if !found {
 		panic("clientState not found")
 	}
-	return &mockclienttypes.ClientState{
-		LatestHeight: ibcclient.Height(clientState.LatestHeight),
+	var cs mockclienttypes.ClientState
+	if err := UnmarshalWithAny(bz, &cs); err != nil {
+		panic(err)
 	}
+	return &cs
 }
 
 func (chain *Chain) GetLightClientState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (LightClientState, error) {

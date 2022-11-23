@@ -23,13 +23,18 @@ contract IBFT2Client is IClient {
     using Bytes for bytes;
     using IBCHeight for Height.Data;
 
+    string private constant HEADER_TYPE_URL = "/ibc.lightclients.ibft2.v1.Header";
+    string private constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ClientState";
+    string private constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ConsensusState";
+
+    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked(HEADER_TYPE_URL));
+    bytes32 private constant CLIENT_STATE_TYPE_URL_HASH =
+        keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
+    bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
+        keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
+
     uint256 private constant COMMITMENT_SLOT = 0;
     uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
-    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.Header"));
-    bytes32 private constant CLIENT_STATE_TYPE_URL_HASH =
-        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ClientState"));
-    bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
-        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState"));
 
     address internal ibcModule;
     mapping(string => ClientState.Data) internal clientStates;
@@ -409,18 +414,31 @@ contract IBFT2Client is IClient {
 
     /* State accessors */
 
-    function getClientState(string calldata clientId) external view returns (ClientState.Data memory, bool) {
-        ClientState.Data memory clientState = clientStates[clientId];
-        return (clientState, clientState.latest_height.revision_height != 0);
+    function getClientState(
+        string calldata clientId
+    ) external view returns (bytes memory clientStateBytes, bool) {
+        ClientState.Data storage clientState = clientStates[clientId];
+        if (clientState.latest_height.revision_height == 0) {
+            return (clientStateBytes, false);
+        }
+        return (Any.encode(Any.Data({
+            type_url: CLIENT_STATE_TYPE_URL,
+            value: ClientState.encode(clientState)
+        })), true);
     }
 
-    function getConsensusState(string calldata clientId, Height.Data calldata height)
-        external
-        view
-        returns (ConsensusState.Data memory, bool)
-    {
-        ConsensusState.Data memory consensusState = consensusStates[clientId][height.toUint128()];
-        return (consensusState, consensusState.timestamp != 0);
+    function getConsensusState(
+        string calldata clientId,
+        Height.Data calldata height
+    ) external view returns (bytes memory consensusStateBytes, bool) {
+        ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
+        if (consensusState.timestamp == 0) {
+            return (consensusStateBytes, false);
+        }
+        return (Any.encode(Any.Data({
+            type_url: CONSENSUS_STATE_TYPE_URL,
+            value: ConsensusState.encode(consensusState)
+        })), true);
     }
 
     modifier onlyIBCModule() {
