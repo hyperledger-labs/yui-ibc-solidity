@@ -279,6 +279,33 @@ contract IBCHandler is IBCHost {
         return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
+    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
+        external
+        view
+        returns (bytes32, bool)
+    {
+        bytes32 commitment = commitments[keccak256(IBCCommitment.packetCommitmentPath(portId, channelId, sequence))];
+        return (commitment, commitment != bytes32(0));
+    }
+
+    function getPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence)
+        external
+        view
+        returns (bytes32, bool)
+    {
+        bytes32 commitment =
+            commitments[keccak256(IBCCommitment.packetAcknowledgementCommitmentPath(portId, channelId, sequence))];
+        return (commitment, commitment != bytes32(0));
+    }
+
+    function hasPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence)
+        external
+        view
+        returns (bool)
+    {
+        return packetReceipts[portId][channelId][sequence] == 1;
+    }
+
     function getNextSequenceSend(string calldata portId, string calldata channelId) external view returns (uint64) {
         return nextSequenceSends[portId][channelId];
     }
