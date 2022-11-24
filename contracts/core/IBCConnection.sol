@@ -222,6 +222,13 @@ contract IBCConnection is IBCHost {
 
     /* Internal functions */
 
+    function generateConnectionIdentifier() private returns (string memory) {
+        string memory identifier = string(abi.encodePacked("connection-", uint2str(nextConnectionSequence)));
+        nextConnectionSequence++;
+        emit GeneratedConnectionIdentifier(identifier);
+        return identifier;
+    }
+
     function setVersions(Version.Data[] storage versions) internal {
         versions.push(Version.Data({identifier: "1", features: new string[](2)}));
         Version.Data storage version = versions[0];

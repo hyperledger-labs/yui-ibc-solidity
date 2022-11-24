@@ -478,4 +478,11 @@ contract IBCChannel is IBCHost {
     function hashString(string memory s) private pure returns (bytes32) {
         return keccak256(abi.encodePacked(s));
     }
+
+    function generateChannelIdentifier() private returns (string memory) {
+        string memory identifier = string(abi.encodePacked("channel-", uint2str(nextChannelSequence)));
+        nextChannelSequence++;
+        emit GeneratedChannelIdentifier(identifier);
+        return identifier;
+    }
 }

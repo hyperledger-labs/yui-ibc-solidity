@@ -45,4 +45,11 @@ contract IBCClient is IBCHost {
             )] = updates[i].consensusStateCommitment;
         }
     }
+
+    function generateClientIdentifier(string calldata clientType) private returns (string memory) {
+        string memory identifier = string(abi.encodePacked(clientType, "-", uint2str(nextClientSequence)));
+        nextClientSequence++;
+        emit GeneratedClientIdentifier(identifier);
+        return identifier;
+    }
 }

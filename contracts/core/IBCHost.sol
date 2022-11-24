@@ -27,7 +27,6 @@ contract IBCHost {
     uint64 internal nextChannelSequence;
     uint64 internal expectedTimePerBlock;
 
-    // TODO make these immutable and move into each contract
     // module addresses
     address internal ibcChannelAddress;
     address internal ibcConnectionAddress;
@@ -68,29 +67,6 @@ contract IBCHost {
             return (address(0), false);
         }
         return (capabilities[name][0], true);
-    }
-
-    // Identifier generators
-
-    function generateClientIdentifier(string calldata clientType) internal returns (string memory) {
-        string memory identifier = string(abi.encodePacked(clientType, "-", uint2str(nextClientSequence)));
-        nextClientSequence++;
-        emit GeneratedClientIdentifier(identifier);
-        return identifier;
-    }
-
-    function generateConnectionIdentifier() internal returns (string memory) {
-        string memory identifier = string(abi.encodePacked("connection-", uint2str(nextConnectionSequence)));
-        nextConnectionSequence++;
-        emit GeneratedConnectionIdentifier(identifier);
-        return identifier;
-    }
-
-    function generateChannelIdentifier() internal returns (string memory) {
-        string memory identifier = string(abi.encodePacked("channel-", uint2str(nextChannelSequence)));
-        nextChannelSequence++;
-        emit GeneratedChannelIdentifier(identifier);
-        return identifier;
     }
 
     // Storage accessors
