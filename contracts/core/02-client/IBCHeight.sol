@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../proto/Client.sol";
+import "../../proto/Client.sol";
 
 library IBCHeight {
     function toUint128(Height.Data memory self) internal pure returns (uint128) {

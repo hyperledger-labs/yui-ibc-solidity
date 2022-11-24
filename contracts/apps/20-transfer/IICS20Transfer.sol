@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../core/IBCModule.sol";
+import "../../core/05-port/IIBCModule.sol";
 
-interface IICS20Transfer is IModuleCallbacks {
+interface IICS20Transfer is IIBCModule {
     function sendTransfer(
         string calldata denom,
         uint64 amount,

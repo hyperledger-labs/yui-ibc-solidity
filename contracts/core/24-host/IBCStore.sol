@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../proto/Client.sol";
-import "../proto/Connection.sol";
-import "../proto/Channel.sol";
-import "./IClient.sol";
+import "../../proto/Connection.sol";
+import "../../proto/Channel.sol";
+import "../02-client/ILightClient.sol";
 
-contract IBCHost {
+abstract contract IBCStore {
     // Commitments
     mapping(bytes32 => bytes32) internal commitments;
 
@@ -30,48 +29,12 @@ contract IBCHost {
     uint64 internal nextConnectionSequence;
     uint64 internal nextChannelSequence;
 
-    // IBC Module addresses
-    address internal ibcClientAddress;
-    address internal ibcConnectionAddress;
-    address internal ibcChannelAddress;
-
-    /* Host functions */
-
-    // validateSelfClient validates the client parameters for a client of the host chain.
-    function validateSelfClient(bytes memory) internal view virtual returns (bool) {
-        this; // this is a trick that suppresses "Warning: Function state mutability can be restricted to pure"
-        return true;
-    }
-
-    function claimCapability(bytes memory name, address addr) internal {
-        for (uint32 i = 0; i < capabilities[name].length; i++) {
-            require(capabilities[name][i] != addr);
-        }
-        capabilities[name].push(addr);
-    }
-
-    function authenticateCapability(bytes memory name, address addr) internal view returns (bool) {
-        for (uint32 i = 0; i < capabilities[name].length; i++) {
-            if (capabilities[name][i] == addr) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function getModuleOwner(bytes memory name) internal view returns (address, bool) {
-        if (capabilities[name].length == 0) {
-            return (address(0), false);
-        }
-        return (capabilities[name][0], true);
-    }
-
     // Storage accessors
 
-    function getClient(string memory clientId) internal view returns (IClient) {
+    function getClient(string memory clientId) internal view returns (ILightClient) {
         address clientImpl = clientImpls[clientId];
         require(clientImpl != address(0));
-        return IClient(clientImpl);
+        return ILightClient(clientImpl);
     }
 
     // Utility functions

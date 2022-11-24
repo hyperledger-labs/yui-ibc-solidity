@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./IBCMsgs.sol";
+import "../25-handler/IBCMsgs.sol";
 
-interface IIBCConnection {
+interface IIBCConnectionHandshake {
     /* Handshake functions */
 
     /**

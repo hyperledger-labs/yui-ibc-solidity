@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../proto/Client.sol";
-import "../proto/Connection.sol";
-import "../proto/Channel.sol";
+import "../../proto/Client.sol";
+import "../../proto/Connection.sol";
+import "../../proto/Channel.sol";
 
-/*
-IBCMsgs defines Datagrams in ics-026.*/
+/**
+ * @dev IBCMsgs provides datagram types in [ICS-26](https://github.com/cosmos/ibc/tree/main/spec/core/ics-026-routing-module#datagram-handlers-write)
+ */
 library IBCMsgs {
-    /// Client ///
+    /* Client */
 
     struct MsgCreateClient {
         string clientType;
@@ -22,7 +23,7 @@ library IBCMsgs {
         bytes clientMessage;
     }
 
-    /// Connection handshake ///
+    /* Connection */
 
     struct MsgConnectionOpenInit {
         string clientId;
@@ -62,7 +63,7 @@ library IBCMsgs {
         Height.Data proofHeight;
     }
 
-    /// Channel handshake ///
+    /* Channel */
 
     struct MsgChannelOpenInit {
         string portId;
@@ -94,8 +95,6 @@ library IBCMsgs {
         Height.Data proofHeight;
     }
 
-    /// Channel closing ///
-
     struct MsgChannelCloseInit {
         string portId;
         string channelId;
@@ -108,7 +107,7 @@ library IBCMsgs {
         Height.Data proofHeight;
     }
 
-    /// Packet ///
+    /* Packet relay */
 
     struct MsgPacketRecv {
         Packet.Data packet;

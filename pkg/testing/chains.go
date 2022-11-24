@@ -23,10 +23,8 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitment"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/mockclient"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/simpletoken"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
@@ -67,27 +65,22 @@ func init() {
 type Chain struct {
 	t *testing.T
 
+	chainID        int64
+	client         *client.ETHClient
+	lc             *LightClient
+	mnemonicPhrase string
+	keys           map[uint32]*ecdsa.PrivateKey
+
+	ContractConfig ContractConfig
+
 	// Core Modules
-	client        *client.ETHClient
 	IBCHandler    ibchandler.Ibchandler
 	IBCCommitment ibccommitment.Ibccommitment
-
-	// Client Modules
-	MockClient  mockclient.Mockclient
-	IBFT2Client ibft2client.Ibft2client
 
 	// App Modules
 	SimpleToken   simpletoken.Simpletoken
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
-
-	chainID int64
-	lc      *LightClient
-
-	ContractConfig ContractConfig
-
-	mnemonicPhrase string
-	keys           map[uint32]*ecdsa.PrivateKey
 
 	// State
 	LastLCState LightClientState
@@ -101,8 +94,6 @@ type Chain struct {
 type ContractConfig interface {
 	GetIBCHandlerAddress() common.Address
 	GetIBCCommitmentAddress() common.Address
-	GetIBFT2ClientAddress() common.Address
-	GetMockClientAddress() common.Address
 
 	GetSimpleTokenAddress() common.Address
 	GetICS20TransferBankAddress() common.Address
@@ -115,14 +106,6 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 		t.Error(err)
 	}
 	ibcCommitment, err := ibccommitment.NewIbccommitment(config.GetIBCCommitmentAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
-	mockClient, err := mockclient.NewMockclient(config.GetMockClientAddress(), client)
-	if err != nil {
-		t.Error(err)
-	}
-	ibft2Client, err := ibft2client.NewIbft2client(config.GetIBFT2ClientAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}
@@ -151,9 +134,6 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 
 		IBCHandler:    *ibcHandler,
 		IBCCommitment: *ibcCommitment,
-
-		MockClient:  *mockClient,
-		IBFT2Client: *ibft2Client,
 
 		SimpleToken:   *simpletoken,
 		ICS20Transfer: *ics20transfer,
@@ -215,6 +195,21 @@ func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.Clien
 		panic("clientState not found")
 	}
 	var cs ibft2clienttypes.ClientState
+	if err := UnmarshalWithAny(bz, &cs); err != nil {
+		panic(err)
+	}
+	return &cs
+}
+
+func (chain *Chain) GetIBFT2ConsensusState(clientID string, height ibcclient.Height) *ibft2clienttypes.ConsensusState {
+	ctx := context.Background()
+	bz, found, err := chain.IBCHandler.GetConsensusState(chain.CallOpts(ctx, RelayerKeyIndex), clientID, ibchandler.HeightData(height))
+	if err != nil {
+		require.NoError(chain.t, err)
+	} else if !found {
+		panic("consensusState not found")
+	}
+	var cs ibft2clienttypes.ConsensusState
 	if err := UnmarshalWithAny(bz, &cs); err != nil {
 		panic(err)
 	}

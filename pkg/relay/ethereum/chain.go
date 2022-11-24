@@ -18,7 +18,6 @@ import (
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
 	"github.com/hyperledger-labs/yui-relayer/core"
 )
@@ -34,7 +33,6 @@ type Chain struct {
 
 	relayerPrvKey *ecdsa.PrivateKey
 	client        *client.ETHClient
-	ibcHost       *ibchost.Ibchost
 	ibcHandler    *ibchandler.Ibchandler
 }
 
@@ -50,10 +48,6 @@ func NewChain(config ChainConfig) (*Chain, error) {
 	if err != nil {
 		return nil, err
 	}
-	ibcHost, err := ibchost.NewIbchost(config.IBCHostAddress(), client)
-	if err != nil {
-		return nil, err
-	}
 	ibcHandler, err := ibchandler.NewIbchandler(config.IBCHandlerAddress(), client)
 	if err != nil {
 		return nil, err
@@ -64,7 +58,6 @@ func NewChain(config ChainConfig) (*Chain, error) {
 		relayerPrvKey: key,
 		chainID:       id,
 
-		ibcHost:    ibcHost,
 		ibcHandler: ibcHandler,
 	}, nil
 }

@@ -7,8 +7,6 @@ import (
 const (
 	IBCHandlerAddress = "<%= IBCHandlerAddress; %>"
 	IBCCommitmentAddress = "<%= IBCCommitmentAddress; %>"
-	IBFT2ClientAddress = "<%= IBFT2ClientAddress; %>"
-	MockClientAddress = "<%= MockClientAddress; %>"
 	SimpleTokenAddress = "<%= SimpleTokenAddress; %>"
 	ICS20TransferBankAddress = "<%= ICS20TransferBankAddress; %>"
 	ICS20BankAddress = "<%= ICS20BankAddress; %>"
@@ -24,14 +22,6 @@ func (contractConfig) GetIBCHandlerAddress() common.Address {
 
 func (contractConfig) GetIBCCommitmentAddress() common.Address {
 	return common.HexToAddress(IBCCommitmentAddress)
-}
-
-func (contractConfig) GetIBFT2ClientAddress() common.Address {
-	return common.HexToAddress(IBFT2ClientAddress)
-}
-
-func (contractConfig) GetMockClientAddress() common.Address {
-	return common.HexToAddress(MockClientAddress)
 }
 
 func (contractConfig) GetSimpleTokenAddress() common.Address {

@@ -3,7 +3,7 @@ const MockClient = artifacts.require("MockClient");
 const IBCClient = artifacts.require("IBCClient");
 const IBCConnection = artifacts.require("IBCConnection");
 const IBCChannel = artifacts.require("IBCChannel");
-const IBCHandler = artifacts.require("IBCHandler");
+const IBCHandler = artifacts.require("OwnableIBCHandler");
 const IBCMsgs = artifacts.require("IBCMsgs");
 const IBCCommitment = artifacts.require("IBCCommitment");
 const SimpleToken = artifacts.require("SimpleToken");
@@ -20,7 +20,7 @@ module.exports = async function (deployer) {
   await deployer.deploy(IBCClient);
   await deployer.deploy(IBCConnection);
   await deployer.deploy(IBCChannel);
-  await deployer.deploy(IBCHandler, IBCClient.address, IBCConnection.address, IBCChannel.address);
+  await deployer.deploy(IBCHandler, IBCClient.address, IBCConnection.address, IBCChannel.address, IBCChannel.address);
 
   await deployer.deploy(MockClient, IBCHandler.address);
   await deployer.deploy(IBFT2Client, IBCHandler.address);

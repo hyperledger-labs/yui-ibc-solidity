@@ -1,6 +1,4 @@
-const IBFT2Client = artifacts.require("IBFT2Client");
-const MockClient = artifacts.require("MockClient");
-const IBCHandler = artifacts.require("IBCHandler");
+const IBCHandler = artifacts.require("OwnableIBCHandler");
 const IBCCommitment = artifacts.require("IBCCommitment");
 const SimpleToken = artifacts.require("SimpleToken");
 const ICS20TransferBank = artifacts.require("ICS20TransferBank");
@@ -33,8 +31,6 @@ module.exports = function(callback) {
   targets.forEach(function(item) {
     ejs.renderFile(item[1], {
       IBCHandlerAddress: IBCHandler.address,
-      IBFT2ClientAddress: IBFT2Client.address,
-      MockClientAddress: MockClient.address,
       IBCCommitmentAddress: IBCCommitment.address,
       SimpleTokenAddress: SimpleToken.address,
       ICS20TransferBankAddress: ICS20TransferBank.address,
