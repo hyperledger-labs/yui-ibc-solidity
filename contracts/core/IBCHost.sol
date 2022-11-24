@@ -31,9 +31,9 @@ contract IBCHost {
     uint64 internal nextChannelSequence;
 
     // IBC Module addresses
-    address internal ibcChannelAddress;
-    address internal ibcConnectionAddress;
     address internal ibcClientAddress;
+    address internal ibcConnectionAddress;
+    address internal ibcChannelAddress;
 
     // Events
     event GeneratedClientIdentifier(string);
@@ -42,7 +42,8 @@ contract IBCHost {
 
     /* Host functions */
 
-    function validateSelfClient(bytes memory) internal view returns (bool) {
+    // validateSelfClient validates the client parameters for a client of the host chain.
+    function validateSelfClient(bytes memory) internal view virtual returns (bool) {
         this; // this is a trick that suppresses "Warning: Function state mutability can be restricted to pure"
         return true;
     }

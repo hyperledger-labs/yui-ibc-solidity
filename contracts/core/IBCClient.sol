@@ -5,12 +5,13 @@ import "./IClient.sol";
 import "./IBCMsgs.sol";
 import "./IBCHost.sol";
 import "./IBCCommitment.sol";
+import "./IIBCClient.sol";
 
-contract IBCClient is IBCHost {
+contract IBCClient is IBCHost, IIBCClient {
     /**
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
-    function createClient(IBCMsgs.MsgCreateClient calldata msg_) external {
+    function createClient(IBCMsgs.MsgCreateClient calldata msg_) external override {
         address clientImpl = clientRegistry[msg_.clientType];
         require(clientImpl != address(0), "unregistered client type");
         string memory clientId = generateClientIdentifier(msg_.clientType);
@@ -25,7 +26,7 @@ contract IBCClient is IBCHost {
     /**
      * @dev updateClient updates the consensus state and the state root from a provided header
      */
-    function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
+    function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external override {
         require(commitments[IBCCommitment.clientStateCommitmentKey(msg_.clientId)] != bytes32(0));
         (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) =
             getClient(msg_.clientId).updateClient(msg_.clientId, msg_.clientMessage);

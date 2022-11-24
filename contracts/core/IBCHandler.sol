@@ -2,13 +2,13 @@
 pragma solidity ^0.8.9;
 
 import "./IClient.sol";
-import "./IBCClient.sol";
-import "./IBCConnection.sol";
-import "./IBCChannel.sol";
 import "./IBCModule.sol";
 import "./IBCMsgs.sol";
 import "./IBCCommitment.sol";
 import "./IBCHost.sol";
+import "./IIBCClient.sol";
+import "./IIBCConnection.sol";
+import "./IIBCChannel.sol";
 
 contract IBCHandler is IBCHost {
     address public owner;
@@ -22,11 +22,11 @@ contract IBCHandler is IBCHost {
     );
     event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
 
-    constructor(address ibcClientAddress_, address ibcConnectionAddress_, address ibcChannelAddress_) {
+    constructor(IIBCClient ibcClient, IIBCConnection ibcConnection, IIBCChannel ibcChannel) {
         owner = msg.sender;
-        ibcClientAddress = ibcClientAddress_;
-        ibcConnectionAddress = ibcConnectionAddress_;
-        ibcChannelAddress = ibcChannelAddress_;
+        ibcClientAddress = address(ibcClient);
+        ibcConnectionAddress = address(ibcConnection);
+        ibcChannelAddress = address(ibcChannel);
     }
 
     /* Client/Module/Settings accessors */
@@ -51,45 +51,45 @@ contract IBCHandler is IBCHost {
     /* Handshake interface */
 
     function createClient(IBCMsgs.MsgCreateClient calldata msg_) external {
-        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IBCClient.createClient.selector, msg_));
+        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IIBCClient.createClient.selector, msg_));
         require(success);
     }
 
     function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
-        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IBCClient.updateClient.selector, msg_));
+        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IIBCClient.updateClient.selector, msg_));
         require(success);
     }
 
     function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_) external returns (string memory) {
         (bool success, bytes memory res) =
-            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IBCConnection.connectionOpenInit.selector, msg_));
+            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IIBCConnection.connectionOpenInit.selector, msg_));
         require(success);
         return abi.decode(res, (string));
     }
 
     function connectionOpenTry(IBCMsgs.MsgConnectionOpenTry calldata msg_) external returns (string memory) {
         (bool success, bytes memory res) =
-            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IBCConnection.connectionOpenTry.selector, msg_));
+            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IIBCConnection.connectionOpenTry.selector, msg_));
         require(success);
         return abi.decode(res, (string));
     }
 
     function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) external {
         (bool success,) =
-            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IBCConnection.connectionOpenAck.selector, msg_));
+            ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IIBCConnection.connectionOpenAck.selector, msg_));
         require(success);
     }
 
     function connectionOpenConfirm(IBCMsgs.MsgConnectionOpenConfirm calldata msg_) external {
         (bool success,) = ibcConnectionAddress.delegatecall(
-            abi.encodeWithSelector(IBCConnection.connectionOpenConfirm.selector, msg_)
+            abi.encodeWithSelector(IIBCConnection.connectionOpenConfirm.selector, msg_)
         );
         require(success);
     }
 
     function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) external returns (string memory) {
         (bool success, bytes memory res) =
-            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenInit.selector, msg_));
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.channelOpenInit.selector, msg_));
         require(success);
         string memory channelId = abi.decode(res, (string));
 
@@ -111,7 +111,7 @@ contract IBCHandler is IBCHost {
         {
             // avoid "Stack too deep" error
             (bool success, bytes memory res) =
-                ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenTry.selector, msg_));
+                ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.channelOpenTry.selector, msg_));
             require(success);
             channelId = abi.decode(res, (string));
         }
@@ -131,28 +131,28 @@ contract IBCHandler is IBCHost {
 
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck calldata msg_) external {
         (bool success,) =
-            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenAck.selector, msg_));
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.channelOpenAck.selector, msg_));
         require(success);
         lookupModuleByPortId(msg_.portId).onChanOpenAck(msg_.portId, msg_.channelId, msg_.counterpartyVersion);
     }
 
     function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm calldata msg_) external {
         (bool success,) =
-            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelOpenConfirm.selector, msg_));
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.channelOpenConfirm.selector, msg_));
         require(success);
         lookupModuleByPortId(msg_.portId).onChanOpenConfirm(msg_.portId, msg_.channelId);
     }
 
     function channelCloseInit(IBCMsgs.MsgChannelCloseInit calldata msg_) external {
         (bool success,) =
-            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelCloseInit.selector, msg_));
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.channelCloseInit.selector, msg_));
         require(success);
         lookupModuleByPortId(msg_.portId).onChanCloseInit(msg_.portId, msg_.channelId);
     }
 
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) external {
         (bool success,) =
-            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.channelCloseConfirm.selector, msg_));
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.channelCloseConfirm.selector, msg_));
         require(success);
         lookupModuleByPortId(msg_.portId).onChanCloseConfirm(msg_.portId, msg_.channelId);
     }
@@ -161,7 +161,8 @@ contract IBCHandler is IBCHost {
 
     function sendPacket(Packet.Data calldata packet) external {
         require(authenticateCapability(channelCapabilityPath(packet.source_port, packet.source_channel), msg.sender));
-        (bool success,) = ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.sendPacket.selector, packet));
+        (bool success,) =
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.sendPacket.selector, packet));
         require(success);
         emit SendPacket(packet);
     }
@@ -169,12 +170,12 @@ contract IBCHandler is IBCHost {
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external returns (bytes memory acknowledgement) {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
         acknowledgement = module.onRecvPacket(msg_.packet, msg.sender);
-        (bool success,) = ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.recvPacket.selector, msg_));
+        (bool success,) = ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.recvPacket.selector, msg_));
         require(success);
         if (acknowledgement.length > 0) {
             (success,) = ibcChannelAddress.delegatecall(
                 abi.encodeWithSelector(
-                    IBCChannel.writeAcknowledgement.selector,
+                    IIBCChannel.writeAcknowledgement.selector,
                     msg_.packet.destination_port,
                     msg_.packet.destination_channel,
                     msg_.packet.sequence,
@@ -199,7 +200,7 @@ contract IBCHandler is IBCHost {
         require(authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel), msg.sender));
         (bool success,) = ibcChannelAddress.delegatecall(
             abi.encodeWithSelector(
-                IBCChannel.writeAcknowledgement.selector,
+                IIBCChannel.writeAcknowledgement.selector,
                 destinationPortId,
                 destinationChannel,
                 sequence,
@@ -214,7 +215,7 @@ contract IBCHandler is IBCHost {
         IModuleCallbacks module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
         module.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement, msg.sender);
         (bool success,) =
-            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IBCChannel.acknowledgePacket.selector, msg_));
+            ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.acknowledgePacket.selector, msg_));
         require(success);
         emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
     }

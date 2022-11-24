@@ -6,15 +6,22 @@ import "../proto/Connection.sol";
 import "./IBCMsgs.sol";
 import "./IBCHost.sol";
 import "./IBCCommitment.sol";
+import "./IIBCConnection.sol";
 
-contract IBCConnection is IBCHost {
+contract IBCConnection is IBCHost, IIBCConnection {
     string private constant commitmentPrefix = "ibc";
 
     /* Handshake functions */
 
-    // ConnOpenInit initialises a connection attempt on chain A. The generated connection identifier
-    // is returned.
-    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_) public returns (string memory) {
+    /**
+     * @dev connectionOpenInit initialises a connection attempt on chain A. The generated connection identifier
+     * is returned.
+     */
+    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_)
+        external
+        override
+        returns (string memory)
+    {
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
@@ -27,9 +34,11 @@ contract IBCConnection is IBCHost {
         return connectionId;
     }
 
-    // ConnOpenTry relays notice of a connection attempt on chain A to chain B (this
-    // code is executed on chain B).
-    function connectionOpenTry(IBCMsgs.MsgConnectionOpenTry calldata msg_) public returns (string memory) {
+    /**
+     * @dev connectionOpenTry relays notice of a connection attempt on chain A to chain B (this
+     * code is executed on chain B).
+     */
+    function connectionOpenTry(IBCMsgs.MsgConnectionOpenTry calldata msg_) external override returns (string memory) {
         require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
         require(msg_.counterpartyVersions.length > 0, "counterpartyVersions length must be greater than 0");
 
@@ -76,7 +85,11 @@ contract IBCConnection is IBCHost {
         return connectionId;
     }
 
-    function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) public {
+    /**
+     * @dev connectionOpenAck relays acceptance of a connection open attempt from chain B back
+     * to chain A (this code is executed on chain A).
+     */
+    function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) external override {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
         if (connection.state != ConnectionEnd.State.STATE_INIT && connection.state != ConnectionEnd.State.STATE_TRYOPEN)
         {
@@ -132,7 +145,11 @@ contract IBCConnection is IBCHost {
         updateConnectionCommitment(msg_.connectionId);
     }
 
-    function connectionOpenConfirm(IBCMsgs.MsgConnectionOpenConfirm calldata msg_) public {
+    /**
+     * @dev connectionOpenConfirm confirms opening of a connection on chain A to chain B, after
+     * which the connection is open on both chains (this code is executed on chain B).
+     */
+    function connectionOpenConfirm(IBCMsgs.MsgConnectionOpenConfirm calldata msg_) external override {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
         require(connection.state == ConnectionEnd.State.STATE_TRYOPEN, "connection state is not TRYOPEN");
 

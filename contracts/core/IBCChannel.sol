@@ -6,12 +6,16 @@ import "./IBCMsgs.sol";
 import "./IBCHeight.sol";
 import "./IBCHost.sol";
 import "./IBCCommitment.sol";
+import "./IIBCChannel.sol";
 
-contract IBCChannel is IBCHost {
+contract IBCChannel is IBCHost, IIBCChannel {
     using IBCHeight for Height.Data;
 
     /* Handshake functions */
 
+    /**
+     * @dev channelOpenInit is called by a module to initiate a channel opening handshake with a module on another chain.
+     */
     function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) external returns (string memory) {
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
@@ -33,6 +37,9 @@ contract IBCChannel is IBCHost {
         return channelId;
     }
 
+    /**
+     * @dev channelOpenTry is called by a module to accept the first step of a channel opening handshake initiated by a module on another chain.
+     */
     function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) external returns (string memory) {
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
@@ -76,6 +83,9 @@ contract IBCChannel is IBCHost {
         return channelId;
     }
 
+    /**
+     * @dev channelOpenAck is called by the handshake-originating module to acknowledge the acceptance of the initial request by the counterparty module on the other chain.
+     */
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(
@@ -115,6 +125,9 @@ contract IBCChannel is IBCHost {
         updateChannelCommitment(msg_.portId, msg_.channelId);
     }
 
+    /**
+     * @dev channelOpenConfirm is called by the counterparty module to close their end of the channel, since the other end has been closed.
+     */
     function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(channel.state == Channel.State.STATE_TRYOPEN, "channel state is not TRYOPEN");
@@ -149,6 +162,9 @@ contract IBCChannel is IBCHost {
         updateChannelCommitment(msg_.portId, msg_.channelId);
     }
 
+    /**
+     * @dev channelCloseInit is called by either module to close their end of the channel. Once closed, channels cannot be reopened.
+     */
     function channelCloseInit(IBCMsgs.MsgChannelCloseInit calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
@@ -162,6 +178,10 @@ contract IBCChannel is IBCHost {
         updateChannelCommitment(msg_.portId, msg_.channelId);
     }
 
+    /**
+     * @dev channelCloseConfirm is called by the counterparty module to close their end of the
+     * channel, since the other end has been closed.
+     */
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
@@ -203,6 +223,11 @@ contract IBCChannel is IBCHost {
 
     /* Packet handlers */
 
+    /**
+     * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
+     * The packet sequence generated for the packet to be sent is returned. An error
+     * is returned if one occurs.
+     */
     function sendPacket(Packet.Data calldata packet) external {
         uint64 latestTimestamp;
 
@@ -252,6 +277,10 @@ contract IBCChannel is IBCHost {
         // TODO emit an event that includes a packet
     }
 
+    /**
+     * @dev recvPacket is called by a module in order to receive & process an IBC packet
+     * sent on the corresponding channel end on the counterparty chain.
+     */
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external {
         Channel.Data storage channel = channels[msg_.packet.destination_port][msg_.packet.destination_channel];
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
@@ -317,8 +346,10 @@ contract IBCChannel is IBCHost {
         }
     }
 
-    // WriteAcknowledgement writes the packet execution acknowledgement to the state,
-    // which will be verified by the counterparty chain using AcknowledgePacket.
+    /**
+     * @dev writeAcknowledgement writes the packet execution acknowledgement to the state,
+     * which will be verified by the counterparty chain using AcknowledgePacket.
+     */
     function writeAcknowledgement(
         string calldata destinationPortId,
         string calldata destinationChannel,
@@ -337,7 +368,14 @@ contract IBCChannel is IBCHost {
         commitments[ackCommitmentKey] = keccak256(abi.encodePacked(sha256(acknowledgement)));
     }
 
-    // TODO use calldata
+    /**
+     * @dev AcknowledgePacket is called by a module to process the acknowledgement of a
+     * packet previously sent by the calling module on a channel to a counterparty
+     * module on the counterparty chain. Its intended usage is within the ante
+     * handler. AcknowledgePacket will clean up the packet commitment,
+     * which is no longer necessary since the packet has been received and acted upon.
+     * It will also increment NextSequenceAck in case of ORDERED channels.
+     */
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
         Channel.Data storage channel = channels[msg_.packet.source_port][msg_.packet.source_channel];
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");

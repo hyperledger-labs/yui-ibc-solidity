@@ -2,10 +2,13 @@
 pragma solidity ^0.8.9;
 
 import "../../../contracts/core/IBCHandler.sol";
+import "../../../contracts/core/IIBCClient.sol";
+import "../../../contracts/core/IIBCConnection.sol";
+import "../../../contracts/core/IIBCChannel.sol";
 
 contract TestableIBCHandler is IBCHandler {
-    constructor(address ibcClientAddress_, address ibcConnectionAddress_, address ibcChannelAddress_)
-        IBCHandler(ibcClientAddress_, ibcConnectionAddress_, ibcChannelAddress_)
+    constructor(IIBCClient ibcClient, IIBCConnection ibcConnection, IIBCChannel ibcChannel)
+        IBCHandler(ibcClient, ibcConnection, ibcChannel)
     {}
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) external {
