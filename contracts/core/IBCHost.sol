@@ -14,7 +14,6 @@ contract IBCHost {
     mapping(string => address) internal clientRegistry; // clientType => clientImpl
     mapping(string => string) internal clientTypes; // clientID => clientType
     mapping(string => address) internal clientImpls; // clientID => clientImpl
-
     mapping(string => ConnectionEnd.Data) internal connections;
     mapping(string => mapping(string => Channel.Data)) internal channels;
     mapping(string => mapping(string => uint64)) internal nextSequenceSends;
@@ -22,12 +21,16 @@ contract IBCHost {
     mapping(string => mapping(string => uint64)) internal nextSequenceAcks;
     mapping(string => mapping(string => mapping(uint64 => uint8))) internal packetReceipts;
     mapping(bytes => address[]) internal capabilities;
+
+    // Host parameters
+    uint64 internal expectedTimePerBlock;
+
+    // Sequences for identifier
     uint64 internal nextClientSequence;
     uint64 internal nextConnectionSequence;
     uint64 internal nextChannelSequence;
-    uint64 internal expectedTimePerBlock;
 
-    // module addresses
+    // IBC Module addresses
     address internal ibcChannelAddress;
     address internal ibcConnectionAddress;
     address internal ibcClientAddress;
@@ -37,14 +40,12 @@ contract IBCHost {
     event GeneratedConnectionIdentifier(string);
     event GeneratedChannelIdentifier(string);
 
-    // host functions
+    /* Host functions */
 
     function validateSelfClient(bytes memory) internal view returns (bool) {
         this; // this is a trick that suppresses "Warning: Function state mutability can be restricted to pure"
         return true;
     }
-
-    // capabilities
 
     function claimCapability(bytes memory name, address addr) internal {
         for (uint32 i = 0; i < capabilities[name].length; i++) {
