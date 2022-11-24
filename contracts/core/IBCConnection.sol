@@ -162,7 +162,7 @@ contract IBCConnection is IBCHost {
     }
 
     function updateConnectionCommitment(string memory connectionId) private {
-        commitments[keccak256(IBCCommitment.connectionPath(connectionId))] =
+        commitments[IBCCommitment.connectionCommitmentKey(connectionId)] =
             keccak256(ConnectionEnd.encode(connections[connectionId]));
     }
 

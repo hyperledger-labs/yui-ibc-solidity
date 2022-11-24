@@ -197,7 +197,7 @@ contract IBCChannel is IBCHost {
     }
 
     function updateChannelCommitment(string memory portId, string memory channelId) private {
-        commitments[keccak256(IBCCommitment.channelPath(portId, channelId))] =
+        commitments[IBCCommitment.channelCommitmentKey(portId, channelId)] =
             keccak256(Channel.encode(channels[portId][channelId]));
     }
 
@@ -236,9 +236,8 @@ contract IBCChannel is IBCHost {
         );
 
         nextSequenceSends[packet.source_port][packet.source_channel]++;
-        commitments[keccak256(
-            IBCCommitment.packetCommitmentPath(packet.source_port, packet.source_channel, packet.sequence)
-        )] = keccak256(
+        commitments[IBCCommitment.packetCommitmentKey(packet.source_port, packet.source_channel, packet.sequence)] =
+        keccak256(
             abi.encodePacked(
                 sha256(
                     abi.encodePacked(
@@ -331,9 +330,8 @@ contract IBCChannel is IBCHost {
         Channel.Data storage channel = channels[destinationPortId][destinationChannel];
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
-        bytes32 ackCommitmentKey = keccak256(
-            IBCCommitment.packetAcknowledgementCommitmentPath(destinationPortId, destinationChannel, sequence)
-        );
+        bytes32 ackCommitmentKey =
+            IBCCommitment.packetAcknowledgementCommitmentKey(destinationPortId, destinationChannel, sequence);
         bytes32 ackCommitment = commitments[ackCommitmentKey];
         require(ackCommitment == bytes32(0), "acknowledgement for packet already exists");
         commitments[ackCommitmentKey] = keccak256(abi.encodePacked(sha256(acknowledgement)));
@@ -356,11 +354,8 @@ contract IBCChannel is IBCHost {
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
-        bytes32 packetCommitmentKey = keccak256(
-            IBCCommitment.packetCommitmentPath(
-                msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
-            )
-        );
+        bytes32 packetCommitmentKey =
+            IBCCommitment.packetCommitmentKey(msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence);
         bytes32 packetCommitment = commitments[packetCommitmentKey];
         require(packetCommitment != bytes32(0), "packet commitment not found");
         require(
