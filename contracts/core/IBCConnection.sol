@@ -242,7 +242,6 @@ contract IBCConnection is IBCHost, IIBCConnection {
     function generateConnectionIdentifier() private returns (string memory) {
         string memory identifier = string(abi.encodePacked("connection-", uint2str(nextConnectionSequence)));
         nextConnectionSequence++;
-        emit GeneratedConnectionIdentifier(identifier);
         return identifier;
     }
 

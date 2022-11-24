@@ -274,7 +274,6 @@ contract IBCChannel is IBCHost, IIBCChannel {
                 )
             )
         );
-        // TODO emit an event that includes a packet
     }
 
     /**
@@ -520,7 +519,6 @@ contract IBCChannel is IBCHost, IIBCChannel {
     function generateChannelIdentifier() private returns (string memory) {
         string memory identifier = string(abi.encodePacked("channel-", uint2str(nextChannelSequence)));
         nextChannelSequence++;
-        emit GeneratedChannelIdentifier(identifier);
         return identifier;
     }
 }

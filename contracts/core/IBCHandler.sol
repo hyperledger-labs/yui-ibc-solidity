@@ -11,16 +11,26 @@ import "./IIBCConnection.sol";
 import "./IIBCChannel.sol";
 
 contract IBCHandler is IBCHost {
+    /* State variables */
+
     address public owner;
 
     /* Event definitions */
 
+    // generated identifiers
+    event GeneratedClientIdentifier(string);
+    event GeneratedConnectionIdentifier(string);
+    event GeneratedChannelIdentifier(string);
+
+    // packet/ack info
     event SendPacket(Packet.Data packet);
     event RecvPacket(Packet.Data packet);
     event WriteAcknowledgement(
         string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement
     );
     event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
+
+    /* Constructor */
 
     constructor(IIBCClient ibcClient, IIBCConnection ibcConnection, IIBCChannel ibcChannel) {
         owner = msg.sender;
@@ -50,9 +60,13 @@ contract IBCHandler is IBCHost {
 
     /* Handshake interface */
 
-    function createClient(IBCMsgs.MsgCreateClient calldata msg_) external {
-        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IIBCClient.createClient.selector, msg_));
+    function createClient(IBCMsgs.MsgCreateClient calldata msg_) external returns (string memory clientId) {
+        (bool success, bytes memory res) =
+            ibcClientAddress.delegatecall(abi.encodeWithSelector(IIBCClient.createClient.selector, msg_));
         require(success);
+        clientId = abi.decode(res, (string));
+        emit GeneratedClientIdentifier(clientId);
+        return clientId;
     }
 
     function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
@@ -60,18 +74,28 @@ contract IBCHandler is IBCHost {
         require(success);
     }
 
-    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_) external returns (string memory) {
+    function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_)
+        external
+        returns (string memory connectionId)
+    {
         (bool success, bytes memory res) =
             ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IIBCConnection.connectionOpenInit.selector, msg_));
         require(success);
-        return abi.decode(res, (string));
+        connectionId = abi.decode(res, (string));
+        emit GeneratedConnectionIdentifier(connectionId);
+        return connectionId;
     }
 
-    function connectionOpenTry(IBCMsgs.MsgConnectionOpenTry calldata msg_) external returns (string memory) {
+    function connectionOpenTry(IBCMsgs.MsgConnectionOpenTry calldata msg_)
+        external
+        returns (string memory connectionId)
+    {
         (bool success, bytes memory res) =
             ibcConnectionAddress.delegatecall(abi.encodeWithSelector(IIBCConnection.connectionOpenTry.selector, msg_));
         require(success);
-        return abi.decode(res, (string));
+        connectionId = abi.decode(res, (string));
+        emit GeneratedConnectionIdentifier(connectionId);
+        return connectionId;
     }
 
     function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) external {
@@ -87,11 +111,11 @@ contract IBCHandler is IBCHost {
         require(success);
     }
 
-    function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) external returns (string memory) {
+    function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) external returns (string memory channelId) {
         (bool success, bytes memory res) =
             ibcChannelAddress.delegatecall(abi.encodeWithSelector(IIBCChannel.channelOpenInit.selector, msg_));
         require(success);
-        string memory channelId = abi.decode(res, (string));
+        channelId = abi.decode(res, (string));
 
         IModuleCallbacks module = lookupModuleByPortId(msg_.portId);
         module.onChanOpenInit(
@@ -103,11 +127,11 @@ contract IBCHandler is IBCHost {
             msg_.channel.version
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
+        emit GeneratedChannelIdentifier(channelId);
         return channelId;
     }
 
-    function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) external returns (string memory) {
-        string memory channelId;
+    function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) external returns (string memory channelId) {
         {
             // avoid "Stack too deep" error
             (bool success, bytes memory res) =
@@ -126,6 +150,7 @@ contract IBCHandler is IBCHost {
             msg_.counterpartyVersion
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
+        emit GeneratedChannelIdentifier(channelId);
         return channelId;
     }
 

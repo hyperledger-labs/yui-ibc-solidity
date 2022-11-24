@@ -35,11 +35,6 @@ contract IBCHost {
     address internal ibcConnectionAddress;
     address internal ibcChannelAddress;
 
-    // Events
-    event GeneratedClientIdentifier(string);
-    event GeneratedConnectionIdentifier(string);
-    event GeneratedChannelIdentifier(string);
-
     /* Host functions */
 
     // validateSelfClient validates the client parameters for a client of the host chain.

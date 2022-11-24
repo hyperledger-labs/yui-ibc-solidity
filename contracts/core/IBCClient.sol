@@ -11,16 +11,17 @@ contract IBCClient is IBCHost, IIBCClient {
     /**
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
-    function createClient(IBCMsgs.MsgCreateClient calldata msg_) external override {
+    function createClient(IBCMsgs.MsgCreateClient calldata msg_) external override returns (string memory clientId) {
         address clientImpl = clientRegistry[msg_.clientType];
         require(clientImpl != address(0), "unregistered client type");
-        string memory clientId = generateClientIdentifier(msg_.clientType);
+        clientId = generateClientIdentifier(msg_.clientType);
         clientTypes[clientId] = msg_.clientType;
         clientImpls[clientId] = clientImpl;
         (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) =
             IClient(clientImpl).createClient(clientId, msg_.height, msg_.clientStateBytes, msg_.consensusStateBytes);
         require(ok, "failed to create client");
         updateCommitments(clientId, clientStateCommitment, updates);
+        return clientId;
     }
 
     /**
@@ -50,7 +51,6 @@ contract IBCClient is IBCHost, IIBCClient {
     function generateClientIdentifier(string calldata clientType) private returns (string memory) {
         string memory identifier = string(abi.encodePacked(clientType, "-", uint2str(nextClientSequence)));
         nextClientSequence++;
-        emit GeneratedClientIdentifier(identifier);
         return identifier;
     }
 }
