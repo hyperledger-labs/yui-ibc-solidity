@@ -3,8 +3,8 @@ pragma solidity ^0.8.9;
 
 import "./ICS20Transfer.sol";
 import "./IICS20Bank.sol";
-import "../core/IBCHandler.sol";
-import "../proto/App.sol";
+import "../../core/25-handler/IBCHandler.sol";
+import "../../proto/App.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
     IICS20Bank bank;

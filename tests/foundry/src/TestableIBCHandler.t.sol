@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../../../contracts/core/IBCHandler.sol";
-import "../../../contracts/core/IIBCClient.sol";
-import "../../../contracts/core/IIBCConnection.sol";
-import "../../../contracts/core/IIBCChannel.sol";
+import "../../../contracts/core/OwnableIBCHandler.sol";
 
-contract TestableIBCHandler is IBCHandler {
-    constructor(IIBCClient ibcClient, IIBCConnection ibcConnection, IIBCChannel ibcChannel)
-        IBCHandler(ibcClient, ibcConnection, ibcChannel)
+contract TestableIBCHandler is OwnableIBCHandler {
+    constructor(address ibcClient, address ibcConnection, address ibcChannel)
+        OwnableIBCHandler(ibcClient, ibcConnection, ibcChannel, ibcChannel)
     {}
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) external {

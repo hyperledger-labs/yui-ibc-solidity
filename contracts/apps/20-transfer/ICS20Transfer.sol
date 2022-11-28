@@ -2,12 +2,12 @@
 pragma solidity ^0.8.9;
 
 import "./IICS20Transfer.sol";
-import "../proto/Channel.sol";
-import "../core/IBCModule.sol";
-import "../core/IBCHandler.sol";
-import "../proto/App.sol";
-import "../lib/strings.sol";
-import "../lib/Bytes.sol";
+import "../../proto/Channel.sol";
+import "../../core/05-port/IIBCModule.sol";
+import "../../core/25-handler/IBCHandler.sol";
+import "../../proto/App.sol";
+import "../../lib/strings.sol";
+import "../../lib/Bytes.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 abstract contract ICS20Transfer is Context, IICS20Transfer {

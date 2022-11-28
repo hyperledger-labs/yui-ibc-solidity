@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../core/IClient.sol";
-import "../core/IBCHeight.sol";
+import "../core/02-client/ILightClient.sol";
+import "../core/02-client/IBCHeight.sol";
 import "../proto/Client.sol";
 import {
     IbcLightclientsIbft2V1ClientState as ClientState,
@@ -16,7 +16,7 @@ import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
 
 // please see docs/ibft2-light-client.md for client spec
-contract IBFT2Client is IClient {
+contract IBFT2Client is ILightClient {
     using TrieProofs for bytes;
     using RLP for RLP.RLPItem;
     using RLP for bytes;
@@ -67,23 +67,21 @@ contract IBFT2Client is IClient {
         Height.Data calldata height,
         bytes calldata clientStateBytes,
         bytes calldata consensusStateBytes
-    ) external onlyIBCModule override returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) {
+    ) external onlyIBC override returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
 
         (clientState, ok) = unmarshalClientState(clientStateBytes);
         if (!ok) {
-            return (clientStateCommitment, updates, false);
+            return (clientStateCommitment, update, false);
         }
         (consensusState, ok) = unmarshalConsensusState(consensusStateBytes);
         if (!ok) {
-            return (clientStateCommitment, updates, false);
+            return (clientStateCommitment, update, false);
         }
         clientStates[clientId] = clientState;
         consensusStates[clientId][height.toUint128()] = consensusState;
-        updates = new ConsensusStateUpdates[](1);
-        updates[0] = ConsensusStateUpdates({consensusStateCommitment: keccak256(consensusStateBytes), height: height});
-        return (keccak256(clientStateBytes), updates, true);
+        return (keccak256(clientStateBytes), ConsensusStateUpdate({consensusStateCommitment: keccak256(consensusStateBytes), height: height}), true);
     }
 
     /**
@@ -117,9 +115,9 @@ contract IBFT2Client is IClient {
      */
     function updateClient(string calldata clientId, bytes calldata clientMessageBytes)
         external
-        onlyIBCModule
+        onlyIBC
         override
-        returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok)
+        returns (bytes32 clientStateCommitment, ConsensusStateUpdate[] memory updates, bool ok)
     {
         Header.Data memory header;
         bytes[] memory validators;
@@ -161,8 +159,8 @@ contract IBFT2Client is IClient {
         consensusState.validators = validators;
 
         /* Make updates message */
-        updates = new ConsensusStateUpdates[](1);
-        updates[0] = ConsensusStateUpdates({
+        updates = new ConsensusStateUpdate[](1);
+        updates[0] = ConsensusStateUpdate({
             consensusStateCommitment: keccak256(marshalConsensusState(consensusState)),
             height: parsedHeader.height
         });
@@ -204,7 +202,7 @@ contract IBFT2Client is IClient {
 
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         assert(consensusState.timestamp != 0);
-        return verifyMembership( // TODO
+        return verifyMembership(
             proof,
             consensusState.root.toBytes32(),
             keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT)),
@@ -214,14 +212,14 @@ contract IBFT2Client is IClient {
 
     function marshalClientState(ClientState.Data storage clientState) internal pure returns (bytes memory) {
         Any.Data memory anyClientState;
-        anyClientState.type_url = "/ibc.lightclients.ibft2.v1.ClientState";
+        anyClientState.type_url = CLIENT_STATE_TYPE_URL;
         anyClientState.value = ClientState.encode(clientState);
         return Any.encode(anyClientState);
     }
 
     function marshalConsensusState(ConsensusState.Data storage consensusState) internal pure returns (bytes memory) {
         Any.Data memory anyConsensusState;
-        anyConsensusState.type_url = "/ibc.lightclients.ibft2.v1.ConsensusState";
+        anyConsensusState.type_url = CONSENSUS_STATE_TYPE_URL;
         anyConsensusState.value = ConsensusState.encode(consensusState);
         return Any.encode(anyConsensusState);
     }
@@ -414,6 +412,10 @@ contract IBFT2Client is IClient {
 
     /* State accessors */
 
+    /**
+     * @dev getClientState returns the clientState corresponding to `clientId`.
+     *      If it's not found, the function returns false.
+     */
     function getClientState(
         string calldata clientId
     ) external view returns (bytes memory clientStateBytes, bool) {
@@ -427,6 +429,10 @@ contract IBFT2Client is IClient {
         })), true);
     }
 
+    /**
+     * @dev getConsensusState returns the consensusState corresponding to `clientId` and `height`.
+     *      If it's not found, the function returns false.
+     */
     function getConsensusState(
         string calldata clientId,
         Height.Data calldata height
@@ -441,7 +447,7 @@ contract IBFT2Client is IClient {
         })), true);
     }
 
-    modifier onlyIBCModule() {
+    modifier onlyIBC() {
         require(msg.sender == ibcModule);
         _;
     }

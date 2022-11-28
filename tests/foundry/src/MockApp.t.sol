@@ -2,15 +2,15 @@
 pragma solidity ^0.8.9;
 
 import "../../../contracts/proto/Channel.sol";
-import "../../../contracts/core/IBCModule.sol";
-import "../../../contracts/core/IBCHandler.sol";
-import "../../../contracts/core/IBCHost.sol";
+import "../../../contracts/core/05-port/IIBCModule.sol";
+import "../../../contracts/core/25-handler/IBCHandler.sol";
+import "../../../contracts/core/24-host/IBCHost.sol";
 import "../../../contracts/proto/App.sol";
 import "../../../contracts/lib/strings.sol";
 import "../../../contracts/lib/Bytes.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
-contract MockApp is IModuleCallbacks {
+contract MockApp is IIBCModule {
     event MockRecv(bool ok);
 
     /// Module callbacks ///

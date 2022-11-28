@@ -2,14 +2,11 @@
 pragma solidity ^0.8.9;
 
 import "forge-std/Test.sol";
-import "../../../contracts/core/IBCHandler.sol";
-import "../../../contracts/core/IBCClient.sol";
-import "../../../contracts/core/IBCConnection.sol";
-import "../../../contracts/core/IBCChannel.sol";
-import "../../../contracts/core/IBCCommitment.sol";
-import "../../../contracts/core/IIBCClient.sol";
-import "../../../contracts/core/IIBCConnection.sol";
-import "../../../contracts/core/IIBCChannel.sol";
+import "../../../contracts/core/25-handler/IBCHandler.sol";
+import "../../../contracts/core/02-client/IBCClient.sol";
+import "../../../contracts/core/03-connection/IBCConnection.sol";
+import "../../../contracts/core/04-channel/IBCChannel.sol";
+import "../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../contracts/clients/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
@@ -29,9 +26,9 @@ contract IBCTest is Test {
     bytes32 private testPacketCommitment;
 
     function setUp() public {
-        IIBCClient ibcClient = new IBCClient();
-        IIBCConnection ibcConnection = new IBCConnection();
-        IIBCChannel ibcChannel = new IBCChannel();
+        address ibcClient = address(new IBCClient());
+        address ibcConnection = address(new IBCConnection());
+        address ibcChannel = address(new IBCChannel());
         handler = new TestableIBCHandler(ibcClient, ibcConnection, ibcChannel);
 
         mockClient = new MockClient(address(handler));

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../core/IClient.sol";
-import "../core/IBCHeight.sol";
+import "../core/02-client/ILightClient.sol";
+import "../core/02-client/IBCHeight.sol";
 import "../proto/Client.sol";
 import {
     IbcLightclientsMockV1ClientState as ClientState,
@@ -14,7 +14,7 @@ import "../lib/Bytes.sol";
 
 // MockClient implements https://github.com/datachainlab/ibc-mock-client
 // WARNING: This client is intended to be used for testing purpose. Therefore, it is not generally available in a production, except in a fully trusted environment.
-contract MockClient is IClient {
+contract MockClient is ILightClient {
     using Bytes for bytes;
     using IBCHeight for Height.Data;
 
@@ -44,29 +44,27 @@ contract MockClient is IClient {
         Height.Data calldata height,
         bytes calldata clientStateBytes,
         bytes calldata consensusStateBytes
-    ) external onlyIBCModule override returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok) {
+    ) external onlyIBC override returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok) {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
 
         (clientState, ok) = unmarshalClientState(clientStateBytes);
         if (!ok) {
-            return (clientStateCommitment, updates, false);
+            return (clientStateCommitment, update, false);
         }
         (consensusState, ok) = unmarshalConsensusState(consensusStateBytes);
         if (!ok) {
-            return (clientStateCommitment, updates, false);
+            return (clientStateCommitment, update, false);
         }
         if (
             clientState.latest_height.revision_number != 0 || clientState.latest_height.revision_height == 0
                 || consensusState.timestamp == 0
         ) {
-            return (clientStateCommitment, updates, false);
+            return (clientStateCommitment, update, false);
         }
         clientStates[clientId] = clientState;
         consensusStates[clientId][height.toUint128()] = consensusState;
-        updates = new ConsensusStateUpdates[](1);
-        updates[0] = ConsensusStateUpdates({consensusStateCommitment: keccak256(consensusStateBytes), height: height});
-        return (keccak256(clientStateBytes), updates, true);
+        return (keccak256(clientStateBytes), ConsensusStateUpdate({consensusStateCommitment: keccak256(consensusStateBytes), height: height}), true);
     }
 
     /**
@@ -100,9 +98,9 @@ contract MockClient is IClient {
      */
     function updateClient(string calldata clientId, bytes calldata clientMessageBytes)
         external
-        onlyIBCModule
+        onlyIBC
         override
-        returns (bytes32 clientStateCommitment, ConsensusStateUpdates[] memory updates, bool ok)
+        returns (bytes32 clientStateCommitment, ConsensusStateUpdate[] memory updates, bool ok)
     {
         Height.Data memory height;
         uint64 timestamp;
@@ -113,18 +111,18 @@ contract MockClient is IClient {
         if (height.gt(clientStates[clientId].latest_height)) {
             clientStates[clientId].latest_height = height;
         }
-        anyClientState.type_url = "/ibc.lightclients.mock.v1.ClientState";
+        anyClientState.type_url = CLIENT_STATE_TYPE_URL;
         anyClientState.value = ClientState.encode(clientStates[clientId]);
 
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         consensusState.timestamp = timestamp;
 
-        anyConsensusState.type_url = "/ibc.lightclients.mock.v1.ConsensusState";
+        anyConsensusState.type_url = CONSENSUS_STATE_TYPE_URL;
         anyConsensusState.value = ConsensusState.encode(consensusState);
 
-        updates = new ConsensusStateUpdates[](1);
+        updates = new ConsensusStateUpdate[](1);
         updates[0] =
-            ConsensusStateUpdates({consensusStateCommitment: keccak256(Any.encode(anyConsensusState)), height: height});
+            ConsensusStateUpdate({consensusStateCommitment: keccak256(Any.encode(anyConsensusState)), height: height});
         return (keccak256(Any.encode(anyClientState)), updates, true);
     }
 
@@ -148,6 +146,10 @@ contract MockClient is IClient {
 
     /* State accessors */
 
+    /**
+     * @dev getClientState returns the clientState corresponding to `clientId`.
+     *      If it's not found, the function returns false.
+     */
     function getClientState(
         string calldata clientId
     ) external view returns (bytes memory clientStateBytes, bool) {
@@ -161,6 +163,10 @@ contract MockClient is IClient {
         })), true);
     }
 
+    /**
+     * @dev getConsensusState returns the consensusState corresponding to `clientId` and `height`.
+     *      If it's not found, the function returns false.
+     */
     function getConsensusState(
         string calldata clientId,
         Height.Data calldata height
@@ -212,7 +218,7 @@ contract MockClient is IClient {
         return (ConsensusState.decode(anyConsensusState.value), true);
     }
 
-    modifier onlyIBCModule() {
+    modifier onlyIBC() {
         require(msg.sender == ibcModule);
         _;
     }

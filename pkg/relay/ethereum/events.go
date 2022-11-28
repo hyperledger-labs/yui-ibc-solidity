@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 )
 
 var (
@@ -29,15 +28,11 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	parsedHostABI, err := abi.JSON(strings.NewReader(ibchost.IbchostABI))
-	if err != nil {
-		panic(err)
-	}
 	abiSendPacket = parsedHandlerABI.Events["SendPacket"]
 	abiWriteAcknowledgement = parsedHandlerABI.Events["WriteAcknowledgement"]
-	abiGeneratedClientIdentifier = parsedHostABI.Events["GeneratedClientIdentifier"]
-	abiGeneratedConnectionIdentifier = parsedHostABI.Events["GeneratedConnectionIdentifier"]
-	abiGeneratedChannelIdentifier = parsedHostABI.Events["GeneratedChannelIdentifier"]
+	abiGeneratedClientIdentifier = parsedHandlerABI.Events["GeneratedClientIdentifier"]
+	abiGeneratedConnectionIdentifier = parsedHandlerABI.Events["GeneratedConnectionIdentifier"]
+	abiGeneratedChannelIdentifier = parsedHandlerABI.Events["GeneratedChannelIdentifier"]
 }
 
 func (chain *Chain) findPacket(

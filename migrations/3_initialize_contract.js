@@ -1,4 +1,4 @@
-const IBCHandler = artifacts.require("IBCHandler");
+const IBCHandler = artifacts.require("OwnableIBCHandler");
 const IBFT2Client = artifacts.require("IBFT2Client");
 const MockClient = artifacts.require("MockClient");
 const ICS20TransferBank = artifacts.require("ICS20TransferBank");

@@ -10,7 +10,6 @@ import (
 
 	"github.com/avast/retry-go"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
@@ -67,9 +66,7 @@ func (suite ChainTestSuite) TestChannel() {
 	var delayStartTimeForAck time.Time
 
 	beforeLatestHeight := chainA.GetIBFT2ClientState(clientA).LatestHeight
-	beforeConsensusState, ok, err := chainA.IBFT2Client.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibft2client.HeightData(beforeLatestHeight))
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
+	beforeConsensusState := chainA.GetIBFT2ConsensusState(clientA, beforeLatestHeight)
 
 	/// Tests for Transfer module ///
 
@@ -149,7 +146,7 @@ func (suite ChainTestSuite) TestChannel() {
 		retry.Delay(time.Second),
 		retry.Attempts(60),
 	))
-	delayForRecv := time.Now().Sub(delayStartTimeForRecv)
+	delayForRecv := time.Since(delayStartTimeForRecv)
 	suite.T().Log("delay for recv@chainB", delayForRecv)
 	suite.Require().Greater(delayForRecv, time.Duration(ibctesting.DefaultDelayPeriod))
 	suite.Require().NoError(retry.Do(
@@ -159,7 +156,7 @@ func (suite ChainTestSuite) TestChannel() {
 		retry.Delay(time.Second),
 		retry.Attempts(60),
 	))
-	delayForAck := time.Now().Sub(delayStartTimeForAck)
+	delayForAck := time.Since(delayStartTimeForAck)
 	suite.T().Log("delay for ack@chainA", delayForAck)
 	suite.Require().Greater(delayForAck, time.Duration(ibctesting.DefaultDelayPeriod))
 
@@ -216,7 +213,7 @@ func (suite ChainTestSuite) TestChannel() {
 		retry.Delay(time.Second),
 		retry.Attempts(60),
 	))
-	delayForRecv = time.Now().Sub(delayStartTimeForRecv)
+	delayForRecv = time.Since(delayStartTimeForRecv)
 	suite.T().Log("delay for recv@chainA", delayForRecv)
 	suite.Require().Greater(delayForRecv, time.Duration(delayPeriodExtensionA*ibctesting.DefaultDelayPeriod))
 	suite.Require().NoError(retry.Do(
@@ -226,7 +223,7 @@ func (suite ChainTestSuite) TestChannel() {
 		retry.Delay(time.Second),
 		retry.Attempts(60),
 	))
-	delayForAck = time.Now().Sub(delayStartTimeForAck)
+	delayForAck = time.Since(delayStartTimeForAck)
 	suite.T().Log("delay for ack@chainB", delayForAck)
 	suite.Require().Greater(delayForAck, time.Duration(delayPeriodExtensionB*ibctesting.DefaultDelayPeriod))
 
@@ -261,9 +258,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().Equal(afterLatestHeight.RevisionNumber, beforeLatestHeight.RevisionNumber)
 	suite.Require().True(afterLatestHeight.RevisionHeight > beforeLatestHeight.RevisionHeight)
 
-	beforeConsensusState2, ok, err := chainA.IBFT2Client.GetConsensusState(chainA.CallOpts(ctx, relayer), clientA, ibft2client.HeightData(beforeLatestHeight))
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
+	beforeConsensusState2 := chainA.GetIBFT2ConsensusState(clientA, beforeLatestHeight)
 	suite.Require().Equal(beforeConsensusState, beforeConsensusState2)
 }
 

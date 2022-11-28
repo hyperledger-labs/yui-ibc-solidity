@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./IBCMsgs.sol";
+import "../25-handler/IBCMsgs.sol";
 
-interface IIBCChannel {
+interface IIBCChannelHandshake {
     /**
      * @dev channelOpenInit is called by a module to initiate a channel opening handshake with a module on another chain.
      */
@@ -34,7 +34,9 @@ interface IIBCChannel {
      * channel, since the other end has been closed.
      */
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) external;
+}
 
+interface IIBCPacket {
     /**
      * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
      * The packet sequence generated for the packet to be sent is returned. An error

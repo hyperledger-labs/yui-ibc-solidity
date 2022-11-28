@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../proto/Client.sol";
-import "../proto/Connection.sol";
-import "./IBCMsgs.sol";
-import "./IBCHost.sol";
-import "./IBCCommitment.sol";
-import "./IIBCConnection.sol";
+import "../../proto/Client.sol";
+import "../../proto/Connection.sol";
+import "../25-handler/IBCMsgs.sol";
+import "../24-host/IBCStore.sol";
+import "../24-host/IBCCommitment.sol";
+import "../03-connection/IIBCConnection.sol";
 
-contract IBCConnection is IBCHost, IIBCConnection {
+/**
+ * @dev IBCConnection is a contract that implements [ICS-3](https://github.com/cosmos/ibc/tree/main/spec/core/ics-003-connection-semantics).
+ */
+contract IBCConnection is IBCStore, IIBCConnectionHandshake {
     string private constant commitmentPrefix = "ibc";
 
     /* Handshake functions */
@@ -26,7 +29,7 @@ contract IBCConnection is IBCHost, IIBCConnection {
         ConnectionEnd.Data storage connection = connections[connectionId];
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
         connection.client_id = msg_.clientId;
-        setVersions(connection.versions);
+        setSupportedVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_INIT;
         connection.delay_period = msg_.delayPeriod;
         connection.counterparty = msg_.counterparty;
@@ -46,7 +49,7 @@ contract IBCConnection is IBCHost, IIBCConnection {
         ConnectionEnd.Data storage connection = connections[connectionId];
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
         connection.client_id = msg_.clientId;
-        setVersions(connection.versions);
+        setSupportedVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_TRYOPEN;
         connection.delay_period = msg_.delayPeriod;
         connection.counterparty = msg_.counterparty;
@@ -245,7 +248,23 @@ contract IBCConnection is IBCHost, IIBCConnection {
         return identifier;
     }
 
-    function setVersions(Version.Data[] storage versions) internal {
+    /**
+     * @dev validateSelfClient validates the client parameters for a client of the host chain.
+     *
+     * NOTE: Developers can override this function to support an arbitrary EVM chain.
+     */
+    function validateSelfClient(bytes memory) internal view virtual returns (bool) {
+        this; // this is a trick that suppresses "Warning: Function state mutability can be restricted to pure"
+        return true;
+    }
+
+    /**
+     * @dev setSupportedVersions sets the supported versions to a given array.
+     *
+     * NOTE: `versions` must be an empty array
+     */
+    function setSupportedVersions(Version.Data[] storage versions) internal {
+        assert(versions.length == 0);
         versions.push(Version.Data({identifier: "1", features: new string[](2)}));
         Version.Data storage version = versions[0];
         version.features[0] = "ORDER_ORDERED";

@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../proto/Channel.sol";
-import "./IBCMsgs.sol";
-import "./IBCHeight.sol";
-import "./IBCHost.sol";
-import "./IBCCommitment.sol";
-import "./IIBCChannel.sol";
+import "../../proto/Channel.sol";
+import "../25-handler/IBCMsgs.sol";
+import "../02-client/IBCHeight.sol";
+import "../24-host/IBCStore.sol";
+import "../24-host/IBCCommitment.sol";
+import "../04-channel/IIBCChannel.sol";
 
-contract IBCChannel is IBCHost, IIBCChannel {
+/**
+ * @dev IBCChannel is a contract that implements [ICS-4](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics).
+ */
+contract IBCChannel is IBCStore, IIBCChannelHandshake, IIBCPacket {
     using IBCHeight for Height.Data;
 
     /* Handshake functions */
@@ -242,7 +245,7 @@ contract IBCChannel is IBCHost, IIBCChannel {
             "packet destination channel doesn't match the counterparty's channel"
         );
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        IClient client = IClient(clientImpls[connection.client_id]);
+        ILightClient client = ILightClient(clientImpls[connection.client_id]);
         (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
         require(
             packet.timeout_height.isZero() || latestHeight.lt(packet.timeout_height),
