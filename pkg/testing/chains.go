@@ -855,38 +855,22 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 }
 
 func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
+	cs, found, err := counterparty.IBCHandler.GetClientState(counterparty.CallOpts(context.Background(), RelayerKeyIndex), counterpartyClientID)
+	if err != nil {
+		return nil, nil, err
+	} else if !found {
+		return nil, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
+	}
 	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ClientStateCommitmentSlot(counterpartyClientID), height)
 	if err != nil {
 		return nil, nil, err
 	}
 	switch counterparty.ClientType() {
 	case ibcclient.MockClient:
-		cs := counterparty.GetMockClientState(counterpartyClientID)
-		any, err := PackAny(cs)
-		if err != nil {
-			return nil, nil, err
-		}
-		bz, err := proto.Marshal(any)
-		if err != nil {
-			return nil, nil, err
-		}
-		h := sha256.Sum256(bz)
+		h := sha256.Sum256(cs)
 		proof.Data = h[:]
-		return bz, proof, nil
-	case ibcclient.BesuIBFT2Client:
-		cs := counterparty.GetIBFT2ClientState(counterpartyClientID)
-		any, err := PackAny(cs)
-		if err != nil {
-			return nil, nil, err
-		}
-		bz, err := proto.Marshal(any)
-		if err != nil {
-			return nil, nil, err
-		}
-		return bz, proof, nil
-	default:
-		panic("not supported")
 	}
+	return cs, proof, nil
 }
 
 func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string, height *big.Int) (*Proof, error) {
