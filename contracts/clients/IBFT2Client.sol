@@ -36,7 +36,7 @@ contract IBFT2Client is ILightClient {
     uint256 private constant COMMITMENT_SLOT = 0;
     uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
-    address internal ibcModule;
+    address internal ibcHandler;
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
     mapping(string => mapping(uint128 => uint256)) internal processedTimes;
@@ -55,8 +55,8 @@ contract IBFT2Client is ILightClient {
         uint64 denominator;
     }
 
-    constructor(address ibcModule_) {
-        ibcModule = ibcModule_;
+    constructor(address ibcHandler_) {
+        ibcHandler = ibcHandler_;
     }
 
     /**
@@ -448,7 +448,7 @@ contract IBFT2Client is ILightClient {
     }
 
     modifier onlyIBC() {
-        require(msg.sender == ibcModule);
+        require(msg.sender == ibcHandler);
         _;
     }
 }

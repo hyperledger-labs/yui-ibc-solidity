@@ -28,12 +28,12 @@ contract MockClient is ILightClient {
     bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH =
         keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
 
-    address internal ibcModule;
+    address internal ibcHandler;
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
 
-    constructor(address ibcModule_) {
-        ibcModule = ibcModule_;
+    constructor(address ibcHandler_) {
+        ibcHandler = ibcHandler_;
     }
 
     /**
@@ -219,7 +219,7 @@ contract MockClient is ILightClient {
     }
 
     modifier onlyIBC() {
-        require(msg.sender == ibcModule);
+        require(msg.sender == ibcHandler);
         _;
     }
 }
