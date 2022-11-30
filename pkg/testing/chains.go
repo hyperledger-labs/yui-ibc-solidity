@@ -26,11 +26,11 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/simpletoken"
-	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
-	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
-	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/ibft2"
-	mockclienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client/mock"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment"
+	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2"
+	mockclienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/mock"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
+	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/commitment"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/wallet"
 )
 

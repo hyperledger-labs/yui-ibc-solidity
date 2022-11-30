@@ -5,7 +5,7 @@ import "./IICS20Transfer.sol";
 import "../../proto/Channel.sol";
 import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
-import "../../proto/App.sol";
+import "../../proto/FungibleTokenPacketData.sol";
 import "../../lib/strings.sol";
 import "../../lib/Bytes.sol";
 import "@openzeppelin/contracts/utils/Context.sol";

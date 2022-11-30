@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment";
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/commitment";
 
 import "solidity-protobuf-extensions.proto";
 option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };

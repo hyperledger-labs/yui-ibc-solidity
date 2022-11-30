@@ -10,8 +10,8 @@ import (
 
 	"github.com/avast/retry-go"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
-	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
-	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
+	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
 	testchain0 "github.com/hyperledger-labs/yui-ibc-solidity/tests/e2e/config/chain0"
 	testchain1 "github.com/hyperledger-labs/yui-ibc-solidity/tests/e2e/config/chain1"

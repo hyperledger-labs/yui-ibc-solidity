@@ -62,9 +62,8 @@ setup-e2e:
 down:
 	./scripts/setup.sh down
 
-.PHONY: proto-gen
-proto-gen:
-	@echo "Generating Protobuf files"
+.PHONY: proto-go
+proto-go:
 ifndef SOLPB_DIR
 	$(error SOLPB_DIR is not specified)
 else

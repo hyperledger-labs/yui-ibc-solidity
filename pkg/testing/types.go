@@ -8,9 +8,9 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
-	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
-	commitmenttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment"
-	connectiontypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
+	commitmenttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/commitment"
+	connectiontypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/connection"
 )
 
 // TestConnection is a testing helper struct to keep track of the connectionID, source clientID,

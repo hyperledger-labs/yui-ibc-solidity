@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection";
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/connection";
 
 import "solidity-protobuf-extensions.proto";
 option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
 
 import "gogoproto/gogo.proto";
-import "commitment/Commitment.proto";
+import "core/23-commitment/Commitment.proto";
 
 // ICS03 - Connection Data Structures as defined in
 // https://github.com/cosmos/ibc/blob/master/spec/core/ics-003-connection-semantics#data-structures
