@@ -62,6 +62,14 @@ setup-e2e:
 down:
 	./scripts/setup.sh down
 
+.PHONY: proto-sol
+proto-sol:
+ifndef SOLPB_DIR
+	$(error SOLPB_DIR is not specified)
+else
+	./scripts/solpb.sh
+endif
+
 .PHONY: proto-go
 proto-go:
 ifndef SOLPB_DIR
@@ -75,6 +83,9 @@ else
 		tendermintdev/sdk-proto-gen:v0.3 \
 		sh ./scripts/protocgen.sh
 endif
+
+.PHONY: proto-gen
+proto-gen: proto-sol proto-go
 
 .PHONY: integration-test
 integration-test:
