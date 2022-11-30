@@ -12,8 +12,8 @@ import (
 	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/consts"
-	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
-	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
+	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -54,7 +54,7 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 		ctx := context.Background()
 
 		// clientState
-		path, err := suite.chainA.IBCIdentifier.ClientStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID)
+		path, err := suite.chainA.IBCCommitment.ClientStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID)
 		require.NoError(err)
 		require.Equal(host.FullClientStateKey(testClientID), path)
 
@@ -63,29 +63,29 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 		for _, n := range cases {
 			for _, h := range cases {
 				testHeight := ibcclienttypes.NewHeight(n, h)
-				path, err := suite.chainA.IBCIdentifier.ConsensusStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID, testHeight.RevisionNumber, testHeight.RevisionHeight)
+				path, err := suite.chainA.IBCCommitment.ConsensusStatePath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testClientID, testHeight.RevisionNumber, testHeight.RevisionHeight)
 				require.NoError(err)
 				require.Equal(host.FullConsensusStateKey(testClientID, testHeight), path)
 			}
 		}
 		// connectionState
-		path, err = suite.chainA.IBCIdentifier.ConnectionPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testConnectionID)
+		path, err = suite.chainA.IBCCommitment.ConnectionPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testConnectionID)
 		require.NoError(err)
 		require.Equal(host.ConnectionKey(testConnectionID), path)
 
 		// channelState
-		path, err = suite.chainA.IBCIdentifier.ChannelPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
+		path, err = suite.chainA.IBCCommitment.ChannelPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
 		require.NoError(err)
 		require.Equal(host.ChannelKey(testPortID, testChannelID), path)
 
 		// packetCommitment
 		var testSequence uint64 = 1
-		path, err = suite.chainA.IBCIdentifier.PacketCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		path, err = suite.chainA.IBCCommitment.PacketCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
 		require.Equal(host.PacketCommitmentKey(testPortID, testChannelID, testSequence), path)
 
 		// acknowledgementCommitment
-		path, err = suite.chainA.IBCIdentifier.PacketAcknowledgementCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		path, err = suite.chainA.IBCCommitment.PacketAcknowledgementCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
 		require.Equal(host.PacketAcknowledgementKey(testPortID, testChannelID, testSequence), path)
 	})
@@ -204,12 +204,12 @@ func (suite *ContractTestSuite) TestChannel() {
 	// close channel
 	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 	// confirm that the channel is CLOSED on chain A
-	chanData, ok, err := chainA.IBCHost.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
+	chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
 	// confirm that the channel is CLOSED on chain B
-	chanData, ok, err = chainB.IBCHost.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
+	chanData, ok, err = chainB.IBCHandler.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
 	suite.Require().NoError(err)
 	suite.Require().True(ok)
 	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)

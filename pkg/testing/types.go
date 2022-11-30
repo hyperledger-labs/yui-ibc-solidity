@@ -7,10 +7,10 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
-	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
-	commitmenttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/commitment"
-	connectiontypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/connection"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
+	commitmenttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/commitment"
+	connectiontypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/connection"
 )
 
 // TestConnection is a testing helper struct to keep track of the connectionID, source clientID,
@@ -35,7 +35,7 @@ type TestChannel struct {
 	Version              string
 }
 
-func connectionEndToPB(conn ibchost.ConnectionEndData) *connectiontypes.ConnectionEnd {
+func connectionEndToPB(conn ibchandler.ConnectionEndData) *connectiontypes.ConnectionEnd {
 	connpb := &connectiontypes.ConnectionEnd{
 		ClientId:    conn.ClientId,
 		Versions:    []*connectiontypes.Version{},
@@ -54,7 +54,7 @@ func connectionEndToPB(conn ibchost.ConnectionEndData) *connectiontypes.Connecti
 	return connpb
 }
 
-func channelToPB(ch ibchost.ChannelData) *channeltypes.Channel {
+func channelToPB(ch ibchandler.ChannelData) *channeltypes.Channel {
 	return &channeltypes.Channel{
 		State:          channeltypes.Channel_State(ch.State),
 		Ordering:       channeltypes.Channel_Order(ch.Ordering),

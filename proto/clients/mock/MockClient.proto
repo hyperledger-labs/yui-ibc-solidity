@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ibc.lightclients.mock.v1;
+
+import "gogoproto/gogo.proto";
+import "solidity-protobuf-extensions.proto";
+import "core/02-client/Client.proto";
+
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/mock";
+option (gogoproto.goproto_getters_all)  = false;
+option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
+
+message ClientState {
+  Height latest_height = 1 [(gogoproto.nullable) = false];
+}
+
+message ConsensusState {
+  uint64 timestamp = 1;
+}
+
+message Header {
+  Height height = 1 [(gogoproto.nullable) = false];
+  uint64 timestamp = 2;
+}

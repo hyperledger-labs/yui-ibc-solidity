@@ -11,20 +11,21 @@ function before_common() {
 }
 
 function after_common() {
+    if [ -n "$NO_GEN_CODE" ]; then
+        return
+    fi
+
     srcs=(
-        "IBCHost"
-        "IBCHandler"
-        "IBCIdentifier"
+        "IBCCommitment"
         "SimpleToken"
         "ICS20TransferBank"
         "ICS20Bank"
     )
-    if [ -n "$NO_GEN_CODE" ]; then
-        return
-    fi
     for src in "${srcs[@]}" ; do
         make abi SOURCE=${src}
     done
+    # rename OwnableIBCHandler to IBCHandler
+    make abi SOURCE=OwnableIBCHandler TARGET=ibchandler
 }
 
 function chain() {

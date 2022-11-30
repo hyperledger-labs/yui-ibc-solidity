@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/channel"
-	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/client"
+	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
+	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	"github.com/stretchr/testify/require"
 )
 
@@ -184,6 +184,7 @@ func (c Coordinator) ConnOpenInit(
 
 	// initialize connection on source
 	if connID, err := source.ConnectionOpenInit(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
+		fmt.Println("ConnectionOpenInit failed", err)
 		return sourceConnection, counterpartyConnection, err
 	} else {
 		sourceConnection.ID = connID

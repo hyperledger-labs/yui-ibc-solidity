@@ -6,10 +6,9 @@ import (
 	commitmenttypes "github.com/cosmos/ibc-go/v4/modules/core/23-commitment/types"
 	"github.com/cosmos/ibc-go/v4/modules/core/exported"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchost"
 )
 
-func connectionEndToPB(conn ibchost.ConnectionEndData) connectiontypes.ConnectionEnd {
+func connectionEndToPB(conn ibchandler.ConnectionEndData) connectiontypes.ConnectionEnd {
 	connpb := connectiontypes.ConnectionEnd{
 		ClientId:    conn.ClientId,
 		Versions:    []*connectiontypes.Version{},
@@ -28,7 +27,7 @@ func connectionEndToPB(conn ibchost.ConnectionEndData) connectiontypes.Connectio
 	return connpb
 }
 
-func channelToPB(chann ibchost.ChannelData) channeltypes.Channel {
+func channelToPB(chann ibchandler.ChannelData) channeltypes.Channel {
 	return channeltypes.Channel{
 		State:          channeltypes.State(chann.State),
 		Ordering:       channeltypes.Order(chann.Ordering),
@@ -45,8 +44,8 @@ func pbToHandlerHeight(height exported.Height) ibchandler.HeightData {
 	}
 }
 
-func pbToHostHeight(height exported.Height) ibchost.HeightData {
-	return ibchost.HeightData{
+func pbToHostHeight(height exported.Height) ibchandler.HeightData {
+	return ibchandler.HeightData{
 		RevisionNumber: height.GetRevisionNumber(),
 		RevisionHeight: height.GetRevisionHeight(),
 	}

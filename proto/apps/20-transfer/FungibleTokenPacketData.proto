@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/apps/transfer";
+
+import "solidity-protobuf-extensions.proto";
+option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
+
+// FungibleTokenPacketData defines a struct for the packet payload
+// See FungibleTokenPacketData spec:
+// https://github.com/cosmos/ics/tree/master/spec/ics-020-fungible-token-transfer#data-structures
+message FungibleTokenPacketData {
+    // the token denomination to be transferred
+    string denom = 1;
+    // the token amount to be transferred
+    uint64 amount = 2;
+    // the sender address
+    bytes sender = 3;
+    // the recipient address on the destination chain
+    bytes receiver = 4;
+}
