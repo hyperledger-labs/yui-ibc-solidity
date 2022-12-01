@@ -123,7 +123,7 @@ func (suite ChainTestSuite) TestChannel() {
 			100,
 			chainB.CallOpts(ctx, bobB).From,
 			chanA.PortID, chanA.ID,
-			uint64(chainA.LastHeader().Number.Int64())+1000,
+			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
 	))
 	chainA.UpdateHeader()
@@ -195,7 +195,7 @@ func (suite ChainTestSuite) TestChannel() {
 			chainA.CallOpts(ctx, aliceA).From,
 			chanB.PortID,
 			chanB.ID,
-			uint64(chainB.LastHeader().Number.Int64())+1000,
+			uint64(chainA.LastHeader().Number.Int64())+1000,
 		),
 	))
 	chainB.UpdateHeader()
