@@ -42,7 +42,7 @@ fmt:
 		./contracts/core \
 		./tests/foundry/src
 
-.PHONY: fmt
+.PHONY: check-fmt
 check-fmt:
 	@$(MAKE) FORGE_FMT_OPTS=--check fmt
 
