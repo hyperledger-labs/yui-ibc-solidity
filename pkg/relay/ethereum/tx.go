@@ -95,7 +95,6 @@ func (c *Chain) TxCreateClient(opts *bind.TransactOpts, msg *clienttypes.MsgCrea
 	}
 	return c.ibcHandler.CreateClient(opts, ibchandler.IBCMsgsMsgCreateClient{
 		ClientType:          clientState.ClientType(),
-		Height:              pbToHandlerHeight(clientState.GetLatestHeight()),
 		ClientStateBytes:    clientStateBytes,
 		ConsensusStateBytes: consensusStateBytes,
 	})

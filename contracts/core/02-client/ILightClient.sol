@@ -12,12 +12,9 @@ interface ILightClient {
      * @dev createClient creates a new client with the given state.
      * If succeeded, it returns a commitment for the initial state.
      */
-    function createClient(
-        string calldata clientId,
-        Height.Data calldata height,
-        bytes calldata clientStateBytes,
-        bytes calldata consensusStateBytes
-    ) external returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok);
+    function createClient(string calldata clientId, bytes calldata clientStateBytes, bytes calldata consensusStateBytes)
+        external
+        returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok);
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.

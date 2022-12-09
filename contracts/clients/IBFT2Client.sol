@@ -64,7 +64,6 @@ contract IBFT2Client is ILightClient {
      */
     function createClient(
         string calldata clientId,
-        Height.Data calldata height,
         bytes calldata clientStateBytes,
         bytes calldata consensusStateBytes
     ) external onlyIBC override returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok) {
@@ -80,8 +79,8 @@ contract IBFT2Client is ILightClient {
             return (clientStateCommitment, update, false);
         }
         clientStates[clientId] = clientState;
-        consensusStates[clientId][height.toUint128()] = consensusState;
-        return (keccak256(clientStateBytes), ConsensusStateUpdate({consensusStateCommitment: keccak256(consensusStateBytes), height: height}), true);
+        consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
+        return (keccak256(clientStateBytes), ConsensusStateUpdate({consensusStateCommitment: keccak256(consensusStateBytes), height: clientState.latest_height}), true);
     }
 
     /**
@@ -411,6 +410,7 @@ contract IBFT2Client is ILightClient {
     }
 
     function ecdsaRecover(bytes32 hash, bytes memory sig) private pure returns (address) {
+        require(sig.length == 65, "sig length must be 65");
         if (uint8(sig[64]) < 27) {
             sig[64] = bytes1(uint8(sig[64]) + 27);
         }

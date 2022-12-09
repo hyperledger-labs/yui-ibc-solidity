@@ -13,7 +13,6 @@ library IBCMsgs {
 
     struct MsgCreateClient {
         string clientType;
-        Height.Data height;
         bytes clientStateBytes;
         bytes consensusStateBytes;
     }
