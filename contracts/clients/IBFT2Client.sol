@@ -410,6 +410,7 @@ contract IBFT2Client is ILightClient {
     }
 
     function ecdsaRecover(bytes32 hash, bytes memory sig) private pure returns (address) {
+        require(sig.length == 65, "sig length must be 65");
         if (uint8(sig[64]) < 27) {
             sig[64] = bytes1(uint8(sig[64]) + 27);
         }
