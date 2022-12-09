@@ -267,7 +267,6 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 	}
 	return ibchandler.IBCMsgsMsgCreateClient{
 		ClientType:          ibcclient.MockClient,
-		Height:              clientState.LatestHeight.ToCallData(),
 		ClientStateBytes:    clientStateBytes,
 		ConsensusStateBytes: consensusStateBytes,
 	}
@@ -294,7 +293,6 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 	}
 	return ibchandler.IBCMsgsMsgCreateClient{
 		ClientType:          ibcclient.BesuIBFT2Client,
-		Height:              clientState.LatestHeight.ToCallData(),
 		ClientStateBytes:    clientStateBytes,
 		ConsensusStateBytes: consensusStateBytes,
 	}
