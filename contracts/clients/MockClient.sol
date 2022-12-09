@@ -41,7 +41,6 @@ contract MockClient is ILightClient {
      */
     function createClient(
         string calldata clientId,
-        Height.Data calldata height,
         bytes calldata clientStateBytes,
         bytes calldata consensusStateBytes
     ) external onlyIBC override returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok) {
@@ -63,8 +62,8 @@ contract MockClient is ILightClient {
             return (clientStateCommitment, update, false);
         }
         clientStates[clientId] = clientState;
-        consensusStates[clientId][height.toUint128()] = consensusState;
-        return (keccak256(clientStateBytes), ConsensusStateUpdate({consensusStateCommitment: keccak256(consensusStateBytes), height: height}), true);
+        consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
+        return (keccak256(clientStateBytes), ConsensusStateUpdate({consensusStateCommitment: keccak256(consensusStateBytes), height: clientState.latest_height}), true);
     }
 
     /**

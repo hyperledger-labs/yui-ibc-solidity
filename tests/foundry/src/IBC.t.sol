@@ -138,7 +138,6 @@ contract IBCTest is Test {
         handler.createClient(
             IBCMsgs.MsgCreateClient({
                 clientType: mockClientType,
-                height: Height.Data({revision_number: 0, revision_height: revision_height}),
                 clientStateBytes: wrapAnyMockClientState(
                     IbcLightclientsMockV1ClientState.Data({
                         latest_height: Height.Data({revision_number: 0, revision_height: revision_height})
