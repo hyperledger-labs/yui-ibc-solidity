@@ -10,7 +10,7 @@ import {
     IbcLightclientsIbft2V1Header as Header
 } from "../proto/IBFT2.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
-import "../lib/ECRecovery.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "../lib/Bytes.sol";
 import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
@@ -300,7 +300,7 @@ contract IBFT2Client is ILightClient {
             if (seals[i].length == 0) {
                 continue;
             }
-            address signer = ECRecovery.recover(blkHash, seals[i]);
+            address signer = ecdsaRecover(blkHash, seals[i]);
             for (uint256 j = 0; j < trustedVals.length; j++) {
                 if (!marked[j] && trustedVals[j].toAddress() == signer) {
                     success++;
@@ -328,7 +328,7 @@ contract IBFT2Client is ILightClient {
             validators[i] = untrustedVals[i].toBytes();
             if (seals[i].length == 0) {
                 continue;
-            } else if (validators[i].toAddress() == ECRecovery.recover(blkHash, seals[i])) {
+            } else if (validators[i].toAddress() == ecdsaRecover(blkHash, seals[i])) {
                 success++;
             }
         }
@@ -408,6 +408,17 @@ contract IBFT2Client is ILightClient {
         bytes32 proofPath = keccak256(abi.encodePacked(account));
         bytes memory accountRLP = accountStateProof.verify(stateRoot, proofPath); // reverts if proof is invalid
         return bytes32(accountRLP.toRLPItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
+    }
+
+    function ecdsaRecover(bytes32 hash, bytes memory sig) private pure returns (address) {
+        if (uint8(sig[64]) < 27) {
+            sig[64] = bytes1(uint8(sig[64]) + 27);
+        }
+        (address signer, ECDSA.RecoverError error) = ECDSA.tryRecover(hash, sig);
+        if (error != ECDSA.RecoverError.NoError) {
+            return address(0);
+        }
+        return signer;
     }
 
     /* State accessors */
