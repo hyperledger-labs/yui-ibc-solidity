@@ -10,12 +10,12 @@ import {
     IbcLightclientsMockV1Header as Header
 } from "../proto/MockClient.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
-import "../lib/Bytes.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 // MockClient implements https://github.com/datachainlab/ibc-mock-client
 // WARNING: This client is intended to be used for testing purpose. Therefore, it is not generally available in a production, except in a fully trusted environment.
 contract MockClient is ILightClient {
-    using Bytes for bytes;
+    using BytesLib for bytes;
     using IBCHeight for Height.Data;
 
     string private constant HEADER_TYPE_URL = "/ibc.lightclients.mock.v1.Header";
@@ -140,7 +140,7 @@ contract MockClient is ILightClient {
         bytes calldata value
     ) external view override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
-        return sha256(value) == proof.toBytes32();
+        return sha256(value) == proof.toBytes32(0);
     }
 
     /* State accessors */
