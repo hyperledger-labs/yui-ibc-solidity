@@ -5,7 +5,6 @@ import "../../../contracts/proto/Channel.sol";
 import "../../../contracts/core/05-port/IIBCModule.sol";
 import "../../../contracts/core/25-handler/IBCHandler.sol";
 import "../../../contracts/core/24-host/IBCHost.sol";
-import "../../../contracts/lib/strings.sol";
 import "../../../contracts/lib/Bytes.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 

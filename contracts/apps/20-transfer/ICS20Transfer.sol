@@ -6,7 +6,7 @@ import "../../proto/Channel.sol";
 import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
 import "../../proto/FungibleTokenPacketData.sol";
-import "../../lib/strings.sol";
+import "solidity-stringutils/src/strings.sol";
 import "../../lib/Bytes.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
