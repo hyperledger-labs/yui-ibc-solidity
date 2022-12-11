@@ -9,6 +9,8 @@
     "@truffle/hdwallet-provider": "^2.0.15",
     "ejs": "^3.1.7",
     "@openzeppelin/contracts": "^4.8.0",
+    "solidity-bytes-utils": "0.8.0",
+    "solidity-stringutils": "git+https://github.com/ibc-solidity/solidity-stringutils.git#716294569dd2304ae8d81681951733542f999015",
     "truffle": "5.6.6",
     "truffle-contract-size": "^2.0.1"
   },

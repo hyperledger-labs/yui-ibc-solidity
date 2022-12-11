@@ -11,7 +11,7 @@ import {
 } from "../proto/IBFT2.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "../lib/Bytes.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "../lib/TrieProofs.sol";
 import "../lib/RLP.sol";
 
@@ -20,7 +20,7 @@ contract IBFT2Client is ILightClient {
     using TrieProofs for bytes;
     using RLP for RLP.RLPItem;
     using RLP for bytes;
-    using Bytes for bytes;
+    using BytesLib for bytes;
     using IBCHeight for Height.Data;
 
     string private constant HEADER_TYPE_URL = "/ibc.lightclients.ibft2.v1.Header";
@@ -152,7 +152,7 @@ contract IBFT2Client is ILightClient {
         consensusState.timestamp = parsedHeader.time;
         consensusState.root = abi.encodePacked(
             verifyStorageProof(
-                Bytes.toAddress(clientState.ibc_store_address), parsedHeader.stateRoot, header.account_state_proof
+                clientState.ibc_store_address.toAddress(0), parsedHeader.stateRoot, header.account_state_proof
             )
         );
         consensusState.validators = validators;
@@ -203,7 +203,7 @@ contract IBFT2Client is ILightClient {
         assert(consensusState.timestamp != 0);
         return verifyMembership(
             proof,
-            consensusState.root.toBytes32(),
+            consensusState.root.toBytes32(0),
             keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT)),
             keccak256(value)
         );
@@ -301,7 +301,7 @@ contract IBFT2Client is ILightClient {
             }
             address signer = ecdsaRecover(blkHash, seals[i]);
             for (uint256 j = 0; j < trustedVals.length; j++) {
-                if (!marked[j] && trustedVals[j].toAddress() == signer) {
+                if (!marked[j] && trustedVals[j].toAddress(0) == signer) {
                     success++;
                     marked[j] = true;
                 }
@@ -327,7 +327,7 @@ contract IBFT2Client is ILightClient {
             validators[i] = untrustedVals[i].toBytes();
             if (seals[i].length == 0) {
                 continue;
-            } else if (validators[i].toAddress() == ecdsaRecover(blkHash, seals[i])) {
+            } else if (validators[i].toAddress(0) == ecdsaRecover(blkHash, seals[i])) {
                 success++;
             }
         }
@@ -379,7 +379,7 @@ contract IBFT2Client is ILightClient {
     {
         bytes32 path = keccak256(abi.encodePacked(slot));
         bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
-        return expectedValue == dataHash.toRLPItem().toBytes().toBytes32();
+        return expectedValue == bytes32(dataHash.toRLPItem().toUint());
     }
 
     function parseBesuHeader(Header.Data memory header) internal pure returns (ParsedBesuHeader memory) {
@@ -387,7 +387,7 @@ contract IBFT2Client is ILightClient {
 
         parsedHeader.base = header;
         RLP.RLPItem[] memory items = header.besu_header_rlp.toRLPItem().toList();
-        parsedHeader.stateRoot = items[3].toBytes().toBytes32();
+        parsedHeader.stateRoot = bytes32(items[3].toUint());
         parsedHeader.height = Height.Data({revision_number: 0, revision_height: uint64(items[8].toUint())});
 
         require(items.length == 15, "items length must be 15");

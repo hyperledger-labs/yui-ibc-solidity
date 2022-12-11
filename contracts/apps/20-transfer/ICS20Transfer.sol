@@ -6,13 +6,13 @@ import "../../proto/Channel.sol";
 import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
 import "../../proto/FungibleTokenPacketData.sol";
-import "../../lib/strings.sol";
-import "../../lib/Bytes.sol";
+import "solidity-stringutils/src/strings.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 abstract contract ICS20Transfer is Context, IICS20Transfer {
     using strings for *;
-    using Bytes for *;
+    using BytesLib for bytes;
 
     IBCHandler ibcHandler;
 
@@ -67,7 +67,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
             return _newAcknowledgement(
                 _transferFrom(
                     _getEscrowAddress(packet.destination_channel),
-                    data.receiver.toAddress(),
+                    data.receiver.toAddress(0),
                     trimedDenom.toString(),
                     data.amount
                 )
@@ -75,7 +75,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         } else {
             string memory prefixedDenom =
                 _makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            return _newAcknowledgement(_mint(data.receiver.toAddress(), prefixedDenom, data.amount));
+            return _newAcknowledgement(_mint(data.receiver.toAddress(0), prefixedDenom, data.amount));
         }
     }
 
@@ -187,9 +187,9 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
     ) internal virtual {
         if (!data.denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) {
             // sender was source chain
-            require(_transferFrom(_getEscrowAddress(sourceChannel), data.sender.toAddress(), data.denom, data.amount));
+            require(_transferFrom(_getEscrowAddress(sourceChannel), data.sender.toAddress(0), data.denom, data.amount));
         } else {
-            require(_mint(data.sender.toAddress(), data.denom, data.amount));
+            require(_mint(data.sender.toAddress(0), data.denom, data.amount));
         }
     }
 
