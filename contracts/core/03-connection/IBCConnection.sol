@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../proto/Client.sol";
 import "../../proto/Connection.sol";
 import "../25-handler/IBCMsgs.sol";
@@ -243,7 +244,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
     /* Internal functions */
 
     function generateConnectionIdentifier() private returns (string memory) {
-        string memory identifier = string(abi.encodePacked("connection-", uint2str(nextConnectionSequence)));
+        string memory identifier = string(abi.encodePacked("connection-", Strings.toString(nextConnectionSequence)));
         nextConnectionSequence++;
         return identifier;
     }

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./ILightClient.sol";
 import "../25-handler/IBCMsgs.sol";
 import "../24-host/IBCStore.sol";
@@ -60,7 +61,7 @@ contract IBCClient is IBCStore, IIBCClient {
     }
 
     function generateClientIdentifier(string calldata clientType) private returns (string memory) {
-        string memory identifier = string(abi.encodePacked(clientType, "-", uint2str(nextClientSequence)));
+        string memory identifier = string(abi.encodePacked(clientType, "-", Strings.toString(nextClientSequence)));
         nextClientSequence++;
         return identifier;
     }
