@@ -1,7 +1,7 @@
 {
   "name": "ibc-solidity",
   "version": "0.1.0",
-  "description": "IBC implementation in solidity",
+  "description": "IBC in Solidity",
   "directories": {
     "test": "test"
   },
@@ -12,8 +12,7 @@
     "solidity-bytes-utils": "0.8.0",
     "solidity-rlp": "^2.0.6",
     "solidity-stringutils": "git+https://github.com/ibc-solidity/solidity-stringutils.git#716294569dd2304ae8d81681951733542f999015",
-    "truffle": "5.6.6",
-    "truffle-contract-size": "^2.0.1"
+    "truffle": "5.6.6"
   },
   "scripts": {
     "postinstall": "truffle compile",
