@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../proto/Channel.sol";
 import "../25-handler/IBCMsgs.sol";
 import "../02-client/IBCHeight.sol";
@@ -520,7 +521,7 @@ contract IBCChannel is IBCStore, IIBCChannelHandshake, IIBCPacket {
     }
 
     function generateChannelIdentifier() private returns (string memory) {
-        string memory identifier = string(abi.encodePacked("channel-", uint2str(nextChannelSequence)));
+        string memory identifier = string(abi.encodePacked("channel-", Strings.toString(nextChannelSequence)));
         nextChannelSequence++;
         return identifier;
     }

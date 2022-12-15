@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 library IBCCommitment {
     // Commitment path generators that comply with https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#path-space
 
@@ -14,7 +16,12 @@ library IBCCommitment {
         returns (bytes memory)
     {
         return abi.encodePacked(
-            "clients/", clientId, "/consensusStates/", uint2str(revisionNumber), "-", uint2str(revisionHeight)
+            "clients/",
+            clientId,
+            "/consensusStates/",
+            Strings.toString(revisionNumber),
+            "-",
+            Strings.toString(revisionHeight)
         );
     }
 
@@ -31,8 +38,9 @@ library IBCCommitment {
         pure
         returns (bytes memory)
     {
-        return
-            abi.encodePacked("commitments/ports/", portId, "/channels/", channelId, "/sequences/", uint2str(sequence));
+        return abi.encodePacked(
+            "commitments/ports/", portId, "/channels/", channelId, "/sequences/", Strings.toString(sequence)
+        );
     }
 
     function packetAcknowledgementCommitmentPath(string calldata portId, string calldata channelId, uint64 sequence)
@@ -40,7 +48,8 @@ library IBCCommitment {
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked("acks/ports/", portId, "/channels/", channelId, "/sequences/", uint2str(sequence));
+        return
+            abi.encodePacked("acks/ports/", portId, "/channels/", channelId, "/sequences/", Strings.toString(sequence));
     }
 
     function packetReceiptCommitmentPath(string calldata portId, string calldata channelId, uint64 sequence)
@@ -48,7 +57,9 @@ library IBCCommitment {
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked("receipts/ports/", portId, "/channels/", channelId, "/sequences/", uint2str(sequence));
+        return abi.encodePacked(
+            "receipts/ports/", portId, "/channels/", channelId, "/sequences/", Strings.toString(sequence)
+        );
     }
 
     function nextSequenceRecvCommitmentPath(string calldata portId, string calldata channelId)
@@ -111,29 +122,5 @@ library IBCCommitment {
         returns (bytes32)
     {
         return keccak256(nextSequenceRecvCommitmentPath(portId, channelId));
-    }
-
-    // Utility functions
-
-    function uint2str(uint64 _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint64 j = _i;
-        uint64 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint64 k = len;
-        while (_i != 0) {
-            k = k - 1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
     }
 }
