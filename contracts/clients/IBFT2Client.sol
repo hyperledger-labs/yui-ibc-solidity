@@ -12,14 +12,14 @@ import {
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
+import "solidity-rlp/contracts/RLPReader.sol";
 import "../lib/TrieProofs.sol";
-import "../lib/RLP.sol";
 
 // please see docs/ibft2-light-client.md for client spec
 contract IBFT2Client is ILightClient {
     using TrieProofs for bytes;
-    using RLP for RLP.RLPItem;
-    using RLP for bytes;
+    using RLPReader for RLPReader.RLPItem;
+    using RLPReader for bytes;
     using BytesLib for bytes;
     using IBCHeight for Height.Data;
 
@@ -47,7 +47,7 @@ contract IBFT2Client is ILightClient {
         Height.Data height;
         bytes32 stateRoot;
         uint64 time;
-        RLP.RLPItem[] validators;
+        RLPReader.RLPItem[] validators;
     }
 
     struct Fraction {
@@ -316,7 +316,7 @@ contract IBFT2Client is ILightClient {
      * @param seals commit seals for untrusted block header
      * @param blkHash the hash of untrusted block
      */
-    function verifyCommitSeals(RLP.RLPItem[] memory untrustedVals, bytes[] memory seals, bytes32 blkHash)
+    function verifyCommitSeals(RLPReader.RLPItem[] memory untrustedVals, bytes[] memory seals, bytes32 blkHash)
         internal
         pure
         returns (bytes[] memory, bool)
@@ -379,20 +379,20 @@ contract IBFT2Client is ILightClient {
     {
         bytes32 path = keccak256(abi.encodePacked(slot));
         bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
-        return expectedValue == bytes32(dataHash.toRLPItem().toUint());
+        return expectedValue == bytes32(dataHash.toRlpItem().toUint());
     }
 
     function parseBesuHeader(Header.Data memory header) internal pure returns (ParsedBesuHeader memory) {
         ParsedBesuHeader memory parsedHeader;
 
         parsedHeader.base = header;
-        RLP.RLPItem[] memory items = header.besu_header_rlp.toRLPItem().toList();
+        RLPReader.RLPItem[] memory items = header.besu_header_rlp.toRlpItem().toList();
         parsedHeader.stateRoot = bytes32(items[3].toUint());
         parsedHeader.height = Height.Data({revision_number: 0, revision_height: uint64(items[8].toUint())});
 
         require(items.length == 15, "items length must be 15");
         parsedHeader.time = uint64(items[11].toUint());
-        items = items[12].toBytes().toRLPItem().toList();
+        items = items[12].toBytes().toRlpItem().toList();
         require(items.length == 4, "extra length must be 4");
 
         parsedHeader.validators = items[1].toList();
@@ -406,7 +406,7 @@ contract IBFT2Client is ILightClient {
     {
         bytes32 proofPath = keccak256(abi.encodePacked(account));
         bytes memory accountRLP = accountStateProof.verify(stateRoot, proofPath); // reverts if proof is invalid
-        return bytes32(accountRLP.toRLPItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
+        return bytes32(accountRLP.toRlpItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
     }
 
     function ecdsaRecover(bytes32 hash, bytes memory sig) private pure returns (address) {

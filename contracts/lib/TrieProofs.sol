@@ -5,11 +5,11 @@ pragma solidity ^0.8.9;
 Forked from: https://github.com/lorenzb/proveth/blob/master/onchain/ProvethVerifier.sol
 */
 
-import "./RLP.sol";
+import "solidity-rlp/contracts/RLPReader.sol";
 
 library TrieProofs {
-    using RLP for RLP.RLPItem;
-    using RLP for bytes;
+    using RLPReader for RLPReader.RLPItem;
+    using RLPReader for bytes;
 
     bytes32 internal constant EMPTY_TRIE_ROOT_HASH = 0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421;
 
@@ -24,10 +24,10 @@ library TrieProofs {
         assembly { mstore(add(path, 0x20), path32) } // careful as path may need to be 64
         path = decodeNibbles(path, 0); // lol, so efficient
 
-        RLP.RLPItem[] memory proof = proofRLP.toRLPItem().toList();
+        RLPReader.RLPItem[] memory proof = proofRLP.toRlpItem().toList();
 
         uint8 nodeChildren;
-        RLP.RLPItem memory children;
+        RLPReader.RLPItem memory children;
 
         uint256 pathOffset = 0; // Offset of the proof
         bytes32 nextHash; // Required hash for the next node
@@ -42,7 +42,7 @@ library TrieProofs {
             // We use the fact that an rlp encoded list consists of some
             // encoding of its length plus the concatenation of its
             // *rlp-encoded* items.
-            bytes memory rlpNode = proof[i].toRLPBytes(); // TODO: optimize by not encoding and decoding?
+            bytes memory rlpNode = proof[i].toRlpBytes(); // TODO: optimize by not encoding and decoding?
 
             if (i == 0) {
                 require(rootHash == keccak256(rlpNode), "Bad first proof part");
@@ -50,7 +50,7 @@ library TrieProofs {
                 require(nextHash == keccak256(rlpNode), "Bad hash");
             }
 
-            RLP.RLPItem[] memory node = proof[i].toList();
+            RLPReader.RLPItem[] memory node = proof[i].toList();
 
             // Extension or Leaf node
             if (node.length == 2) {
@@ -82,7 +82,7 @@ library TrieProofs {
                     if (!children.isList()) {
                         nextHash = getNextHash(children);
                     } else {
-                        nextHash = keccak256(children.toRLPBytes());
+                        nextHash = keccak256(children.toRlpBytes());
                     }
                 }
             } else {
@@ -113,7 +113,7 @@ library TrieProofs {
                     if (!children.isList()) {
                         nextHash = getNextHash(children);
                     } else {
-                        nextHash = keccak256(children.toRLPBytes());
+                        nextHash = keccak256(children.toRlpBytes());
                     }
                 }
             }
@@ -123,7 +123,7 @@ library TrieProofs {
         assert(false);
     }
 
-    function getNextHash(RLP.RLPItem memory node) internal pure returns (bytes32 nextHash) {
+    function getNextHash(RLPReader.RLPItem memory node) internal pure returns (bytes32 nextHash) {
         bytes memory nextHashBytes = node.toBytes();
         require(nextHashBytes.length == 32, "Invalid node");
 
