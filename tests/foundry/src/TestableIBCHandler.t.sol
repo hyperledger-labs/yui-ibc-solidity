@@ -4,8 +4,8 @@ pragma solidity ^0.8.9;
 import "../../../contracts/core/OwnableIBCHandler.sol";
 
 contract TestableIBCHandler is OwnableIBCHandler {
-    constructor(address ibcClient, address ibcConnection, address ibcChannel)
-        OwnableIBCHandler(ibcClient, ibcConnection, ibcChannel, ibcChannel)
+    constructor(address ibcClient, address ibcConnection, address ibcChannelHandshake, address ibcPacket)
+        OwnableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket)
     {}
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) external {
