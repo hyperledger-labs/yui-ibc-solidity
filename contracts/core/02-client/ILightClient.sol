@@ -61,6 +61,20 @@ interface ILightClient {
     ) external returns (bool);
 
     /**
+     * @dev verifyNonMembership is a generic proof verification method which verifies the absence of a given CommitmentPath at a specified height.
+     * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
+     */
+    function verifyNonMembership(
+        string calldata clientId,
+        Height.Data calldata height,
+        uint64 delayTimePeriod,
+        uint64 delayBlockPeriod,
+        bytes calldata proof,
+        bytes calldata prefix,
+        bytes calldata path
+    ) external returns (bool);
+
+    /**
      * @dev getClientState returns the clientState corresponding to `clientId`.
      *      If it's not found, the function returns false.
      */

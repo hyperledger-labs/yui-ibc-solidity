@@ -38,8 +38,9 @@ endif
 .PHONY: fmt
 fmt:
 	@$(FORGE) fmt $(FORGE_FMT_OPTS) \
-		./contracts/app \
 		./contracts/core \
+		./contracts/app \
+		./contracts/clients \
 		./tests/foundry/src
 
 .PHONY: check-fmt
