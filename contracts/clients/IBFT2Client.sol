@@ -190,21 +190,9 @@ contract IBFT2Client is ILightClient {
         bytes calldata path,
         bytes calldata value
     ) external view override returns (bool) {
-        {
-            ClientState.Data storage clientState = clientStates[clientId];
-            assert(clientState.ibc_store_address.length != 0);
-
-            if (!validateArgs(clientState, height, prefix, proof)) {
-                return false;
-            }
-            if (
-                (delayTimePeriod != 0 || delayBlockPeriod != 0)
-                    && !validateDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod)
-            ) {
-                return false;
-            }
+        if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix, proof)) {
+            return false;
         }
-
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         assert(consensusState.timestamp != 0);
         return verifyMembership(
@@ -212,6 +200,29 @@ contract IBFT2Client is ILightClient {
             consensusState.root.toBytes32(0),
             keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT)),
             keccak256(value)
+        );
+    }
+
+    /**
+     * @dev verifyNonMembership is a generic proof verification method which verifies the absence of a given CommitmentPath at a specified height.
+     * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
+     */
+    function verifyNonMembership(
+        string calldata clientId,
+        Height.Data calldata height,
+        uint64 delayTimePeriod,
+        uint64 delayBlockPeriod,
+        bytes calldata proof,
+        bytes calldata prefix,
+        bytes calldata path
+    ) external returns (bool) {
+        if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix, proof)) {
+            return false;
+        }
+        ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
+        assert(consensusState.timestamp != 0);
+        return verifyNonMembership(
+            proof, consensusState.root.toBytes32(0), keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT))
         );
     }
 
@@ -344,9 +355,9 @@ contract IBFT2Client is ILightClient {
 
     function validateArgs(
         ClientState.Data storage cs,
-        Height.Data calldata height,
+        Height.Data memory height,
         bytes memory prefix,
-        bytes calldata proof
+        bytes memory proof
     ) internal view returns (bool) {
         if (cs.latest_height.lt(height)) {
             return false;
@@ -360,7 +371,7 @@ contract IBFT2Client is ILightClient {
 
     function validateDelayPeriod(
         string memory clientId,
-        Height.Data calldata height,
+        Height.Data memory height,
         uint64 delayPeriodTime,
         uint64 delayPeriodBlocks
     ) private view returns (bool) {
@@ -378,6 +389,30 @@ contract IBFT2Client is ILightClient {
         return true;
     }
 
+    function validateArgsAndDelayPeriod(
+        string memory clientId,
+        Height.Data memory height,
+        uint64 delayTimePeriod,
+        uint64 delayBlockPeriod,
+        bytes memory prefix,
+        bytes memory proof
+    ) internal view returns (bool) {
+        ClientState.Data storage clientState = clientStates[clientId];
+        assert(clientState.ibc_store_address.length != 0);
+
+        if (!validateArgs(clientState, height, prefix, proof)) {
+            return false;
+        }
+        if (
+            (delayTimePeriod != 0 || delayBlockPeriod != 0)
+                && !validateDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod)
+        ) {
+            return false;
+        }
+
+        return true;
+    }
+
     function verifyMembership(bytes calldata proof, bytes32 root, bytes32 slot, bytes32 expectedValue)
         internal
         pure
@@ -386,6 +421,13 @@ contract IBFT2Client is ILightClient {
         bytes32 path = keccak256(abi.encodePacked(slot));
         bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
         return expectedValue == bytes32(dataHash.toRlpItem().toUint());
+    }
+
+    function verifyNonMembership(bytes calldata proof, bytes32 root, bytes32 slot) internal pure returns (bool) {
+        // bytes32 path = keccak256(abi.encodePacked(slot));
+        // bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
+        // return dataHash.toRlpItem().toBytes().length == 0;
+        revert("not implemented");
     }
 
     function parseBesuHeader(Header.Data memory header) internal pure returns (ParsedBesuHeader memory) {

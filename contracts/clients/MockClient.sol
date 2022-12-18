@@ -149,6 +149,23 @@ contract MockClient is ILightClient {
         return sha256(value) == proof.toBytes32(0);
     }
 
+    /**
+     * @dev verifyNonMembership is a generic proof verification method which verifies the absence of a given CommitmentPath at a specified height.
+     * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
+     */
+    function verifyNonMembership(
+        string calldata clientId,
+        Height.Data calldata height,
+        uint64,
+        uint64,
+        bytes calldata proof,
+        bytes memory,
+        bytes memory
+    ) external view override returns (bool) {
+        require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
+        return proof.length == 0;
+    }
+
     /* State accessors */
 
     /**
