@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	IBCHandlerAddress = "0xaa43d337145E8930d01cb4E60Abf6595C692921E"
-	IBCCommitmentAddress = "0xdD5109D05Ac357E446992a60E64764041A0E8529"
-	SimpleTokenAddress = "0xaE1C9125BbcF63bf51294C4D15CBD472782E330D"
-	ICS20TransferBankAddress = "0x87d7778dbc81251D5A0D78DFD8a0C359887E98C9"
-	ICS20BankAddress = "0xa7f733a4fEA1071f58114b203F57444969b86524"
+	IBCHandlerAddress = "0x702E40245797c5a2108A566b3CE2Bf14Bc6aF841"
+	IBCCommitmentTestHelperAddress = "0x87d7778dbc81251D5A0D78DFD8a0C359887E98C9"
+	SimpleTokenAddress = "0x2F5703804E29F4252FA9405B8D357220d11b3bd9"
+	ICS20TransferBankAddress = "0xa7f733a4fEA1071f58114b203F57444969b86524"
+	ICS20BankAddress = "0xaE1C9125BbcF63bf51294C4D15CBD472782E330D"
 )
 
 type contractConfig struct{}
@@ -20,8 +20,8 @@ func (contractConfig) GetIBCHandlerAddress() common.Address {
 	return common.HexToAddress(IBCHandlerAddress)
 }
 
-func (contractConfig) GetIBCCommitmentAddress() common.Address {
-	return common.HexToAddress(IBCCommitmentAddress)
+func (contractConfig) GetIBCCommitmentTestHelperAddress() common.Address {
+	return common.HexToAddress(IBCCommitmentTestHelperAddress)
 }
 
 func (contractConfig) GetSimpleTokenAddress() common.Address {

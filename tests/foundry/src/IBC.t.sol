@@ -5,13 +5,13 @@ import "forge-std/Test.sol";
 import "../../../contracts/core/25-handler/IBCHandler.sol";
 import "../../../contracts/core/02-client/IBCClient.sol";
 import "../../../contracts/core/03-connection/IBCConnection.sol";
-import "../../../contracts/core/04-channel/IBCChannel.sol";
+import "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
+import "../../../contracts/core/04-channel/IBCPacket.sol";
 import "../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../contracts/clients/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";
-
 import "./TestableIBCHandler.t.sol";
 import "./MockApp.t.sol";
 
@@ -28,8 +28,9 @@ contract IBCTest is Test {
     function setUp() public {
         address ibcClient = address(new IBCClient());
         address ibcConnection = address(new IBCConnection());
-        address ibcChannel = address(new IBCChannel());
-        handler = new TestableIBCHandler(ibcClient, ibcConnection, ibcChannel);
+        address ibcChannelHandshake = address(new IBCChannelHandshake());
+        address ibcPacket = address(new IBCPacket());
+        handler = new TestableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
 
         mockClient = new MockClient(address(handler));
         handler.registerClient(mockClientType, mockClient);

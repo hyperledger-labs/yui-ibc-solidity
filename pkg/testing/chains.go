@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitment"
+	ibccommitment "github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitmenttesthelper"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
@@ -75,7 +75,7 @@ type Chain struct {
 
 	// Core Modules
 	IBCHandler    ibchandler.Ibchandler
-	IBCCommitment ibccommitment.Ibccommitment
+	IBCCommitment ibccommitment.Ibccommitmenttesthelper
 
 	// App Modules
 	SimpleToken   simpletoken.Simpletoken
@@ -93,7 +93,7 @@ type Chain struct {
 
 type ContractConfig interface {
 	GetIBCHandlerAddress() common.Address
-	GetIBCCommitmentAddress() common.Address
+	GetIBCCommitmentTestHelperAddress() common.Address
 
 	GetSimpleTokenAddress() common.Address
 	GetICS20TransferBankAddress() common.Address
@@ -105,7 +105,7 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 	if err != nil {
 		t.Error(err)
 	}
-	ibcCommitment, err := ibccommitment.NewIbccommitment(config.GetIBCCommitmentAddress(), client)
+	ibcCommitment, err := ibccommitment.NewIbccommitmenttesthelper(config.GetIBCCommitmentTestHelperAddress(), client)
 	if err != nil {
 		t.Error(err)
 	}

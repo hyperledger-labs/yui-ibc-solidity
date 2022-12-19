@@ -16,10 +16,10 @@ function after_common() {
     fi
 
     srcs=(
-        "IBCCommitment"
         "SimpleToken"
         "ICS20TransferBank"
         "ICS20Bank"
+        "IBCCommitmentTestHelper"
     )
     for src in "${srcs[@]}" ; do
         make abi SOURCE=${src}
