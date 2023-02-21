@@ -34,7 +34,7 @@ abstract contract IBCQuerier is IBCStore {
         return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
-    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
+    function getHashedPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
         external
         view
         returns (bytes32, bool)
@@ -43,11 +43,11 @@ abstract contract IBCQuerier is IBCStore {
         return (commitment, commitment != bytes32(0));
     }
 
-    function getPacketAcknowledgementCommitment(string calldata portId, string calldata channelId, uint64 sequence)
-        external
-        view
-        returns (bytes32, bool)
-    {
+    function getHashedPacketAcknowledgementCommitment(
+        string calldata portId,
+        string calldata channelId,
+        uint64 sequence
+    ) external view returns (bytes32, bool) {
         bytes32 commitment =
             commitments[keccak256(IBCCommitment.packetAcknowledgementCommitmentPath(portId, channelId, sequence))];
         return (commitment, commitment != bytes32(0));

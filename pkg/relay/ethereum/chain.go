@@ -294,7 +294,7 @@ func (c *Chain) QueryPacketAcknowledgementCommitments(offset uint64, limit uint6
 func (c *Chain) QueryUnrecievedAcknowledgements(height int64, seqs []uint64) ([]uint64, error) {
 	var ret []uint64
 	for _, seq := range seqs {
-		_, found, err := c.ibcHandler.GetPacketCommitment(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
+		_, found, err := c.ibcHandler.GetHashedPacketCommitment(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
 		if err != nil {
 			return nil, err
 		} else if found {
