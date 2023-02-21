@@ -226,24 +226,22 @@ func (c *Chain) QueryChannel(height int64) (chanRes *chantypes.QueryChannelRespo
 
 // QueryPacketCommitment returns the packet commitment corresponding to a given sequence
 func (c *Chain) QueryPacketCommitment(height int64, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
-	commitment, found, err := c.ibcHandler.GetPacketCommitment(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
+	packet, err := c.QueryPacket(height, seq)
 	if err != nil {
 		return nil, err
-	} else if !found {
-		return nil, fmt.Errorf("packet commitment not found: %v:%v:%v", c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
 	}
-	return chantypes.NewQueryPacketCommitmentResponse(commitment[:], nil, clienttypes.NewHeight(0, uint64(height))), nil
+	commitment := chantypes.CommitPacket(c.Codec(), packet)
+	return chantypes.NewQueryPacketCommitmentResponse(commitment, nil, clienttypes.NewHeight(0, uint64(height))), nil
 }
 
 // QueryPacketAcknowledgementCommitment returns the acknowledgement corresponding to a given sequence
 func (c *Chain) QueryPacketAcknowledgementCommitment(height int64, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
-	commitment, found, err := c.ibcHandler.GetPacketAcknowledgementCommitment(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
+	ack, err := c.QueryPacketAcknowledgement(height, seq)
 	if err != nil {
 		return nil, err
-	} else if !found {
-		return nil, fmt.Errorf("packet commitment not found: %v:%v:%v", c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
 	}
-	return chantypes.NewQueryPacketAcknowledgementResponse(commitment[:], nil, clienttypes.NewHeight(0, uint64(height))), nil
+	commitment := chantypes.CommitAcknowledgement(ack)
+	return chantypes.NewQueryPacketAcknowledgementResponse(commitment, nil, clienttypes.NewHeight(0, uint64(height))), nil
 }
 
 // NOTE: The current implementation returns all packets, including those for that acknowledgement has already received.
@@ -296,7 +294,7 @@ func (c *Chain) QueryPacketAcknowledgementCommitments(offset uint64, limit uint6
 func (c *Chain) QueryUnrecievedAcknowledgements(height int64, seqs []uint64) ([]uint64, error) {
 	var ret []uint64
 	for _, seq := range seqs {
-		_, found, err := c.ibcHandler.GetPacketCommitment(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
+		_, found, err := c.ibcHandler.GetHashedPacketCommitment(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
 		if err != nil {
 			return nil, err
 		} else if found {
