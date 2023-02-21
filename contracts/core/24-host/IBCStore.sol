@@ -7,6 +7,7 @@ import "../02-client/ILightClient.sol";
 
 abstract contract IBCStore {
     // Commitments
+    // keccak256(IBC-compatible-store-path) => keccak256(IBC-compatible-commitment)
     mapping(bytes32 => bytes32) internal commitments;
 
     // Store
