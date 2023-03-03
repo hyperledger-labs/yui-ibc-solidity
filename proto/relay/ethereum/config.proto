@@ -15,6 +15,5 @@ message ChainConfig {
   string hdw_mnemonic = 4;
   string hdw_path = 5;
 
-  string ibc_host_address = 6;
-  string ibc_handler_address = 7;
+  string ibc_address = 6;
 }
