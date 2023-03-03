@@ -54,7 +54,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
             require(success);
             emit WriteAcknowledgement(
                 msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement
-                );
+            );
         }
         emit RecvPacket(msg_.packet);
     }
