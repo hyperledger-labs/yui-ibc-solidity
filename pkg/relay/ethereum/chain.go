@@ -48,7 +48,7 @@ func NewChain(config ChainConfig) (*Chain, error) {
 	if err != nil {
 		return nil, err
 	}
-	ibcHandler, err := ibchandler.NewIbchandler(config.IBCHandlerAddress(), client)
+	ibcHandler, err := ibchandler.NewIbchandler(config.IBCAddress(), client)
 	if err != nil {
 		return nil, err
 	}

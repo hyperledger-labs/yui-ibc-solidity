@@ -17,10 +17,7 @@ import (
 
 var (
 	abiSendPacket,
-	abiWriteAcknowledgement,
-	abiGeneratedClientIdentifier,
-	abiGeneratedConnectionIdentifier,
-	abiGeneratedChannelIdentifier abi.Event
+	abiWriteAcknowledgement abi.Event
 )
 
 func init() {
@@ -30,9 +27,6 @@ func init() {
 	}
 	abiSendPacket = parsedHandlerABI.Events["SendPacket"]
 	abiWriteAcknowledgement = parsedHandlerABI.Events["WriteAcknowledgement"]
-	abiGeneratedClientIdentifier = parsedHandlerABI.Events["GeneratedClientIdentifier"]
-	abiGeneratedConnectionIdentifier = parsedHandlerABI.Events["GeneratedConnectionIdentifier"]
-	abiGeneratedChannelIdentifier = parsedHandlerABI.Events["GeneratedChannelIdentifier"]
 }
 
 func (chain *Chain) findPacket(
@@ -44,7 +38,7 @@ func (chain *Chain) findPacket(
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
-			chain.config.IBCHandlerAddress(),
+			chain.config.IBCAddress(),
 		},
 		Topics: [][]common.Hash{{
 			abiSendPacket.ID,
@@ -101,7 +95,7 @@ func (chain *Chain) getAllPackets(
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
-			chain.config.IBCHandlerAddress(),
+			chain.config.IBCAddress(),
 		},
 		Topics: [][]common.Hash{{
 			abiSendPacket.ID,
@@ -156,7 +150,7 @@ func (chain *Chain) findAcknowledgement(
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
-			chain.config.IBCHandlerAddress(),
+			chain.config.IBCAddress(),
 		},
 		Topics: [][]common.Hash{{
 			abiWriteAcknowledgement.ID,
@@ -197,7 +191,7 @@ func (chain *Chain) getAllAcknowledgements(
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
-			chain.config.IBCHandlerAddress(),
+			chain.config.IBCAddress(),
 		},
 		Topics: [][]common.Hash{{
 			abiWriteAcknowledgement.ID,

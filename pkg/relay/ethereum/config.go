@@ -11,10 +11,6 @@ func (c ChainConfig) Build() (core.ChainI, error) {
 	return NewChain(c)
 }
 
-func (c ChainConfig) IBCHostAddress() common.Address {
-	return common.HexToAddress(c.IbcHostAddress)
-}
-
-func (c ChainConfig) IBCHandlerAddress() common.Address {
-	return common.HexToAddress(c.IbcHandlerAddress)
+func (c ChainConfig) IBCAddress() common.Address {
+	return common.HexToAddress(c.IbcAddress)
 }
