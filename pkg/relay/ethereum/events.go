@@ -17,10 +17,7 @@ import (
 
 var (
 	abiSendPacket,
-	abiWriteAcknowledgement,
-	abiGeneratedClientIdentifier,
-	abiGeneratedConnectionIdentifier,
-	abiGeneratedChannelIdentifier abi.Event
+	abiWriteAcknowledgement abi.Event
 )
 
 func init() {
@@ -30,9 +27,6 @@ func init() {
 	}
 	abiSendPacket = parsedHandlerABI.Events["SendPacket"]
 	abiWriteAcknowledgement = parsedHandlerABI.Events["WriteAcknowledgement"]
-	abiGeneratedClientIdentifier = parsedHandlerABI.Events["GeneratedClientIdentifier"]
-	abiGeneratedConnectionIdentifier = parsedHandlerABI.Events["GeneratedConnectionIdentifier"]
-	abiGeneratedChannelIdentifier = parsedHandlerABI.Events["GeneratedChannelIdentifier"]
 }
 
 func (chain *Chain) findPacket(
