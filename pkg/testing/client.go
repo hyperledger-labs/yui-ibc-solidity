@@ -59,7 +59,7 @@ func (lc LightClient) GetIBFT2State(ctx context.Context, address common.Address,
 	if err != nil {
 		return nil, err
 	}
-	proof, err := lc.client.GetStateProof(address, storageKeys, block.Number())
+	proof, err := lc.client.GetProof(address, storageKeys, block.Number())
 	if err != nil {
 		return nil, err
 	}
