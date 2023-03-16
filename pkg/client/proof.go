@@ -3,23 +3,34 @@ package client
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
 type StateProof struct {
+	Balance     big.Int
+	CodeHash    [32]byte
+	Nonce       uint64
+	StorageHash [32]byte
+
 	AccountProofRLP []byte
 	StorageProofRLP [][]byte
 }
 
-func (cl ETHClient) GetStateProof(address common.Address, storageKeys [][]byte, blockNumber *big.Int) (*StateProof, error) {
+func (cl ETHClient) GetProof(address common.Address, storageKeys [][]byte, blockNumber *big.Int) (*StateProof, error) {
 	bz, err := cl.getProof(address, storageKeys, "0x"+blockNumber.Text(16))
 	if err != nil {
 		return nil, err
 	}
 	var proof struct {
+		Balance      string   `json:"balance"`
+		CodeHash     string   `json:"codeHash"`
+		Nonce        string   `json:"nonce"`
+		StorageHash  string   `json:"storageHash"`
 		AccountProof []string `json:"accountProof"`
 		StorageProof []struct {
 			Proof []string `json:"proof"`
@@ -29,7 +40,45 @@ func (cl ETHClient) GetStateProof(address common.Address, storageKeys [][]byte, 
 		return nil, err
 	}
 
-	var encodedProof StateProof
+	var balance big.Int
+	{
+		bz, err := decodeHexString(proof.Balance)
+		if err != nil {
+			return nil, err
+		}
+		balance.SetBytes(bz)
+	}
+	var codeHash [32]byte
+	{
+		bz, err := decodeHexString(proof.CodeHash)
+		if err != nil {
+			return nil, err
+		}
+		copy(codeHash[:], bz)
+	}
+	var nonce big.Int
+	{
+		bz, err := decodeHexString(proof.Nonce)
+		if err != nil {
+			return nil, err
+		}
+		nonce.SetBytes(bz)
+	}
+	var storageHash [32]byte
+	{
+		bz, err := decodeHexString(proof.StorageHash)
+		if err != nil {
+			return nil, err
+		}
+		copy(storageHash[:], bz)
+	}
+
+	var encodedProof = StateProof{
+		Balance:     balance,
+		CodeHash:    codeHash,
+		Nonce:       nonce.Uint64(),
+		StorageHash: storageHash,
+	}
 	encodedProof.AccountProofRLP, err = encodeRLP(proof.AccountProof)
 	if err != nil {
 		return nil, err
@@ -41,7 +90,6 @@ func (cl ETHClient) GetStateProof(address common.Address, storageKeys [][]byte, 
 		}
 		encodedProof.StorageProofRLP = append(encodedProof.StorageProofRLP, bz)
 	}
-
 	return &encodedProof, nil
 }
 
@@ -64,7 +112,7 @@ func (cl ETHClient) getProof(address common.Address, storageKeys [][]byte, block
 func encodeRLP(proof []string) ([]byte, error) {
 	var target [][][]byte
 	for _, p := range proof {
-		bz, err := hex.DecodeString(p[2:])
+		bz, err := decodeHexString(p)
 		if err != nil {
 			return nil, err
 		}
@@ -79,4 +127,15 @@ func encodeRLP(proof []string) ([]byte, error) {
 		return nil, err
 	}
 	return bz, nil
+}
+
+func decodeHexString(s string) ([]byte, error) {
+	if !strings.HasPrefix(s, "0x") {
+		return nil, fmt.Errorf("missing prefix '0x': %v", s)
+	}
+	s = s[2:]
+	if len(s)%2 != 0 {
+		s = "0" + s
+	}
+	return hex.DecodeString(s)
 }
