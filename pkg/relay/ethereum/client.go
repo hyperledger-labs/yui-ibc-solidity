@@ -23,7 +23,7 @@ func (chain *Chain) CallOpts(ctx context.Context, height int64) *bind.CallOpts {
 }
 
 func (chain *Chain) TxOpts(ctx context.Context) *bind.TransactOpts {
-	signer := gethtypes.NewEIP155Signer(chain.chainID)
+	signer := gethtypes.LatestSignerForChainID(chain.chainID)
 	prv := chain.relayerPrvKey
 	addr := gethcrypto.PubkeyToAddress(prv.PublicKey)
 	return &bind.TransactOpts{
