@@ -8,7 +8,7 @@ import (
 // RegisterInterfaces register the module interfaces to protobuf Any.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
 	registry.RegisterImplementations(
-		(*core.ChainConfigI)(nil),
+		(*core.ChainConfig)(nil),
 		&ChainConfig{},
 	)
 }

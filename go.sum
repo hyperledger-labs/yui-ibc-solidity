@@ -640,8 +640,8 @@ github.com/hudl/fargo v1.4.0/go.mod h1:9Ai6uvFy5fQNq6VPKtg+Ceq1+eTY4nKUlR2JElEOc
 github.com/huin/goupnp v1.0.0 h1:wg75sLpL6DZqwHQN6E1Cfk6mtfzS45z8OV+ic+DtHRo=
 github.com/huin/goupnp v1.0.0/go.mod h1:n9v9KO1tAxYH82qOn+UTIFQDmx5n1Zxd/ClZDMX7Bnc=
 github.com/huin/goutil v0.0.0-20170803182201-1ca381bf3150/go.mod h1:PpLOETDnJ0o3iZrZfqZzyLl6l7F3c6L1oWn7OICBi6o=
-github.com/hyperledger-labs/yui-relayer v0.2.1-0.20220907091804-e261b49f06cd h1:p9Yky5P6yf41ZbyLMjFejH1hl6/Yn1/TlMcCVD7bd70=
-github.com/hyperledger-labs/yui-relayer v0.2.1-0.20220907091804-e261b49f06cd/go.mod h1:L+UZLFBu/D6lrlL+etxg8SH3eW9Zm7eZDn/0SncdDOw=
+github.com/hyperledger-labs/yui-relayer v0.3.1 h1:CuBjniF0CSUJ3xP+//dvk3ymRBiyqh+z7C/i6w+5kMA=
+github.com/hyperledger-labs/yui-relayer v0.3.1/go.mod h1:L+UZLFBu/D6lrlL+etxg8SH3eW9Zm7eZDn/0SncdDOw=
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=

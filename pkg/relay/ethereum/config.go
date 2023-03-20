@@ -5,9 +5,9 @@ import (
 	"github.com/hyperledger-labs/yui-relayer/core"
 )
 
-var _ core.ChainConfigI = (*ChainConfig)(nil)
+var _ core.ChainConfig = (*ChainConfig)(nil)
 
-func (c ChainConfig) Build() (core.ChainI, error) {
+func (c ChainConfig) Build() (core.Chain, error) {
 	return NewChain(c)
 }
 

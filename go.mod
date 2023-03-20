@@ -11,7 +11,7 @@ require (
 	github.com/datachainlab/solidity-protobuf/protobuf-solidity/src/protoc/go v0.0.0-20211215073805-59460caf6e59
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/gogo/protobuf v1.3.3
-	github.com/hyperledger-labs/yui-relayer v0.2.1-0.20220907091804-e261b49f06cd
+	github.com/hyperledger-labs/yui-relayer v0.3.1
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.0
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef

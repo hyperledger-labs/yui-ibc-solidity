@@ -14,7 +14,8 @@ import (
 	conntypes "github.com/cosmos/ibc-go/v4/modules/core/03-connection/types"
 	chantypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	committypes "github.com/cosmos/ibc-go/v4/modules/core/23-commitment/types"
-	"github.com/cosmos/ibc-go/v4/modules/core/exported"
+	ibcexported "github.com/cosmos/ibc-go/v4/modules/core/exported"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
@@ -36,7 +37,7 @@ type Chain struct {
 	ibcHandler    *ibchandler.Ibchandler
 }
 
-var _ core.ChainI = (*Chain)(nil)
+var _ core.Chain = (*Chain)(nil)
 
 func NewChain(config ChainConfig) (*Chain, error) {
 	id := big.NewInt(config.EthChainId)
@@ -85,12 +86,12 @@ func (c *Chain) ChainID() string {
 }
 
 // GetLatestHeight gets the chain for the latest height and returns it
-func (c *Chain) GetLatestHeight() (int64, error) {
+func (c *Chain) LatestHeight() (ibcexported.Height, error) {
 	bn, err := c.client.BlockNumber(context.TODO())
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	return int64(bn), nil
+	return clienttypes.NewHeight(0, bn), nil
 }
 
 // GetAddress returns the address of relayer
@@ -112,15 +113,10 @@ func (c *Chain) Client() *client.ETHClient {
 // SetRelayInfo sets source's path and counterparty's info to the chain
 func (c *Chain) SetRelayInfo(p *core.PathEnd, _ *core.ProvableChain, _ *core.PathEnd) error {
 	if err := p.Validate(); err != nil {
-		return c.ErrCantSetPath(err)
+		return fmt.Errorf("path on chain %s failed to set: %w", c.ChainID(), err)
 	}
 	c.pathEnd = p
 	return nil
-}
-
-// ErrCantSetPath returns an error if the path doesn't set properly
-func (c *Chain) ErrCantSetPath(err error) error {
-	return fmt.Errorf("path on chain %s failed to set: %w", c.ChainID(), err)
 }
 
 func (c *Chain) Path() *core.PathEnd {
@@ -133,14 +129,14 @@ func (c *Chain) RegisterMsgEventListener(listener core.MsgEventListener) {
 }
 
 // QueryClientConsensusState retrevies the latest consensus state for a client in state at a given height
-func (c *Chain) QueryClientConsensusState(height int64, dstClientConsHeight exported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
-	s, found, err := c.ibcHandler.GetConsensusState(c.CallOpts(context.Background(), height), c.pathEnd.ClientID, pbToHostHeight(dstClientConsHeight))
+func (c *Chain) QueryClientConsensusState(ctx core.QueryContext, dstClientConsHeight ibcexported.Height) (*clienttypes.QueryConsensusStateResponse, error) {
+	s, found, err := c.ibcHandler.GetConsensusState(c.callOptsFromQueryContext(ctx), c.pathEnd.ClientID, pbToHostHeight(dstClientConsHeight))
 	if err != nil {
 		return nil, err
 	} else if !found {
 		return nil, fmt.Errorf("client consensus not found: %v", c.pathEnd.ClientID)
 	}
-	var consensusState exported.ConsensusState
+	var consensusState ibcexported.ConsensusState
 	if err := c.Codec().UnmarshalInterface(s, &consensusState); err != nil {
 		return nil, err
 	}
@@ -148,19 +144,19 @@ func (c *Chain) QueryClientConsensusState(height int64, dstClientConsHeight expo
 	if err != nil {
 		return nil, err
 	}
-	return clienttypes.NewQueryConsensusStateResponse(any, nil, clienttypes.NewHeight(0, uint64(height))), nil
+	return clienttypes.NewQueryConsensusStateResponse(any, nil, ctx.Height().(clienttypes.Height)), nil
 }
 
 // QueryClientState returns the client state of dst chain
 // height represents the height of dst chain
-func (c *Chain) QueryClientState(height int64) (*clienttypes.QueryClientStateResponse, error) {
-	s, found, err := c.ibcHandler.GetClientState(c.CallOpts(context.Background(), height), c.pathEnd.ClientID)
+func (c *Chain) QueryClientState(ctx core.QueryContext) (*clienttypes.QueryClientStateResponse, error) {
+	s, found, err := c.ibcHandler.GetClientState(c.callOptsFromQueryContext(ctx), c.pathEnd.ClientID)
 	if err != nil {
 		return nil, err
 	} else if !found {
 		return nil, fmt.Errorf("client not found: %v", c.pathEnd.ClientID)
 	}
-	var clientState exported.ClientState
+	var clientState ibcexported.ClientState
 	if err := c.Codec().UnmarshalInterface(s, &clientState); err != nil {
 		return nil, err
 	}
@@ -168,7 +164,7 @@ func (c *Chain) QueryClientState(height int64) (*clienttypes.QueryClientStateRes
 	if err != nil {
 		return nil, err
 	}
-	return clienttypes.NewQueryClientStateResponse(any, nil, clienttypes.NewHeight(0, uint64(height))), nil
+	return clienttypes.NewQueryClientStateResponse(any, nil, ctx.Height().(clienttypes.Height)), nil
 }
 
 var emptyConnRes = conntypes.NewQueryConnectionResponse(
@@ -188,14 +184,14 @@ var emptyConnRes = conntypes.NewQueryConnectionResponse(
 )
 
 // QueryConnection returns the remote end of a given connection
-func (c *Chain) QueryConnection(height int64) (*conntypes.QueryConnectionResponse, error) {
-	conn, found, err := c.ibcHandler.GetConnection(c.CallOpts(context.Background(), height), c.pathEnd.ConnectionID)
+func (c *Chain) QueryConnection(ctx core.QueryContext) (*conntypes.QueryConnectionResponse, error) {
+	conn, found, err := c.ibcHandler.GetConnection(c.callOptsFromQueryContext(ctx), c.pathEnd.ConnectionID)
 	if err != nil {
 		return nil, err
 	} else if !found {
 		return emptyConnRes, nil
 	}
-	return conntypes.NewQueryConnectionResponse(connectionEndToPB(conn), nil, clienttypes.NewHeight(0, uint64(height))), nil
+	return conntypes.NewQueryConnectionResponse(connectionEndToPB(conn), nil, ctx.Height().(clienttypes.Height)), nil
 }
 
 var emptyChannelRes = chantypes.NewQueryChannelResponse(
@@ -214,41 +210,41 @@ var emptyChannelRes = chantypes.NewQueryChannelResponse(
 )
 
 // QueryChannel returns the channel associated with a channelID
-func (c *Chain) QueryChannel(height int64) (chanRes *chantypes.QueryChannelResponse, err error) {
-	chann, found, err := c.ibcHandler.GetChannel(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID)
+func (c *Chain) QueryChannel(ctx core.QueryContext) (chanRes *chantypes.QueryChannelResponse, err error) {
+	chann, found, err := c.ibcHandler.GetChannel(c.callOptsFromQueryContext(ctx), c.pathEnd.PortID, c.pathEnd.ChannelID)
 	if err != nil {
 		return nil, err
 	} else if !found {
 		return emptyChannelRes, nil
 	}
-	return chantypes.NewQueryChannelResponse(channelToPB(chann), nil, clienttypes.NewHeight(0, uint64(height))), nil
+	return chantypes.NewQueryChannelResponse(channelToPB(chann), nil, ctx.Height().(clienttypes.Height)), nil
 }
 
 // QueryPacketCommitment returns the packet commitment corresponding to a given sequence
-func (c *Chain) QueryPacketCommitment(height int64, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
-	packet, err := c.QueryPacket(height, seq)
+func (c *Chain) QueryPacketCommitment(ctx core.QueryContext, seq uint64) (comRes *chantypes.QueryPacketCommitmentResponse, err error) {
+	packet, err := c.QueryPacket(ctx, seq)
 	if err != nil {
 		return nil, err
 	}
 	commitment := chantypes.CommitPacket(c.Codec(), packet)
-	return chantypes.NewQueryPacketCommitmentResponse(commitment, nil, clienttypes.NewHeight(0, uint64(height))), nil
+	return chantypes.NewQueryPacketCommitmentResponse(commitment, nil, ctx.Height().(clienttypes.Height)), nil
 }
 
 // QueryPacketAcknowledgementCommitment returns the acknowledgement corresponding to a given sequence
-func (c *Chain) QueryPacketAcknowledgementCommitment(height int64, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
-	ack, err := c.QueryPacketAcknowledgement(height, seq)
+func (c *Chain) QueryPacketAcknowledgementCommitment(ctx core.QueryContext, seq uint64) (ackRes *chantypes.QueryPacketAcknowledgementResponse, err error) {
+	ack, err := c.QueryPacketAcknowledgement(ctx, seq)
 	if err != nil {
 		return nil, err
 	}
 	commitment := chantypes.CommitAcknowledgement(ack)
-	return chantypes.NewQueryPacketAcknowledgementResponse(commitment, nil, clienttypes.NewHeight(0, uint64(height))), nil
+	return chantypes.NewQueryPacketAcknowledgementResponse(commitment, nil, ctx.Height().(clienttypes.Height)), nil
 }
 
 // NOTE: The current implementation returns all packets, including those for that acknowledgement has already received.
 // QueryPacketCommitments returns an array of packet commitments
-func (c *Chain) QueryPacketCommitments(offset uint64, limit uint64, height int64) (comRes *chantypes.QueryPacketCommitmentsResponse, err error) {
+func (c *Chain) QueryPacketCommitments(ctx core.QueryContext, offset uint64, limit uint64) (comRes *chantypes.QueryPacketCommitmentsResponse, err error) {
 	// WARNING: It may be slow to use in the production. Instead of it, it might be better to use an external event indexer to get all packet commitments.
-	packets, err := c.getAllPackets(context.Background(), c.pathEnd.PortID, c.pathEnd.ChannelID)
+	packets, err := c.getAllPackets(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID)
 	if err != nil {
 		return nil, err
 	}
@@ -257,15 +253,15 @@ func (c *Chain) QueryPacketCommitments(offset uint64, limit uint64, height int64
 		ps := chantypes.NewPacketState(c.pathEnd.PortID, c.pathEnd.ChannelID, p.Sequence, chantypes.CommitPacket(c.Codec(), p))
 		res.Commitments = append(res.Commitments, &ps)
 	}
-	res.Height = clienttypes.NewHeight(0, uint64(height))
+	res.Height = ctx.Height().(clienttypes.Height)
 	return &res, nil
 }
 
 // QueryUnrecievedPackets returns a list of unrelayed packet commitments
-func (c *Chain) QueryUnrecievedPackets(height int64, seqs []uint64) ([]uint64, error) {
+func (c *Chain) QueryUnrecievedPackets(ctx core.QueryContext, seqs []uint64) ([]uint64, error) {
 	var ret []uint64
 	for _, seq := range seqs {
-		found, err := c.ibcHandler.HasPacketReceipt(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
+		found, err := c.ibcHandler.HasPacketReceipt(c.callOptsFromQueryContext(ctx), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
 		if err != nil {
 			return nil, err
 		} else if !found {
@@ -276,9 +272,9 @@ func (c *Chain) QueryUnrecievedPackets(height int64, seqs []uint64) ([]uint64, e
 }
 
 // QueryPacketAcknowledgementCommitments returns an array of packet acks
-func (c *Chain) QueryPacketAcknowledgementCommitments(offset uint64, limit uint64, height int64) (comRes *chantypes.QueryPacketAcknowledgementsResponse, err error) {
+func (c *Chain) QueryPacketAcknowledgementCommitments(ctx core.QueryContext, offset uint64, limit uint64) (comRes *chantypes.QueryPacketAcknowledgementsResponse, err error) {
 	// WARNING: It may be slow to use in the production. Instead of it, it might be better to use an external event indexer to get all packet acknowledgements.
-	acks, err := c.getAllAcknowledgements(context.Background(), c.pathEnd.PortID, c.pathEnd.ChannelID)
+	acks, err := c.getAllAcknowledgements(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID)
 	if err != nil {
 		return nil, err
 	}
@@ -291,10 +287,10 @@ func (c *Chain) QueryPacketAcknowledgementCommitments(offset uint64, limit uint6
 }
 
 // QueryUnrecievedAcknowledgements returns a list of unrelayed packet acks
-func (c *Chain) QueryUnrecievedAcknowledgements(height int64, seqs []uint64) ([]uint64, error) {
+func (c *Chain) QueryUnrecievedAcknowledgements(ctx core.QueryContext, seqs []uint64) ([]uint64, error) {
 	var ret []uint64
 	for _, seq := range seqs {
-		_, found, err := c.ibcHandler.GetHashedPacketCommitment(c.CallOpts(context.Background(), height), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
+		_, found, err := c.ibcHandler.GetHashedPacketCommitment(c.callOptsFromQueryContext(ctx), c.pathEnd.PortID, c.pathEnd.ChannelID, seq)
 		if err != nil {
 			return nil, err
 		} else if found {
@@ -305,23 +301,27 @@ func (c *Chain) QueryUnrecievedAcknowledgements(height int64, seqs []uint64) ([]
 }
 
 // QueryPacket returns the packet corresponding to a sequence
-func (c *Chain) QueryPacket(height int64, sequence uint64) (*chantypes.Packet, error) {
+func (c *Chain) QueryPacket(ctx core.QueryContext, sequence uint64) (*chantypes.Packet, error) {
 	// TODO give the height as max block number
-	return c.findPacket(context.Background(), c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
+	return c.findPacket(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
 }
 
 // QueryPacketAcknowledgement returns the acknowledgement corresponding to a sequence
-func (c *Chain) QueryPacketAcknowledgement(height int64, sequence uint64) ([]byte, error) {
+func (c *Chain) QueryPacketAcknowledgement(ctx core.QueryContext, sequence uint64) ([]byte, error) {
 	// TODO give the height as max block number
-	return c.findAcknowledgement(context.Background(), c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
+	return c.findAcknowledgement(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
 }
 
 // QueryBalance returns the amount of coins in the relayer account
-func (c *Chain) QueryBalance(address sdk.AccAddress) (sdk.Coins, error) {
-	panic("not implemented") // TODO: Implement
+func (c *Chain) QueryBalance(ctx core.QueryContext, address sdk.AccAddress) (sdk.Coins, error) {
+	panic("not supported")
 }
 
 // QueryDenomTraces returns all the denom traces from a given chain
-func (c *Chain) QueryDenomTraces(offset uint64, limit uint64, height int64) (*transfertypes.QueryDenomTracesResponse, error) {
-	panic("not implemented") // TODO: Implement
+func (c *Chain) QueryDenomTraces(ctx core.QueryContext, offset uint64, limit uint64) (*transfertypes.QueryDenomTracesResponse, error) {
+	panic("not supported")
+}
+
+func (c *Chain) callOptsFromQueryContext(ctx core.QueryContext) *bind.CallOpts {
+	return c.CallOpts(ctx.Context(), int64(ctx.Height().GetRevisionHeight()))
 }
