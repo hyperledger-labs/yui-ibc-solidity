@@ -1,7 +1,6 @@
 package ethereum
 
 import (
-	"context"
 	"fmt"
 	"math/big"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
+	"github.com/hyperledger-labs/yui-relayer/core"
 )
 
 var (
@@ -30,13 +30,14 @@ func init() {
 }
 
 func (chain *Chain) findPacket(
-	ctx context.Context,
+	ctx core.QueryContext,
 	sourcePortID string,
 	sourceChannel string,
 	sequence uint64,
 ) (*chantypes.Packet, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
+		ToBlock:   new(big.Int).SetUint64(ctx.Height().GetRevisionHeight()),
 		Addresses: []common.Address{
 			chain.config.IBCAddress(),
 		},
@@ -44,7 +45,7 @@ func (chain *Chain) findPacket(
 			abiSendPacket.ID,
 		}},
 	}
-	logs, err := chain.client.FilterLogs(ctx, query)
+	logs, err := chain.client.FilterLogs(ctx.Context(), query)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func (chain *Chain) findPacket(
 
 // getAllPackets returns all packets from events
 func (chain *Chain) getAllPackets(
-	ctx context.Context,
+	ctx core.QueryContext,
 	sourcePortID string,
 	sourceChannel string,
 ) ([]*chantypes.Packet, error) {
@@ -94,6 +95,7 @@ func (chain *Chain) getAllPackets(
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
+		ToBlock:   new(big.Int).SetUint64(ctx.Height().GetRevisionHeight()),
 		Addresses: []common.Address{
 			chain.config.IBCAddress(),
 		},
@@ -101,7 +103,7 @@ func (chain *Chain) getAllPackets(
 			abiSendPacket.ID,
 		}},
 	}
-	logs, err := chain.client.FilterLogs(ctx, query)
+	logs, err := chain.client.FilterLogs(ctx.Context(), query)
 	if err != nil {
 		return nil, err
 	}
@@ -142,13 +144,14 @@ func (chain *Chain) getAllPackets(
 }
 
 func (chain *Chain) findAcknowledgement(
-	ctx context.Context,
+	ctx core.QueryContext,
 	dstPortID string,
 	dstChannel string,
 	sequence uint64,
 ) ([]byte, error) {
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
+		ToBlock:   new(big.Int).SetUint64(ctx.Height().GetRevisionHeight()),
 		Addresses: []common.Address{
 			chain.config.IBCAddress(),
 		},
@@ -156,7 +159,7 @@ func (chain *Chain) findAcknowledgement(
 			abiWriteAcknowledgement.ID,
 		}},
 	}
-	logs, err := chain.client.FilterLogs(ctx, query)
+	logs, err := chain.client.FilterLogs(ctx.Context(), query)
 	if err != nil {
 		return nil, err
 	}
@@ -183,13 +186,14 @@ type PacketAcknowledgement struct {
 }
 
 func (chain *Chain) getAllAcknowledgements(
-	ctx context.Context,
+	ctx core.QueryContext,
 	dstPortID string,
 	dstChannel string,
 ) ([]PacketAcknowledgement, error) {
 	var acks []PacketAcknowledgement
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
+		ToBlock:   new(big.Int).SetUint64(ctx.Height().GetRevisionHeight()),
 		Addresses: []common.Address{
 			chain.config.IBCAddress(),
 		},
@@ -197,7 +201,7 @@ func (chain *Chain) getAllAcknowledgements(
 			abiWriteAcknowledgement.ID,
 		}},
 	}
-	logs, err := chain.client.FilterLogs(ctx, query)
+	logs, err := chain.client.FilterLogs(ctx.Context(), query)
 	if err != nil {
 		return nil, err
 	}
