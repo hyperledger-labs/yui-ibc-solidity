@@ -59,7 +59,7 @@ func (h ParsedHeader) GetSealingHeaderBytes() ([]byte, error) {
 		return nil, err
 	}
 	newHeader.Extra = extra
-	return rlp.EncodeToBytes(newHeader)
+	return rlp.EncodeToBytes(&newHeader)
 }
 
 func (h ParsedHeader) GetChainHeaderBytes() ([]byte, error) {
@@ -71,7 +71,7 @@ func (h ParsedHeader) GetChainHeaderBytes() ([]byte, error) {
 		return nil, err
 	}
 	newHeader.Extra = extra
-	return rlp.EncodeToBytes(newHeader)
+	return rlp.EncodeToBytes(&newHeader)
 }
 
 func (h ParsedHeader) ValidateAndGetCommitSeals() ([][]byte, error) {

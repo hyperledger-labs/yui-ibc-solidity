@@ -996,7 +996,7 @@ func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestCha
 }
 
 func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Context) *bind.TransactOpts {
-	signer := gethtypes.NewEIP155Signer(chainID)
+	signer := gethtypes.LatestSignerForChainID(chainID)
 	addr := gethcrypto.PubkeyToAddress(prv.PublicKey)
 	return func(ctx context.Context) *bind.TransactOpts {
 		return &bind.TransactOpts{
