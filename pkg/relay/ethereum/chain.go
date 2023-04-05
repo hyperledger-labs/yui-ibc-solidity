@@ -244,7 +244,7 @@ func (c *Chain) QueryPacketAcknowledgementCommitment(ctx core.QueryContext, seq 
 // QueryPacketCommitments returns an array of packet commitments
 func (c *Chain) QueryPacketCommitments(ctx core.QueryContext, offset uint64, limit uint64) (comRes *chantypes.QueryPacketCommitmentsResponse, err error) {
 	// WARNING: It may be slow to use in the production. Instead of it, it might be better to use an external event indexer to get all packet commitments.
-	packets, err := c.getAllPackets(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID)
+	packets, err := c.getAllPackets(ctx, c.pathEnd.PortID, c.pathEnd.ChannelID)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (c *Chain) QueryUnrecievedPackets(ctx core.QueryContext, seqs []uint64) ([]
 // QueryPacketAcknowledgementCommitments returns an array of packet acks
 func (c *Chain) QueryPacketAcknowledgementCommitments(ctx core.QueryContext, offset uint64, limit uint64) (comRes *chantypes.QueryPacketAcknowledgementsResponse, err error) {
 	// WARNING: It may be slow to use in the production. Instead of it, it might be better to use an external event indexer to get all packet acknowledgements.
-	acks, err := c.getAllAcknowledgements(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID)
+	acks, err := c.getAllAcknowledgements(ctx, c.pathEnd.PortID, c.pathEnd.ChannelID)
 	if err != nil {
 		return nil, err
 	}
@@ -302,14 +302,12 @@ func (c *Chain) QueryUnrecievedAcknowledgements(ctx core.QueryContext, seqs []ui
 
 // QueryPacket returns the packet corresponding to a sequence
 func (c *Chain) QueryPacket(ctx core.QueryContext, sequence uint64) (*chantypes.Packet, error) {
-	// TODO give the height as max block number
-	return c.findPacket(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
+	return c.findPacket(ctx, c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
 }
 
 // QueryPacketAcknowledgement returns the acknowledgement corresponding to a sequence
 func (c *Chain) QueryPacketAcknowledgement(ctx core.QueryContext, sequence uint64) ([]byte, error) {
-	// TODO give the height as max block number
-	return c.findAcknowledgement(ctx.Context(), c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
+	return c.findAcknowledgement(ctx, c.pathEnd.PortID, c.pathEnd.ChannelID, sequence)
 }
 
 // QueryBalance returns the amount of coins in the relayer account
