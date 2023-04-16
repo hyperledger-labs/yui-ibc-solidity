@@ -243,7 +243,7 @@ contract IBCPacket is IBCStore, IIBCPacket {
         bytes memory path,
         bytes32 commitmentBytes
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id,
             height,
             connection.delay_period,
@@ -262,7 +262,7 @@ contract IBCPacket is IBCStore, IIBCPacket {
         bytes memory path,
         bytes32 acknowledgementCommitmentBytes
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id,
             height,
             connection.delay_period,

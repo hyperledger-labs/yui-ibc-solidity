@@ -196,7 +196,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         bytes memory proof,
         bytes memory clientStateBytes
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id, height, 0, 0, proof, connection.counterparty.prefix.key_prefix, path, clientStateBytes
         );
     }
@@ -208,7 +208,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         bytes memory proof,
         bytes memory consensusStateBytes
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id,
             height,
             0,
@@ -229,7 +229,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         string memory connectionId,
         ConnectionEnd.Data memory counterpartyConnection
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id,
             height,
             0,

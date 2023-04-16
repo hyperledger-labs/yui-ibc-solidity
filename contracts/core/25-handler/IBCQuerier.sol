@@ -9,7 +9,7 @@ import "../24-host/IBCCommitment.sol";
 
 abstract contract IBCQuerier is IBCStore {
     function getClientState(string calldata clientId) external view returns (bytes memory, bool) {
-        return getClient(clientId).getClientState(clientId);
+        return checkAndGetClient(clientId).getClientState(clientId);
     }
 
     function getConsensusState(string calldata clientId, Height.Data calldata height)
@@ -17,7 +17,7 @@ abstract contract IBCQuerier is IBCStore {
         view
         returns (bytes memory consensusStateBytes, bool)
     {
-        return getClient(clientId).getConsensusState(clientId, height);
+        return checkAndGetClient(clientId).getConsensusState(clientId, height);
     }
 
     function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory, bool) {

@@ -235,7 +235,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         string memory channelId,
         bytes memory channelBytes
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id,
             height,
             0,
