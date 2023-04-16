@@ -90,6 +90,7 @@ contract IBCTest is Test {
     /* test cases */
 
     function testConnectionOpenInit() public {
+        createMockClient(1);
         IBCMsgs.MsgConnectionOpenInit memory msg_ = IBCMsgs.MsgConnectionOpenInit({
             clientId: "mock-client-1",
             counterparty: Counterparty.Data({

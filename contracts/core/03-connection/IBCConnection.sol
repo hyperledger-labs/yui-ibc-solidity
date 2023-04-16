@@ -29,6 +29,8 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
+        // ensure the client exists
+        checkAndGetClient(msg_.clientId);
         connection.client_id = msg_.clientId;
         setSupportedVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_INIT;
@@ -49,6 +51,8 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
+        // ensure the client exists
+        checkAndGetClient(msg_.clientId);
         connection.client_id = msg_.clientId;
         setSupportedVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_TRYOPEN;
