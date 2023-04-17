@@ -99,18 +99,11 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
      */
     function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) external override {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
-        if (connection.state != ConnectionEnd.State.STATE_INIT && connection.state != ConnectionEnd.State.STATE_TRYOPEN)
-        {
-            revert("connection state is not INIT or TRYOPEN");
-        } else if (connection.state == ConnectionEnd.State.STATE_INIT && !isSupportedVersion(msg_.version)) {
-            revert("connection state is in INIT but the provided version is not supported");
-        } else if (
-            connection.state == ConnectionEnd.State.STATE_TRYOPEN
-                && (connection.versions.length != 1 || !isEqualVersion(connection.versions[0], msg_.version))
-        ) {
-            revert(
-                "connection state is in TRYOPEN but the provided version is not set in the previous connection versions"
-            );
+        if (connection.state != ConnectionEnd.State.STATE_INIT) {
+            revert("connection state is not INIT");
+        }
+        if (!isSupportedVersion(msg_.version)) {
+            revert("the counterparty selected version is not supported by versions selected on INIT");
         }
 
         require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
@@ -279,10 +272,6 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
     // TODO implements
     function isSupportedVersion(Version.Data memory) internal pure returns (bool) {
         return true;
-    }
-
-    function isEqualVersion(Version.Data memory a, Version.Data memory b) internal pure returns (bool) {
-        return keccak256(Version.encode(a)) == keccak256(Version.encode(b));
     }
 
     function makeVersionArray(Version.Data memory version) internal pure returns (Version.Data[] memory ret) {
