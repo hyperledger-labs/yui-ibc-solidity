@@ -30,8 +30,6 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
 
         // TODO verifySupportedFeature
 
-        // TODO authenticates a port binding
-
         string memory channelId = generateChannelIdentifier();
         channels[msg_.portId][channelId] = msg_.channel;
         nextSequenceSends[msg_.portId][channelId] = 1;
@@ -54,8 +52,6 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(msg_.channel.connection_hops.length == 1);
 
         // TODO verifySupportedFeature
-
-        // TODO authenticates a port binding
 
         ChannelCounterparty.Data memory expectedCounterparty =
             ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""});
@@ -173,8 +169,6 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
 
-        // TODO authenticates a port binding
-
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
@@ -189,8 +183,6 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
-
-        // TODO authenticates a port binding
 
         require(channel.connection_hops.length == 1);
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
