@@ -29,6 +29,8 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
+        // ensure the client exists
+        checkAndGetClient(msg_.clientId);
         connection.client_id = msg_.clientId;
         setSupportedVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_INIT;
@@ -49,6 +51,8 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
+        // ensure the client exists
+        checkAndGetClient(msg_.clientId);
         connection.client_id = msg_.clientId;
         setSupportedVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_TRYOPEN;
@@ -95,18 +99,11 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
      */
     function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) external override {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
-        if (connection.state != ConnectionEnd.State.STATE_INIT && connection.state != ConnectionEnd.State.STATE_TRYOPEN)
-        {
-            revert("connection state is not INIT or TRYOPEN");
-        } else if (connection.state == ConnectionEnd.State.STATE_INIT && !isSupportedVersion(msg_.version)) {
-            revert("connection state is in INIT but the provided version is not supported");
-        } else if (
-            connection.state == ConnectionEnd.State.STATE_TRYOPEN
-                && (connection.versions.length != 1 || !isEqualVersion(connection.versions[0], msg_.version))
-        ) {
-            revert(
-                "connection state is in TRYOPEN but the provided version is not set in the previous connection versions"
-            );
+        if (connection.state != ConnectionEnd.State.STATE_INIT) {
+            revert("connection state is not INIT");
+        }
+        if (!isSupportedVersion(msg_.version)) {
+            revert("the counterparty selected version is not supported by versions selected on INIT");
         }
 
         require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
@@ -196,7 +193,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         bytes memory proof,
         bytes memory clientStateBytes
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id, height, 0, 0, proof, connection.counterparty.prefix.key_prefix, path, clientStateBytes
         );
     }
@@ -208,7 +205,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         bytes memory proof,
         bytes memory consensusStateBytes
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id,
             height,
             0,
@@ -229,7 +226,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         string memory connectionId,
         ConnectionEnd.Data memory counterpartyConnection
     ) private returns (bool) {
-        return getClient(connection.client_id).verifyMembership(
+        return checkAndGetClient(connection.client_id).verifyMembership(
             connection.client_id,
             height,
             0,
@@ -275,10 +272,6 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
     // TODO implements
     function isSupportedVersion(Version.Data memory) internal pure returns (bool) {
         return true;
-    }
-
-    function isEqualVersion(Version.Data memory a, Version.Data memory b) internal pure returns (bool) {
-        return keccak256(Version.encode(a)) == keccak256(Version.encode(b));
     }
 
     function makeVersionArray(Version.Data memory version) internal pure returns (Version.Data[] memory ret) {

@@ -48,7 +48,7 @@ contract IBCClient is IBCStore, IIBCClient {
     function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external override {
         require(commitments[IBCCommitment.clientStateCommitmentKey(msg_.clientId)] != bytes32(0));
         (bytes32 clientStateCommitment, ConsensusStateUpdate[] memory updates, bool ok) =
-            getClient(msg_.clientId).updateClient(msg_.clientId, msg_.clientMessage);
+            checkAndGetClient(msg_.clientId).updateClient(msg_.clientId, msg_.clientMessage);
         require(ok, "failed to update client");
 
         // update commitments

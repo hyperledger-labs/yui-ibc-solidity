@@ -32,7 +32,7 @@ abstract contract IBCStore {
 
     // Storage accessors
 
-    function getClient(string memory clientId) internal view returns (ILightClient) {
+    function checkAndGetClient(string memory clientId) internal view returns (ILightClient) {
         address clientImpl = clientImpls[clientId];
         require(clientImpl != address(0));
         return ILightClient(clientImpl);
