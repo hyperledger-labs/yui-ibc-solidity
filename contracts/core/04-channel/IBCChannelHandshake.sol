@@ -88,10 +88,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
      */
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
-        require(
-            channel.state == Channel.State.STATE_INIT || channel.state == Channel.State.STATE_TRYOPEN,
-            "invalid channel state"
-        );
+        require(channel.state == Channel.State.STATE_INIT, "channel state should be INIT");
 
         // TODO authenticates a port binding
 
