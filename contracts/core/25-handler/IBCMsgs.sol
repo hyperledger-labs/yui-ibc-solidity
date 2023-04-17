@@ -31,7 +31,6 @@ library IBCMsgs {
     }
 
     struct MsgConnectionOpenTry {
-        string previousConnectionId;
         Counterparty.Data counterparty; // counterpartyConnectionIdentifier, counterpartyPrefix and counterpartyClientIdentifier
         uint64 delayPeriod;
         string clientId; // clientID of chainA
@@ -71,7 +70,6 @@ library IBCMsgs {
 
     struct MsgChannelOpenTry {
         string portId;
-        string previousChannelId;
         Channel.Data channel;
         string counterpartyVersion;
         bytes proofInit;
