@@ -417,7 +417,6 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 		chain.IBCHandler.ConnectionOpenTry(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgConnectionOpenTry{
-				PreviousConnectionId: "",
 				Counterparty: ibchandler.CounterpartyData{
 					ClientId:     counterpartyConnection.ClientID,
 					ConnectionId: counterpartyConnection.ID,

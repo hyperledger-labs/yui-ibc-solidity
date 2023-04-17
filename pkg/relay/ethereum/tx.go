@@ -133,7 +133,6 @@ func (c *Chain) TxConnectionOpenTry(opts *bind.TransactOpts, msg *conntypes.MsgC
 		versions = append(versions, ibchandler.VersionData(*v))
 	}
 	return c.ibcHandler.ConnectionOpenTry(opts, ibchandler.IBCMsgsMsgConnectionOpenTry{
-		PreviousConnectionId: msg.PreviousConnectionId,
 		Counterparty: ibchandler.CounterpartyData{
 			ClientId:     msg.Counterparty.ClientId,
 			ConnectionId: msg.Counterparty.ConnectionId,
@@ -195,8 +194,7 @@ func (c *Chain) TxChannelOpenInit(opts *bind.TransactOpts, msg *chantypes.MsgCha
 
 func (c *Chain) TxChannelOpenTry(opts *bind.TransactOpts, msg *chantypes.MsgChannelOpenTry) (*gethtypes.Transaction, error) {
 	return c.ibcHandler.ChannelOpenTry(opts, ibchandler.IBCMsgsMsgChannelOpenTry{
-		PortId:            msg.PortId,
-		PreviousChannelId: msg.PreviousChannelId,
+		PortId: msg.PortId,
 		Channel: ibchandler.ChannelData{
 			State:          uint8(msg.Channel.State),
 			Ordering:       uint8(msg.Channel.Ordering),
