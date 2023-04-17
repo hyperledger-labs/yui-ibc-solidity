@@ -38,7 +38,7 @@ function chain() {
         exit 1
     fi
 
-    pushd ./chains && docker-compose up -d ${network} && popd
+    pushd ./chains && docker compose up -d ${network} && popd
     # XXX Wait for the first block to be created
     sleep 3
     ${TRUFFLE} compile
@@ -79,7 +79,7 @@ function testtwochainz {
 }
 
 function down {
-    pushd ./chains/besu && docker-compose down && popd
+    pushd ./chains/besu && docker compose down && popd
 }
 
 subcommand="$1"
