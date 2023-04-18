@@ -14,6 +14,9 @@
     "solidity-stringutils": "git+https://github.com/ibc-solidity/solidity-stringutils.git#716294569dd2304ae8d81681951733542f999015",
     "truffle": "5.6.6"
   },
+  "devDependencies": {
+    "solhint": "^3.4.1"
+  },
   "scripts": {
     "postinstall": "truffle compile",
     "test": "echo \"Error: no test specified\" && exit 1"
