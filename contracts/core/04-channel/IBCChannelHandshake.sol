@@ -90,8 +90,6 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(channel.state == Channel.State.STATE_INIT, "channel state should be INIT");
 
-        // TODO authenticates a port binding
-
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
         require(channel.connection_hops.length == 1);
@@ -128,8 +126,6 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
     function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         require(channel.state == Channel.State.STATE_TRYOPEN, "channel state is not TRYOPEN");
-
-        // TODO authenticates a port binding
 
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");

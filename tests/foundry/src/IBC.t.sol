@@ -21,8 +21,8 @@ contract IBCTest is Test {
     MockClient mockClient;
     MockApp mockApp;
 
-    string private constant mockClientType = "mock-client";
-    string private constant portId = "mock";
+    string private constant MOCK_CLIENT_TYPE = "mock-client";
+    string private constant MOCK_PORT_ID = "mock";
     bytes32 private testPacketCommitment;
 
     function setUp() public {
@@ -33,7 +33,7 @@ contract IBCTest is Test {
         handler = new TestableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
 
         mockClient = new MockClient(address(handler));
-        handler.registerClient(mockClientType, mockClient);
+        handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
 
         setUpMockClient();
         setUpConnection();
@@ -67,24 +67,24 @@ contract IBCTest is Test {
         Channel.Data memory channel = Channel.Data({
             state: Channel.State.STATE_OPEN,
             ordering: Channel.Order.ORDER_UNORDERED,
-            counterparty: ChannelCounterparty.Data({port_id: portId, channel_id: "channel-0"}),
+            counterparty: ChannelCounterparty.Data({port_id: MOCK_PORT_ID, channel_id: "channel-0"}),
             connection_hops: hops,
             version: "1"
         });
-        handler.setChannel(portId, "channel-0", channel);
+        handler.setChannel(MOCK_PORT_ID, "channel-0", channel);
         handler.setNextChannelSequence(1);
-        handler.setNextSequenceSend(portId, "channel-0", 1);
-        handler.setNextSequenceRecv(portId, "channel-0", 1);
-        handler.setNextSequenceAck(portId, "channel-0", 1);
+        handler.setNextSequenceSend(MOCK_PORT_ID, "channel-0", 1);
+        handler.setNextSequenceRecv(MOCK_PORT_ID, "channel-0", 1);
+        handler.setNextSequenceAck(MOCK_PORT_ID, "channel-0", 1);
 
         testPacketCommitment = makePacketCommitment(getPacket());
     }
 
     function setUpMockApp() internal {
         mockApp = new MockApp();
-        handler.bindPort(portId, address(mockApp));
-        handler.claimCapabilityDirectly(handler.channelCapabilityPath(portId, "channel-0"), address(mockApp));
-        handler.claimCapabilityDirectly(handler.channelCapabilityPath(portId, "channel-0"), address(this));
+        handler.bindPort(MOCK_PORT_ID, address(mockApp));
+        handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(mockApp));
+        handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(this));
     }
 
     /* test cases */
@@ -136,13 +136,13 @@ contract IBCTest is Test {
 
     /* internal functions */
 
-    function createMockClient(uint64 revision_height) internal {
+    function createMockClient(uint64 revisionHeight) internal {
         handler.createClient(
             IBCMsgs.MsgCreateClient({
-                clientType: mockClientType,
+                clientType: MOCK_CLIENT_TYPE,
                 clientStateBytes: wrapAnyMockClientState(
                     IbcLightclientsMockV1ClientState.Data({
-                        latest_height: Height.Data({revision_number: 0, revision_height: revision_height})
+                        latest_height: Height.Data({revision_number: 0, revision_height: revisionHeight})
                     })
                     ),
                 consensusStateBytes: wrapAnyMockConsensusState(
@@ -152,13 +152,13 @@ contract IBCTest is Test {
         );
     }
 
-    function updateMockClient(uint64 next_revision_height) internal {
+    function updateMockClient(uint64 nextRevisionHeight) internal {
         handler.updateClient(
             IBCMsgs.MsgUpdateClient({
                 clientId: "mock-client-0",
                 clientMessage: wrapAnyMockHeader(
                     IbcLightclientsMockV1Header.Data({
-                        height: Height.Data({revision_number: 0, revision_height: next_revision_height}),
+                        height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
                         timestamp: uint64(block.timestamp)
                     })
                     )
@@ -207,9 +207,9 @@ contract IBCTest is Test {
     function getPacket() internal pure returns (Packet.Data memory packet) {
         return Packet.Data({
             sequence: 1,
-            source_port: portId,
+            source_port: MOCK_PORT_ID,
             source_channel: "channel-0",
-            destination_port: portId,
+            destination_port: MOCK_PORT_ID,
             destination_channel: "channel-0",
             data: bytes("{\"amount\": \"100\"}"),
             timeout_height: Height.Data({revision_number: 0, revision_height: 100}),

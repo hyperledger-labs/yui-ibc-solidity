@@ -43,8 +43,9 @@ fmt:
 		./contracts/clients \
 		./tests/foundry/src
 
-.PHONY: check-fmt
-check-fmt:
+.PHONY: lint
+lint:
+	@npx solhint 'contracts/{apps,clients,core}/**/*.sol' 'tests/foundry/src/**/*.sol'
 	@$(MAKE) FORGE_FMT_OPTS=--check fmt
 
 .PHONY: test
