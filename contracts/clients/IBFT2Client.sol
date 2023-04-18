@@ -215,7 +215,7 @@ contract IBFT2Client is ILightClient {
         bytes calldata proof,
         bytes calldata prefix,
         bytes calldata path
-    ) external returns (bool) {
+    ) external view override returns (bool) {
         if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix, proof)) {
             return false;
         }
