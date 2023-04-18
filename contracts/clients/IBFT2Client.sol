@@ -423,7 +423,7 @@ contract IBFT2Client is ILightClient {
         return expectedValue == bytes32(dataHash.toRlpItem().toUint());
     }
 
-    function verifyNonMembership(bytes calldata proof, bytes32 root, bytes32 slot) internal pure returns (bool) {
+    function verifyNonMembership(bytes calldata, bytes32, bytes32) internal pure returns (bool) {
         // bytes32 path = keccak256(abi.encodePacked(slot));
         // bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
         // return dataHash.toRlpItem().toBytes().length == 0;
