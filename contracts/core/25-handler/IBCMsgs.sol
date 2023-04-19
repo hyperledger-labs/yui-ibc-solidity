@@ -41,6 +41,7 @@ library IBCMsgs {
         bytes proofConsensus; // proof that chainA stored chainB's consensus state at consensus height
         Height.Data proofHeight; // height at which relayer constructs proof of A storing connectionEnd in state
         Height.Data consensusHeight; // latest height of chain B which chain A has stored in its chain B client
+        bytes hostConsensusStateProof; // optional proof data for host state machines that are unable to introspect their own consensus state
     }
 
     struct MsgConnectionOpenAck {
@@ -53,6 +54,7 @@ library IBCMsgs {
         bytes proofConsensus; // proof that chainB has stored ConsensusState of chainA on its client
         Height.Data proofHeight; // height that relayer constructed proofTry
         Height.Data consensusHeight; // latest height of chainA that chainB has stored on its chainA client
+        bytes hostConsensusStateProof; // optional proof data for host state machines that are unable to introspect their own consensus state
     }
 
     struct MsgConnectionOpenConfirm {
