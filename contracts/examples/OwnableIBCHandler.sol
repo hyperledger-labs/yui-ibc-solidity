@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./25-handler/IBCHandler.sol";
+import "../core/25-handler/IBCHandler.sol";
 
 /**
  * @dev OwnableIBCHandler is a contract that implements [ICS-25](https://github.com/cosmos/ibc/tree/main/spec/core/ics-025-handler-interface).
