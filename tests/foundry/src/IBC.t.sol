@@ -116,7 +116,9 @@ contract IBCTest is Test {
 
     function testBenchmarkSendPacket() public {
         Packet.Data memory packet = getPacket();
-        handler.sendPacket(packet);
+        handler.sendPacket(
+            packet.source_port, packet.source_channel, packet.timeout_height, packet.timeout_timestamp, packet.data
+        );
     }
 
     event MockRecv(bool ok);

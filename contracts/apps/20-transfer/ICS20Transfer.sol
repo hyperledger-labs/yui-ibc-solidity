@@ -96,20 +96,12 @@ abstract contract ICS20Transfer is IBCAppBase {
         string memory sourceChannel,
         uint64 timeoutHeight
     ) internal virtual {
-        IBCHandler handler = IBCHandler(ibcAddress());
-        (Channel.Data memory channel, bool found) = handler.getChannel(sourcePort, sourceChannel);
-        require(found, "channel not found");
-        handler.sendPacket(
-            Packet.Data({
-                sequence: handler.getNextSequenceSend(sourcePort, sourceChannel),
-                source_port: sourcePort,
-                source_channel: sourceChannel,
-                destination_port: channel.counterparty.port_id,
-                destination_channel: channel.counterparty.channel_id,
-                data: FungibleTokenPacketData.encode(data),
-                timeout_height: Height.Data({revision_number: 0, revision_height: timeoutHeight}),
-                timeout_timestamp: 0
-            })
+        IBCHandler(ibcAddress()).sendPacket(
+            sourcePort,
+            sourceChannel,
+            Height.Data({revision_number: 0, revision_height: timeoutHeight}),
+            0,
+            FungibleTokenPacketData.encode(data)
         );
     }
 

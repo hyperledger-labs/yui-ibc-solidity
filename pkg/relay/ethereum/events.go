@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	clienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	chantypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -35,6 +36,16 @@ func (chain *Chain) findPacket(
 	sourceChannel string,
 	sequence uint64,
 ) (*chantypes.Packet, error) {
+	channel, found, err := chain.ibcHandler.GetChannel(
+		chain.callOptsFromQueryContext(ctx),
+		sourcePortID, sourceChannel,
+	)
+	if err != nil {
+		return nil, err
+	} else if !found {
+		return nil, fmt.Errorf("channel not found: sourcePortID=%v sourceChannel=%v", sourcePortID, sourceChannel)
+	}
+
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		ToBlock:   new(big.Int).SetUint64(ctx.Height().GetRevisionHeight()),
@@ -54,29 +65,29 @@ func (chain *Chain) findPacket(
 		if values, err := abiSendPacket.Inputs.Unpack(log.Data); err != nil {
 			return nil, err
 		} else {
-			p := values[0].(struct {
-				Sequence           uint64  "json:\"sequence\""
-				SourcePort         string  "json:\"source_port\""
-				SourceChannel      string  "json:\"source_channel\""
-				DestinationPort    string  "json:\"destination_port\""
-				DestinationChannel string  "json:\"destination_channel\""
-				Data               []uint8 "json:\"data\""
-				TimeoutHeight      struct {
-					RevisionNumber uint64 "json:\"revision_number\""
-					RevisionHeight uint64 "json:\"revision_height\""
-				} "json:\"timeout_height\""
-				TimeoutTimestamp uint64 "json:\"timeout_timestamp\""
+			if l := len(values); l != 6 {
+				return nil, fmt.Errorf("unexpected values length: expected=%v actual=%v", 6, l)
+			}
+			pSequence := values[0].(uint64)
+			pSourcePortID := values[1].(string)
+			pSourceChannel := values[2].(string)
+			pTimeoutHeight := values[3].(struct {
+				RevisionNumber uint64 "json:\"revision_number\""
+				RevisionHeight uint64 "json:\"revision_height\""
 			})
-			if p.SourcePort == sourcePortID && p.SourceChannel == sourceChannel && p.Sequence == sequence {
-				return &chantypes.Packet{
-					Sequence:           p.Sequence,
-					SourcePort:         p.SourcePort,
-					SourceChannel:      p.SourceChannel,
-					DestinationPort:    p.DestinationPort,
-					DestinationChannel: p.DestinationChannel,
-					Data:               p.Data,
-					TimeoutHeight:      clienttypes.Height(p.TimeoutHeight),
-					TimeoutTimestamp:   p.TimeoutTimestamp,
+			pTimeoutTimestamp := values[4].(uint64)
+			pData := values[5].([]uint8)
+
+			if pSequence == sequence && pSourcePortID == sourcePortID && pSourceChannel == sourceChannel {
+				return &channeltypes.Packet{
+					Sequence:           pSequence,
+					SourcePort:         pSourcePortID,
+					SourceChannel:      pSourceChannel,
+					DestinationPort:    channel.Counterparty.PortId,
+					DestinationChannel: channel.Counterparty.ChannelId,
+					Data:               pData,
+					TimeoutHeight:      clienttypes.Height{RevisionNumber: pTimeoutHeight.RevisionNumber, RevisionHeight: pTimeoutHeight.RevisionHeight},
+					TimeoutTimestamp:   pTimeoutTimestamp,
 				}, nil
 			}
 		}
@@ -91,7 +102,15 @@ func (chain *Chain) getAllPackets(
 	sourcePortID string,
 	sourceChannel string,
 ) ([]*chantypes.Packet, error) {
-	var packets []*chantypes.Packet
+	channel, found, err := chain.ibcHandler.GetChannel(
+		chain.callOptsFromQueryContext(ctx),
+		sourcePortID, sourceChannel,
+	)
+	if err != nil {
+		return nil, err
+	} else if !found {
+		return nil, fmt.Errorf("channel not found: sourcePortID=%v sourceChannel=%v", sourcePortID, sourceChannel)
+	}
 
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
@@ -108,35 +127,35 @@ func (chain *Chain) getAllPackets(
 		return nil, err
 	}
 
+	var packets []*chantypes.Packet
 	for _, log := range logs {
 		if values, err := abiSendPacket.Inputs.Unpack(log.Data); err != nil {
 			return nil, err
 		} else {
-			p := values[0].(struct {
-				Sequence           uint64  "json:\"sequence\""
-				SourcePort         string  "json:\"source_port\""
-				SourceChannel      string  "json:\"source_channel\""
-				DestinationPort    string  "json:\"destination_port\""
-				DestinationChannel string  "json:\"destination_channel\""
-				Data               []uint8 "json:\"data\""
-				TimeoutHeight      struct {
-					RevisionNumber uint64 "json:\"revision_number\""
-					RevisionHeight uint64 "json:\"revision_height\""
-				} "json:\"timeout_height\""
-				TimeoutTimestamp uint64 "json:\"timeout_timestamp\""
+			if l := len(values); l != 6 {
+				return nil, fmt.Errorf("unexpected values length: expected=%v actual=%v", 6, l)
+			}
+			pSequence := values[0].(uint64)
+			pSourcePortID := values[1].(string)
+			pSourceChannel := values[2].(string)
+			pTimeoutHeight := values[3].(struct {
+				RevisionNumber uint64 "json:\"revision_number\""
+				RevisionHeight uint64 "json:\"revision_height\""
 			})
-			if p.SourcePort == sourcePortID && p.SourceChannel == sourceChannel {
-				packet := &chantypes.Packet{
-					Sequence:           p.Sequence,
-					SourcePort:         p.SourcePort,
-					SourceChannel:      p.SourceChannel,
-					DestinationPort:    p.DestinationPort,
-					DestinationChannel: p.DestinationChannel,
-					Data:               p.Data,
-					TimeoutHeight:      clienttypes.Height(p.TimeoutHeight),
-					TimeoutTimestamp:   p.TimeoutTimestamp,
-				}
-				packets = append(packets, packet)
+			pTimeoutTimestamp := values[4].(uint64)
+			pData := values[5].([]uint8)
+
+			if pSourcePortID == sourcePortID && pSourceChannel == sourceChannel {
+				packets = append(packets, &channeltypes.Packet{
+					Sequence:           pSequence,
+					SourcePort:         pSourcePortID,
+					SourceChannel:      pSourceChannel,
+					DestinationPort:    channel.Counterparty.PortId,
+					DestinationChannel: channel.Counterparty.ChannelId,
+					Data:               pData,
+					TimeoutHeight:      clienttypes.Height{RevisionNumber: pTimeoutHeight.RevisionNumber, RevisionHeight: pTimeoutHeight.RevisionHeight},
+					TimeoutTimestamp:   pTimeoutTimestamp,
+				})
 			}
 		}
 	}

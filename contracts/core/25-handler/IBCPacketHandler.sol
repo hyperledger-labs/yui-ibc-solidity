@@ -17,7 +17,14 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
     address immutable ibcPacket;
 
     // Events
-    event SendPacket(Packet.Data packet);
+    event SendPacket(
+        uint64 sequence,
+        string sourcePort,
+        string sourceChannel,
+        Height.Data timeoutHeight,
+        uint64 timeoutTimestamp,
+        bytes data
+    );
     event RecvPacket(Packet.Data packet);
     event WriteAcknowledgement(
         string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement
@@ -29,11 +36,21 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         ibcPacket = _ibcPacket;
     }
 
-    function sendPacket(Packet.Data calldata packet) external {
-        require(authenticateCapability(channelCapabilityPath(packet.source_port, packet.source_channel)));
-        (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.sendPacket.selector, packet));
+    function sendPacket(
+        string calldata sourcePort,
+        string calldata sourceChannel,
+        Height.Data calldata timeoutHeight,
+        uint64 timeoutTimestamp,
+        bytes calldata data
+    ) external {
+        require(authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel)));
+        (bool success, bytes memory res) = ibcPacket.delegatecall(
+            abi.encodeWithSelector(
+                IIBCPacket.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
+            )
+        );
         require(success);
-        emit SendPacket(packet);
+        emit SendPacket(abi.decode(res, (uint64)), sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external {
