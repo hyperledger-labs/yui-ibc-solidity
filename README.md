@@ -39,11 +39,10 @@ Here are some such examples:
 
 ## Development and Testing
 
-Launch two Besu chains(ethereum-compatible) with the contracts deployed with the following command:
+Launch two Hyperledger Besu chains(ethereum-compatible) with the contracts deployed with the following command:
 
 ```sh
-# If NO_GEN_CODE is empty, setup-script will generate a proto3 marshaler in solidity
-$ NO_GEN_CODE=1 ./scripts/setup.sh testtwochainz
+$ ./scripts/setup.sh testtwochainz
 ```
 
 After launch the chains, execute the following command:
