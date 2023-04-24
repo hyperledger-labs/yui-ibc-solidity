@@ -1,34 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -ex
 
 TRUFFLE="npx truffle"
 
-function before_common() {
-    if [ -n "$NO_GEN_CODE" ]; then
-        return
-    fi
-    ./scripts/solpb.sh
-}
-
-function after_common() {
-    if [ -n "$NO_GEN_CODE" ]; then
-        return
-    fi
-
-    srcs=(
-        "SimpleToken"
-        "ICS20TransferBank"
-        "ICS20Bank"
-        "IBCCommitmentTestHelper"
-    )
-    for src in "${srcs[@]}" ; do
-        make abi SOURCE=${src}
-    done
-    # rename OwnableIBCHandler to IBCHandler
-    make abi SOURCE=OwnableIBCHandler TARGET=ibchandler
-}
-
-function chain() {
+function launch_chain() {
     if [ -z "$network" ]; then
         echo "variable network must be set"
         exit 1
@@ -39,47 +14,32 @@ function chain() {
     fi
 
     pushd ./chains && docker compose up -d ${network} && popd
-    # XXX Wait for the first block to be created
-    sleep 3
     ${TRUFFLE} compile
     ${TRUFFLE} migrate --reset --compile-none --network=${network}
     ${TRUFFLE} exec ./scripts/confgen.js --network=${network}
 }
 
 function development {
-    before_common
-
     network=development
     export CONF_TPL="./pkg/consts/contract.go:./scripts/template/contract.go.tpl"
-    chain
-
-    after_common
+    launch_chain
 }
 
 function testonechain {
-    before_common
-
     network=testchain0
     export CONF_TPL="./tests/e2e/config/chain0/contract.go:./scripts/template/contract.go.tpl"
-    chain
-
-    after_common
+    launch_chain
 }
 
 function testtwochainz {
-    before_common
-
     testonechain
-
     network=testchain1
     export CONF_TPL="./tests/e2e/config/chain1/contract.go:./scripts/template/contract.go.tpl"
-    chain
-
-    after_common
+    launch_chain
 }
 
 function down {
-    pushd ./chains/besu && docker compose down && popd
+    pushd ./chains && docker compose down && popd
 }
 
 subcommand="$1"

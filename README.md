@@ -39,11 +39,10 @@ Here are some such examples:
 
 ## Development and Testing
 
-Launch two Besu chains(ethereum-compatible) with the contracts deployed with the following command:
+Launch two Hyperledger Besu chains(ethereum-compatible) with the contracts deployed with the following command:
 
 ```sh
-# If NO_GEN_CODE is empty, setup-script will generate a proto3 marshaler in solidity
-$ NO_GEN_CODE=1 ./scripts/setup.sh testtwochainz
+$ ./scripts/setup.sh testtwochainz
 ```
 
 After launch the chains, execute the following command:
@@ -60,9 +59,14 @@ An example of E2E with IBC-Relayer([yui-relayer](https://github.com/hyperledger-
 
 ## For Developers
 
-To develop this project, you need the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf) to generate encoders and decoders in solidity from proto files.
+To generate the proto encoders and decoders in solidity from proto files, you need to use the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf)
 
 Currently, you need to use [this version](https://github.com/datachainlab/solidity-protobuf/tree/fce34ce0240429221105986617f64d8d4261d87d).
+
+If you edit the proto definitions, you should execute the following command:
+```
+$ make SOLPB_DIR=/path/to/solidity-protobuf proto-sol
+```
 
 ## Maintainers
 

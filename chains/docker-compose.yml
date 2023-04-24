@@ -16,8 +16,3 @@ services:
     ports:
       - 8745:8545
       - 8746:8546
-  geth:
-    build: ./geth
-    ports:
-      - 8545:8545
-      - 8546:8546
