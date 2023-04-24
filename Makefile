@@ -1,8 +1,6 @@
-NETWORK ?= development
-TRUFFLE ?= npx truffle
-ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 FORGE ?= forge
 SOLC_VERSION ?= 0.8.9
+ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 
 ######## Development ########
 
@@ -75,10 +73,6 @@ integration-test:
 .PHONY: e2e-test
 e2e-test:
 	go test -v ./tests/e2e/... -count=1
-
-.PHONY: config
-config:
-	export CONF_TPL="./pkg/consts/contract.go:./scripts/template/contract.go.tpl" && $(TRUFFLE) exec ./scripts/confgen.js --network=$(NETWORK)
 
 .PHONY: abigen
 abigen:
