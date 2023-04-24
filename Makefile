@@ -1,39 +1,10 @@
 NETWORK ?= development
 TRUFFLE ?= npx truffle
-ABIGEN ?= abigen
+ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 FORGE ?= forge
+SOLC_VERSION ?= 0.8.9
 
-.PHONY: yrly
-yrly:
-	go build -o build/yrly ./relayer
-
-.PHONY: config
-config:
-	export CONF_TPL="./pkg/consts/contract.go:./scripts/template/contract.go.tpl" && $(TRUFFLE) exec ./scripts/confgen.js --network=$(NETWORK)
-
-.PHONY: abi
-abi:
-ifdef SOURCE
-	$(eval TARGET := $(shell echo ${SOURCE} | tr A-Z a-z))
-	@mkdir -p ./build/abi ./pkg/contract
-	@mkdir -p ./pkg/contract/$(TARGET)
-	@cat ./build/contracts/${SOURCE}.json | jq ".abi" > ./build/abi/${SOURCE}.abi
-	$(ABIGEN) --abi ./build/abi/${SOURCE}.abi --pkg $(TARGET) --out ./pkg/contract/$(TARGET)/$(TARGET).go
-else
-	@echo "'SOURCE={SOURCE}' is required"
-endif
-
-.PHONY: proto
-proto:
-ifndef SOLPB_DIR
-	$(error SOLPB_DIR is not specified)
-else
-	protoc --go_out=. \
-		-I./proto \
-		-I./third_party/proto \
-		-I$(SOLPB_DIR)/protobuf-solidity/src/protoc/include \
-		./proto/**/*.proto
-endif
+######## Development ########
 
 .PHONY: fmt
 fmt:
@@ -48,21 +19,15 @@ lint:
 	@npx solhint 'contracts/{apps,clients,core}/**/*.sol' 'tests/foundry/src/**/*.sol'
 	@$(MAKE) FORGE_FMT_OPTS=--check fmt
 
+.PHONY: build
+build:
+	@forge build --sizes --skip test --use solc:$(SOLC_VERSION)
+
 .PHONY: test
 test:
-	go test -v ./tests/... -count=1
+	@forge test -vvvv --gas-report --use solc:$(SOLC_VERSION)
 
-.PHONY: setup
-setup:
-	./scripts/setup.sh development
-
-.PHONY: setup-e2e
-setup-e2e:
-	./scripts/setup.sh testtwochainz
-
-.PHONY: down
-down:
-	./scripts/setup.sh down
+######## Protobuf ########
 
 .PHONY: proto-sol
 proto-sol:
@@ -89,6 +54,20 @@ endif
 .PHONY: proto-gen
 proto-gen: proto-sol proto-go
 
+######## Integration test ########
+
+.PHONY: setup
+setup:
+	./scripts/setup.sh development
+
+.PHONY: setup-e2e
+setup-e2e:
+	./scripts/setup.sh testtwochainz
+
+.PHONY: down
+down:
+	./scripts/setup.sh down
+
 .PHONY: integration-test
 integration-test:
 	go test -v ./tests/integration/... -count=1
@@ -96,3 +75,15 @@ integration-test:
 .PHONY: e2e-test
 e2e-test:
 	go test -v ./tests/e2e/... -count=1
+
+.PHONY: config
+config:
+	export CONF_TPL="./pkg/consts/contract.go:./scripts/template/contract.go.tpl" && $(TRUFFLE) exec ./scripts/confgen.js --network=$(NETWORK)
+
+.PHONY: abigen
+abigen:
+	ABIGEN=$(ABIGEN) ./scripts/abigen.sh
+
+.PHONY: yrly
+yrly:
+	go build -o build/yrly ./relayer
