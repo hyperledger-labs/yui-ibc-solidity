@@ -60,9 +60,14 @@ An example of E2E with IBC-Relayer([yui-relayer](https://github.com/hyperledger-
 
 ## For Developers
 
-To develop this project, you need the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf) to generate encoders and decoders in solidity from proto files.
+To generate the proto encoders and decoders in solidity from proto files, you need to use the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf)
 
 Currently, you need to use [this version](https://github.com/datachainlab/solidity-protobuf/tree/fce34ce0240429221105986617f64d8d4261d87d).
+
+If you edit the proto definitions, you should execute the following command:
+```
+$ make SOLPB_DIR=/path/to/solidity-protobuf proto-sol
+```
 
 ## Maintainers
 
