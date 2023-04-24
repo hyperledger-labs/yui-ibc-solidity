@@ -1,11 +1,11 @@
 version: "3.3"
 services:
   development:
-    image: trufflesuite/ganache-cli:v6.12.2
+    image: trufflesuite/ganache:v7.8.0
     ports:
       - 8545:8545
       - 8546:8546
-    command: -l 1000000000 -p 8545 -m "math razor capable expose worth grape metal sunset metal sudden usage scheme"
+    command: --chain.chainId 2018 -p 8545 -m "math razor capable expose worth grape metal sunset metal sudden usage scheme"
   testchain0:
     build: ./besu/chain0
     ports:
