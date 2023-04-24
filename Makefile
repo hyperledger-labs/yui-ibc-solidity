@@ -10,7 +10,7 @@ SOLC_VERSION ?= 0.8.9
 fmt:
 	@$(FORGE) fmt $(FORGE_FMT_OPTS) \
 		./contracts/core \
-		./contracts/app \
+		./contracts/apps \
 		./contracts/clients \
 		./tests/foundry/src
 
