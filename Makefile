@@ -1,6 +1,7 @@
 FORGE ?= forge
 SOLC_VERSION ?= 0.8.9
 ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
+FORGE_SNAPSHOT_OPTION ?= --diff
 
 ######## Development ########
 
@@ -23,7 +24,7 @@ build:
 
 .PHONY: test
 test:
-	@forge test -vvvv --gas-report --use solc:$(SOLC_VERSION)
+	@forge snapshot -vvvv --gas-report --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
 
 ######## Protobuf ########
 
