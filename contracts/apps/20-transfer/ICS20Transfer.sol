@@ -1,54 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./IICS20Transfer.sol";
-import "../../proto/Channel.sol";
+import "../commons/IBCAppBase.sol";
 import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
+import "../../proto/Channel.sol";
 import "../../proto/FungibleTokenPacketData.sol";
 import "solidity-stringutils/src/strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 
-abstract contract ICS20Transfer is Context, IICS20Transfer {
+abstract contract ICS20Transfer is IBCAppBase {
     using strings for *;
     using BytesLib for bytes;
 
-    IBCHandler ibcHandler;
-
     mapping(string => address) channelEscrowAddresses;
-
-    constructor(IBCHandler ibcHandler_) {
-        ibcHandler = ibcHandler_;
-    }
-
-    function sendTransfer(
-        string calldata denom,
-        uint64 amount,
-        address receiver,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        uint64 timeoutHeight
-    ) external virtual override {
-        if (!denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) {
-            // sender is source chain
-            require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
-        } else {
-            require(_burn(_msgSender(), denom, amount));
-        }
-
-        _sendPacket(
-            FungibleTokenPacketData.Data({
-                denom: denom,
-                amount: amount,
-                sender: abi.encodePacked(_msgSender()),
-                receiver: abi.encodePacked(receiver)
-            }),
-            sourcePort,
-            sourceChannel,
-            timeoutHeight
-        );
-    }
 
     /// Module callbacks ///
 
@@ -56,6 +21,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         external
         virtual
         override
+        onlyIBC
         returns (bytes memory acknowledgement)
     {
         FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
@@ -83,6 +49,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         external
         virtual
         override
+        onlyIBC
     {
         if (!_isSuccessAcknowledgement(acknowledgement)) {
             _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
@@ -96,7 +63,7 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         string calldata channelId,
         ChannelCounterparty.Data calldata,
         string calldata
-    ) external virtual override {
+    ) external virtual override onlyIBC {
         // TODO authenticate a capability
         channelEscrowAddresses[channelId] = address(this);
     }
@@ -109,22 +76,10 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         ChannelCounterparty.Data calldata,
         string calldata,
         string calldata
-    ) external virtual override {
+    ) external virtual override onlyIBC {
         // TODO authenticate a capability
         channelEscrowAddresses[channelId] = address(this);
     }
-
-    function onChanOpenAck(string calldata portId, string calldata channelId, string calldata counterpartyVersion)
-        external
-        virtual
-        override
-    {}
-
-    function onChanOpenConfirm(string calldata portId, string calldata channelId) external virtual override {}
-
-    function onChanCloseInit(string calldata portId, string calldata channelId) external virtual override {}
-
-    function onChanCloseConfirm(string calldata portId, string calldata channelId) external virtual override {}
 
     /// Internal functions ///
 
@@ -143,11 +98,12 @@ abstract contract ICS20Transfer is Context, IICS20Transfer {
         string memory sourceChannel,
         uint64 timeoutHeight
     ) internal virtual {
-        (Channel.Data memory channel, bool found) = ibcHandler.getChannel(sourcePort, sourceChannel);
+        IBCHandler handler = IBCHandler(ibcAddress());
+        (Channel.Data memory channel, bool found) = handler.getChannel(sourcePort, sourceChannel);
         require(found, "channel not found");
-        ibcHandler.sendPacket(
+        handler.sendPacket(
             Packet.Data({
-                sequence: ibcHandler.getNextSequenceSend(sourcePort, sourceChannel),
+                sequence: handler.getNextSequenceSend(sourcePort, sourceChannel),
                 source_port: sourcePort,
                 source_channel: sourceChannel,
                 destination_port: channel.counterparty.port_id,
