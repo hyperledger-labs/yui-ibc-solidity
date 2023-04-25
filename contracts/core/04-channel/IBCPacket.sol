@@ -78,9 +78,6 @@ contract IBCPacket is IBCStore, IIBCPacket {
         Channel.Data storage channel = channels[msg_.packet.destination_port][msg_.packet.destination_channel];
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
-        // TODO
-        // Authenticate capability to ensure caller has authority to receive packet on this channel
-
         require(
             hashString(msg_.packet.source_port) == hashString(channel.counterparty.port_id),
             "packet source port doesn't match the counterparty's port"
