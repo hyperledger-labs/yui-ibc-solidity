@@ -1,6 +1,6 @@
 module github.com/hyperledger-labs/yui-ibc-solidity
 
-go 1.18
+go 1.20
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
@@ -9,7 +9,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.45.7
 	github.com/cosmos/ibc-go/v4 v4.0.0
 	github.com/datachainlab/solidity-protobuf/protobuf-solidity/src/protoc/go v0.0.0-20211215073805-59460caf6e59
-	github.com/ethereum/go-ethereum v1.11.3
+	github.com/ethereum/go-ethereum v1.11.6
 	github.com/gogo/protobuf v1.3.3
 	github.com/hyperledger-labs/yui-relayer v0.3.1
 	github.com/spf13/cobra v1.5.0
@@ -54,7 +54,7 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
+	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
@@ -68,6 +68,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hdevalence/ed25519consensus v0.0.0-20210204194344-59a8610d2b87 // indirect
+	github.com/holiman/uint256 v1.2.2-0.20230321075855-87b91420868c // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
@@ -110,11 +111,11 @@ require (
 	github.com/zondax/hid v0.9.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.4.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	google.golang.org/grpc v1.48.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect

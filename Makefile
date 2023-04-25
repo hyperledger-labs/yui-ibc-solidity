@@ -1,7 +1,6 @@
 FORGE ?= forge
-SOLC_VERSION ?= 0.8.9
+SOLC_VERSION ?= 0.8.18
 ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
-FORGE_SNAPSHOT_OPTION ?= --diff
 
 ######## Development ########
 
