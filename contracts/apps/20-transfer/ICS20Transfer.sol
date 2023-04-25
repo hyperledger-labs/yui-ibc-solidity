@@ -64,7 +64,6 @@ abstract contract ICS20Transfer is IBCAppBase {
         ChannelCounterparty.Data calldata,
         string calldata
     ) external virtual override onlyIBC {
-        // TODO authenticate a capability
         channelEscrowAddresses[channelId] = address(this);
     }
 
@@ -77,7 +76,6 @@ abstract contract ICS20Transfer is IBCAppBase {
         string calldata,
         string calldata
     ) external virtual override onlyIBC {
-        // TODO authenticate a capability
         channelEscrowAddresses[channelId] = address(this);
     }
 
