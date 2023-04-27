@@ -99,13 +99,11 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
      */
     function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) external override {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
-        if (connection.state != ConnectionEnd.State.STATE_INIT) {
-            revert("connection state is not INIT");
-        }
-        if (!isSupportedVersion(msg_.version)) {
-            revert("the counterparty selected version is not supported by versions selected on INIT");
-        }
-
+        require(connection.state == ConnectionEnd.State.STATE_INIT, "connection state is not INIT");
+        require(
+            isSupportedVersion(msg_.version),
+            "the counterparty selected version is not supported by versions selected on INIT"
+        );
         require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
 
         Counterparty.Data memory expectedCounterparty = Counterparty.Data({
@@ -262,7 +260,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
      * NOTE: `versions` must be an empty array
      */
     function setSupportedVersions(Version.Data[] storage versions) internal {
-        assert(versions.length == 0);
+        require(versions.length == 0, "versions must be empty");
         versions.push(Version.Data({identifier: "1", features: new string[](2)}));
         Version.Data storage version = versions[0];
         version.features[0] = "ORDER_ORDERED";
