@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "./IIBCModule.sol";
 
 /**
@@ -11,7 +12,7 @@ abstract contract ModuleManager {
      * @dev bindPort binds to an unallocated port, failing if the port has already been allocated.
      */
     function bindPort(string calldata portId, address moduleAddress) public virtual {
-        require(moduleAddress != address(this));
+        require(moduleAddress != address(this) && Address.isContract(moduleAddress));
         claimCapability(portCapabilityPath(portId), moduleAddress);
     }
 

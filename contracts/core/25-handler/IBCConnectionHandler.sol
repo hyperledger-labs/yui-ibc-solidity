@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../25-handler/IBCMsgs.sol";
 import "../24-host/IBCHost.sol";
 import "../03-connection/IIBCConnection.sol";
@@ -14,8 +15,9 @@ abstract contract IBCConnectionHandler {
 
     event GeneratedConnectionIdentifier(string);
 
-    constructor(address ibcConnection) {
-        ibcConnectionAddress = ibcConnection;
+    constructor(address _ibcConnectionAddress) {
+        require(Address.isContract(_ibcConnectionAddress));
+        ibcConnectionAddress = _ibcConnectionAddress;
     }
 
     function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_)

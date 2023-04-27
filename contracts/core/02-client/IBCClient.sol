@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./ILightClient.sol";
 import "../25-handler/IBCMsgs.sol";
@@ -17,7 +18,7 @@ contract IBCClient is IBCStore, IIBCClient {
      */
     function registerClient(string calldata clientType, ILightClient client) external override {
         require(address(clientRegistry[clientType]) == address(0), "clientImpl already exists");
-        require(address(client) != address(this));
+        require(address(client) != address(this) && Address.isContract(address(client)));
         clientRegistry[clientType] = address(client);
     }
 

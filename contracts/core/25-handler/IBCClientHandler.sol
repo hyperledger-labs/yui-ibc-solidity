@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../24-host/IBCHost.sol";
 import "../02-client/IIBCClient.sol";
 
@@ -13,8 +14,9 @@ abstract contract IBCClientHandler {
 
     event GeneratedClientIdentifier(string);
 
-    constructor(address ibcClient) {
-        ibcClientAddress = ibcClient;
+    constructor(address _ibcClientAddress) {
+        require(Address.isContract(_ibcClientAddress));
+        ibcClientAddress = _ibcClientAddress;
     }
 
     /**

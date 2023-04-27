@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Address.sol";
 import "../25-handler/IBCMsgs.sol";
 import "../24-host/IBCHost.sol";
 import "../04-channel/IIBCChannel.sol";
@@ -16,8 +17,9 @@ abstract contract IBCChannelHandler is ModuleManager {
 
     event GeneratedChannelIdentifier(string);
 
-    constructor(address ibcChannel) {
-        ibcChannelAddress = ibcChannel;
+    constructor(address _ibcChannelAddress) {
+        require(Address.isContract(_ibcChannelAddress));
+        ibcChannelAddress = _ibcChannelAddress;
     }
 
     function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) external returns (string memory channelId) {
