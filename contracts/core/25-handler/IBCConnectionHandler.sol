@@ -11,20 +11,20 @@ import "../03-connection/IIBCConnection.sol";
  */
 abstract contract IBCConnectionHandler {
     // IBC Connection contract address
-    address immutable ibcConnectionAddress;
+    address immutable ibcConnection;
 
     event GeneratedConnectionIdentifier(string);
 
-    constructor(address _ibcConnectionAddress) {
-        require(Address.isContract(_ibcConnectionAddress));
-        ibcConnectionAddress = _ibcConnectionAddress;
+    constructor(address _ibcConnection) {
+        require(Address.isContract(_ibcConnection), "address must be contract");
+        ibcConnection = _ibcConnection;
     }
 
     function connectionOpenInit(IBCMsgs.MsgConnectionOpenInit calldata msg_)
         external
         returns (string memory connectionId)
     {
-        (bool success, bytes memory res) = ibcConnectionAddress.delegatecall(
+        (bool success, bytes memory res) = ibcConnection.delegatecall(
             abi.encodeWithSelector(IIBCConnectionHandshake.connectionOpenInit.selector, msg_)
         );
         require(success);
@@ -37,9 +37,8 @@ abstract contract IBCConnectionHandler {
         external
         returns (string memory connectionId)
     {
-        (bool success, bytes memory res) = ibcConnectionAddress.delegatecall(
-            abi.encodeWithSelector(IIBCConnectionHandshake.connectionOpenTry.selector, msg_)
-        );
+        (bool success, bytes memory res) =
+            ibcConnection.delegatecall(abi.encodeWithSelector(IIBCConnectionHandshake.connectionOpenTry.selector, msg_));
         require(success);
         connectionId = abi.decode(res, (string));
         emit GeneratedConnectionIdentifier(connectionId);
@@ -47,14 +46,13 @@ abstract contract IBCConnectionHandler {
     }
 
     function connectionOpenAck(IBCMsgs.MsgConnectionOpenAck calldata msg_) external {
-        (bool success,) = ibcConnectionAddress.delegatecall(
-            abi.encodeWithSelector(IIBCConnectionHandshake.connectionOpenAck.selector, msg_)
-        );
+        (bool success,) =
+            ibcConnection.delegatecall(abi.encodeWithSelector(IIBCConnectionHandshake.connectionOpenAck.selector, msg_));
         require(success);
     }
 
     function connectionOpenConfirm(IBCMsgs.MsgConnectionOpenConfirm calldata msg_) external {
-        (bool success,) = ibcConnectionAddress.delegatecall(
+        (bool success,) = ibcConnection.delegatecall(
             abi.encodeWithSelector(IIBCConnectionHandshake.connectionOpenConfirm.selector, msg_)
         );
         require(success);

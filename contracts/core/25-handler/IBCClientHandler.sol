@@ -10,22 +10,21 @@ import "../02-client/IIBCClient.sol";
  */
 abstract contract IBCClientHandler {
     // IBC Client contract address
-    address immutable ibcClientAddress;
+    address immutable ibcClient;
 
     event GeneratedClientIdentifier(string);
 
-    constructor(address _ibcClientAddress) {
-        require(Address.isContract(_ibcClientAddress));
-        ibcClientAddress = _ibcClientAddress;
+    constructor(address _ibcClient) {
+        require(Address.isContract(_ibcClient), "address must be contract");
+        ibcClient = _ibcClient;
     }
 
     /**
      * @dev registerClient registers a new client type into the client registry
      */
     function registerClient(string calldata clientType, ILightClient client) public virtual {
-        (bool success,) = ibcClientAddress.delegatecall(
-            abi.encodeWithSelector(IIBCClient.registerClient.selector, clientType, client)
-        );
+        (bool success,) =
+            ibcClient.delegatecall(abi.encodeWithSelector(IIBCClient.registerClient.selector, clientType, client));
         require(success);
     }
 
@@ -34,7 +33,7 @@ abstract contract IBCClientHandler {
      */
     function createClient(IBCMsgs.MsgCreateClient calldata msg_) external returns (string memory clientId) {
         (bool success, bytes memory res) =
-            ibcClientAddress.delegatecall(abi.encodeWithSelector(IIBCClient.createClient.selector, msg_));
+            ibcClient.delegatecall(abi.encodeWithSelector(IIBCClient.createClient.selector, msg_));
         require(success);
         clientId = abi.decode(res, (string));
         emit GeneratedClientIdentifier(clientId);
@@ -45,7 +44,7 @@ abstract contract IBCClientHandler {
      * @dev updateClient updates the consensus state and the state root from a provided header
      */
     function updateClient(IBCMsgs.MsgUpdateClient calldata msg_) external {
-        (bool success,) = ibcClientAddress.delegatecall(abi.encodeWithSelector(IIBCClient.updateClient.selector, msg_));
+        (bool success,) = ibcClient.delegatecall(abi.encodeWithSelector(IIBCClient.updateClient.selector, msg_));
         require(success);
     }
 }

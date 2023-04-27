@@ -17,8 +17,8 @@ contract IBCClient is IBCStore, IIBCClient {
      * @dev registerClient registers a new client type into the client registry
      */
     function registerClient(string calldata clientType, ILightClient client) external override {
-        require(address(clientRegistry[clientType]) == address(0), "clientImpl already exists");
-        require(address(client) != address(this) && Address.isContract(address(client)));
+        require(address(clientRegistry[clientType]) == address(0), "clientType already exists");
+        require(address(client) != address(this) && Address.isContract(address(client)), "invalid client address");
         clientRegistry[clientType] = address(client);
     }
 
