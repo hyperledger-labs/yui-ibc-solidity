@@ -646,7 +646,11 @@ func (chain *Chain) SendPacket(
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.SendPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
-			packetToCallData(packet),
+			packet.SourcePort,
+			packet.SourceChannel,
+			ibchandler.HeightData(packet.TimeoutHeight),
+			packet.TimeoutTimestamp,
+			packet.Data,
 		),
 	)
 }
@@ -768,6 +772,13 @@ func (chain *Chain) FindPacket(
 	sourceChannel string,
 	sequence uint64,
 ) (*channeltypes.Packet, error) {
+	channel, found, err := chain.IBCHandler.GetChannel(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
+	if err != nil {
+		return nil, err
+	} else if !found {
+		return nil, fmt.Errorf("channel not found: sourcePortID=%v sourceChannel=%v", sourcePortID, sourceChannel)
+	}
+
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
@@ -786,29 +797,29 @@ func (chain *Chain) FindPacket(
 		if values, err := abiSendPacket.Inputs.Unpack(log.Data); err != nil {
 			return nil, err
 		} else {
-			p := values[0].(struct {
-				Sequence           uint64  "json:\"sequence\""
-				SourcePort         string  "json:\"source_port\""
-				SourceChannel      string  "json:\"source_channel\""
-				DestinationPort    string  "json:\"destination_port\""
-				DestinationChannel string  "json:\"destination_channel\""
-				Data               []uint8 "json:\"data\""
-				TimeoutHeight      struct {
-					RevisionNumber uint64 "json:\"revision_number\""
-					RevisionHeight uint64 "json:\"revision_height\""
-				} "json:\"timeout_height\""
-				TimeoutTimestamp uint64 "json:\"timeout_timestamp\""
+			if l := len(values); l != 6 {
+				return nil, fmt.Errorf("unexpected values length: expected=%v actual=%v", 6, l)
+			}
+			pSequence := values[0].(uint64)
+			pSourcePortID := values[1].(string)
+			pSourceChannel := values[2].(string)
+			pTimeoutHeight := values[3].(struct {
+				RevisionNumber uint64 "json:\"revision_number\""
+				RevisionHeight uint64 "json:\"revision_height\""
 			})
-			if p.SourcePort == sourcePortID && p.SourceChannel == sourceChannel && p.Sequence == sequence {
+			pTimeoutTimestamp := values[4].(uint64)
+			pData := values[5].([]uint8)
+
+			if pSequence == sequence && pSourcePortID == sourcePortID && pSourceChannel == sourceChannel {
 				return &channeltypes.Packet{
-					Sequence:           p.Sequence,
-					SourcePort:         p.SourcePort,
-					SourceChannel:      p.SourceChannel,
-					DestinationPort:    p.DestinationPort,
-					DestinationChannel: p.DestinationChannel,
-					Data:               p.Data,
-					TimeoutHeight:      ibcclient.Height(p.TimeoutHeight),
-					TimeoutTimestamp:   p.TimeoutTimestamp,
+					Sequence:           pSequence,
+					SourcePort:         pSourcePortID,
+					SourceChannel:      pSourceChannel,
+					DestinationPort:    channel.Counterparty.PortId,
+					DestinationChannel: channel.Counterparty.ChannelId,
+					Data:               pData,
+					TimeoutHeight:      ibcclient.Height{RevisionNumber: pTimeoutHeight.RevisionNumber, RevisionHeight: pTimeoutHeight.RevisionHeight},
+					TimeoutTimestamp:   pTimeoutTimestamp,
 				}, nil
 			}
 		}

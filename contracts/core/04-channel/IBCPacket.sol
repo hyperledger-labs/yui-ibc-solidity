@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "../../proto/Client.sol";
 import "../../proto/Channel.sol";
 import "../25-handler/IBCMsgs.sol";
 import "../02-client/IBCHeight.sol";
@@ -22,52 +23,46 @@ contract IBCPacket is IBCStore, IIBCPacket {
      * The packet sequence generated for the packet to be sent is returned. An error
      * is returned if one occurs.
      */
-    function sendPacket(Packet.Data calldata packet) external {
-        uint64 latestTimestamp;
-
-        Channel.Data storage channel = channels[packet.source_port][packet.source_channel];
+    function sendPacket(
+        string calldata sourcePort,
+        string calldata sourceChannel,
+        Height.Data calldata timeoutHeight,
+        uint64 timeoutTimestamp,
+        bytes calldata data
+    ) external returns (uint64) {
+        Channel.Data storage channel = channels[sourcePort][sourceChannel];
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
-        require(
-            hashString(packet.destination_port) == hashString(channel.counterparty.port_id),
-            "packet destination port doesn't match the counterparty's port"
-        );
-        require(
-            hashString(packet.destination_channel) == hashString(channel.counterparty.channel_id),
-            "packet destination channel doesn't match the counterparty's channel"
-        );
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        ILightClient client = ILightClient(clientImpls[connection.client_id]);
-        (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
-        require(
-            packet.timeout_height.isZero() || latestHeight.lt(packet.timeout_height),
-            "receiving chain block height >= packet timeout height"
-        );
-        (latestTimestamp, found) = client.getTimestampAtHeight(connection.client_id, latestHeight);
-        require(found, "consensusState not found");
-        require(
-            packet.timeout_timestamp == 0 || latestTimestamp < packet.timeout_timestamp,
-            "receiving chain block timestamp >= packet timeout timestamp"
-        );
 
-        require(
-            packet.sequence == nextSequenceSends[packet.source_port][packet.source_channel],
-            "packet sequence != next send sequence"
-        );
+        {
+            uint64 latestTimestamp;
+            ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
+            ILightClient client = ILightClient(clientImpls[connection.client_id]);
 
-        nextSequenceSends[packet.source_port][packet.source_channel]++;
-        commitments[IBCCommitment.packetCommitmentKey(packet.source_port, packet.source_channel, packet.sequence)] =
-        keccak256(
+            (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
+            require(
+                timeoutHeight.isZero() || latestHeight.lt(timeoutHeight),
+                "receiving chain block height >= packet timeout height"
+            );
+            (latestTimestamp, found) = client.getTimestampAtHeight(connection.client_id, latestHeight);
+            require(found, "consensusState not found");
+            require(
+                timeoutTimestamp == 0 || latestTimestamp < timeoutTimestamp,
+                "receiving chain block timestamp >= packet timeout timestamp"
+            );
+        }
+
+        uint64 packetSequence = nextSequenceSends[sourcePort][sourceChannel];
+        nextSequenceSends[sourcePort][sourceChannel] = packetSequence + 1;
+        commitments[IBCCommitment.packetCommitmentKey(sourcePort, sourceChannel, packetSequence)] = keccak256(
             abi.encodePacked(
                 sha256(
                     abi.encodePacked(
-                        packet.timeout_timestamp,
-                        packet.timeout_height.revision_number,
-                        packet.timeout_height.revision_height,
-                        sha256(packet.data)
+                        timeoutTimestamp, timeoutHeight.revision_number, timeoutHeight.revision_height, sha256(data)
                     )
                 )
             )
         );
+        return packetSequence;
     }
 
     /**
