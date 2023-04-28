@@ -34,15 +34,24 @@ Here are some such examples:
 
 ## Related projects
 
-- A demo of trustless bridge between Harmony and Cosmos(Tendermint): https://github.com/datachainlab/harmony-cosmos-bridge-demo
-- A demo of trustless bridge between Celo and Cosmos: https://github.com/ChorusOne/celo-cosmos-bridge
+- A demo of trustless bridge
+    - between Harmony and Cosmos(Tendermint): https://github.com/datachainlab/harmony-cosmos-bridge-demo
+    - between Celo and Cosmos: https://github.com/ChorusOne/celo-cosmos-bridge
 
 ## Development and Testing
+
+### Unit test
+
+```sh
+$ make test
+```
+
+### E2E test
 
 Launch two Hyperledger Besu chains(ethereum-compatible) with the contracts deployed with the following command:
 
 ```sh
-$ ./scripts/setup.sh testtwochainz
+$ make setup-e2e
 ```
 
 After launch the chains, execute the following command:
@@ -54,8 +63,8 @@ $ make e2e-test
 ## E2E-test with IBC-Relayer
 
 An example of E2E with IBC-Relayer([yui-relayer](https://github.com/hyperledger-labs/yui-relayer)) can be found here:
-- https://github.com/datachainlab/yui-relayer-build/tree/v0.2/tests/cases/tm2eth
-- https://github.com/datachainlab/yui-relayer-build/blob/v0.2/.github/workflows/v0.2-tm2eth.yml
+- https://github.com/datachainlab/yui-relayer-build/tree/v0.3/tests/cases/eth2eth
+- https://github.com/datachainlab/yui-relayer-build/blob/v0.3/.github/workflows/v0.3-eth2eth.yml
 
 ## For Developers
 

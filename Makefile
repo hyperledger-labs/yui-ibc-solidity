@@ -77,7 +77,3 @@ e2e-test:
 .PHONY: abigen
 abigen:
 	ABIGEN=$(ABIGEN) ./scripts/abigen.sh
-
-.PHONY: yrly
-yrly:
-	go build -o build/yrly ./relayer
