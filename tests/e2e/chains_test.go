@@ -13,8 +13,6 @@ import (
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
-	testchain0 "github.com/hyperledger-labs/yui-ibc-solidity/tests/e2e/config/chain0"
-	testchain1 "github.com/hyperledger-labs/yui-ibc-solidity/tests/e2e/config/chain1"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -39,8 +37,8 @@ func (suite *ChainTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	ibcID := uint64(time.Now().UnixNano())
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client), testchain0.Contract, mnemonicPhrase, ibcID)
-	suite.chainB = ibctesting.NewChain(suite.T(), 3018, clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client), testchain1.Contract, mnemonicPhrase, ibcID)
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client), mnemonicPhrase, ibcID)
+	suite.chainB = ibctesting.NewChain(suite.T(), 3018, clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client), mnemonicPhrase, ibcID)
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
@@ -73,13 +71,13 @@ func (suite ChainTestSuite) TestChannel() {
 	balanceA0, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.SimpleToken.Approve(chainA.TxOpts(ctx, deployerA), chainA.ContractConfig.GetICS20BankAddress(), big.NewInt(100)),
+		chainA.SimpleToken.Approve(chainA.TxOpts(ctx, deployerA), chainA.ContractConfig.ICS20BankAddress, big.NewInt(100)),
 	))
 
 	// deposit a simple token to the bank
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
 		chainA.TxOpts(ctx, deployerA),
-		chainA.ContractConfig.GetSimpleTokenAddress(),
+		chainA.ContractConfig.SimpleTokenAddress,
 		big.NewInt(100),
 		chainA.CallOpts(ctx, aliceA).From,
 	)))
@@ -89,7 +87,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(err)
 	suite.Require().Equal(balanceA0.Int64()-100, balanceA1.Int64())
 
-	baseDenom := strings.ToLower(chainA.ContractConfig.GetSimpleTokenAddress().String())
+	baseDenom := strings.ToLower(chainA.ContractConfig.SimpleTokenAddress.String())
 
 	bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, aliceA).From, baseDenom)
 	suite.Require().NoError(err)
@@ -131,7 +129,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
 	// ensure that escrow has correct balance
-	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, aliceA), chainA.ContractConfig.GetICS20TransferBankAddress(), baseDenom)
+	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, aliceA), chainA.ContractConfig.ICS20TransferBankAddress, baseDenom)
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
@@ -231,7 +229,7 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Bank.Withdraw(
 			chainA.TxOpts(ctx, aliceA),
-			chainA.ContractConfig.GetSimpleTokenAddress(),
+			chainA.ContractConfig.SimpleTokenAddress,
 			big.NewInt(100),
 			chainA.CallOpts(ctx, deployerA).From,
 		)))

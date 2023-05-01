@@ -1,6 +1,9 @@
 FORGE ?= forge
 SOLC_VERSION ?= 0.8.18
 ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
+DOCKER_COMPOSE ?= docker compose
+INTEGRATION_TEST_COMPOSE_FILE ?= ./chains/docker-compose.yml
+TEST_BROADCAST_LOG_DIR ?= ./broadcast/Deploy.s.sol
 
 ######## Development ########
 
@@ -56,23 +59,29 @@ proto-gen: proto-sol proto-go
 
 .PHONY: setup
 setup:
-	./scripts/setup.sh development
+	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up -d development && sleep 3s
+	$(FORGE) script --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8545 --broadcast \
+		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: setup-e2e
 setup-e2e:
-	./scripts/setup.sh testtwochainz
+	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up -d testchain0 testchain1 && sleep 3s
+	$(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
+		./tests/foundry/src/Deploy.s.sol
+	$(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
+		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: down
 down:
-	./scripts/setup.sh down
+	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) down
 
 .PHONY: integration-test
 integration-test:
-	go test -v ./tests/integration/... -count=1
+	TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/integration/... -count=1
 
 .PHONY: e2e-test
 e2e-test:
-	go test -v ./tests/e2e/... -count=1
+	TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
 
 .PHONY: abigen
 abigen:

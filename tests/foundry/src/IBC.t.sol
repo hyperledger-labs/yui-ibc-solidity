@@ -12,7 +12,7 @@ import "../../../contracts/clients/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";
-import "./TestableIBCHandler.t.sol";
+import "./helpers/TestableIBCHandler.t.sol";
 import "./MockApp.t.sol";
 
 // TODO split setup code into other contracts

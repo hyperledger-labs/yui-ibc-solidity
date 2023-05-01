@@ -2,24 +2,14 @@
   "name": "ibc-solidity",
   "version": "0.1.0",
   "description": "IBC in Solidity",
-  "directories": {
-    "test": "test"
-  },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
-    "@truffle/hdwallet-provider": "^2.0.15",
-    "ejs": "^3.1.7",
     "solidity-bytes-utils": "0.8.0",
     "solidity-rlp": "^2.0.7",
-    "solidity-stringutils": "git+https://github.com/ibc-solidity/solidity-stringutils.git#716294569dd2304ae8d81681951733542f999015",
-    "truffle": "5.6.6"
+    "solidity-stringutils": "git+https://github.com/ibc-solidity/solidity-stringutils.git#716294569dd2304ae8d81681951733542f999015"
   },
   "devDependencies": {
     "solhint": "^3.4.1"
-  },
-  "scripts": {
-    "postinstall": "truffle compile",
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jun Kimura",
   "license": "Apache-2.0"

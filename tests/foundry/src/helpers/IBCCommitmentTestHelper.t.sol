@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./IBCCommitment.sol";
+import "../../../../contracts/core/24-host/IBCCommitment.sol";
 
-library IBCCommitmentTestHelper {
+contract IBCCommitmentTestHelper {
     function clientStatePath(string memory clientId) external pure returns (bytes memory) {
         return IBCCommitment.clientStatePath(clientId);
     }
