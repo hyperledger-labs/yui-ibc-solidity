@@ -51,7 +51,7 @@ $ make test
 Launch two Hyperledger Besu chains(ethereum-compatible) with the contracts deployed with the following command:
 
 ```sh
-$ make setup-e2e
+$ make network-e2e
 ```
 
 After launch the chains, execute the following command:

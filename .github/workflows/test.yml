@@ -55,13 +55,13 @@ jobs:
       run: npm install
 
     - name: Setup ganache-cli
-      run: ./scripts/setup.sh development
+      run: make network-development
 
     - name: Integration test
       run: make integration-test
 
     - name: Setup chains for E2E test
-      run: ./scripts/setup.sh testtwochainz
+      run: make network-e2e
 
     - name: E2E test
       run: make e2e-test
