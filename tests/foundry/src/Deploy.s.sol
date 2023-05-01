@@ -12,14 +12,15 @@ import {IBFT2Client} from "../../../contracts/clients/IBFT2Client.sol";
 import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
 import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
 import {SimpleToken} from "../../../contracts/apps/20-transfer/SimpleToken.sol";
-import {IBCCommitmentTestHelper} from "./helpers/IBCCommitmentTestHelper.t.sol";
+import {IBCCommitmentTestHelper} from "./helpers/IBCCommitmentTestHelper.sol";
 
 contract DeployScript is Script {
     string private constant MOCK_CLIENT_TYPE = "mock-client";
     string private constant IBFT2_CLIENT_TYPE = "hyperledger-besu-ibft2";
 
     function run() external {
-        uint256 privateKey = vm.deriveKey(vm.envString("MNEMONIC"), uint32(vm.envOr("MNEMONIC_INDEX", uint32(0))));
+        uint256 privateKey =
+            vm.deriveKey(vm.envString("TEST_MNEMONIC"), uint32(vm.envOr("TEST_MNEMONIC_INDEX", uint32(0))));
         vm.startBroadcast(privateKey);
 
         // deploy core contracts

@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"strings"
 	"testing"
-	"time"
 
 	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
@@ -17,8 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
-
-const mnemonicPhrase = "math razor capable expose worth grape metal sunset metal sudden usage scheme"
 
 /*
 NOTE: This test is intended to be run on ganache. Therefore, we are using MockClient instead of IBFT2Client.
@@ -35,8 +32,8 @@ func (suite *ContractTestSuite) SetupTest() {
 	ethClient, err := client.NewETHClient("http://127.0.0.1:8545")
 	suite.Require().NoError(err)
 
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), mnemonicPhrase, uint64(time.Now().UnixNano()))
-	suite.chainB = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), mnemonicPhrase, uint64(time.Now().UnixNano()))
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient))
+	suite.chainB = ibctesting.NewChain(suite.T(), 2018, ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient))
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 

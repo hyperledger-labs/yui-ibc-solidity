@@ -17,7 +17,6 @@ import (
 )
 
 const (
-	mnemonicPhrase        = "math razor capable expose worth grape metal sunset metal sudden usage scheme"
 	delayPeriodExtensionA = 5
 	delayPeriodExtensionB = 10
 )
@@ -36,9 +35,8 @@ func (suite *ChainTestSuite) SetupTest() {
 	clientB, err := client.NewETHClient("http://127.0.0.1:8745")
 	suite.Require().NoError(err)
 
-	ibcID := uint64(time.Now().UnixNano())
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client), mnemonicPhrase, ibcID)
-	suite.chainB = ibctesting.NewChain(suite.T(), 3018, clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client), mnemonicPhrase, ibcID)
+	suite.chainA = ibctesting.NewChain(suite.T(), 2018, clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client))
+	suite.chainB = ibctesting.NewChain(suite.T(), 3018, clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client))
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 

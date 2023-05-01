@@ -4,6 +4,7 @@ ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:allto
 DOCKER_COMPOSE ?= docker compose
 INTEGRATION_TEST_COMPOSE_FILE ?= ./chains/docker-compose.yml
 TEST_BROADCAST_LOG_DIR ?= ./broadcast/Deploy.s.sol
+TEST_MNEMONIC ?= "math razor capable expose worth grape metal sunset metal sudden usage scheme"
 
 ######## Development ########
 
@@ -59,16 +60,16 @@ proto-gen: proto-sol proto-go
 
 .PHONY: network-development
 network-development:
-	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up -d development && sleep 3s
-	$(FORGE) script --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8545 --broadcast \
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up -d development && sleep 3s
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8545 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: network-e2e
 network-e2e:
 	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up -d testchain0 testchain1 && sleep 3s
-	$(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
-	$(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: network-down
@@ -77,11 +78,11 @@ network-down:
 
 .PHONY: integration-test
 integration-test:
-	TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/integration/... -count=1
+	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/integration/... -count=1
 
 .PHONY: e2e-test
 e2e-test:
-	TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
+	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
 
 .PHONY: abigen
 abigen:

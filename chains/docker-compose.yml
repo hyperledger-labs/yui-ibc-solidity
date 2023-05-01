@@ -5,7 +5,7 @@ services:
     ports:
       - 8545:8545
       - 8546:8546
-    command: --chain.chainId 2018 -p 8545 -m "math razor capable expose worth grape metal sunset metal sudden usage scheme"
+    command: --chain.chainId 2018 -p 8545 -m "${TEST_MNEMONIC}"
   testchain0:
     build: ./besu/chain0
     ports:

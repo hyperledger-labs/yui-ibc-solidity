@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../../../../contracts/core/OwnableIBCHandler.sol";
+import "../../../contracts/core/OwnableIBCHandler.sol";
 
 contract TestableIBCHandler is OwnableIBCHandler {
     constructor(address ibcClient, address ibcConnection, address ibcChannelHandshake, address ibcPacket)

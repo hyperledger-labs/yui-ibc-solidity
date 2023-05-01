@@ -68,11 +68,11 @@ func init() {
 type Chain struct {
 	t *testing.T
 
-	chainID        int64
-	client         *client.ETHClient
-	lc             *LightClient
-	mnemonicPhrase string
-	keys           map[uint32]*ecdsa.PrivateKey
+	chainID  int64
+	client   *client.ETHClient
+	lc       *LightClient
+	mnemonic string
+	keys     map[uint32]*ecdsa.PrivateKey
 
 	ContractConfig ContractConfig
 
@@ -91,10 +91,13 @@ type Chain struct {
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
 	Connections []*TestConnection // track connectionID's created for this chain
-	IBCID       uint64
 }
 
-func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightClient, mnemonicPhrase string, ibcID uint64) *Chain {
+func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightClient) *Chain {
+	mnemonic := os.Getenv("TEST_MNEMONIC")
+	if mnemonic == "" {
+		t.Fatal("environ variable 'TEST_MNEMONIC' is empty")
+	}
 	logDir := os.Getenv("TEST_BROADCAST_LOG_DIR")
 	if logDir == "" {
 		t.Fatal("environ variable 'TEST_BROADCAST_LOG_DIR' is empty")
@@ -129,10 +132,9 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 		client:         client,
 		chainID:        chainID,
 		lc:             lc,
+		mnemonic:       mnemonic,
 		ContractConfig: *config,
-		mnemonicPhrase: mnemonicPhrase,
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
-		IBCID:          ibcID,
 
 		IBCHandler:    *ibcHandler,
 		IBCCommitment: *ibcCommitment,
@@ -168,7 +170,7 @@ func (chain *Chain) prvKey(index uint32) *ecdsa.PrivateKey {
 	if ok {
 		return key
 	}
-	key, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(chain.mnemonicPhrase, fmt.Sprintf("m/44'/60'/0'/0/%v", index))
+	key, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(chain.mnemonic, fmt.Sprintf("m/44'/60'/0'/0/%v", index))
 	if err != nil {
 		panic(err)
 	}
