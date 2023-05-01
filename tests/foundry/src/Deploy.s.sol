@@ -19,8 +19,8 @@ contract DeployScript is Script {
     string private constant IBFT2_CLIENT_TYPE = "hyperledger-besu-ibft2";
 
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        uint256 privateKey = vm.deriveKey(vm.envString("MNEMONIC"), uint32(vm.envOr("MNEMONIC_INDEX", uint32(0))));
+        vm.startBroadcast(privateKey);
 
         // deploy core contracts
         address ibcClient = address(new IBCClient());
