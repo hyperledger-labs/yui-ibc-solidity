@@ -8,20 +8,16 @@ fi
 
 function gen_code() {
     local source=$1;
-    if [ $# == 1 ]; then
-        local target=$(echo ${source} | tr A-Z a-z)
-    else
-        local target=$2;
-    fi
+    local target=$(echo ${source} | tr A-Z a-z)
 
-    mkdir -p ./build/abi ./pkg/contract
-    mkdir -p ./pkg/contract/${target}
-	jq -r '.abi' ./build/contracts/${source}.json > ./build/abi/${source}.abi
+    mkdir -p ./build/abi ./pkg/contract/${target}
+	jq -r '.abi' ./out/${source}.sol/${source}.json > ./build/abi/${source}.abi
 	${ABIGEN} --abi ./build/abi/${source}.abi --pkg ${target} --out ./pkg/contract/${target}/${target}.go
 }
 
 function main() {
     local srcs=(
+        "IBCHandler"
         "SimpleToken"
         "ICS20TransferBank"
         "ICS20Bank"
@@ -30,8 +26,6 @@ function main() {
     for src in "${srcs[@]}" ; do
         gen_code ${src}
     done
-    # rename OwnableIBCHandler to IBCHandler
-    gen_code OwnableIBCHandler ibchandler
 }
 
 main
