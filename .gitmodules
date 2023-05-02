@@ -10,3 +10,6 @@
 [submodule "lib/Solidity-RLP"]
 	path = lib/Solidity-RLP
 	url = https://github.com/hamdiallam/Solidity-RLP
+[submodule "lib/solidity-stringutils"]
+	path = lib/solidity-stringutils
+	url = https://github.com/Arachnid/solidity-stringutils
