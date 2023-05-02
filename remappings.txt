@@ -1,0 +1,6 @@
+solidity-rlp/=lib/Solidity-RLP/contracts/
+ds-test/=lib/forge-std/lib/ds-test/src/
+forge-std/=lib/forge-std/src/
+openzeppelin-contracts/=lib/openzeppelin-contracts/contracts
+solidity-bytes-utils/=lib/solidity-bytes-utils/contracts/
+solidity-stringutils/=lib/solidity-stringutils/src

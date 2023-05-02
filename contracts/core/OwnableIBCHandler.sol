@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "openzeppelin-contracts/access/Ownable.sol";
 import "./25-handler/IBCHandler.sol";
 
 /**

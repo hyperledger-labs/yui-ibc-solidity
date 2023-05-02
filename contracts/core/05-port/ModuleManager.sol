@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/Address.sol";
+import "openzeppelin-contracts/utils/Address.sol";
 import "./IIBCModule.sol";
 
 /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "openzeppelin-contracts/utils/Strings.sol";
 
 library IBCCommitment {
     // Commitment path generators that comply with https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#path-space

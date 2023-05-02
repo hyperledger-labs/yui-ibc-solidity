@@ -10,9 +10,9 @@ import {
     IbcLightclientsIbft2V1Header as Header
 } from "../proto/IBFT2.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
-import "solidity-rlp/contracts/RLPReader.sol";
+import "openzeppelin-contracts/utils/cryptography/ECDSA.sol";
+import "solidity-bytes-utils/BytesLib.sol";
+import "solidity-rlp/RLPReader.sol";
 import "../lib/TrieProofs.sol";
 
 // please see docs/ibft2-light-client.md for client spec

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/Context.sol";
+import "openzeppelin-contracts/utils/Context.sol";
 import "../../core/05-port/IIBCModule.sol";
 
 /**

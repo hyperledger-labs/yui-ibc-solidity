@@ -6,8 +6,8 @@ import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
 import "../../proto/Channel.sol";
 import "../../proto/FungibleTokenPacketData.sol";
-import "solidity-stringutils/src/strings.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
+import "solidity-stringutils/strings.sol";
+import "solidity-bytes-utils/BytesLib.sol";
 
 abstract contract ICS20Transfer is IBCAppBase {
     using strings for *;
