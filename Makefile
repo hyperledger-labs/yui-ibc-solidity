@@ -61,15 +61,15 @@ proto-gen: proto-sol proto-go
 .PHONY: network-development
 network-development:
 	TEST_MNEMONIC=$(TEST_MNEMONIC) $(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up --detach --wait development
-	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8545 --broadcast \
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8545 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: network-e2e
 network-e2e:
 	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up --detach --wait testchain0 testchain1
-	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
-	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: network-down
