@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -93,7 +92,7 @@ type Chain struct {
 	Connections []*TestConnection // track connectionID's created for this chain
 }
 
-func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightClient) *Chain {
+func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient) *Chain {
 	mnemonic := os.Getenv("TEST_MNEMONIC")
 	if mnemonic == "" {
 		t.Fatal("environ variable 'TEST_MNEMONIC' is empty")
@@ -102,7 +101,11 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 	if logDir == "" {
 		t.Fatal("environ variable 'TEST_BROADCAST_LOG_DIR' is empty")
 	}
-	config, err := buildContractConfigFromBroadcastLog(filepath.Join(logDir, strconv.Itoa(int(chainID)), "run-latest.json"))
+	chainID, err := client.ChainID(context.TODO())
+	if err != nil {
+		t.Fatal(err)
+	}
+	config, err := buildContractConfigFromBroadcastLog(filepath.Join(logDir, chainID.String(), "run-latest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +133,7 @@ func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightCl
 	return &Chain{
 		t:              t,
 		client:         client,
-		chainID:        chainID,
+		chainID:        chainID.Int64(),
 		lc:             lc,
 		mnemonic:       mnemonic,
 		ContractConfig: *config,

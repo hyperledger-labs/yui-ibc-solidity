@@ -35,8 +35,8 @@ func (suite *ChainTestSuite) SetupTest() {
 	clientB, err := client.NewETHClient("http://127.0.0.1:8745")
 	suite.Require().NoError(err)
 
-	suite.chainA = ibctesting.NewChain(suite.T(), 2018, clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client))
-	suite.chainB = ibctesting.NewChain(suite.T(), 3018, clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client))
+	suite.chainA = ibctesting.NewChain(suite.T(), clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client))
+	suite.chainB = ibctesting.NewChain(suite.T(), clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client))
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 

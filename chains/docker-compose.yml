@@ -5,7 +5,7 @@ services:
     ports:
       - 8545:8545
       - 8546:8546
-    command: --chain.chainId 2018 -p 8545 -m "${TEST_MNEMONIC}"
+    command: --chain.chainId 1337 -p 8545 -m "${TEST_MNEMONIC}"
     healthcheck:
       test: [ "CMD-SHELL", "grep 00000000:2161 /proc/**/net/tcp" ]
       interval: 1s
