@@ -7,25 +7,25 @@ if [ -z "$ABIGEN" ]; then
 fi
 
 function gen_code() {
-    local source=$1;
-    local target=$(echo ${source} | tr A-Z a-z)
+  local source=$1;
+  local target=$(echo ${source} | tr A-Z a-z)
 
-    mkdir -p ./build/abi ./pkg/contract/${target}
-	jq -r '.abi' ./out/${source}.sol/${source}.json > ./build/abi/${source}.abi
-	${ABIGEN} --abi ./build/abi/${source}.abi --pkg ${target} --out ./pkg/contract/${target}/${target}.go
+  mkdir -p ./build/abi ./pkg/contract/${target}
+  jq -r '.abi' ./out/${source}.sol/${source}.json > ./build/abi/${source}.abi
+  ${ABIGEN} --abi ./build/abi/${source}.abi --pkg ${target} --out ./pkg/contract/${target}/${target}.go
 }
 
 function main() {
-    local srcs=(
-        "IBCHandler"
-        "SimpleToken"
-        "ICS20TransferBank"
-        "ICS20Bank"
-        "IBCCommitmentTestHelper"
-    )
-    for src in "${srcs[@]}" ; do
-        gen_code ${src}
-    done
+  local srcs=(
+    "IBCHandler"
+    "SimpleToken"
+    "ICS20TransferBank"
+    "ICS20Bank"
+    "IBCCommitmentTestHelper"
+  )
+  for src in "${srcs[@]}" ; do
+    gen_code ${src}
+  done
 }
 
 main
