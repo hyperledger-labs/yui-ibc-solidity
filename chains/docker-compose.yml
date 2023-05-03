@@ -5,14 +5,29 @@ services:
     ports:
       - 8545:8545
       - 8546:8546
-    command: --chain.chainId 2018 -p 8545 -m "math razor capable expose worth grape metal sunset metal sudden usage scheme"
+    command: --chain.chainId 1337 -p 8545 -m "${TEST_MNEMONIC}"
+    healthcheck:
+      test: [ "CMD-SHELL", "grep 00000000:2161 /proc/**/net/tcp" ]
+      interval: 1s
+      timeout: 10s
+      retries: 10
   testchain0:
     build: ./besu/chain0
     ports:
       - 8645:8545
       - 8646:8546
+    healthcheck:
+      test: [ "CMD-SHELL", "grep 00000000:2161 /proc/**/net/tcp" ]
+      interval: 1s
+      timeout: 10s
+      retries: 20
   testchain1:
     build: ./besu/chain1
     ports:
       - 8745:8545
       - 8746:8546
+    healthcheck:
+      test: [ "CMD-SHELL", "grep 00000000:2161 /proc/**/net/tcp" ]
+      interval: 1s
+      timeout: 10s
+      retries: 20

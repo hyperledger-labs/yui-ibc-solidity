@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -65,11 +67,11 @@ func init() {
 type Chain struct {
 	t *testing.T
 
-	chainID        int64
-	client         *client.ETHClient
-	lc             *LightClient
-	mnemonicPhrase string
-	keys           map[uint32]*ecdsa.PrivateKey
+	chainID  int64
+	client   *client.ETHClient
+	lc       *LightClient
+	mnemonic string
+	keys     map[uint32]*ecdsa.PrivateKey
 
 	ContractConfig ContractConfig
 
@@ -88,49 +90,54 @@ type Chain struct {
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
 	Connections []*TestConnection // track connectionID's created for this chain
-	IBCID       uint64
 }
 
-type ContractConfig interface {
-	GetIBCHandlerAddress() common.Address
-	GetIBCCommitmentTestHelperAddress() common.Address
-
-	GetSimpleTokenAddress() common.Address
-	GetICS20TransferBankAddress() common.Address
-	GetICS20BankAddress() common.Address
-}
-
-func NewChain(t *testing.T, chainID int64, client *client.ETHClient, lc *LightClient, config ContractConfig, mnemonicPhrase string, ibcID uint64) *Chain {
-	ibcHandler, err := ibchandler.NewIbchandler(config.GetIBCHandlerAddress(), client)
-	if err != nil {
-		t.Error(err)
+func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient) *Chain {
+	mnemonic := os.Getenv("TEST_MNEMONIC")
+	if mnemonic == "" {
+		t.Fatal("environ variable 'TEST_MNEMONIC' is empty")
 	}
-	ibcCommitment, err := ibccommitment.NewIbccommitmenttesthelper(config.GetIBCCommitmentTestHelperAddress(), client)
-	if err != nil {
-		t.Error(err)
+	logDir := os.Getenv("TEST_BROADCAST_LOG_DIR")
+	if logDir == "" {
+		t.Fatal("environ variable 'TEST_BROADCAST_LOG_DIR' is empty")
 	}
-	simpletoken, err := simpletoken.NewSimpletoken(config.GetSimpleTokenAddress(), client)
+	chainID, err := client.ChainID(context.TODO())
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-	ics20transfer, err := ics20transferbank.NewIcs20transferbank(config.GetICS20TransferBankAddress(), client)
+	config, err := buildContractConfigFromBroadcastLog(filepath.Join(logDir, chainID.String(), "run-latest.json"))
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-	ics20bank, err := ics20bank.NewIcs20bank(config.GetICS20BankAddress(), client)
+	ibcHandler, err := ibchandler.NewIbchandler(config.IBCHandlerAddress, client)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
+	}
+	ibcCommitment, err := ibccommitment.NewIbccommitmenttesthelper(config.IBCCommitmentTestHelperAddress, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	simpletoken, err := simpletoken.NewSimpletoken(config.SimpleTokenAddress, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ics20transfer, err := ics20transferbank.NewIcs20transferbank(config.ICS20TransferBankAddress, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ics20bank, err := ics20bank.NewIcs20bank(config.ICS20BankAddress, client)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	return &Chain{
 		t:              t,
 		client:         client,
-		chainID:        chainID,
+		chainID:        chainID.Int64(),
 		lc:             lc,
-		ContractConfig: config,
-		mnemonicPhrase: mnemonicPhrase,
+		mnemonic:       mnemonic,
+		ContractConfig: *config,
 		keys:           make(map[uint32]*ecdsa.PrivateKey),
-		IBCID:          ibcID,
 
 		IBCHandler:    *ibcHandler,
 		IBCCommitment: *ibcCommitment,
@@ -166,7 +173,7 @@ func (chain *Chain) prvKey(index uint32) *ecdsa.PrivateKey {
 	if ok {
 		return key
 	}
-	key, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(chain.mnemonicPhrase, fmt.Sprintf("m/44'/60'/0'/0/%v", index))
+	key, err := wallet.GetPrvKeyFromMnemonicAndHDWPath(chain.mnemonic, fmt.Sprintf("m/44'/60'/0'/0/%v", index))
 	if err != nil {
 		panic(err)
 	}
@@ -244,7 +251,7 @@ func (chain *Chain) GetLightClientState(counterparty *Chain, counterpartyClientI
 	}
 	return chain.lc.GetState(
 		context.Background(),
-		chain.ContractConfig.GetIBCHandlerAddress(),
+		chain.ContractConfig.IBCHandlerAddress,
 		storageKeys,
 		height,
 	)
@@ -275,7 +282,7 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandler.IBCMsgsMsgCreateClient {
 	clientState := ibft2clienttypes.ClientState{
 		ChainId:         counterparty.ChainIDString(),
-		IbcStoreAddress: counterparty.ContractConfig.GetIBCHandlerAddress().Bytes(),
+		IbcStoreAddress: counterparty.ContractConfig.IBCHandlerAddress.Bytes(),
 		LatestHeight:    ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 	}
 	consensusState := ibft2clienttypes.ConsensusState{
@@ -337,7 +344,7 @@ func (chain *Chain) UpdateHeader() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		state, err := chain.lc.GetState(ctx, chain.ContractConfig.GetIBCHandlerAddress(), nil, nil)
+		state, err := chain.lc.GetState(ctx, chain.ContractConfig.IBCHandlerAddress, nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -733,7 +740,7 @@ func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, err
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
-			chain.ContractConfig.GetIBCHandlerAddress(),
+			chain.ContractConfig.IBCHandlerAddress,
 		},
 		Topics: [][]common.Hash{{
 			event.ID,
@@ -782,7 +789,7 @@ func (chain *Chain) FindPacket(
 	query := ethereum.FilterQuery{
 		FromBlock: big.NewInt(0),
 		Addresses: []common.Address{
-			chain.ContractConfig.GetIBCHandlerAddress(),
+			chain.ContractConfig.IBCHandlerAddress,
 		},
 		Topics: [][]common.Hash{{
 			abiSendPacket.ID,

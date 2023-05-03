@@ -1,6 +1,10 @@
 FORGE ?= forge
 SOLC_VERSION ?= 0.8.18
 ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
+DOCKER_COMPOSE ?= docker compose
+INTEGRATION_TEST_COMPOSE_FILE ?= ./chains/docker-compose.yml
+TEST_BROADCAST_LOG_DIR ?= ./broadcast/Deploy.s.sol
+TEST_MNEMONIC ?= "math razor capable expose worth grape metal sunset metal sudden usage scheme"
 
 ######## Development ########
 
@@ -54,25 +58,31 @@ proto-gen: proto-sol proto-go
 
 ######## Integration test ########
 
-.PHONY: setup
-setup:
-	./scripts/setup.sh development
+.PHONY: network-development
+network-development:
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up --detach --wait development
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8545 --broadcast \
+		./tests/foundry/src/Deploy.s.sol
 
-.PHONY: setup-e2e
-setup-e2e:
-	./scripts/setup.sh testtwochainz
+.PHONY: network-e2e
+network-e2e:
+	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up --detach --wait testchain0 testchain1
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
+		./tests/foundry/src/Deploy.s.sol
+	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
+		./tests/foundry/src/Deploy.s.sol
 
-.PHONY: down
-down:
-	./scripts/setup.sh down
+.PHONY: network-down
+network-down:
+	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) down
 
 .PHONY: integration-test
 integration-test:
-	go test -v ./tests/integration/... -count=1
+	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/integration/... -count=1
 
 .PHONY: e2e-test
 e2e-test:
-	go test -v ./tests/e2e/... -count=1
+	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
 
 .PHONY: abigen
 abigen:
