@@ -36,6 +36,10 @@ jobs:
     needs: contract-test
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
     - uses: actions/setup-go@v3
       with:
         go-version-file: go.mod
@@ -49,10 +53,6 @@ jobs:
       uses: foundry-rs/foundry-toolchain@v1
       with:
         version: nightly
-
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
 
     - name: Resolve dependencies
       run: npm install
