@@ -13,11 +13,11 @@ import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 import "solidity-rlp/contracts/RLPReader.sol";
-import "../lib/TrieProofs.sol";
+import "solidity-mpt/src/MPTProof.sol";
 
 // please see docs/ibft2-light-client.md for client spec
 contract IBFT2Client is ILightClient {
-    using TrieProofs for bytes;
+    using MPTProof for bytes;
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
     using BytesLib for bytes;
@@ -419,15 +419,14 @@ contract IBFT2Client is ILightClient {
         returns (bool)
     {
         bytes32 path = keccak256(abi.encodePacked(slot));
-        bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
+        bytes memory dataHash = proof.verifyRLPProof(root, path); // reverts if proof is invalid
         return expectedValue == bytes32(dataHash.toRlpItem().toUint());
     }
 
-    function verifyNonMembership(bytes calldata, bytes32, bytes32) internal pure returns (bool) {
-        // bytes32 path = keccak256(abi.encodePacked(slot));
-        // bytes memory dataHash = proof.verify(root, path); // reverts if proof is invalid
-        // return dataHash.toRlpItem().toBytes().length == 0;
-        revert("not implemented");
+    function verifyNonMembership(bytes calldata proof, bytes32 root, bytes32 slot) internal pure returns (bool) {
+        bytes32 path = keccak256(abi.encodePacked(slot));
+        bytes memory dataHash = proof.verifyRLPProof(root, path); // reverts if proof is invalid
+        return dataHash.toRlpItem().toBytes().length == 0;
     }
 
     function parseBesuHeader(Header.Data memory header) internal pure returns (ParsedBesuHeader memory) {
@@ -453,7 +452,7 @@ contract IBFT2Client is ILightClient {
         returns (bytes32)
     {
         bytes32 proofPath = keccak256(abi.encodePacked(account));
-        bytes memory accountRLP = accountStateProof.verify(stateRoot, proofPath); // reverts if proof is invalid
+        bytes memory accountRLP = accountStateProof.verifyRLPProof(stateRoot, proofPath); // reverts if proof is invalid
         return bytes32(accountRLP.toRlpItem().toList()[ACCOUNT_STORAGE_ROOT_INDEX].toUint());
     }
 
