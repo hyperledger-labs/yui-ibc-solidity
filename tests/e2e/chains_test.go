@@ -66,26 +66,26 @@ func (suite ChainTestSuite) TestChannel() {
 
 	/// Tests for Transfer module ///
 
-	balanceA0, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	balanceA0, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.SimpleToken.Approve(chainA.TxOpts(ctx, deployerA), chainA.ContractConfig.ICS20BankAddress, big.NewInt(100)),
+		chainA.ERC20.Approve(chainA.TxOpts(ctx, deployerA), chainA.ContractConfig.ICS20BankAddress, big.NewInt(100)),
 	))
 
 	// deposit a simple token to the bank
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
 		chainA.TxOpts(ctx, deployerA),
-		chainA.ContractConfig.SimpleTokenAddress,
+		chainA.ContractConfig.ERC20TokenAddress,
 		big.NewInt(100),
 		chainA.CallOpts(ctx, aliceA).From,
 	)))
 
 	// ensure that the balance is reduced
-	balanceA1, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	balanceA1, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
 	suite.Require().Equal(balanceA0.Int64()-100, balanceA1.Int64())
 
-	baseDenom := strings.ToLower(chainA.ContractConfig.SimpleTokenAddress.String())
+	baseDenom := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
 
 	bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, aliceA).From, baseDenom)
 	suite.Require().NoError(err)
@@ -227,13 +227,13 @@ func (suite ChainTestSuite) TestChannel() {
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Bank.Withdraw(
 			chainA.TxOpts(ctx, aliceA),
-			chainA.ContractConfig.SimpleTokenAddress,
+			chainA.ContractConfig.ERC20TokenAddress,
 			big.NewInt(100),
 			chainA.CallOpts(ctx, deployerA).From,
 		)))
 
 	// ensure that token balance equals original value
-	balanceA2, err := chainA.SimpleToken.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	balanceA2, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
 	suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 

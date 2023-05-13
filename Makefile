@@ -85,5 +85,5 @@ e2e-test:
 	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
 
 .PHONY: abigen
-abigen:
+abigen: build
 	ABIGEN=$(ABIGEN) ./scripts/abigen.sh

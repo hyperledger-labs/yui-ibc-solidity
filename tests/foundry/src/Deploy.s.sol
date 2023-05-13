@@ -11,7 +11,7 @@ import {MockClient} from "../../../contracts/clients/MockClient.sol";
 import {IBFT2Client} from "../../../contracts/clients/IBFT2Client.sol";
 import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
 import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
-import {SimpleToken} from "../../../contracts/apps/20-transfer/SimpleToken.sol";
+import {ERC20Token} from "../../../contracts/apps/20-transfer/ERC20Token.sol";
 import {IBCCommitmentTestHelper} from "./helpers/IBCCommitmentTestHelper.sol";
 
 contract DeployScript is Script {
@@ -43,7 +43,7 @@ contract DeployScript is Script {
         handler.registerClient(IBFT2_CLIENT_TYPE, ibft2Client);
 
         // deploy test helpers
-        new SimpleToken("simple", "simple", 1000000);
+        new ERC20Token("test", "test", 1000000);
         new IBCCommitmentTestHelper();
 
         vm.stopBroadcast();

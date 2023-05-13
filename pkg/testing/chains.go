@@ -23,11 +23,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	ibccommitment "github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitmenttesthelper"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/simpletoken"
 	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2"
 	mockclienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/mock"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
@@ -80,7 +80,7 @@ type Chain struct {
 	IBCCommitment ibccommitment.Ibccommitmenttesthelper
 
 	// App Modules
-	SimpleToken   simpletoken.Simpletoken
+	ERC20         erc20.Erc20
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
 
@@ -117,7 +117,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient) *Chain {
 	if err != nil {
 		t.Fatal(err)
 	}
-	simpletoken, err := simpletoken.NewSimpletoken(config.SimpleTokenAddress, client)
+	erc20_, err := erc20.NewErc20(config.ERC20TokenAddress, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient) *Chain {
 		IBCHandler:    *ibcHandler,
 		IBCCommitment: *ibcCommitment,
 
-		SimpleToken:   *simpletoken,
+		ERC20:         *erc20_,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
 	}
