@@ -18,7 +18,7 @@ function gen_code() {
 function main() {
   local srcs=(
     "IBCHandler"
-    "SimpleToken"
+    "ERC20"
     "ICS20TransferBank"
     "ICS20Bank"
     "IBCCommitmentTestHelper"
