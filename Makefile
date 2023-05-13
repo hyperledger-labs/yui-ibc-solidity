@@ -1,5 +1,5 @@
 FORGE ?= forge
-SOLC_VERSION ?= 0.8.18
+SOLC_VERSION ?= 0.8.19
 ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 DOCKER_COMPOSE ?= docker compose
 INTEGRATION_TEST_COMPOSE_FILE ?= ./chains/docker-compose.yml

@@ -9,7 +9,7 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
     "solidity-bytes-utils": "0.8.0",
-    "solidity-rlp": "^2.0.7",
+    "solidity-rlp": "^2.0.8",
     "solidity-stringutils": "git+https://github.com/ibc-solidity/solidity-stringutils.git#716294569dd2304ae8d81681951733542f999015",
     "solidity-mpt": "^0.1.0",
     "truffle": "5.8.4"
