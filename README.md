@@ -19,9 +19,9 @@ NOTE: This is yet pre-beta non-production-quality software.
 
 ## Documents
 
-Please see [here](./docs/README.md).
-
-In addition, a tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/).
+- [Architecture Overview](./docs/architecture.md)
+- [Learn how to develop an IBC Module](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/)
+- [IBFT 2.0 Light Client spec](./docs/ibft2-light-client.md)
 
 ## Supported Light Client
 
