@@ -19,9 +19,9 @@ NOTE: This is yet pre-beta non-production-quality software.
 
 ## Documents
 
-Please see [here](./docs/README.md).
-
-In addition, a tutorial is [here](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/).
+- [Architecture Overview](./docs/architecture.md)
+- [Learn how to develop an IBC Module](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/)
+- [IBFT 2.0 Light Client spec](./docs/ibft2-light-client.md)
 
 ## Supported Light Client
 
@@ -38,7 +38,7 @@ Here are some such examples:
     - between Harmony and Cosmos(Tendermint): https://github.com/datachainlab/harmony-cosmos-bridge-demo
     - between Celo and Cosmos: https://github.com/ChorusOne/celo-cosmos-bridge
 
-## Development and Testing
+## For Developers
 
 ### Unit test
 
@@ -60,13 +60,13 @@ After launch the chains, execute the following command:
 $ make e2e-test
 ```
 
-## E2E-test with IBC-Relayer
+### E2E-test with IBC-Relayer
 
 An example of E2E with IBC-Relayer([yui-relayer](https://github.com/hyperledger-labs/yui-relayer)) can be found here:
 - https://github.com/datachainlab/yui-relayer-build/tree/v0.3/tests/cases/eth2eth
 - https://github.com/datachainlab/yui-relayer-build/blob/v0.3/.github/workflows/v0.3-eth2eth.yml
 
-## For Developers
+### solidity-protobuf
 
 To generate the proto encoders and decoders in solidity from proto files, you need to use the code generator [solidity-protobuf](https://github.com/datachainlab/solidity-protobuf)
 
