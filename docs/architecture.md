@@ -2,7 +2,7 @@
 
 IBC-Solidity is an IBC implementation in solidity. Many implementations comply with [ICS](https://github.com/cosmos/ibc) and [ibc-go](https://github.com/cosmos/ibc-go).
 
-This document describes the overview of architecture and some specs that take into account the limitations of ethereum and solidity.
+This document describes the overview of architecture and key points that we consider the limitations of ethereum and solidity.
 
 ## Repository Structure
 
@@ -29,7 +29,7 @@ contracts/
 
 ![architecture](./architecture-01.png)
 
-To relax the contract size limit of ethereum, each ICS implementation is split into [IBCClient](../contracts/core/02-client/IBCClient.sol), [IBCConnection](../contracts/core/03-connection/IBCConnection.sol), [IBCChannel](../contracts/core/04-channel/IBCChannelHandshake.sol), [IBCPacket](../contracts/core/04-channel/IBCPacket.sol), and [IBCHandler](../contracts/core/25-handler/IBCHandler.sol) contracts, as shown in the figure above.
+To relax the contract size limit of ethereum, each ICS implementation is split into [IBCClient](../contracts/core/02-client/IBCClient.sol), [IBCConnection](../contracts/core/03-connection/IBCConnection.sol), [IBCChannel](../contracts/core/04-channel/IBCChannelHandshake.sol), [IBCPacket](../contracts/core/04-channel/IBCPacket.sol), and [IBCHandler](../contracts/core/25-handler/IBCHandler.sol) contracts, as shown in the above figure.
 
 In general, such a design causes storage splitting, so it is required to implement unnecessary authentication and accessors for inter-contract calls.
 
@@ -52,11 +52,11 @@ https://github.com/cosmos/ibc/blob/01dbba90d238169c4905c7b11969ec7987e22729/spec
 
 In ibc-solidity, we define state variables (e.g. connections, channels) of the type defined with proto3 corresponding to each state. In addition, define a mapping state variable that represents the commitments to satisfy the externally provable property of the `provableStore`. For the key of the mapping, keccak256 of the ICS-23 `Path` is used, and for the value, keccak256 of the ICS-23 `Value` is used.
 
-So how do we get proof of commitments? State variables of contracts defined in solidity are stored in storage according to [this layout spec](https://docs.soliditylang.org/en/latest/internals/layout_in_storage).
+So how do we get a proof of the commitments state variable? In Solidity, state variables of contracts defined are stored in storage according to [this layout spec](https://docs.soliditylang.org/en/latest/internals/layout_in_storage).
 
 The storage location for each commitment is calculated as follows: assume that the slot of the commitments state variable is `s` and a ICS-23 commitment path is `p`, the storage location is `keccak256(keccak256(p) . s)`.
 
-You can query an existence/non-existence proof of a commitment corresponding to the location using [`eth_getProof`](https://eips.ethereum.org/EIPS/eip-1186) provided by ethereum execution client. An example go code is [here](https://github.com/datachainlab/ethereum-ibc-relay-prover/blob/074f9a895e50aa49c4c4a1df2c679f2c10c096db/relay/prover.go#L416).
+Also, you can query an existence/non-existence proof of a commitment corresponding to the location using [`eth_getProof`](https://eips.ethereum.org/EIPS/eip-1186) provided by ethereum execution client. An example go code is [here](https://github.com/datachainlab/ethereum-ibc-relay-prover/blob/074f9a895e50aa49c4c4a1df2c679f2c10c096db/relay/prover.go#L416).
 
 ## Light Client
 
@@ -72,7 +72,7 @@ You can support any light client via developing a contract that implements [ILig
 
 - `verifyNonMembership`: A generic proof verification method that verifies the absence of a given CommitmentPath at a specified height. The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path as defined in ICS-24.
 
-The registered light client can be initialized by `createClient`, which can be used to verify the handshake process to establish connections and channels.
+The registered light client can be instantiated by `createClient`, which can be used to verify the handshake process to establish connections and channels.
 
 Different from ibc-go, the light client contract keeps the state in own contract storage in ibc-solidity. This is an optimization based on the high cost of serialization state and read/write storage in solidity. For this reason, `createClient` and `updateClient` only return a commitment.
 
@@ -140,6 +140,6 @@ The packet sending flow using the `EchoApp` is the following:
 	- The `IBCHandler` ensure that the acknowledgement commitment is valid and calls `onAcknowledgementPacket` of the `EchoApp`.
 	- In `onAcknowledgementPacket`, ensure that acknowledgement data matches the send message("hello")
 
-Also, Apps can also define callback functions for state transitions in the channel handshake. See [IIBCModule interface](../contracts/core/05-port/IIBCModule.sol) for more details.
+Also, an App can define callback functions for state transitions in the channel handshake. See [IIBCModule interface](../contracts/core/05-port/IIBCModule.sol) for more details.
 
 Further example implementations are [ICS-20 implementation](../contracts/apps/20-transfer) and a [tutorial](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/minitoken/overview) that describes e2e packet relay using a small IBC-App called minitoken.
