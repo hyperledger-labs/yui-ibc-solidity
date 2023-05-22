@@ -32,6 +32,7 @@ interface ILightClient {
     /**
      * @dev updateClient updates the client corresponding to `clientId`.
      * If succeeded, it returns a commitment for the updated state.
+     * If there is no update for client state, this function should returns bytes32(0) as `clientStateCommitment`
      * If there are no updates for consensus state, this function should returns an empty array as `updates`.
      *
      * NOTE: updateClient is intended to perform the followings:
