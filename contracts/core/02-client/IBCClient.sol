@@ -54,7 +54,9 @@ contract IBCClient is IBCStore, IIBCClient {
         require(ok, "failed to update client");
 
         // update commitments
-        commitments[keccak256(IBCCommitment.clientStatePath(msg_.clientId))] = clientStateCommitment;
+        if (clientStateCommitment != 0) {
+            commitments[keccak256(IBCCommitment.clientStatePath(msg_.clientId))] = clientStateCommitment;
+        }
         for (uint256 i = 0; i < updates.length; i++) {
             commitments[IBCCommitment.consensusStateCommitmentKey(
                 msg_.clientId, updates[i].height.revision_number, updates[i].height.revision_height

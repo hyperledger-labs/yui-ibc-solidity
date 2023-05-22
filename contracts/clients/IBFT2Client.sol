@@ -152,6 +152,7 @@ contract IBFT2Client is ILightClient {
 
         if (parsedHeader.height.gt(clientState.latest_height)) {
             clientState.latest_height = parsedHeader.height;
+            clientStateCommitment = keccak256(marshalClientState(clientState));
         }
         // if client message is verified and there is no misbehaviour, update state
         consensusState = consensusStates[clientId][newHeight];
@@ -173,7 +174,7 @@ contract IBFT2Client is ILightClient {
         processedTimes[clientId][newHeight] = block.timestamp;
         processedHeights[clientId][newHeight] = block.number;
 
-        return (keccak256(marshalClientState(clientState)), updates, true);
+        return (clientStateCommitment, updates, true);
     }
 
     /**

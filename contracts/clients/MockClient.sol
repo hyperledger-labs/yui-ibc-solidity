@@ -109,15 +109,16 @@ contract MockClient is ILightClient {
     {
         Height.Data memory height;
         uint64 timestamp;
-        Any.Data memory anyClientState;
         Any.Data memory anyConsensusState;
 
         (height, timestamp) = parseHeader(clientMessageBytes);
         if (height.gt(clientStates[clientId].latest_height)) {
+            Any.Data memory anyClientState;
             clientStates[clientId].latest_height = height;
+            anyClientState.type_url = CLIENT_STATE_TYPE_URL;
+            anyClientState.value = ClientState.encode(clientStates[clientId]);
+            clientStateCommitment = keccak256(Any.encode(anyClientState));
         }
-        anyClientState.type_url = CLIENT_STATE_TYPE_URL;
-        anyClientState.value = ClientState.encode(clientStates[clientId]);
 
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         consensusState.timestamp = timestamp;
@@ -128,7 +129,7 @@ contract MockClient is ILightClient {
         updates = new ConsensusStateUpdate[](1);
         updates[0] =
             ConsensusStateUpdate({consensusStateCommitment: keccak256(Any.encode(anyConsensusState)), height: height});
-        return (keccak256(Any.encode(anyClientState)), updates, true);
+        return (clientStateCommitment, updates, true);
     }
 
     /**
