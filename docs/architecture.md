@@ -52,7 +52,7 @@ https://github.com/cosmos/ibc/blob/01dbba90d238169c4905c7b11969ec7987e22729/spec
 
 In ibc-solidity, we define state variables (e.g. connections, channels) of the type defined with proto3 corresponding to each state. In addition, define a mapping state variable that represents the commitments to satisfy the externally provable property of the `provableStore`. For the key of the mapping, keccak256 of the ICS-23 `Path` is used, and for the value, keccak256 of the ICS-23 `Value` is used.
 
-So how do we get a proof of the commitments state variable? In Solidity, state variables of contracts defined are stored in storage according to [this layout spec](https://docs.soliditylang.org/en/latest/internals/layout_in_storage).
+So how do we get a proof of the commitments state variable? In Solidity, state variables of contracts defined are stored in storage according to [this layout spec](https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html).
 
 The storage location for each commitment is calculated as follows: assume that the slot of the commitments state variable is `s` and a ICS-23 commitment path is `p`, the storage location is `keccak256(keccak256(p) . s)`.
 
