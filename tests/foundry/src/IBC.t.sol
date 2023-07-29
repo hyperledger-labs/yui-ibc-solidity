@@ -17,6 +17,8 @@ import "./MockApp.t.sol";
 
 // TODO split setup code into other contracts
 contract IBCTest is Test {
+    using IBCHeight for Height.Data;
+
     TestableIBCHandler handler;
     MockClient mockClient;
     MockApp mockApp;
@@ -88,6 +90,11 @@ contract IBCTest is Test {
     }
 
     /* test cases */
+
+    function testToUint128(Height.Data memory height) public pure {
+        Height.Data memory actual = IBCHeight.fromUint128(IBCHeight.toUint128(height));
+        assert(height.eq(actual));
+    }
 
     function testConnectionOpenInit() public {
         createMockClient(1);
