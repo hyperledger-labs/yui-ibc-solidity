@@ -8,6 +8,10 @@ library IBCHeight {
         return (uint128(self.revision_number) << 64) | uint128(self.revision_height);
     }
 
+    function fromUint128(uint128 height) internal pure returns (Height.Data memory) {
+        return Height.Data({revision_number: uint64(height >> 64), revision_height: uint64(height)});
+    }
+
     function isZero(Height.Data memory self) internal pure returns (bool) {
         return self.revision_number == 0 && self.revision_height == 0;
     }
