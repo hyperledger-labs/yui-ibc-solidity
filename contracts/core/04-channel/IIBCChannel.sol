@@ -40,7 +40,7 @@ interface IIBCPacket {
     /**
      * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
      * The packet sequence generated for the packet to be sent is returned. An error
-     * is returned if one occurs.
+     * is returned if one occurs. Also, `timeoutTimestamp` is given in nanoseconds since unix epoch.
      */
     function sendPacket(
         string calldata sourcePort,

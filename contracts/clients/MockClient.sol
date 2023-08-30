@@ -74,6 +74,7 @@ contract MockClient is ILightClient {
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
+     *      The timestamp is nanoseconds since unix epoch.
      */
     function getTimestampAtHeight(string calldata clientId, Height.Data calldata height)
         external

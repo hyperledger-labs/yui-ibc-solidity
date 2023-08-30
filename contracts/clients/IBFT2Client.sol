@@ -91,6 +91,7 @@ contract IBFT2Client is ILightClient {
 
     /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
+     *      The timestamp is nanoseconds since unix epoch.
      */
     function getTimestampAtHeight(string calldata clientId, Height.Data calldata height)
         external
@@ -99,7 +100,8 @@ contract IBFT2Client is ILightClient {
         returns (uint64, bool)
     {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        return (consensusState.timestamp, consensusState.timestamp != 0);
+        // ConsensState.timestamp is seconds since unix epoch, so need to convert it to nanoseconds
+        return (consensusState.timestamp * 1e9, consensusState.timestamp != 0);
     }
 
     /**

@@ -155,7 +155,7 @@ contract IBCTest is Test {
                     })
                     ),
                 consensusStateBytes: wrapAnyMockConsensusState(
-                    IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp)})
+                    IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp * 1e9)})
                     )
             })
         );
@@ -168,7 +168,7 @@ contract IBCTest is Test {
                 clientMessage: wrapAnyMockHeader(
                     IbcLightclientsMockV1Header.Data({
                         height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
-                        timestamp: uint64(block.timestamp)
+                        timestamp: uint64(block.timestamp * 1e9)
                     })
                     )
             })

@@ -262,7 +262,7 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 		LatestHeight: ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 	}
 	consensusState := mockclienttypes.ConsensusState{
-		Timestamp: counterparty.LastHeader().Time,
+		Timestamp: counterparty.LastHeader().Time * 1e9,
 	}
 	clientStateBytes, err := MarshalWithAny(&clientState)
 	if err != nil {
