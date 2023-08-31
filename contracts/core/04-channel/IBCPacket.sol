@@ -90,7 +90,7 @@ contract IBCPacket is IBCStore, IIBCPacket {
             "block height >= packet timeout height"
         );
         require(
-            msg_.packet.timeout_timestamp == 0 || block.timestamp < msg_.packet.timeout_timestamp,
+            msg_.packet.timeout_timestamp == 0 || block.timestamp * 1e9 < msg_.packet.timeout_timestamp,
             "block timestamp >= packet timeout timestamp"
         );
 
