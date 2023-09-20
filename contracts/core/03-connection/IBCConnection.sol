@@ -13,8 +13,6 @@ import "../03-connection/IIBCConnection.sol";
  * @dev IBCConnection is a contract that implements [ICS-3](https://github.com/cosmos/ibc/tree/main/spec/core/ics-003-connection-semantics).
  */
 contract IBCConnection is IBCStore, IIBCConnectionHandshake {
-    string private constant COMMITMENT_PREFIX = "ibc";
-
     /* Handshake functions */
 
     /**
@@ -67,7 +65,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
             counterparty: Counterparty.Data({
                 client_id: msg_.clientId,
                 connection_id: "",
-                prefix: MerklePrefix.Data({key_prefix: bytes(COMMITMENT_PREFIX)})
+                prefix: MerklePrefix.Data({key_prefix: getCommitmentPrefix()})
             })
         });
 
@@ -109,7 +107,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         Counterparty.Data memory expectedCounterparty = Counterparty.Data({
             client_id: connection.client_id,
             connection_id: msg_.connectionId,
-            prefix: MerklePrefix.Data({key_prefix: bytes(COMMITMENT_PREFIX)})
+            prefix: MerklePrefix.Data({key_prefix: getCommitmentPrefix()})
         });
 
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
@@ -155,7 +153,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         Counterparty.Data memory expectedCounterparty = Counterparty.Data({
             client_id: connection.client_id,
             connection_id: msg_.connectionId,
-            prefix: MerklePrefix.Data({key_prefix: bytes(COMMITMENT_PREFIX)})
+            prefix: MerklePrefix.Data({key_prefix: getCommitmentPrefix()})
         });
 
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
