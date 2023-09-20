@@ -30,8 +30,22 @@ abstract contract IBCStore {
     uint64 internal nextConnectionSequence;
     uint64 internal nextChannelSequence;
 
+    // It represents the prefix of the commitment proof(https://github.com/cosmos/ibc/tree/main/spec/core/ics-023-vector-commitments#prefix).
+    // In ibc-solidity, the prefix is not required, but for compatibility with ibc-go this must be a non-empty value.
+    bytes internal constant DEFAULT_COMMITMENT_PREFIX = bytes("ibc");
+
+    /**
+     * @dev getCommitmentPrefix returns the prefix of the commitment proof.
+     */
+    function getCommitmentPrefix() public pure virtual returns (bytes memory) {
+        return DEFAULT_COMMITMENT_PREFIX;
+    }
+
     // Storage accessors
 
+    /**
+     * @dev checkAndGetClient returns the client implementation for the given client ID.
+     */
     function checkAndGetClient(string memory clientId) internal view returns (ILightClient) {
         address clientImpl = clientImpls[clientId];
         require(clientImpl != address(0));

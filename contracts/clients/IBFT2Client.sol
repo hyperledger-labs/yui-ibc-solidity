@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "../core/02-client/ILightClient.sol";
 import "../core/02-client/IBCHeight.sol";
+import "../core/25-handler/IBCHandler.sol";
 import "../proto/Client.sol";
 import {
     IbcLightclientsIbft2V1ClientState as ClientState,
@@ -413,7 +414,7 @@ contract IBFT2Client is ILightClient {
             return false;
         }
 
-        return true;
+        return keccak256(IBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix);
     }
 
     function verifyMembership(bytes calldata proof, bytes32 root, bytes32 slot, bytes32 expectedValue)
