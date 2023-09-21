@@ -40,7 +40,7 @@ func (suite *ChainTestSuite) SetupTest() {
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
-func (suite ChainTestSuite) TestChannel() {
+func (suite *ChainTestSuite) TestChannel() {
 	ctx := context.Background()
 
 	const (
