@@ -84,8 +84,8 @@ type Chain struct {
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
 
-	// State
-	LastLCState LightClientState
+	// Input data for light client
+	LatestLCInputData LightClientInputData
 
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
@@ -238,7 +238,7 @@ func (chain *Chain) GetMockClientState(clientID string) *mockclienttypes.ClientS
 	return &cs
 }
 
-func (chain *Chain) GetLightClientState(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (LightClientState, error) {
+func (chain *Chain) GetLightClientInputData(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (LightClientInputData, error) {
 	if height == nil {
 		switch counterparty.ClientType() {
 		case ibcclient.MockClient:
@@ -249,7 +249,7 @@ func (chain *Chain) GetLightClientState(counterparty *Chain, counterpartyClientI
 			return nil, fmt.Errorf("unknown client type: '%v'", counterparty.ClientType())
 		}
 	}
-	return chain.lc.GetState(
+	return chain.lc.GenerateInputData(
 		context.Background(),
 		chain.ContractConfig.IBCHandlerAddress,
 		storageKeys,
@@ -288,7 +288,7 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 	consensusState := ibft2clienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Time,
 		Root:       counterparty.LastHeader().Root.Bytes(),
-		Validators: counterparty.LastLCState.(IBFT2State).Validators(),
+		Validators: counterparty.LatestLCInputData.(IBFT2LightClientInputData).Validators(),
 	}
 	clientStateBytes, err := MarshalWithAny(&clientState)
 	if err != nil {
@@ -306,7 +306,7 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 }
 
 func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
-	cs := counterparty.LastLCState.(ETHState)
+	cs := counterparty.LatestLCInputData.(ETHLightClientInputData)
 	header := mockclienttypes.Header{
 		Height:    ibcclient.NewHeightFromBN(cs.Header().Number),
 		Timestamp: cs.Header().Time,
@@ -323,12 +323,12 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 
 func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IBCMsgsMsgUpdateClient {
 	trustedHeight := chain.GetIBFT2ClientState(clientID).LatestHeight
-	cs := counterparty.LastLCState.(IBFT2State)
+	cs := counterparty.LatestLCInputData.(IBFT2LightClientInputData)
 	var header = ibft2clienttypes.Header{
 		BesuHeaderRlp:     cs.SealingHeaderRLP(),
 		Seals:             cs.CommitSeals,
 		TrustedHeight:     trustedHeight,
-		AccountStateProof: cs.Proof().AccountProofRLP,
+		AccountStateProof: cs.MembershipProof().AccountProofRLP,
 	}
 	bz, err := MarshalWithAny(&header)
 	if err != nil {
@@ -340,16 +340,16 @@ func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID 
 	}
 }
 
-func (chain *Chain) UpdateHeader() {
+func (chain *Chain) UpdateLCInputData() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		state, err := chain.lc.GetState(ctx, chain.ContractConfig.IBCHandlerAddress, nil, nil)
+		data, err := chain.lc.GenerateInputData(ctx, chain.ContractConfig.IBCHandlerAddress, nil, nil)
 		if err != nil {
 			panic(err)
 		}
-		if chain.LastLCState == nil || state.Header().Number.Cmp(chain.LastHeader().Number) == 1 {
-			chain.LastLCState = state
+		if chain.LatestLCInputData == nil || data.Header().Number.Cmp(chain.LastHeader().Number) == 1 {
+			chain.LatestLCInputData = data
 			return
 		} else {
 			continue
@@ -859,13 +859,13 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	if !strings.HasPrefix(storageKey, "0x") {
 		return nil, fmt.Errorf("storageKey must be hex string")
 	}
-	s, err := chain.GetLightClientState(counterparty, counterpartyClientID, [][]byte{[]byte(storageKey)}, height)
+	s, err := chain.GetLightClientInputData(counterparty, counterpartyClientID, [][]byte{[]byte(storageKey)}, height)
 	if err != nil {
 		return nil, err
 	}
 	return &Proof{
 		Height: ibcclient.NewHeightFromBN(s.Header().Number),
-		Data:   s.Proof().StorageProofRLP[0],
+		Data:   s.MembershipProof().StorageProofRLP[0],
 	}, nil
 }
 
@@ -941,7 +941,7 @@ func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID 
 }
 
 func (chain *Chain) LastHeader() *gethtypes.Header {
-	return chain.LastLCState.Header()
+	return chain.LatestLCInputData.Header()
 }
 
 func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) error {

@@ -21,27 +21,27 @@ func NewLightClient(cl *client.ETHClient, clientType string) *LightClient {
 	return &LightClient{client: cl, clientType: clientType}
 }
 
-type LightClientState interface {
+type LightClientInputData interface {
 	Header() *gethtypes.Header
-	Proof() *client.StateProof
+	MembershipProof() *client.StateProof
 }
 
 func (lc LightClient) ClientType() string {
 	return lc.clientType
 }
 
-func (lc LightClient) GetState(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (LightClientState, error) {
+func (lc LightClient) GenerateInputData(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (LightClientInputData, error) {
 	switch lc.clientType {
 	case ibcclient.BesuIBFT2Client:
-		return lc.GetIBFT2State(ctx, address, storageKeys, bn)
+		return lc.GetIBFT2InputData(ctx, address, storageKeys, bn)
 	case ibcclient.MockClient:
-		return lc.GetMockContractState(ctx, address, storageKeys, bn)
+		return lc.GetMockInputData(ctx, address, storageKeys, bn)
 	default:
 		panic(fmt.Sprintf("unknown client type '%v'", lc.clientType))
 	}
 }
 
-func (lc LightClient) GetMockContractState(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (LightClientState, error) {
+func (lc LightClient) GetMockInputData(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (LightClientInputData, error) {
 	block, err := lc.client.BlockByNumber(ctx, bn)
 	if err != nil {
 		return nil, err
@@ -50,11 +50,11 @@ func (lc LightClient) GetMockContractState(ctx context.Context, address common.A
 	proof := &client.StateProof{
 		StorageProofRLP: make([][]byte, len(storageKeys)),
 	}
-	return ETHState{header: block.Header(), StateProof: proof}, nil
+	return ETHLightClientInputData{header: block.Header(), StateProof: proof}, nil
 }
 
-func (lc LightClient) GetIBFT2State(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (LightClientState, error) {
-	var state IBFT2State
+func (lc LightClient) GetIBFT2InputData(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (LightClientInputData, error) {
+	var state IBFT2LightClientInputData
 	block, err := lc.client.BlockByNumber(ctx, bn)
 	if err != nil {
 		return nil, err
@@ -75,36 +75,36 @@ func (lc LightClient) GetIBFT2State(ctx context.Context, address common.Address,
 	return state, nil
 }
 
-type ETHState struct {
+type ETHLightClientInputData struct {
 	header     *gethtypes.Header
 	StateProof *client.StateProof
 }
 
-var _ LightClientState = (*ETHState)(nil)
+var _ LightClientInputData = (*ETHLightClientInputData)(nil)
 
-func (cs ETHState) Header() *gethtypes.Header {
+func (cs ETHLightClientInputData) Header() *gethtypes.Header {
 	return cs.header
 }
 
-func (cs ETHState) Proof() *client.StateProof {
+func (cs ETHLightClientInputData) MembershipProof() *client.StateProof {
 	return cs.StateProof
 }
 
-type IBFT2State struct {
+type IBFT2LightClientInputData struct {
 	ParsedHeader *chains.ParsedHeader
 	StateProof   *client.StateProof
 	CommitSeals  [][]byte
 }
 
-func (cs IBFT2State) Header() *gethtypes.Header {
+func (cs IBFT2LightClientInputData) Header() *gethtypes.Header {
 	return cs.ParsedHeader.Base
 }
 
-func (cs IBFT2State) Proof() *client.StateProof {
+func (cs IBFT2LightClientInputData) MembershipProof() *client.StateProof {
 	return cs.StateProof
 }
 
-func (cs IBFT2State) ChainHeaderRLP() []byte {
+func (cs IBFT2LightClientInputData) ChainHeaderRLP() []byte {
 	bz, err := cs.ParsedHeader.GetChainHeaderBytes()
 	if err != nil {
 		panic(err)
@@ -112,7 +112,7 @@ func (cs IBFT2State) ChainHeaderRLP() []byte {
 	return bz
 }
 
-func (cs IBFT2State) SealingHeaderRLP() []byte {
+func (cs IBFT2LightClientInputData) SealingHeaderRLP() []byte {
 	bz, err := cs.ParsedHeader.GetSealingHeaderBytes()
 	if err != nil {
 		panic(err)
@@ -120,11 +120,11 @@ func (cs IBFT2State) SealingHeaderRLP() []byte {
 	return bz
 }
 
-func (cs IBFT2State) GetCommitSeals() [][]byte {
+func (cs IBFT2LightClientInputData) GetCommitSeals() [][]byte {
 	return cs.CommitSeals
 }
 
-func (cs IBFT2State) Validators() [][]byte {
+func (cs IBFT2LightClientInputData) Validators() [][]byte {
 	var addrs [][]byte
 	for _, val := range cs.ParsedHeader.Validators {
 		addrs = append(addrs, val.Bytes())

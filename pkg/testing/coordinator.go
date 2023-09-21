@@ -16,9 +16,9 @@ type Coordinator struct {
 }
 
 func NewCoordinator(t *testing.T, chains ...*Chain) Coordinator {
+	// initialize the input data for the light clients
 	for _, chain := range chains {
-		// initialize LastLCState of chain
-		chain.UpdateHeader()
+		chain.UpdateLCInputData()
 	}
 	return Coordinator{t: t, chains: chains}
 }
@@ -60,9 +60,9 @@ func (coord *Coordinator) SetupClientConnections(
 	return clientA, clientB, connA, connB
 }
 
-func (coord *Coordinator) UpdateHeaders() {
+func (coord *Coordinator) UpdateLCInputData() {
 	for _, c := range coord.chains {
-		c.UpdateHeader()
+		c.UpdateLCInputData()
 	}
 }
 
@@ -92,6 +92,7 @@ func (c Coordinator) UpdateClient(
 	source, counterparty *Chain,
 	clientID string,
 ) error {
+	counterparty.UpdateLCInputData()
 	var err error
 	switch counterparty.ClientType() {
 	case clienttypes.BesuIBFT2Client:
@@ -190,8 +191,6 @@ func (c Coordinator) ConnOpenInit(
 		sourceConnection.ID = connID
 	}
 
-	source.UpdateHeader()
-
 	// update source client on counterparty connection
 	if err := c.UpdateClient(
 		ctx,
@@ -218,8 +217,6 @@ func (c *Coordinator) ConnOpenTry(
 		sourceConnection.ID = connID
 	}
 
-	source.UpdateHeader()
-
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
@@ -239,8 +236,6 @@ func (c *Coordinator) ConnOpenAck(
 		return err
 	}
 
-	source.UpdateHeader()
-
 	// update source client on counterparty connection
 	return c.UpdateClient(
 		ctx,
@@ -259,8 +254,6 @@ func (c *Coordinator) ConnOpenConfirm(
 	if err := source.ConnectionOpenConfirm(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
 		return err
 	}
-
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -291,8 +284,6 @@ func (c *Coordinator) ChanOpenInit(
 		sourceChannel.ID = channelID
 	}
 
-	source.UpdateHeader()
-
 	// update source client on counterparty connection
 	err := c.UpdateClient(
 		ctx,
@@ -317,7 +308,6 @@ func (c *Coordinator) ChanOpenTry(
 	} else {
 		sourceChannel.ID = channelID
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -337,7 +327,6 @@ func (c *Coordinator) ChanOpenAck(
 	if err := source.ChannelOpenAck(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -357,7 +346,6 @@ func (c *Coordinator) ChanOpenConfirm(
 	if err := source.ChannelOpenConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	return c.UpdateClient(
 		ctx,
@@ -375,7 +363,6 @@ func (c *Coordinator) ChanCloseInit(
 	if err := source.ChannelCloseInit(ctx, sourceChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	return c.UpdateClient(
 		ctx,
@@ -394,7 +381,6 @@ func (c *Coordinator) ChanCloseConfirm(
 	if err := source.ChannelCloseConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	return c.UpdateClient(
 		ctx,
@@ -414,7 +400,6 @@ func (c *Coordinator) SendPacket(
 	if err := source.SendPacket(ctx, packet); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -433,7 +418,6 @@ func (c *Coordinator) HandlePacketRecv(
 	if err := source.HandlePacketRecv(ctx, counterparty, sourceChannel, counterpartyChannel, packet); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -453,7 +437,6 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 	if err := source.HandlePacketAcknowledgement(ctx, counterparty, sourceChannel, counterpartyChannel, packet, acknowledgement); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(

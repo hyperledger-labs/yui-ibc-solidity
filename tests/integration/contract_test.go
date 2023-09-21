@@ -143,7 +143,7 @@ func (suite *ContractTestSuite) TestChannel() {
 				uint64(chainB.LastHeader().Number.Int64())+1000,
 			),
 		))
-		chainA.UpdateHeader()
+
 		suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
 		// ensure that escrow has correct balance
@@ -178,7 +178,7 @@ func (suite *ContractTestSuite) TestChannel() {
 				uint64(chainA.LastHeader().Number.Int64())+1000,
 			),
 		))
-		chainB.UpdateHeader()
+
 		suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 		// relay the packet

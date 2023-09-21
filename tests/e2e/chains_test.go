@@ -122,7 +122,6 @@ func (suite *ChainTestSuite) TestChannel() {
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
 	))
-	chainA.UpdateHeader()
 	delayStartTimeForRecv = time.Now()
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
@@ -194,7 +193,7 @@ func (suite *ChainTestSuite) TestChannel() {
 			uint64(chainA.LastHeader().Number.Int64())+1000,
 		),
 	))
-	chainB.UpdateHeader()
+
 	delayStartTimeForRecv = time.Now()
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
