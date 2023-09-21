@@ -253,12 +253,12 @@ contract IBCPacket is IBCStore, IIBCPacket {
             require(found, "clientState not found");
             (proofTimestamp, found) = client.getTimestampAtHeight(connection.client_id, latestHeight);
             require(found, "consensusState not found");
-
-            require(
+            if (
                 (msg_.packet.timeout_height.isZero() || msg_.proofHeight.lt(msg_.packet.timeout_height))
-                    && (msg_.packet.timeout_timestamp == 0 || proofTimestamp < msg_.packet.timeout_timestamp),
-                "packet timeout has not been reached for height or timestamp"
-            );
+                    && (msg_.packet.timeout_timestamp == 0 || proofTimestamp < msg_.packet.timeout_timestamp)
+            ) {
+                revert("packet timeout has not been reached for height or timestamp");
+            }
         }
 
         {
