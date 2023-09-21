@@ -681,7 +681,7 @@ func (chain *Chain) HandlePacketRecv(
 		chain.IBCHandler.RecvPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgPacketRecv{
-				Packet:      packetToCallData(packet),
+				Packet:      PacketToCallData(packet),
 				Proof:       proof.Data,
 				ProofHeight: proof.Height.ToCallData(),
 			},
@@ -709,7 +709,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 		chain.IBCHandler.AcknowledgePacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IBCMsgsMsgPacketAcknowledgement{
-				Packet:          packetToCallData(packet),
+				Packet:          PacketToCallData(packet),
 				Acknowledgement: acknowledgement,
 				Proof:           proof.Data,
 				ProofHeight:     proof.Height.ToCallData(),
@@ -835,7 +835,7 @@ func (chain *Chain) FindPacket(
 	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
 }
 
-func packetToCallData(packet channeltypes.Packet) ibchandler.PacketData {
+func PacketToCallData(packet channeltypes.Packet) ibchandler.PacketData {
 	return ibchandler.PacketData{
 		Sequence:           packet.Sequence,
 		SourcePort:         packet.SourcePort,

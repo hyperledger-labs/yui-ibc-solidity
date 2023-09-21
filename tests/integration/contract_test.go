@@ -10,6 +10,7 @@ import (
 	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
@@ -202,18 +203,97 @@ func (suite *ContractTestSuite) TestChannel() {
 		suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 	}
 
-	// close channel
-	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
-	// confirm that the channel is CLOSED on chain A
-	chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
-	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
-	// confirm that the channel is CLOSED on chain B
-	chanData, ok, err = chainB.IBCHandler.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
-	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+	// Case: timeout packet
+	{
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainA.ERC20.Approve(chainA.TxOpts(ctx, deployer), chainA.ContractConfig.ICS20BankAddress, big.NewInt(100)),
+		))
+
+		// deposit a simple token to the bank
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
+			chainA.TxOpts(ctx, deployer),
+			chainA.ContractConfig.ERC20TokenAddress,
+			big.NewInt(100),
+			chainA.CallOpts(ctx, alice).From,
+		)))
+
+		// try to transfer the token to chainB
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainA.ICS20Transfer.SendTransfer(
+				chainA.TxOpts(ctx, alice),
+				denomA,
+				100,
+				chainB.CallOpts(ctx, bob).From,
+				chanA.PortID, chanA.ID,
+				uint64(chainB.LastHeader().Number.Int64())+1,
+			),
+		))
+		transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		// should fail to timeout packet because the timeout height is not reached
+		suite.Require().Error(chainA.WaitIfNoError(ctx)(
+			chainA.IBCHandler.TimeoutPacket(
+				chainA.TxOpts(ctx, deployer),
+				ibchandler.IBCMsgsMsgTimeoutPacket{
+					Packet: ibctesting.PacketToCallData(*transferPacket),
+					Proof:  []byte{}, // NOTE: assume to use the mock client
+					ProofHeight: ibchandler.HeightData{
+						RevisionNumber: 0,
+						RevisionHeight: uint64(chainB.LatestLCInputData.Header().Number.Int64()),
+					},
+				},
+			)),
+		)
+
+		// execute a meaningless transaction to increase the block height
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainB.ERC20.Approve(chainA.TxOpts(ctx, deployer), chainB.ContractConfig.ICS20BankAddress, big.NewInt(0)),
+		))
+		// then, update the client to reach the timeout height
+		suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+
+		_, found, err := chainA.IBCHandler.GetHashedPacketCommitment(chainA.CallOpts(ctx, relayer), transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence)
+		suite.Require().NoError(err)
+		suite.Require().True(found)
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainA.IBCHandler.TimeoutPacket(
+				chainA.TxOpts(ctx, deployer),
+				ibchandler.IBCMsgsMsgTimeoutPacket{
+					Packet: ibctesting.PacketToCallData(*transferPacket),
+					Proof:  []byte{}, // NOTE: assume to use the mock client
+					ProofHeight: ibchandler.HeightData{
+						RevisionNumber: 0,
+						RevisionHeight: uint64(chainB.LatestLCInputData.Header().Number.Int64()),
+					},
+				},
+			)),
+		)
+		// confirm that the channel is OPEN on chain A
+		chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		suite.Require().True(ok)
+		suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.OPEN)
+
+		// confirm that the packet commitment is deleted
+		_, found, err = chainA.IBCHandler.GetHashedPacketCommitment(chainA.CallOpts(ctx, relayer), transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence)
+		suite.Require().NoError(err)
+		suite.Require().False(found)
+	}
+
+	// Case: close channel
+	{
+		suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
+		// confirm that the channel is CLOSED on chain A
+		chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		suite.Require().True(ok)
+		suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+		// confirm that the channel is CLOSED on chain B
+		chanData, ok, err = chainB.IBCHandler.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
+		suite.Require().NoError(err)
+		suite.Require().True(ok)
+		suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
+	}
 }
 
 func TestContractTestSuite(t *testing.T) {
