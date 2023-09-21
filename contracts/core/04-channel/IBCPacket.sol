@@ -16,6 +16,9 @@ import "../04-channel/IIBCChannel.sol";
 contract IBCPacket is IBCStore, IIBCPacket {
     using IBCHeight for Height.Data;
 
+    bytes internal constant SUCCESSFUL_RECEIPT = hex"01";
+    bytes32 internal constant HASHED_SUCCESSFUL_RECEIPT = keccak256(SUCCESSFUL_RECEIPT);
+
     /* Packet handlers */
 
     /**
@@ -116,17 +119,22 @@ contract IBCPacket is IBCStore, IIBCPacket {
         );
 
         if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
-            require(
-                packetReceipts[msg_.packet.destination_port][msg_.packet.destination_channel][msg_.packet.sequence] == 0,
-                "packet sequence already has been received"
+            bytes32 commitmentKey = IBCCommitment.packetReceiptCommitmentKey(
+                msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
             );
-            packetReceipts[msg_.packet.destination_port][msg_.packet.destination_channel][msg_.packet.sequence] = 1;
+            require(commitments[commitmentKey] == bytes32(0), "packet receipt already exists");
+            commitments[commitmentKey] = HASHED_SUCCESSFUL_RECEIPT;
         } else if (channel.ordering == Channel.Order.ORDER_ORDERED) {
             require(
                 nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel] == msg_.packet.sequence,
                 "packet sequence != next receive sequence"
             );
             nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel]++;
+            commitments[IBCCommitment.nextSequenceRecvCommitmentKey(
+                msg_.packet.destination_port, msg_.packet.destination_channel
+            )] = keccak256(
+                uint64ToBigEndianBytes(nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel])
+            );
         } else {
             revert("unknown ordering type");
         }
