@@ -112,4 +112,12 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         module.onTimeoutPacket(msg_.packet, _msgSender());
         emit TimeoutPacket(msg_.packet);
     }
+
+    function timeoutOnClose(IBCMsgs.MsgTimeoutOnClose calldata msg_) external {
+        IIBCModule module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
+        (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.timeoutOnClose.selector, msg_));
+        require(success);
+        module.onTimeoutPacket(msg_.packet, _msgSender());
+        emit TimeoutPacket(msg_.packet);
+    }
 }

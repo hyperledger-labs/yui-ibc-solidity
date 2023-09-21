@@ -125,4 +125,12 @@ library IBCMsgs {
         Height.Data proofHeight;
         uint64 nextSequenceRecv;
     }
+
+    struct MsgTimeoutOnClose {
+        Packet.Data packet;
+        bytes proofUnreceived;
+        bytes proofClose;
+        Height.Data proofHeight;
+        uint64 nextSequenceRecv;
+    }
 }

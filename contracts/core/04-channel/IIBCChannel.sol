@@ -86,4 +86,11 @@ interface IIBCPacket {
      * ante handler.
      */
     function timeoutPacket(IBCMsgs.MsgTimeoutPacket calldata msg_) external;
+
+    /**
+     * @dev TimeoutOnClose is called by a module in order to prove that the channel to
+     * which an unreceived packet was addressed has been closed, so the packet will
+     * never be received (even if the timeoutHeight has not yet been reached).
+     */
+    function timeoutOnClose(IBCMsgs.MsgTimeoutOnClose calldata msg_) external;
 }

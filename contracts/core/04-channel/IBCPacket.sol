@@ -40,6 +40,7 @@ contract IBCPacket is IBCStore, IIBCPacket {
             uint64 latestTimestamp;
             ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
             ILightClient client = ILightClient(clientImpls[connection.client_id]);
+            require(address(client) != address(0), "client not found");
 
             (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
             require(found, "clientState not found");
@@ -247,6 +248,7 @@ contract IBCPacket is IBCStore, IIBCPacket {
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         require(bytes(connection.client_id).length != 0, "connection not found");
         ILightClient client = ILightClient(clientImpls[connection.client_id]);
+        require(address(client) != address(0), "client not found");
         {
             uint64 proofTimestamp;
             (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
@@ -326,6 +328,109 @@ contract IBCPacket is IBCStore, IIBCPacket {
         delete commitments[IBCCommitment.packetCommitmentKey(
             msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
         )];
+    }
+
+    function timeoutOnClose(IBCMsgs.MsgTimeoutOnClose calldata msg_) external {
+        Channel.Data storage channel = channels[msg_.packet.source_port][msg_.packet.source_channel];
+        require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
+
+        require(
+            hashString(msg_.packet.destination_port) == hashString(channel.counterparty.port_id),
+            "packet destination port doesn't match the counterparty's port"
+        );
+        require(
+            hashString(msg_.packet.destination_channel) == hashString(channel.counterparty.channel_id),
+            "packet destination channel doesn't match the counterparty's channel"
+        );
+
+        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
+        require(bytes(connection.client_id).length != 0, "connection not found");
+        ILightClient client = ILightClient(clientImpls[connection.client_id]);
+        require(address(client) != address(0), "client not found");
+
+        {
+            bytes32 commitment = commitments[IBCCommitment.packetCommitmentKey(
+                msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
+            )];
+            // NOTE: if false, this indicates that the timeoutPacket already been executed
+            require(commitment != bytes32(0), "packet commitment not found");
+            require(
+                commitment
+                    == keccak256(
+                        abi.encodePacked(
+                            sha256(
+                                abi.encodePacked(
+                                    msg_.packet.timeout_timestamp,
+                                    msg_.packet.timeout_height.revision_number,
+                                    msg_.packet.timeout_height.revision_height,
+                                    sha256(msg_.packet.data)
+                                )
+                            )
+                        )
+                    ),
+                "commitment bytes are not equal"
+            );
+        }
+
+        {
+            Channel.Data memory expectedChannel = Channel.Data({
+                state: Channel.State.STATE_CLOSED,
+                ordering: channel.ordering,
+                counterparty: channel.counterparty,
+                connection_hops: channel.connection_hops,
+                version: channel.version
+            });
+            require(
+                client.verifyMembership(
+                    connection.client_id,
+                    msg_.proofHeight,
+                    connection.delay_period,
+                    calcBlockDelay(connection.delay_period),
+                    msg_.proofClose,
+                    connection.counterparty.prefix.key_prefix,
+                    IBCCommitment.channelPath(msg_.packet.source_port, msg_.packet.source_channel),
+                    Channel.encode(expectedChannel)
+                ),
+                "failed to verify channel state"
+            );
+        }
+
+        if (channel.ordering == Channel.Order.ORDER_ORDERED) {
+            // check that packet has not been received
+            require(msg_.nextSequenceRecv <= msg_.packet.sequence, "packet sequence > next receive sequence");
+            require(
+                client.verifyMembership(
+                    connection.client_id,
+                    msg_.proofHeight,
+                    connection.delay_period,
+                    calcBlockDelay(connection.delay_period),
+                    msg_.proofUnreceived,
+                    connection.counterparty.prefix.key_prefix,
+                    IBCCommitment.nextSequenceRecvCommitmentPath(
+                        msg_.packet.destination_port, msg_.packet.destination_channel
+                    ),
+                    uint64ToBigEndianBytes(msg_.nextSequenceRecv)
+                ),
+                "failed to verify next sequence receive"
+            );
+        } else if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
+            require(
+                client.verifyNonMembership(
+                    connection.client_id,
+                    msg_.proofHeight,
+                    connection.delay_period,
+                    calcBlockDelay(connection.delay_period),
+                    msg_.proofUnreceived,
+                    connection.counterparty.prefix.key_prefix,
+                    IBCCommitment.packetReceiptCommitmentPath(
+                        msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
+                    )
+                ),
+                "failed to verify packet receipt absense"
+            );
+        } else {
+            revert("unknown ordering type");
+        }
     }
 
     /* Verification functions */
