@@ -109,4 +109,11 @@ abstract contract IBCAppBase is Context, IIBCModule {
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
     function onAcknowledgementPacket(Packet.Data calldata, bytes calldata, address) external virtual override onlyIBC {}
+
+    /**
+     * @dev See IIBCModule-onTimeoutPacket
+     *
+     * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
+     */
+    function onTimeoutPacket(Packet.Data calldata, address relayer) external virtual onlyIBC {}
 }

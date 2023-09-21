@@ -30,6 +30,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement
     );
     event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
+    event TimeoutPacket(Packet.Data packet);
 
     constructor(address _ibcPacket) {
         require(Address.isContract(_ibcPacket), "address must be contract");
@@ -102,5 +103,13 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.acknowledgePacket.selector, msg_));
         require(success);
         emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
+    }
+
+    function timeoutPacket(IBCMsgs.MsgTimeoutPacket calldata msg_) external {
+        IIBCModule module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
+        (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.timeoutPacket.selector, msg_));
+        require(success);
+        module.onTimeoutPacket(msg_.packet, _msgSender());
+        emit TimeoutPacket(msg_.packet);
     }
 }

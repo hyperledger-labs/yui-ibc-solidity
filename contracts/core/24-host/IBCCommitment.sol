@@ -108,7 +108,7 @@ library IBCCommitment {
         return keccak256(packetAcknowledgementCommitmentPath(portId, channelId, sequence));
     }
 
-    function packetReceiptCommitmentKey(string memory portId, string memory channelId, uint64 sequence)
+    function packetReceiptCommitmentKey(string calldata portId, string calldata channelId, uint64 sequence)
         internal
         pure
         returns (bytes32)

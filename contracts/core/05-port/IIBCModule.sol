@@ -63,4 +63,6 @@ interface IIBCModule {
     function onRecvPacket(Packet.Data calldata, address relayer) external returns (bytes memory);
 
     function onAcknowledgementPacket(Packet.Data calldata, bytes calldata acknowledgement, address relayer) external;
+
+    function onTimeoutPacket(Packet.Data calldata, address relayer) external;
 }
