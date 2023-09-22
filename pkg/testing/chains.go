@@ -718,6 +718,112 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	)
 }
 
+func (chain *Chain) TimeoutPacket(
+	ctx context.Context,
+	packet channeltypes.Packet,
+	counterparty *Chain,
+) error {
+	var proof []byte
+
+	channel, found, err := counterparty.IBCHandler.GetChannel(
+		counterparty.CallOpts(ctx, RelayerKeyIndex),
+		packet.DestinationPort,
+		packet.DestinationChannel,
+	)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("channel not found: port=%v channel=%v", packet.DestinationPort, packet.DestinationChannel)
+	}
+	if channel.State == uint8(channeltypes.CLOSED) {
+		return fmt.Errorf("channel is closed: port=%v channel=%v", packet.DestinationPort, packet.DestinationChannel)
+	}
+
+	switch chain.ClientType() {
+	case ibcclient.MockClient:
+		if channel.Ordering == uint8(channeltypes.ORDERED) {
+			panic("not implemented")
+		} else {
+			proof = []byte{}
+		}
+	default:
+		return errors.New("TimeoutPacket: unsupported client type")
+	}
+
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCHandler.TimeoutPacket(
+			chain.TxOpts(ctx, RelayerKeyIndex),
+			ibchandler.IBCMsgsMsgTimeoutPacket{
+				Packet: PacketToCallData(packet),
+				Proof:  proof,
+				ProofHeight: ibchandler.HeightData{
+					RevisionNumber: 0,
+					RevisionHeight: uint64(counterparty.LatestLCInputData.Header().Number.Int64()),
+				},
+			},
+		),
+	)
+}
+
+func (chain *Chain) TimeoutOnClose(
+	ctx context.Context,
+	packet channeltypes.Packet,
+	counterparty *Chain,
+) error {
+	var (
+		proofClose      []byte
+		proofUnreceived []byte
+	)
+
+	channel, found, err := counterparty.IBCHandler.GetChannel(
+		counterparty.CallOpts(ctx, RelayerKeyIndex),
+		packet.DestinationPort,
+		packet.DestinationChannel,
+	)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("channel not found: port=%v channel=%v", packet.DestinationPort, packet.DestinationChannel)
+	}
+	if channel.State != uint8(channeltypes.CLOSED) {
+		return fmt.Errorf("channel is not closed: port=%v channel=%v", packet.DestinationPort, packet.DestinationChannel)
+	}
+
+	switch chain.ClientType() {
+	case ibcclient.MockClient:
+		bz, err := proto.Marshal(channelToPB(channel))
+		if err != nil {
+			return err
+		}
+		h := sha256.Sum256(bz)
+		proofClose = h[:]
+		if channel.Ordering == uint8(channeltypes.ORDERED) {
+			panic("not implemented")
+		} else {
+			proofUnreceived = []byte{}
+		}
+	default:
+		return errors.New("TimeoutOnClose: unsupported client type")
+	}
+
+	return chain.WaitIfNoError(ctx)(
+		chain.IBCHandler.TimeoutOnClose(
+			chain.TxOpts(ctx, RelayerKeyIndex),
+			ibchandler.IBCMsgsMsgTimeoutOnClose{
+				Packet:          PacketToCallData(packet),
+				ProofClose:      proofClose,
+				ProofUnreceived: proofUnreceived,
+				ProofHeight: ibchandler.HeightData{
+					RevisionNumber: 0,
+					RevisionHeight: uint64(counterparty.LatestLCInputData.Header().Number.Int64()),
+				},
+			},
+		),
+	)
+}
+
 func (chain *Chain) GetLastGeneratedClientID(
 	ctx context.Context,
 ) (string, error) {

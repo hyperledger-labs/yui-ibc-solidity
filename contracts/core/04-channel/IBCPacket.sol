@@ -330,6 +330,10 @@ contract IBCPacket is IBCStore, IIBCPacket {
         )];
     }
 
+    function buildCounterparty(Packet.Data memory packet) private pure returns (ChannelCounterparty.Data memory) {
+        return ChannelCounterparty.Data({port_id: packet.source_port, channel_id: packet.source_channel});
+    }
+
     function timeoutOnClose(IBCMsgs.MsgTimeoutOnClose calldata msg_) external {
         Channel.Data storage channel = channels[msg_.packet.source_port][msg_.packet.source_channel];
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
@@ -376,8 +380,11 @@ contract IBCPacket is IBCStore, IIBCPacket {
             Channel.Data memory expectedChannel = Channel.Data({
                 state: Channel.State.STATE_CLOSED,
                 ordering: channel.ordering,
-                counterparty: channel.counterparty,
-                connection_hops: channel.connection_hops,
+                counterparty: ChannelCounterparty.Data({
+                    port_id: msg_.packet.source_port,
+                    channel_id: msg_.packet.source_channel
+                }),
+                connection_hops: buildConnectionHops(connection.counterparty.connection_id),
                 version: channel.version
             });
             require(
@@ -388,7 +395,7 @@ contract IBCPacket is IBCStore, IIBCPacket {
                     calcBlockDelay(connection.delay_period),
                     msg_.proofClose,
                     connection.counterparty.prefix.key_prefix,
-                    IBCCommitment.channelPath(msg_.packet.source_port, msg_.packet.source_channel),
+                    IBCCommitment.channelPath(msg_.packet.destination_port, msg_.packet.destination_channel),
                     Channel.encode(expectedChannel)
                 ),
                 "failed to verify channel state"
@@ -481,6 +488,12 @@ contract IBCPacket is IBCStore, IIBCPacket {
             blockDelay = (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
         }
         return blockDelay;
+    }
+
+    function buildConnectionHops(string memory connectionId) private pure returns (string[] memory hops) {
+        hops = new string[](1);
+        hops[0] = connectionId;
+        return hops;
     }
 
     function hashString(string memory s) private pure returns (bytes32) {
