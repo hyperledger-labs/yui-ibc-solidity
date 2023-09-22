@@ -745,6 +745,7 @@ func (chain *Chain) TimeoutPacket(
 		if channel.Ordering == uint8(channeltypes.ORDERED) {
 			panic("not implemented")
 		} else {
+			// proof for packet receipt absence
 			proof = []byte{}
 		}
 	default:
