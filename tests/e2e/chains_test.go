@@ -36,7 +36,9 @@ func (suite *ChainTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	suite.chainA = ibctesting.NewChain(suite.T(), clientA, ibctesting.NewLightClient(clientA, clienttypes.BesuIBFT2Client), true)
+	suite.chainA.SetDelayPeriod(3 * ibctesting.BlockTime)
 	suite.chainB = ibctesting.NewChain(suite.T(), clientB, ibctesting.NewLightClient(clientB, clienttypes.BesuIBFT2Client), true)
+	suite.chainB.SetDelayPeriod(3 * ibctesting.BlockTime)
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
@@ -108,7 +110,7 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	))
 	delayForRecv := time.Since(delayStartTimeForRecv)
 	suite.T().Log("delay for recv@chainB", delayForRecv)
-	suite.Require().Greater(delayForRecv, time.Duration(ibctesting.DefaultDelayPeriod))
+	suite.Require().Greater(delayForRecv, time.Duration(chainB.GetDelayPeriod()))
 	suite.Require().NoError(retry.Do(
 		func() error {
 			return suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1})
@@ -118,7 +120,7 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	))
 	delayForAck := time.Since(delayStartTimeForAck)
 	suite.T().Log("delay for ack@chainA", delayForAck)
-	suite.Require().Greater(delayForAck, time.Duration(ibctesting.DefaultDelayPeriod))
+	suite.Require().Greater(delayForAck, time.Duration(chainA.GetDelayPeriod()))
 
 	// ensure that chainB has correct balance
 	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, baseDenom)
@@ -165,7 +167,7 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	))
 	delayForRecv = time.Since(delayStartTimeForRecv)
 	suite.T().Log("delay for recv@chainA", delayForRecv)
-	suite.Require().Greater(delayForRecv, time.Duration(delayPeriodExtensionA*ibctesting.DefaultDelayPeriod))
+	suite.Require().Greater(delayForRecv, time.Duration(delayPeriodExtensionA*chainA.GetDelayPeriod()))
 	suite.Require().NoError(retry.Do(
 		func() error {
 			return suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1})
@@ -175,7 +177,7 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	))
 	delayForAck = time.Since(delayStartTimeForAck)
 	suite.T().Log("delay for ack@chainB", delayForAck)
-	suite.Require().Greater(delayForAck, time.Duration(delayPeriodExtensionB*ibctesting.DefaultDelayPeriod))
+	suite.Require().Greater(delayForAck, time.Duration(delayPeriodExtensionB*chainB.GetDelayPeriod()))
 
 	// withdraw tokens from the bank
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(

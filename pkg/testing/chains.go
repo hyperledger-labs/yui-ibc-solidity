@@ -39,7 +39,7 @@ import (
 const (
 	DefaultChannelVersion        = "ics20-1"
 	BlockTime             uint64 = 1000 * 1000 * 1000 // 1[sec]
-	DefaultDelayPeriod    uint64 = 3 * BlockTime
+	DefaultDelayPeriod    uint64 = 0
 	DefaultPrefix                = "ibc"
 	TransferPort                 = "transfer"
 
@@ -67,9 +67,11 @@ func init() {
 type Chain struct {
 	t *testing.T
 
-	chainID  int64
-	client   *client.ETHClient
-	lc       *LightClient
+	chainID     int64
+	client      *client.ETHClient
+	lc          *LightClient
+	delayPeriod uint64 // nano second
+
 	mnemonic string
 	keys     map[uint32]*ecdsa.PrivateKey
 
@@ -146,6 +148,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		client:           client,
 		chainID:          chainID.Int64(),
 		lc:               lc,
+		delayPeriod:      DefaultDelayPeriod,
 		mnemonic:         mnemonic,
 		ContractConfig:   *config,
 		keys:             make(map[uint32]*ecdsa.PrivateKey),
@@ -159,6 +162,14 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
 	}
+}
+
+func (chain *Chain) SetDelayPeriod(delayPeriod uint64) {
+	chain.delayPeriod = delayPeriod
+}
+
+func (chain *Chain) GetDelayPeriod() uint64 {
+	return chain.delayPeriod
 }
 
 func (chain *Chain) Client() *client.ETHClient {
@@ -415,7 +426,7 @@ func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain,
 					ConnectionId: "",
 					Prefix:       ibchandler.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
 				},
-				DelayPeriod: DefaultDelayPeriod,
+				DelayPeriod: chain.delayPeriod,
 			},
 		),
 	); err != nil {
@@ -442,7 +453,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 					ConnectionId: counterpartyConnection.ID,
 					Prefix:       ibchandler.MerklePrefixData{KeyPrefix: counterparty.GetCommitmentPrefix()},
 				},
-				DelayPeriod:      DefaultDelayPeriod,
+				DelayPeriod:      chain.delayPeriod,
 				ClientId:         connection.ClientID,
 				ClientStateBytes: clientStateBytes,
 				CounterpartyVersions: []ibchandler.VersionData{
