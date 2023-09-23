@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/avast/retry-go"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	"github.com/stretchr/testify/require"
@@ -446,4 +448,52 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 		counterparty, source,
 		counterpartyChannel.ClientID,
 	)
+}
+
+func (c *Coordinator) RelayLastSentPacket(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+) {
+	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
+	require.NoError(c.t, err)
+	require.NoError(c.t, c.HandlePacketRecv(ctx, counterparty, source, counterpartyChannel, sourceChannel, *packet))
+	require.NoError(c.t, c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, []byte{1}))
+}
+
+func (c *Coordinator) RelayLastSentPacketWithDelay(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceDelayPeriodExtension, counterpartyDelayPeriodExtension uint64,
+) {
+	var (
+		delayStartTimeForRecv time.Time
+		delayStartTimeForAck  time.Time
+	)
+
+	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
+	require.NoError(c.t, err)
+	delayStartTimeForRecv = time.Now()
+	require.NoError(c.t, retry.Do(
+		func() error {
+			delayStartTimeForAck = time.Now()
+			return c.HandlePacketRecv(ctx, counterparty, source, counterpartyChannel, sourceChannel, *packet)
+		},
+		retry.Delay(time.Second),
+		retry.Attempts(60),
+	))
+	delayForRecv := time.Since(delayStartTimeForRecv)
+	c.t.Logf("delay for recv@%v %s", counterparty.chainID, delayForRecv)
+	require.Greater(c.t, delayForRecv, time.Duration(counterpartyDelayPeriodExtension*counterparty.GetDelayPeriod()))
+	require.NoError(c.t, retry.Do(
+		func() error {
+			return c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, []byte{1})
+		},
+		retry.Delay(time.Second),
+		retry.Attempts(60),
+	))
+	delayForAck := time.Since(delayStartTimeForAck)
+	c.t.Logf("delay for ack@%v %s", source.chainID, delayForAck)
+	require.Greater(c.t, delayForAck, time.Duration(sourceDelayPeriodExtension*source.GetDelayPeriod()))
 }

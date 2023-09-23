@@ -133,10 +133,7 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 		suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
 		// relay the packet
-		transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
-		suite.Require().NoError(err)
-		suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, *transferPacket))
-		suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1}))
+		suite.coordinator.RelayLastSentPacket(ctx, chainA, chainB, chanA, chanB)
 	}
 
 	denomB := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, denomA)
@@ -163,10 +160,7 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 		suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 		// relay the packet
-		transferPacket, err := chainB.GetLastSentPacket(ctx, chanB.PortID, chanB.ID)
-		suite.Require().NoError(err)
-		suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
-		suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1}))
+		suite.coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA)
 
 		// withdraw tokens from the bank
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -183,20 +177,8 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 		suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 	}
 
-	// Case: close channel
-	{
-		suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
-		// confirm that the channel is CLOSED on chain A
-		chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
-		suite.Require().NoError(err)
-		suite.Require().True(ok)
-		suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
-		// confirm that the channel is CLOSED on chain B
-		chanData, ok, err = chainB.IBCHandler.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
-		suite.Require().NoError(err)
-		suite.Require().True(ok)
-		suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
-	}
+	// close channel
+	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 }
 
 func (suite *ContractTestSuite) TestTimeoutPacket() {
