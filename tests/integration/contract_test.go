@@ -39,8 +39,8 @@ func (suite *ContractTestSuite) SetupTest() {
 	ethClient, err := client.NewETHClient("http://127.0.0.1:8545")
 	suite.Require().NoError(err)
 
-	suite.chainA = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient))
-	suite.chainB = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient))
+	suite.chainA = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), false)
+	suite.chainB = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), false)
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
@@ -230,10 +230,8 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 	// should fail to timeout packet because the timeout height is not reached
 	suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB))
 
-	// execute a meaningless transaction to increase the block height
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainB.ERC20.Approve(chainA.TxOpts(ctx, deployer), chainB.ContractConfig.ICS20BankAddress, big.NewInt(0)),
-	))
+	suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
+
 	// then, update the client to reach the timeout height
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 

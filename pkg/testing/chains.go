@@ -72,6 +72,10 @@ type Chain struct {
 	lc       *LightClient
 	mnemonic string
 	keys     map[uint32]*ecdsa.PrivateKey
+
+	// isAutoMining is true if the chain generates new blocks automatically
+	isAutoMining bool
+
 	// startBlockNumber is the block number when the chain instance is created
 	// each event query should specify this as `FromBlock`
 	startBlockNumber *big.Int
@@ -95,7 +99,7 @@ type Chain struct {
 	Connections []*TestConnection // track connectionID's created for this chain
 }
 
-func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient) *Chain {
+func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMining bool) *Chain {
 	mnemonic := os.Getenv("TEST_MNEMONIC")
 	if mnemonic == "" {
 		t.Fatal("environ variable 'TEST_MNEMONIC' is empty")
@@ -145,6 +149,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient) *Chain {
 		mnemonic:         mnemonic,
 		ContractConfig:   *config,
 		keys:             make(map[uint32]*ecdsa.PrivateKey),
+		isAutoMining:     isAutoMining,
 		startBlockNumber: big.NewInt(int64(startBlockNumber)),
 
 		IBCHandler:    *ibcHandler,
@@ -988,7 +993,17 @@ func (chain *Chain) AdvanceBlockNumber(
 		if blockNumber >= toBlockNumber {
 			return nil
 		}
-		time.Sleep(100 * time.Millisecond)
+		if chain.isAutoMining {
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			// execute a meaningless transaction to increase the block height
+			err := chain.WaitIfNoError(ctx)(
+				chain.ERC20.Approve(chain.TxOpts(ctx, RelayerKeyIndex), chain.ContractConfig.ICS20BankAddress, big.NewInt(0)),
+			)
+			if err != nil {
+				return err
+			}
+		}
 	}
 }
 
