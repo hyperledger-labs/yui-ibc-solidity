@@ -72,6 +72,9 @@ type Chain struct {
 	lc       *LightClient
 	mnemonic string
 	keys     map[uint32]*ecdsa.PrivateKey
+	// startBlockNumber is the block number when the chain instance is created
+	// each event query should specify this as `FromBlock`
+	startBlockNumber *big.Int
 
 	ContractConfig ContractConfig
 
@@ -129,15 +132,20 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient) *Chain {
 	if err != nil {
 		t.Fatal(err)
 	}
+	startBlockNumber, err := client.BlockNumber(context.TODO())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	return &Chain{
-		t:              t,
-		client:         client,
-		chainID:        chainID.Int64(),
-		lc:             lc,
-		mnemonic:       mnemonic,
-		ContractConfig: *config,
-		keys:           make(map[uint32]*ecdsa.PrivateKey),
+		t:                t,
+		client:           client,
+		chainID:          chainID.Int64(),
+		lc:               lc,
+		mnemonic:         mnemonic,
+		ContractConfig:   *config,
+		keys:             make(map[uint32]*ecdsa.PrivateKey),
+		startBlockNumber: big.NewInt(int64(startBlockNumber)),
 
 		IBCHandler:    *ibcHandler,
 		IBCCommitment: *ibcCommitment,
@@ -845,7 +853,7 @@ func (chain *Chain) GetLastGeneratedChannelID(
 
 func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, error) {
 	query := ethereum.FilterQuery{
-		FromBlock: big.NewInt(0),
+		FromBlock: chain.startBlockNumber,
 		Addresses: []common.Address{
 			chain.ContractConfig.IBCHandlerAddress,
 		},
@@ -894,7 +902,7 @@ func (chain *Chain) FindPacket(
 	}
 
 	query := ethereum.FilterQuery{
-		FromBlock: big.NewInt(0),
+		FromBlock: chain.startBlockNumber,
 		Addresses: []common.Address{
 			chain.ContractConfig.IBCHandlerAddress,
 		},
