@@ -466,15 +466,12 @@ func (c *Coordinator) RelayLastSentPacketWithDelay(
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
 	sourceDelayPeriodExtension, counterpartyDelayPeriodExtension uint64,
+	delayStartTimeForRecv time.Time,
 ) {
-	var (
-		delayStartTimeForRecv time.Time
-		delayStartTimeForAck  time.Time
-	)
+	var delayStartTimeForAck time.Time
 
 	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
 	require.NoError(c.t, err)
-	delayStartTimeForRecv = time.Now()
 	require.NoError(c.t, retry.Do(
 		func() error {
 			delayStartTimeForAck = time.Now()
