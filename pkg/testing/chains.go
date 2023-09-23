@@ -833,6 +833,32 @@ func (chain *Chain) TimeoutOnClose(
 	)
 }
 
+func (chain *Chain) SetExpectedTimePerBlock(
+	ctx context.Context,
+	callerIndex uint32,
+	duration uint64,
+) error {
+	err := chain.WaitIfNoError(ctx)(
+		chain.IBCHandler.SetExpectedTimePerBlock(
+			chain.TxOpts(ctx, callerIndex),
+			duration,
+		),
+	)
+	if err != nil {
+		return err
+	}
+	actual, err := chain.IBCHandler.GetExpectedTimePerBlock(
+		chain.CallOpts(ctx, callerIndex),
+	)
+	if err != nil {
+		return err
+	}
+	if actual != duration {
+		return fmt.Errorf("expected=%v actual=%v", duration, actual)
+	}
+	return nil
+}
+
 func (chain *Chain) GetLastGeneratedClientID(
 	ctx context.Context,
 ) (string, error) {
@@ -948,6 +974,60 @@ func (chain *Chain) FindPacket(
 	}
 
 	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
+}
+
+func (chain *Chain) AdvanceBlockNumber(
+	ctx context.Context,
+	toBlockNumber uint64,
+) error {
+	for {
+		blockNumber, err := chain.client.BlockNumber(ctx)
+		if err != nil {
+			return err
+		}
+		if blockNumber >= toBlockNumber {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func (chain *Chain) EnsureChannelState(
+	ctx context.Context,
+	portID string,
+	channelID string,
+	state channeltypes.Channel_State,
+) error {
+	channels, found, err := chain.IBCHandler.GetChannel(chain.CallOpts(ctx, RelayerKeyIndex), portID, channelID)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("channel not found")
+	}
+	if channels.State != uint8(state) {
+		return fmt.Errorf("unexpected channel state: expected=%v actual=%v", state, channels.State)
+	}
+	return nil
+}
+
+func (chain *Chain) EnsurePacketCommitmentExistence(
+	ctx context.Context,
+	exists bool,
+	portID string,
+	channelID string,
+	sequence uint64,
+) error {
+	_, found, err := chain.IBCHandler.GetHashedPacketCommitment(chain.CallOpts(ctx, RelayerKeyIndex), portID, channelID, sequence)
+	if err != nil {
+		return err
+	}
+	if exists && !found {
+		return fmt.Errorf("packet commitment not found")
+	} else if !exists && found {
+		return fmt.Errorf("packet commitment found")
+	}
+	return nil
 }
 
 func PacketToCallData(packet channeltypes.Packet) ibchandler.PacketData {

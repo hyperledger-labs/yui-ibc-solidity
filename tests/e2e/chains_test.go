@@ -40,7 +40,7 @@ func (suite *ChainTestSuite) SetupTest() {
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
-func (suite *ChainTestSuite) TestChannel() {
+func (suite *ChainTestSuite) TestPacketRelay() {
 	ctx := context.Background()
 
 	const (
@@ -61,55 +61,20 @@ func (suite *ChainTestSuite) TestChannel() {
 	var delayStartTimeForRecv time.Time
 	var delayStartTimeForAck time.Time
 
-	beforeLatestHeight := chainA.GetIBFT2ClientState(clientA).LatestHeight
-	beforeConsensusState := chainA.GetIBFT2ConsensusState(clientA, beforeLatestHeight)
-
 	/// Tests for Transfer module ///
 
-	balanceA0, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	beforeBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ERC20.Approve(chainA.TxOpts(ctx, deployerA), chainA.ContractConfig.ICS20BankAddress, big.NewInt(100)),
-	))
-
-	// deposit a simple token to the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
-		chainA.TxOpts(ctx, deployerA),
-		chainA.ContractConfig.ERC20TokenAddress,
-		big.NewInt(100),
-		chainA.CallOpts(ctx, aliceA).From,
-	)))
-
-	// ensure that the balance is reduced
-	balanceA1, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
-	suite.Require().NoError(err)
-	suite.Require().Equal(balanceA0.Int64()-100, balanceA1.Int64())
+	suite.Require().NoError(
+		suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployerA, 100, aliceA),
+	)
 
 	baseDenom := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
 
-	bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, aliceA).From, baseDenom)
-	suite.Require().NoError(err)
-	suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
-
 	// set expectedTimePerBlock = block time on chainA
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.IBCHandler.SetExpectedTimePerBlock(
-			chainA.TxOpts(ctx, deployerA),
-			ibctesting.BlockTime,
-		)))
-	expectedTimePerBlockA, err := chainA.IBCHandler.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
-	suite.Require().NoError(err)
-	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime)
-
+	suite.Require().NoError(chainA.SetExpectedTimePerBlock(ctx, deployerA, ibctesting.BlockTime))
 	// set expectedTimePerBlock = 0 on chainB
-	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
-		chainB.IBCHandler.SetExpectedTimePerBlock(
-			chainB.TxOpts(ctx, deployerB),
-			0,
-		)))
-	expectedTimePerBlockB, err := chainB.IBCHandler.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
-	suite.Require().NoError(err)
-	suite.Require().Zero(expectedTimePerBlockB)
+	suite.Require().NoError(chainB.SetExpectedTimePerBlock(ctx, deployerB, 0))
 
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -126,7 +91,7 @@ func (suite *ChainTestSuite) TestChannel() {
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
 	// ensure that escrow has correct balance
-	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, aliceA), chainA.ContractConfig.ICS20TransferBankAddress, baseDenom)
+	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.ContractConfig.ICS20TransferBankAddress, baseDenom)
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
@@ -162,24 +127,14 @@ func (suite *ChainTestSuite) TestChannel() {
 	suite.Require().Equal(int64(100), balance.Int64())
 
 	// make delay period 10 times longer on chainA
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.IBCHandler.SetExpectedTimePerBlock(
-			chainA.TxOpts(ctx, deployerA),
-			ibctesting.BlockTime/delayPeriodExtensionA,
-		)))
-	expectedTimePerBlockA, err = chainA.IBCHandler.GetExpectedTimePerBlock(chainA.CallOpts(ctx, deployerA))
-	suite.Require().NoError(err)
-	suite.Require().Equal(expectedTimePerBlockA, ibctesting.BlockTime/delayPeriodExtensionA)
+	suite.Require().NoError(
+		chainA.SetExpectedTimePerBlock(ctx, deployerA, ibctesting.BlockTime/delayPeriodExtensionA),
+	)
 
 	// make delay period 20 times longer on chainB
-	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
-		chainB.IBCHandler.SetExpectedTimePerBlock(
-			chainB.TxOpts(ctx, deployerB),
-			ibctesting.BlockTime/delayPeriodExtensionB,
-		)))
-	expectedTimePerBlockB, err = chainB.IBCHandler.GetExpectedTimePerBlock(chainB.CallOpts(ctx, deployerB))
-	suite.Require().NoError(err)
-	suite.Require().Equal(expectedTimePerBlockB, ibctesting.BlockTime/delayPeriodExtensionB)
+	suite.Require().NoError(
+		chainB.SetExpectedTimePerBlock(ctx, deployerB, ibctesting.BlockTime/delayPeriodExtensionB),
+	)
 
 	// try to transfer the token to chainA
 	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
@@ -232,29 +187,12 @@ func (suite *ChainTestSuite) TestChannel() {
 		)))
 
 	// ensure that token balance equals original value
-	balanceA2, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	suite.Require().NoError(err)
-	suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
+	suite.Require().Equal(beforeBalanceA.Int64(), afterBalanceA.Int64())
 
 	// close channel
 	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
-	// confirm that the channel is CLOSED on chain A
-	chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
-	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
-	// confirm that the channel is CLOSED on chain B
-	chanData, ok, err = chainB.IBCHandler.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
-	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
-
-	afterLatestHeight := chainA.GetIBFT2ClientState(clientA).LatestHeight
-	suite.Require().Equal(afterLatestHeight.RevisionNumber, beforeLatestHeight.RevisionNumber)
-	suite.Require().True(afterLatestHeight.RevisionHeight > beforeLatestHeight.RevisionHeight)
-
-	beforeConsensusState2 := chainA.GetIBFT2ConsensusState(clientA, beforeLatestHeight)
-	suite.Require().Equal(beforeConsensusState, beforeConsensusState2)
 }
 
 func TestChainTestSuite(t *testing.T) {

@@ -164,9 +164,11 @@ func (c *Coordinator) CloseChannel(
 ) {
 	err := c.ChanCloseInit(ctx, chainA, chainB, chanA)
 	require.NoError(c.t, err)
+	require.NoError(c.t, chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED))
 
 	err = c.ChanCloseConfirm(ctx, chainB, chainA, chanB, chanA)
 	require.NoError(c.t, err)
+	require.NoError(c.t, chainB.EnsureChannelState(ctx, chanB.PortID, chanB.ID, channeltypes.CLOSED))
 }
 
 // ConnOpenInit initializes a connection on the source chain with the state INIT

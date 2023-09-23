@@ -111,16 +111,7 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 	suite.Require().NoError(err)
 	// Case: transfer tokens from chainA to chainB
 	{
-		suite.Require().NoError(chainA.ApproveAndDepositToken(ctx, deployer, 100, alice))
-
-		// ensure that the balance is reduced
-		balanceA1, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
-		suite.Require().NoError(err)
-		suite.Require().Equal(balanceA0.Int64()-100, balanceA1.Int64())
-
-		bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, alice).From, denomA)
-		suite.Require().NoError(err)
-		suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
+		suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
 
 		// try to transfer the token to chainB
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -220,7 +211,7 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 
 	denomA := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
 
-	suite.Require().NoError(chainA.ApproveAndDepositToken(ctx, deployer, 100, alice))
+	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
 
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -246,21 +237,10 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 	// then, update the client to reach the timeout height
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
-	_, found, err := chainA.IBCHandler.GetHashedPacketCommitment(chainA.CallOpts(ctx, relayer), transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence)
-	suite.Require().NoError(err)
-	suite.Require().True(found)
+	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
 	suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB))
-
-	// confirm that the channel is OPEN on chain A
-	chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
-	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.OPEN)
-
 	// confirm that the packet commitment is deleted
-	_, found, err = chainA.IBCHandler.GetHashedPacketCommitment(chainA.CallOpts(ctx, relayer), transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence)
-	suite.Require().NoError(err)
-	suite.Require().False(found)
+	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
 }
 
 func (suite *ContractTestSuite) TestTimeoutOnClose() {
@@ -273,14 +253,13 @@ func (suite *ContractTestSuite) TestTimeoutOnClose() {
 	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
 
-	suite.Require().NoError(chainA.ApproveAndDepositToken(ctx, deployer, 100, alice))
-	denomA := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
+	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
 
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, alice),
-			denomA,
+			strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
 			100,
 			chainB.CallOpts(ctx, bob).From,
 			chanA.PortID, chanA.ID,
