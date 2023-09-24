@@ -746,10 +746,9 @@ func (chain *Chain) TimeoutPacket(
 	ctx context.Context,
 	packet channeltypes.Packet,
 	counterparty *Chain,
+	channel TestChannel,
 ) error {
-	var proof []byte
-
-	channel, found, err := counterparty.IBCHandler.GetChannel(
+	counterpartyCh, found, err := counterparty.IBCHandler.GetChannel(
 		counterparty.CallOpts(ctx, RelayerKeyIndex),
 		packet.DestinationPort,
 		packet.DestinationChannel,
@@ -760,20 +759,32 @@ func (chain *Chain) TimeoutPacket(
 	if !found {
 		return fmt.Errorf("channel not found: port=%v channel=%v", packet.DestinationPort, packet.DestinationChannel)
 	}
-	if channel.State == uint8(channeltypes.CLOSED) {
+	if counterpartyCh.State == uint8(channeltypes.CLOSED) {
 		return fmt.Errorf("channel is closed: port=%v channel=%v", packet.DestinationPort, packet.DestinationChannel)
 	}
 
-	switch chain.ClientType() {
-	case ibcclient.MockClient:
-		if channel.Ordering == uint8(channeltypes.ORDERED) {
-			panic("not implemented")
-		} else {
-			// proof for packet receipt absence
-			proof = []byte{}
+	var proof []byte
+	if counterpartyCh.Ordering == uint8(channeltypes.ORDERED) {
+		panic("not implemented")
+	} else {
+		ok, err := counterparty.IBCHandler.HasPacketReceipt(
+			counterparty.CallOpts(ctx, RelayerKeyIndex),
+			packet.DestinationPort, packet.DestinationChannel, packet.Sequence,
+		)
+		if err != nil {
+			return err
 		}
-	default:
-		return errors.New("TimeoutPacket: unsupported client type")
+		if ok {
+			return fmt.Errorf("packet receipt exists: port=%v channel=%v sequence=%v", packet.DestinationPort, packet.DestinationChannel, packet.Sequence)
+		}
+		p, err := counterparty.QueryPacketReceiptProof(chain, channel.ClientID, packet, counterparty.LatestLCInputData.Header().Number)
+		if err != nil {
+			return err
+		}
+		proof = p.Data
+		if uint64(counterparty.LatestLCInputData.Header().Number.Int64()) != p.Height.RevisionHeight {
+			return fmt.Errorf("revision height mismatch: expected=%v actual=%v", counterparty.LatestLCInputData.Header().Number.Int64(), p.Height.RevisionHeight)
+		}
 	}
 
 	return chain.WaitIfNoError(ctx)(
@@ -1157,6 +1168,30 @@ func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID 
 		}
 		h := sha256.Sum256(bz)
 		proof.Data = h[:]
+	}
+	return proof, nil
+}
+
+func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyClientID string, packetFromCounterparty channeltypes.Packet, counterpartyHeight *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.PacketReceiptCommitmentSlot(
+		packetFromCounterparty.DestinationPort,
+		packetFromCounterparty.DestinationChannel,
+		packetFromCounterparty.Sequence,
+	), counterpartyHeight)
+	if err != nil {
+		return nil, err
+	}
+	switch counterparty.ClientType() {
+	case ibcclient.MockClient:
+		exists, err := chain.IBCHandler.HasPacketReceipt(chain.CallOpts(context.Background(), RelayerKeyIndex), packetFromCounterparty.DestinationPort, packetFromCounterparty.DestinationChannel, packetFromCounterparty.Sequence)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, errors.New("an existence proof of packet receipt not supported")
+		} else {
+			proof.Data = []byte{}
+		}
 	}
 	return proof, nil
 }

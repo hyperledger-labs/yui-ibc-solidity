@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"strings"
 	"testing"
 	"time"
@@ -50,8 +49,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 
 	/// Tests for Transfer module ///
 
-	beforeBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
-	suite.Require().NoError(err)
+	// beforeBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	// suite.Require().NoError(err)
 	suite.Require().NoError(
 		coordinator.ApproveAndDepositToken(ctx, chainA, deployerA, 100, aliceA),
 	)
@@ -102,19 +101,45 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	// relay the packet
 	coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA)
 
-	// withdraw tokens from the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ICS20Bank.Withdraw(
-			chainA.TxOpts(ctx, aliceA),
-			chainA.ContractConfig.ERC20TokenAddress,
-			big.NewInt(100),
-			chainA.CallOpts(ctx, deployerA).From,
-		)))
+	{
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainA.ICS20Transfer.SendTransfer(
+				chainA.TxOpts(ctx, aliceA),
+				baseDenom,
+				100,
+				chainB.CallOpts(ctx, bobB).From,
+				chanA.PortID, chanA.ID,
+				uint64(chainB.LastHeader().Number.Int64())+1,
+			),
+		))
+		transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		// should fail to timeout packet because the timeout height is not reached
+		suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
+		suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
+		// then, update the client to reach the timeout height
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
-	// ensure that token balance equals original value
-	afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
-	suite.Require().NoError(err)
-	suite.Require().Equal(beforeBalanceA.Int64(), afterBalanceA.Int64())
+		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
+		suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
+		// confirm that the packet commitment is deleted
+		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
+	}
+
+	// TODO uncomment this after implementing `onTimeoutPacket` for ICS20Transfer
+	// // withdraw tokens from the bank
+	// suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+	// 	chainA.ICS20Bank.Withdraw(
+	// 		chainA.TxOpts(ctx, aliceA),
+	// 		chainA.ContractConfig.ERC20TokenAddress,
+	// 		big.NewInt(100),
+	// 		chainA.CallOpts(ctx, deployerA).From,
+	// 	)))
+
+	// // ensure that token balance equals original value
+	// afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	// suite.Require().NoError(err)
+	// suite.Require().Equal(beforeBalanceA.Int64(), afterBalanceA.Int64())
 
 	// close channel
 	coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)

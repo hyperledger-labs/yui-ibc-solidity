@@ -91,6 +91,16 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 		path, err = suite.chainA.IBCCommitment.PacketAcknowledgementCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
 		require.Equal(host.PacketAcknowledgementKey(testPortID, testChannelID, testSequence), path)
+
+		// packet receipt
+		path, err = suite.chainA.IBCCommitment.PacketReceiptCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		require.NoError(err)
+		require.Equal(host.PacketReceiptKey(testPortID, testChannelID, testSequence), path)
+
+		// next sequence receive
+		path, err = suite.chainA.IBCCommitment.NextSequenceRecvCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
+		require.NoError(err)
+		require.Equal(host.NextSequenceRecvKey(testPortID, testChannelID), path)
 	})
 }
 
@@ -210,7 +220,7 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 	suite.Require().NoError(err)
 
 	// should fail to timeout packet because the timeout height is not reached
-	suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB))
+	suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
 
 	suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
 
@@ -218,7 +228,7 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
-	suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB))
+	suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
 	// confirm that the packet commitment is deleted
 	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
 }
