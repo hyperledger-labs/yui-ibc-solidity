@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"strings"
 	"testing"
 	"time"
@@ -49,8 +50,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 
 	/// Tests for Transfer module ///
 
-	// beforeBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
-	// suite.Require().NoError(err)
+	beforeBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	suite.Require().NoError(err)
 	suite.Require().NoError(
 		coordinator.ApproveAndDepositToken(ctx, chainA, deployerA, 100, aliceA),
 	)
@@ -148,20 +149,19 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 		suite.Require().NoError(coordinator.ChanCloseConfirm(ctx, chainA, chainB, chanA, chanB))
 	}
 
-	// TODO uncomment this after implementing `onTimeoutPacket` for ICS20Transfer
-	// // withdraw tokens from the bank
-	// suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-	// 	chainA.ICS20Bank.Withdraw(
-	// 		chainA.TxOpts(ctx, aliceA),
-	// 		chainA.ContractConfig.ERC20TokenAddress,
-	// 		big.NewInt(100),
-	// 		chainA.CallOpts(ctx, deployerA).From,
-	// 	)))
+	// withdraw tokens from the bank
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.ICS20Bank.Withdraw(
+			chainA.TxOpts(ctx, aliceA),
+			chainA.ContractConfig.ERC20TokenAddress,
+			big.NewInt(100),
+			chainA.CallOpts(ctx, deployerA).From,
+		)))
 
-	// // ensure that token balance equals original value
-	// afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
-	// suite.Require().NoError(err)
-	// suite.Require().Equal(beforeBalanceA.Int64(), afterBalanceA.Int64())
+	// ensure that token balance equals original value
+	afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	suite.Require().NoError(err)
+	suite.Require().Equal(beforeBalanceA.Int64(), afterBalanceA.Int64())
 }
 
 func (suite *ChainTestSuite) TestPacketRelayWithDelay() {

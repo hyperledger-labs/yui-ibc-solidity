@@ -262,6 +262,15 @@ func (suite *ContractTestSuite) TestTimeoutOnClose() {
 
 	suite.Require().NoError(suite.coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
 	suite.Require().NoError(suite.chainA.TimeoutOnClose(ctx, *transferPacket, chainB, chanA, chanB))
+
+	// withdraw tokens from the bank
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.ICS20Bank.Withdraw(
+			chainA.TxOpts(ctx, alice),
+			chainA.ContractConfig.ERC20TokenAddress,
+			big.NewInt(100),
+			chainA.CallOpts(ctx, deployer).From,
+		)))
 }
 
 func TestContractTestSuite(t *testing.T) {
