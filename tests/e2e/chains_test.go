@@ -106,7 +106,7 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
 				baseDenom,
-				100,
+				50,
 				chainB.CallOpts(ctx, bobB).From,
 				chanA.PortID, chanA.ID,
 				uint64(chainB.LastHeader().Number.Int64())+1,
@@ -126,6 +126,28 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
 	}
 
+	{
+		// try to transfer the token to chainB
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainA.ICS20Transfer.SendTransfer(
+				chainA.TxOpts(ctx, aliceA),
+				strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
+				50,
+				chainB.CallOpts(ctx, bobB).From,
+				chanA.PortID, chanA.ID,
+				uint64(chainB.LastHeader().Number.Int64())+1000,
+			),
+		))
+
+		transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+
+		// close channel
+		suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
+		suite.Require().NoError(chainA.TimeoutOnClose(ctx, *transferPacket, chainB, chanA, chanB))
+		suite.Require().NoError(coordinator.ChanCloseConfirm(ctx, chainA, chainB, chanA, chanB))
+	}
+
 	// TODO uncomment this after implementing `onTimeoutPacket` for ICS20Transfer
 	// // withdraw tokens from the bank
 	// suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -140,9 +162,6 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	// afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
 	// suite.Require().NoError(err)
 	// suite.Require().Equal(beforeBalanceA.Int64(), afterBalanceA.Int64())
-
-	// close channel
-	coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 }
 
 func (suite *ChainTestSuite) TestPacketRelayWithDelay() {

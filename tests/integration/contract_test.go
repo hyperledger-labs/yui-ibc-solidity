@@ -261,7 +261,7 @@ func (suite *ContractTestSuite) TestTimeoutOnClose() {
 	suite.Require().NoError(err)
 
 	suite.Require().NoError(suite.coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
-	suite.Require().NoError(suite.chainA.TimeoutOnClose(ctx, *transferPacket, chainB))
+	suite.Require().NoError(suite.chainA.TimeoutOnClose(ctx, *transferPacket, chainB, chanA, chanB))
 }
 
 func TestContractTestSuite(t *testing.T) {
