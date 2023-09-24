@@ -47,6 +47,7 @@ const (
 )
 
 var (
+	abiIBCHandler abi.ABI
 	abiSendPacket,
 	abiGeneratedClientIdentifier,
 	abiGeneratedConnectionIdentifier,
@@ -54,14 +55,15 @@ var (
 )
 
 func init() {
-	parsedHandlerABI, err := abi.JSON(strings.NewReader(ibchandler.IbchandlerABI))
+	var err error
+	abiIBCHandler, err = abi.JSON(strings.NewReader(ibchandler.IbchandlerABI))
 	if err != nil {
 		panic(err)
 	}
-	abiSendPacket = parsedHandlerABI.Events["SendPacket"]
-	abiGeneratedClientIdentifier = parsedHandlerABI.Events["GeneratedClientIdentifier"]
-	abiGeneratedConnectionIdentifier = parsedHandlerABI.Events["GeneratedConnectionIdentifier"]
-	abiGeneratedChannelIdentifier = parsedHandlerABI.Events["GeneratedChannelIdentifier"]
+	abiSendPacket = abiIBCHandler.Events["SendPacket"]
+	abiGeneratedClientIdentifier = abiIBCHandler.Events["GeneratedClientIdentifier"]
+	abiGeneratedConnectionIdentifier = abiIBCHandler.Events["GeneratedConnectionIdentifier"]
+	abiGeneratedChannelIdentifier = abiIBCHandler.Events["GeneratedChannelIdentifier"]
 }
 
 type Chain struct {
@@ -969,35 +971,23 @@ func (chain *Chain) FindPacket(
 	}
 
 	for _, log := range logs {
-		if values, err := abiSendPacket.Inputs.Unpack(log.Data); err != nil {
+		var sendPacket ibchandler.IbchandlerSendPacket
+		if err := abiIBCHandler.UnpackIntoInterface(&sendPacket, "SendPacket", log.Data); err != nil {
 			return nil, err
-		} else {
-			if l := len(values); l != 6 {
-				return nil, fmt.Errorf("unexpected values length: expected=%v actual=%v", 6, l)
-			}
-			pSequence := values[0].(uint64)
-			pSourcePortID := values[1].(string)
-			pSourceChannel := values[2].(string)
-			pTimeoutHeight := values[3].(struct {
-				RevisionNumber uint64 "json:\"revision_number\""
-				RevisionHeight uint64 "json:\"revision_height\""
-			})
-			pTimeoutTimestamp := values[4].(uint64)
-			pData := values[5].([]uint8)
-
-			if pSequence == sequence && pSourcePortID == sourcePortID && pSourceChannel == sourceChannel {
-				return &channeltypes.Packet{
-					Sequence:           pSequence,
-					SourcePort:         pSourcePortID,
-					SourceChannel:      pSourceChannel,
-					DestinationPort:    channel.Counterparty.PortId,
-					DestinationChannel: channel.Counterparty.ChannelId,
-					Data:               pData,
-					TimeoutHeight:      ibcclient.Height{RevisionNumber: pTimeoutHeight.RevisionNumber, RevisionHeight: pTimeoutHeight.RevisionHeight},
-					TimeoutTimestamp:   pTimeoutTimestamp,
-				}, nil
-			}
 		}
+		if sendPacket.SourcePort != sourcePortID || sendPacket.SourceChannel != sourceChannel || sendPacket.Sequence != sequence {
+			continue
+		}
+		return &channeltypes.Packet{
+			Sequence:           sendPacket.Sequence,
+			SourcePort:         sendPacket.SourcePort,
+			SourceChannel:      sendPacket.SourceChannel,
+			DestinationPort:    channel.Counterparty.PortId,
+			DestinationChannel: channel.Counterparty.ChannelId,
+			Data:               sendPacket.Data,
+			TimeoutHeight:      ibcclient.Height{RevisionNumber: sendPacket.TimeoutHeight.RevisionNumber, RevisionHeight: sendPacket.TimeoutHeight.RevisionHeight},
+			TimeoutTimestamp:   sendPacket.TimeoutTimestamp,
+		}, nil
 	}
 
 	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
