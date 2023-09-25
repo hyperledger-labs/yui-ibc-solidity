@@ -13,6 +13,8 @@ import "../05-port/IIBCModule.sol";
  * @dev IBCPacketHandler is a contract that calls a contract that implements `IIBCPacket` with delegatecall.
  */
 abstract contract IBCPacketHandler is Context, ModuleManager {
+    using Address for address;
+
     // IBC Packet contract address
     address immutable ibcPacket;
 
@@ -33,7 +35,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
     event TimeoutPacket(Packet.Data packet);
 
     constructor(address _ibcPacket) {
-        require(Address.isContract(_ibcPacket), "address must be contract");
+        require(Address.isContract(_ibcPacket));
         ibcPacket = _ibcPacket;
     }
 
@@ -45,22 +47,20 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         bytes calldata data
     ) external {
         require(authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel)));
-        (bool success, bytes memory res) = ibcPacket.delegatecall(
+        bytes memory res = ibcPacket.functionDelegateCall(
             abi.encodeWithSelector(
                 IIBCPacket.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
             )
         );
-        require(success);
         emit SendPacket(abi.decode(res, (uint64)), sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external {
         IIBCModule module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
+        ibcPacket.functionDelegateCall(abi.encodeWithSelector(IIBCPacket.recvPacket.selector, msg_));
         bytes memory acknowledgement = module.onRecvPacket(msg_.packet, _msgSender());
-        (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.recvPacket.selector, msg_));
-        require(success);
         if (acknowledgement.length > 0) {
-            (success,) = ibcPacket.delegatecall(
+            ibcPacket.functionDelegateCall(
                 abi.encodeWithSelector(
                     IIBCPacket.writeAcknowledgement.selector,
                     msg_.packet.destination_port,
@@ -69,7 +69,6 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
                     acknowledgement
                 )
             );
-            require(success);
             emit WriteAcknowledgement(
                 msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence, acknowledgement
             );
@@ -84,7 +83,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         bytes calldata acknowledgement
     ) external {
         require(authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel)));
-        (bool success,) = ibcPacket.delegatecall(
+        ibcPacket.functionDelegateCall(
             abi.encodeWithSelector(
                 IIBCPacket.writeAcknowledgement.selector,
                 destinationPortId,
@@ -93,30 +92,26 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
                 acknowledgement
             )
         );
-        require(success);
         emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external {
         IIBCModule module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
+        ibcPacket.functionDelegateCall(abi.encodeWithSelector(IIBCPacket.acknowledgePacket.selector, msg_));
         module.onAcknowledgementPacket(msg_.packet, msg_.acknowledgement, _msgSender());
-        (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.acknowledgePacket.selector, msg_));
-        require(success);
         emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
     }
 
     function timeoutPacket(IBCMsgs.MsgTimeoutPacket calldata msg_) external {
         IIBCModule module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
-        (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.timeoutPacket.selector, msg_));
-        require(success);
+        ibcPacket.functionDelegateCall(abi.encodeWithSelector(IIBCPacket.timeoutPacket.selector, msg_));
         module.onTimeoutPacket(msg_.packet, _msgSender());
         emit TimeoutPacket(msg_.packet);
     }
 
     function timeoutOnClose(IBCMsgs.MsgTimeoutOnClose calldata msg_) external {
         IIBCModule module = lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel);
-        (bool success,) = ibcPacket.delegatecall(abi.encodeWithSelector(IIBCPacket.timeoutOnClose.selector, msg_));
-        require(success);
+        ibcPacket.functionDelegateCall(abi.encodeWithSelector(IIBCPacket.timeoutOnClose.selector, msg_));
         module.onTimeoutPacket(msg_.packet, _msgSender());
         emit TimeoutPacket(msg_.packet);
     }
