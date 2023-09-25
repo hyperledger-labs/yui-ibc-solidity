@@ -83,7 +83,7 @@ contract IBCTest is Test {
     }
 
     function setUpMockApp() internal {
-        mockApp = new MockApp();
+        mockApp = new MockApp(address(handler));
         handler.bindPort(MOCK_PORT_ID, address(mockApp));
         handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(mockApp));
         handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(this));

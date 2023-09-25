@@ -60,7 +60,7 @@ abstract contract IBCQuerier is IBCStore {
         view
         returns (bool)
     {
-        return packetReceipts[portId][channelId][sequence] == 1;
+        return commitments[IBCCommitment.packetReceiptCommitmentKey(portId, channelId, sequence)] != bytes32(0);
     }
 
     function getNextSequenceSend(string calldata portId, string calldata channelId) external view returns (uint64) {

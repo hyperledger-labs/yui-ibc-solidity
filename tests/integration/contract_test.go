@@ -17,6 +17,13 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	relayer         = ibctesting.RelayerKeyIndex // the key-index of relayer on chain
+	deployer        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain
+	alice    uint32 = 1                          // the key-index of alice on chain
+	bob      uint32 = 2                          // the key-index of bob on chain
+)
+
 /*
 NOTE: This test is intended to be run on ganache. Therefore, we are using MockClient instead of IBFT2Client.
 */
@@ -32,8 +39,8 @@ func (suite *ContractTestSuite) SetupTest() {
 	ethClient, err := client.NewETHClient("http://127.0.0.1:8545")
 	suite.Require().NoError(err)
 
-	suite.chainA = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient))
-	suite.chainB = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient))
+	suite.chainA = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), false)
+	suite.chainB = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), false)
 	suite.coordinator = ibctesting.NewCoordinator(suite.T(), suite.chainA, suite.chainB)
 }
 
@@ -84,18 +91,21 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 		path, err = suite.chainA.IBCCommitment.PacketAcknowledgementCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
 		require.NoError(err)
 		require.Equal(host.PacketAcknowledgementKey(testPortID, testChannelID, testSequence), path)
+
+		// packet receipt
+		path, err = suite.chainA.IBCCommitment.PacketReceiptCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID, testSequence)
+		require.NoError(err)
+		require.Equal(host.PacketReceiptKey(testPortID, testChannelID, testSequence), path)
+
+		// next sequence receive
+		path, err = suite.chainA.IBCCommitment.NextSequenceRecvCommitmentPath(suite.chainA.CallOpts(ctx, ibctesting.RelayerKeyIndex), testPortID, testChannelID)
+		require.NoError(err)
+		require.Equal(host.NextSequenceRecvKey(testPortID, testChannelID), path)
 	})
 }
 
-func (suite *ContractTestSuite) TestChannel() {
+func (suite *ContractTestSuite) TestPacketRelay() {
 	ctx := context.Background()
-
-	const (
-		relayer         = ibctesting.RelayerKeyIndex // the key-index of relayer on chain
-		deployer        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain
-		alice    uint32 = 1                          // the key-index of alice on chain
-		bob      uint32 = 2                          // the key-index of bob on chain
-	)
 
 	chainA := suite.chainA
 	chainB := suite.chainB
@@ -106,82 +116,152 @@ func (suite *ContractTestSuite) TestChannel() {
 
 	/// Tests for Transfer module ///
 
-	balance0, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
+	denomA := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
+	balanceA0, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
 	suite.Require().NoError(err)
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ERC20.Approve(chainA.TxOpts(ctx, deployer), chainA.ContractConfig.ICS20BankAddress, big.NewInt(100)),
-	))
+	// Case: transfer tokens from chainA to chainB
+	{
+		suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
 
-	// deposit a simple token to the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.ICS20Bank.Deposit(
-		chainA.TxOpts(ctx, deployer),
-		chainA.ContractConfig.ERC20TokenAddress,
-		big.NewInt(100),
-		chainA.CallOpts(ctx, alice).From,
-	)))
+		// try to transfer the token to chainB
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainA.ICS20Transfer.SendTransfer(
+				chainA.TxOpts(ctx, alice),
+				denomA,
+				100,
+				chainB.CallOpts(ctx, bob).From,
+				chanA.PortID, chanA.ID,
+				uint64(chainB.LastHeader().Number.Int64())+1000,
+			),
+		))
 
-	// ensure that the balance is reduced
-	balance1, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
-	suite.Require().NoError(err)
-	suite.Require().Equal(balance0.Int64()-100, balance1.Int64())
+		suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
-	baseDenom := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
+		// ensure that escrow has correct balance
+		escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, alice), chainA.ContractConfig.ICS20TransferBankAddress, denomA)
+		suite.Require().NoError(err)
+		suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
-	bankA, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, alice).From, baseDenom)
-	suite.Require().NoError(err)
-	suite.Require().GreaterOrEqual(bankA.Int64(), int64(100))
+		// relay the packet
+		suite.coordinator.RelayLastSentPacket(ctx, chainA, chainB, chanA, chanB)
+	}
+
+	denomB := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, denomA)
+	// Case: transfer tokens from chainB to chainA
+	{
+		// ensure that chainB has correct balance
+		balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bob).From, denomB)
+		suite.Require().NoError(err)
+		suite.Require().Equal(int64(100), balance.Int64())
+
+		// try to transfer the token to chainA
+		suite.Require().NoError(chainB.WaitIfNoError(ctx)(
+			chainB.ICS20Transfer.SendTransfer(
+				chainB.TxOpts(ctx, bob),
+				denomB,
+				100,
+				chainA.CallOpts(ctx, alice).From,
+				chanB.PortID,
+				chanB.ID,
+				uint64(chainA.LastHeader().Number.Int64())+1000,
+			),
+		))
+
+		suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+
+		// relay the packet
+		suite.coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA)
+
+		// withdraw tokens from the bank
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+			chainA.ICS20Bank.Withdraw(
+				chainA.TxOpts(ctx, alice),
+				chainA.ContractConfig.ERC20TokenAddress,
+				big.NewInt(100),
+				chainA.CallOpts(ctx, deployer).From,
+			)))
+
+		// ensure that token balance equals original value
+		balanceA2, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
+		suite.Require().NoError(err)
+		suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
+	}
+
+	// close channel
+	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
+}
+
+func (suite *ContractTestSuite) TestTimeoutPacket() {
+	ctx := context.Background()
+
+	chainA := suite.chainA
+	chainB := suite.chainB
+
+	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
+	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+	chanA, _ := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+
+	denomA := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
+
+	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
 
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, alice),
-			baseDenom,
+			denomA,
 			100,
 			chainB.CallOpts(ctx, bob).From,
 			chanA.PortID, chanA.ID,
-			uint64(chainA.LastHeader().Number.Int64())+1000,
+			uint64(chainB.LastHeader().Number.Int64())+1,
 		),
 	))
-	chainA.UpdateHeader()
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainB, chainA, clientB))
-
-	// ensure that escrow has correct balance
-	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, alice), chainA.ContractConfig.ICS20TransferBankAddress, baseDenom)
-	suite.Require().NoError(err)
-	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
-
-	// relay the packet
 	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
-	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainB, chainA, chanB, chanA, *transferPacket))
-	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainA, chainB, chanA, chanB, *transferPacket, []byte{1}))
 
-	// ensure that chainB has correct balance
-	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, baseDenom)
-	balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bob).From, expectedDenom)
-	suite.Require().NoError(err)
-	suite.Require().Equal(int64(100), balance.Int64())
+	// should fail to timeout packet because the timeout height is not reached
+	suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
 
-	// try to transfer the token to chainA
-	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
-		chainB.ICS20Transfer.SendTransfer(
-			chainB.TxOpts(ctx, bob),
-			expectedDenom,
+	suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
+
+	// then, update the client to reach the timeout height
+	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+
+	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
+	suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
+	// confirm that the packet commitment is deleted
+	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
+}
+
+func (suite *ContractTestSuite) TestTimeoutOnClose() {
+	ctx := context.Background()
+
+	chainA := suite.chainA
+	chainB := suite.chainB
+
+	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
+	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+
+	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
+
+	// try to transfer the token to chainB
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		chainA.ICS20Transfer.SendTransfer(
+			chainA.TxOpts(ctx, alice),
+			strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
 			100,
-			chainA.CallOpts(ctx, alice).From,
-			chanB.PortID,
-			chanB.ID,
+			chainB.CallOpts(ctx, bob).From,
+			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
 	))
-	chainB.UpdateHeader()
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
-	// relay the packet
-	transferPacket, err = chainB.GetLastSentPacket(ctx, chanB.PortID, chanB.ID)
+	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
-	suite.Require().NoError(suite.coordinator.HandlePacketRecv(ctx, chainA, chainB, chanA, chanB, *transferPacket))
-	suite.Require().NoError(suite.coordinator.HandlePacketAcknowledgement(ctx, chainB, chainA, chanB, chanA, *transferPacket, []byte{1}))
+
+	suite.Require().NoError(suite.coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
+	suite.Require().NoError(suite.chainA.TimeoutOnClose(ctx, *transferPacket, chainB, chanA, chanB))
 
 	// withdraw tokens from the bank
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -191,24 +271,6 @@ func (suite *ContractTestSuite) TestChannel() {
 			big.NewInt(100),
 			chainA.CallOpts(ctx, deployer).From,
 		)))
-
-	// ensure that token balance equals original value
-	balanceA2, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployer).From)
-	suite.Require().NoError(err)
-	suite.Require().Equal(balance0.Int64(), balanceA2.Int64())
-
-	// close channel
-	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
-	// confirm that the channel is CLOSED on chain A
-	chanData, ok, err := chainA.IBCHandler.GetChannel(chainA.CallOpts(ctx, relayer), chanA.PortID, chanA.ID)
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
-	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
-	// confirm that the channel is CLOSED on chain B
-	chanData, ok, err = chainB.IBCHandler.GetChannel(chainB.CallOpts(ctx, relayer), chanB.PortID, chanB.ID)
-	suite.Require().NoError(err)
-	suite.Require().True(ok)
-	suite.Require().Equal(channeltypes.Channel_State(chanData.State), channeltypes.CLOSED)
 }
 
 func TestContractTestSuite(t *testing.T) {

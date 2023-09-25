@@ -76,4 +76,21 @@ interface IIBCPacket {
      * It will also increment NextSequenceAck in case of ORDERED channels.
      */
     function acknowledgePacket(IBCMsgs.MsgPacketAcknowledgement calldata msg_) external;
+
+    /**
+     * @dev TimeoutPacket is called by a module which originally attempted to send a
+     * packet to a counterparty module, where the timeout height has passed on the
+     * counterparty chain without the packet being committed, to prove that the
+     * packet can no longer be executed and to allow the calling module to safely
+     * perform appropriate state transitions. Its intended usage is within the
+     * ante handler.
+     */
+    function timeoutPacket(IBCMsgs.MsgTimeoutPacket calldata msg_) external;
+
+    /**
+     * @dev TimeoutOnClose is called by a module in order to prove that the channel to
+     * which an unreceived packet was addressed has been closed, so the packet will
+     * never be received (even if the timeoutHeight has not yet been reached).
+     */
+    function timeoutOnClose(IBCMsgs.MsgTimeoutOnClose calldata msg_) external;
 }

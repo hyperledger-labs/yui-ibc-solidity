@@ -19,7 +19,6 @@ abstract contract IBCStore {
     mapping(string => mapping(string => uint64)) internal nextSequenceSends;
     mapping(string => mapping(string => uint64)) internal nextSequenceRecvs;
     mapping(string => mapping(string => uint64)) internal nextSequenceAcks;
-    mapping(string => mapping(string => mapping(uint64 => uint8))) internal packetReceipts;
     mapping(bytes => address[]) internal capabilities;
 
     // Host parameters

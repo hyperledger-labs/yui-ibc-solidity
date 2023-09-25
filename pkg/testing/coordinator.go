@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/avast/retry-go"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	"github.com/stretchr/testify/require"
@@ -16,9 +18,9 @@ type Coordinator struct {
 }
 
 func NewCoordinator(t *testing.T, chains ...*Chain) Coordinator {
+	// initialize the input data for the light clients
 	for _, chain := range chains {
-		// initialize LastLCState of chain
-		chain.UpdateHeader()
+		chain.UpdateLCInputData()
 	}
 	return Coordinator{t: t, chains: chains}
 }
@@ -60,9 +62,9 @@ func (coord *Coordinator) SetupClientConnections(
 	return clientA, clientB, connA, connB
 }
 
-func (coord *Coordinator) UpdateHeaders() {
+func (coord *Coordinator) UpdateLCInputData() {
 	for _, c := range coord.chains {
-		c.UpdateHeader()
+		c.UpdateLCInputData()
 	}
 }
 
@@ -92,6 +94,7 @@ func (c Coordinator) UpdateClient(
 	source, counterparty *Chain,
 	clientID string,
 ) error {
+	counterparty.UpdateLCInputData()
 	var err error
 	switch counterparty.ClientType() {
 	case clienttypes.BesuIBFT2Client:
@@ -163,9 +166,11 @@ func (c *Coordinator) CloseChannel(
 ) {
 	err := c.ChanCloseInit(ctx, chainA, chainB, chanA)
 	require.NoError(c.t, err)
+	require.NoError(c.t, chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED))
 
 	err = c.ChanCloseConfirm(ctx, chainB, chainA, chanB, chanA)
 	require.NoError(c.t, err)
+	require.NoError(c.t, chainB.EnsureChannelState(ctx, chanB.PortID, chanB.ID, channeltypes.CLOSED))
 }
 
 // ConnOpenInit initializes a connection on the source chain with the state INIT
@@ -189,8 +194,6 @@ func (c Coordinator) ConnOpenInit(
 	} else {
 		sourceConnection.ID = connID
 	}
-
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	if err := c.UpdateClient(
@@ -218,8 +221,6 @@ func (c *Coordinator) ConnOpenTry(
 		sourceConnection.ID = connID
 	}
 
-	source.UpdateHeader()
-
 	return c.UpdateClient(
 		ctx,
 		counterparty, source,
@@ -239,8 +240,6 @@ func (c *Coordinator) ConnOpenAck(
 		return err
 	}
 
-	source.UpdateHeader()
-
 	// update source client on counterparty connection
 	return c.UpdateClient(
 		ctx,
@@ -259,8 +258,6 @@ func (c *Coordinator) ConnOpenConfirm(
 	if err := source.ConnectionOpenConfirm(ctx, counterparty, sourceConnection, counterpartyConnection); err != nil {
 		return err
 	}
-
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -291,8 +288,6 @@ func (c *Coordinator) ChanOpenInit(
 		sourceChannel.ID = channelID
 	}
 
-	source.UpdateHeader()
-
 	// update source client on counterparty connection
 	err := c.UpdateClient(
 		ctx,
@@ -317,7 +312,6 @@ func (c *Coordinator) ChanOpenTry(
 	} else {
 		sourceChannel.ID = channelID
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -337,7 +331,6 @@ func (c *Coordinator) ChanOpenAck(
 	if err := source.ChannelOpenAck(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -357,7 +350,6 @@ func (c *Coordinator) ChanOpenConfirm(
 	if err := source.ChannelOpenConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	return c.UpdateClient(
 		ctx,
@@ -375,7 +367,6 @@ func (c *Coordinator) ChanCloseInit(
 	if err := source.ChannelCloseInit(ctx, sourceChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	return c.UpdateClient(
 		ctx,
@@ -394,7 +385,6 @@ func (c *Coordinator) ChanCloseConfirm(
 	if err := source.ChannelCloseConfirm(ctx, counterparty, sourceChannel, counterpartyChannel); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	return c.UpdateClient(
 		ctx,
@@ -414,7 +404,6 @@ func (c *Coordinator) SendPacket(
 	if err := source.SendPacket(ctx, packet); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -433,7 +422,6 @@ func (c *Coordinator) HandlePacketRecv(
 	if err := source.HandlePacketRecv(ctx, counterparty, sourceChannel, counterpartyChannel, packet); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -453,7 +441,6 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 	if err := source.HandlePacketAcknowledgement(ctx, counterparty, sourceChannel, counterpartyChannel, packet, acknowledgement); err != nil {
 		return err
 	}
-	source.UpdateHeader()
 
 	// update source client on counterparty connection
 	return c.UpdateClient(
@@ -461,4 +448,59 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 		counterparty, source,
 		counterpartyChannel.ClientID,
 	)
+}
+
+func (c *Coordinator) RelayLastSentPacket(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+) {
+	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
+	require.NoError(c.t, err)
+	require.NoError(c.t, c.HandlePacketRecv(ctx, counterparty, source, counterpartyChannel, sourceChannel, *packet))
+	require.NoError(c.t, c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, []byte{1}))
+}
+
+func (c *Coordinator) RelayLastSentPacketWithDelay(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel, counterpartyChannel TestChannel,
+	sourceDelayPeriodExtension, counterpartyDelayPeriodExtension uint64,
+	delayStartTimeForRecv time.Time,
+) {
+	var delayStartTimeForAck time.Time
+
+	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
+	require.NoError(c.t, err)
+	require.NoError(c.t, retry.Do(
+		func() error {
+			delayStartTimeForAck = time.Now()
+			return c.HandlePacketRecv(ctx, counterparty, source, counterpartyChannel, sourceChannel, *packet)
+		},
+		retry.Delay(time.Second),
+		retry.Attempts(60),
+	))
+	delayForRecv := time.Since(delayStartTimeForRecv)
+	c.t.Logf("delay for recv@%v %s", counterparty.chainID, delayForRecv)
+	require.Greater(c.t, delayForRecv, time.Duration(counterpartyDelayPeriodExtension*counterparty.GetDelayPeriod()))
+	require.NoError(c.t, retry.Do(
+		func() error {
+			return c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, []byte{1})
+		},
+		retry.Delay(time.Second),
+		retry.Attempts(60),
+	))
+	delayForAck := time.Since(delayStartTimeForAck)
+	c.t.Logf("delay for ack@%v %s", source.chainID, delayForAck)
+	require.Greater(c.t, delayForAck, time.Duration(sourceDelayPeriodExtension*source.GetDelayPeriod()))
+}
+
+func (c *Coordinator) TimeoutLastSentPacket(
+	ctx context.Context,
+	source, counterparty *Chain,
+	sourceChannel TestChannel,
+) error {
+	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
+	require.NoError(c.t, err)
+	return source.TimeoutPacket(ctx, *packet, counterparty, sourceChannel)
 }

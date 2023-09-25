@@ -79,6 +79,10 @@ abstract contract ICS20Transfer is IBCAppBase {
         channelEscrowAddresses[channelId] = address(this);
     }
 
+    function onTimeoutPacket(Packet.Data calldata packet, address) external virtual override onlyIBC {
+        _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
+    }
+
     /// Internal functions ///
 
     function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
