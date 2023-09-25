@@ -1278,7 +1278,9 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 	addr := gethcrypto.PubkeyToAddress(prv.PublicKey)
 	return func(ctx context.Context) *bind.TransactOpts {
 		return &bind.TransactOpts{
-			From:     addr,
+			From: addr,
+			// Set non-zero value to avoid call `estimateGas`
+			// This allows we can extract the revert reason from the transaction receipt if the transaction fails.
 			GasLimit: 6382056,
 			Signer: func(address common.Address, tx *gethtypes.Transaction) (*gethtypes.Transaction, error) {
 				if address != addr {
