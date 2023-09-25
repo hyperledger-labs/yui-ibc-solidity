@@ -1,4 +1,4 @@
-FROM hyperledger/besu:21.1
+FROM hyperledger/besu:23.7.2
 
 USER root
 
@@ -10,4 +10,4 @@ RUN cp ./networkFiles/keys/*/* ./data/
 
 EXPOSE 8545 8546 8547 30303
 ENTRYPOINT [ "besu" ]
-CMD ["--data-path", "./data", "--genesis-file", "./networkFiles/genesis.json", "--rpc-http-enabled", "--rpc-http-api", "ETH,NET,IBFT", "--host-allowlist", "*", "--rpc-http-cors-origins", "all", "--revert-reason-enabled"]
+CMD ["--data-path", "./data", "--genesis-file", "./networkFiles/genesis.json", "--rpc-http-enabled", "--rpc-http-api", "ETH,NET,IBFT,DEBUG", "--host-allowlist", "*", "--rpc-http-cors-origins", "all", "--revert-reason-enabled"]
