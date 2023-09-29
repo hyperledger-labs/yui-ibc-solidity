@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	ibcclienttypes "github.com/cosmos/ibc-go/v4/modules/core/02-client/types"
-	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
+	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
@@ -128,7 +128,7 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, alice),
 				denomA,
-				100,
+				big.NewInt(100),
 				chainB.CallOpts(ctx, bob).From,
 				chanA.PortID, chanA.ID,
 				uint64(chainB.LastHeader().Number.Int64())+1000,
@@ -159,7 +159,7 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 			chainB.ICS20Transfer.SendTransfer(
 				chainB.TxOpts(ctx, bob),
 				denomB,
-				100,
+				big.NewInt(100),
 				chainA.CallOpts(ctx, alice).From,
 				chanB.PortID,
 				chanB.ID,
@@ -210,7 +210,7 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, alice),
 			denomA,
-			100,
+			big.NewInt(100),
 			chainB.CallOpts(ctx, bob).From,
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1,
@@ -250,7 +250,7 @@ func (suite *ContractTestSuite) TestTimeoutOnClose() {
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, alice),
 			strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
-			100,
+			big.NewInt(100),
 			chainB.CallOpts(ctx, bob).From,
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,

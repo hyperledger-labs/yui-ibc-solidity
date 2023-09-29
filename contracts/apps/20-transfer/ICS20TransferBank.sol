@@ -18,7 +18,7 @@ contract ICS20TransferBank is ICS20Transfer {
 
     function sendTransfer(
         string calldata denom,
-        uint64 amount,
+        uint256 amount,
         address receiver,
         string calldata sourcePort,
         string calldata sourceChannel,
@@ -32,11 +32,12 @@ contract ICS20TransferBank is ICS20Transfer {
         }
 
         _sendPacket(
-            FungibleTokenPacketData.Data({
+            ICS20Packet.PacketData({
                 denom: denom,
                 amount: amount,
-                sender: abi.encodePacked(_msgSender()),
-                receiver: abi.encodePacked(receiver)
+                sender: string(abi.encodePacked(_msgSender())),
+                receiver: string(abi.encodePacked(receiver)),
+                memo: ""
             }),
             sourcePort,
             sourceChannel,

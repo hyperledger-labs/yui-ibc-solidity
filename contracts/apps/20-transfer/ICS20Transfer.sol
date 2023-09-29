@@ -5,7 +5,7 @@ import "../commons/IBCAppBase.sol";
 import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
 import "../../proto/Channel.sol";
-import "../../proto/FungibleTokenPacketData.sol";
+import "./ICS20Packet.sol";
 import "solidity-stringutils/src/strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
@@ -24,7 +24,7 @@ abstract contract ICS20Transfer is IBCAppBase {
         onlyIBC
         returns (bytes memory acknowledgement)
     {
-        FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
+        ICS20Packet.PacketData memory data = ICS20Packet.unmarshalJSON(packet.data);
         strings.slice memory denom = data.denom.toSlice();
         strings.slice memory trimedDenom =
             data.denom.toSlice().beyond(_makeDenomPrefix(packet.source_port, packet.source_channel));
@@ -33,7 +33,7 @@ abstract contract ICS20Transfer is IBCAppBase {
             return _newAcknowledgement(
                 _transferFrom(
                     _getEscrowAddress(packet.destination_channel),
-                    data.receiver.toAddress(0),
+                    bytes(data.receiver).toAddress(0),
                     trimedDenom.toString(),
                     data.amount
                 )
@@ -41,7 +41,7 @@ abstract contract ICS20Transfer is IBCAppBase {
         } else {
             string memory prefixedDenom =
                 _makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            return _newAcknowledgement(_mint(data.receiver.toAddress(0), prefixedDenom, data.amount));
+            return _newAcknowledgement(_mint(bytes(data.receiver).toAddress(0), prefixedDenom, data.amount));
         }
     }
 
@@ -52,7 +52,7 @@ abstract contract ICS20Transfer is IBCAppBase {
         onlyIBC
     {
         if (!_isSuccessAcknowledgement(acknowledgement)) {
-            _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
+            _refundTokens(ICS20Packet.unmarshalJSON(packet.data), packet.source_port, packet.source_channel);
         }
     }
 
@@ -80,7 +80,7 @@ abstract contract ICS20Transfer is IBCAppBase {
     }
 
     function onTimeoutPacket(Packet.Data calldata packet, address) external virtual override onlyIBC {
-        _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
+        _refundTokens(ICS20Packet.unmarshalJSON(packet.data), packet.source_port, packet.source_channel);
     }
 
     /// Internal functions ///
@@ -95,7 +95,7 @@ abstract contract ICS20Transfer is IBCAppBase {
     function _burn(address account, string memory denom, uint256 amount) internal virtual returns (bool);
 
     function _sendPacket(
-        FungibleTokenPacketData.Data memory data,
+        ICS20Packet.PacketData memory data,
         string memory sourcePort,
         string memory sourceChannel,
         uint64 timeoutHeight
@@ -105,7 +105,7 @@ abstract contract ICS20Transfer is IBCAppBase {
             sourceChannel,
             Height.Data({revision_number: 0, revision_height: timeoutHeight}),
             0,
-            FungibleTokenPacketData.encode(data)
+            ICS20Packet.marshalUnsafeJSON(data)
         );
     }
 
@@ -116,30 +116,30 @@ abstract contract ICS20Transfer is IBCAppBase {
     }
 
     function _newAcknowledgement(bool success) internal pure virtual returns (bytes memory) {
-        bytes memory acknowledgement = new bytes(1);
         if (success) {
-            acknowledgement[0] = 0x01;
+            return ICS20Packet.SUCCESSFUL_ACKNOWLEDGEMENT_JSON;
         } else {
-            acknowledgement[0] = 0x00;
+            return ICS20Packet.FAILED_ACKNOWLEDGEMENT_JSON;
         }
-        return acknowledgement;
     }
 
     function _isSuccessAcknowledgement(bytes memory acknowledgement) internal pure virtual returns (bool) {
-        require(acknowledgement.length == 1);
-        return acknowledgement[0] == 0x01;
+        return keccak256(acknowledgement) == keccak256(ICS20Packet.SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
     }
 
-    function _refundTokens(
-        FungibleTokenPacketData.Data memory data,
-        string memory sourcePort,
-        string memory sourceChannel
-    ) internal virtual {
+    function _refundTokens(ICS20Packet.PacketData memory data, string memory sourcePort, string memory sourceChannel)
+        internal
+        virtual
+    {
         if (!data.denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) {
             // sender was source chain
-            require(_transferFrom(_getEscrowAddress(sourceChannel), data.sender.toAddress(0), data.denom, data.amount));
+            require(
+                _transferFrom(
+                    _getEscrowAddress(sourceChannel), bytes(data.sender).toAddress(0), data.denom, data.amount
+                )
+            );
         } else {
-            require(_mint(data.sender.toAddress(0), data.denom, data.amount));
+            require(_mint(bytes(data.sender).toAddress(0), data.denom, data.amount));
         }
     }
 
