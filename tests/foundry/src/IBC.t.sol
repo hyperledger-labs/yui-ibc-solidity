@@ -79,7 +79,7 @@ contract IBCTest is Test {
         handler.setNextSequenceRecv(MOCK_PORT_ID, "channel-0", 1);
         handler.setNextSequenceAck(MOCK_PORT_ID, "channel-0", 1);
 
-        testPacketCommitment = makePacketCommitment(getPacket());
+        testPacketCommitment = makePacketCommitment(createPacket(0, 100));
     }
 
     function setUpMockApp() internal {
@@ -111,6 +111,14 @@ contract IBCTest is Test {
         assertEq(connectionId, "connection-1");
     }
 
+    function testSendPacketInvalidTimestamp() public {
+        Packet.Data memory packet = createPacket(0, 0);
+        vm.expectRevert("timeout height and timestamp cannot both be 0");
+        handler.sendPacket(
+            packet.source_port, packet.source_channel, packet.timeout_height, packet.timeout_timestamp, packet.data
+        );
+    }
+
     /* gas benchmarks */
 
     function testBenchmarkCreateMockClient() public {
@@ -122,7 +130,7 @@ contract IBCTest is Test {
     }
 
     function testBenchmarkSendPacket() public {
-        Packet.Data memory packet = getPacket();
+        Packet.Data memory packet = createPacket(0, 100);
         handler.sendPacket(
             packet.source_port, packet.source_channel, packet.timeout_height, packet.timeout_timestamp, packet.data
         );
@@ -131,7 +139,7 @@ contract IBCTest is Test {
     event MockRecv(bool ok);
 
     function testBenchmarkRecvPacket() public {
-        Packet.Data memory packet = getPacket();
+        Packet.Data memory packet = createPacket(0, 100);
         vm.expectEmit(false, false, false, true);
         emit MockRecv(true);
         handler.recvPacket(
@@ -213,7 +221,11 @@ contract IBCTest is Test {
         return versions;
     }
 
-    function getPacket() internal pure returns (Packet.Data memory packet) {
+    function createPacket(uint64 revisionNumber, uint64 revisionHeight)
+        internal
+        pure
+        returns (Packet.Data memory packet)
+    {
         return Packet.Data({
             sequence: 1,
             source_port: MOCK_PORT_ID,
@@ -221,7 +233,7 @@ contract IBCTest is Test {
             destination_port: MOCK_PORT_ID,
             destination_channel: "channel-0",
             data: bytes("{\"amount\": \"100\"}"),
-            timeout_height: Height.Data({revision_number: 0, revision_height: 100}),
+            timeout_height: Height.Data({revision_number: revisionNumber, revision_height: revisionHeight}),
             timeout_timestamp: 0
         });
     }
