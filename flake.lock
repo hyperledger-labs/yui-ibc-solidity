@@ -371,7 +371,24 @@
       "inputs": {
         "ethereum": "ethereum",
         "flake-parts": "flake-parts_4",
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_3",
+        "solidity-protobuf": "solidity-protobuf"
+      }
+    },
+    "solidity-protobuf": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1655264711,
+        "narHash": "sha256-5dqBObLSEDQ/G2AFYcyDyz/7dCiggUWEVqUWo2YWKlU=",
+        "owner": "datachainlab",
+        "repo": "solidity-protobuf",
+        "rev": "3def6706178e5407497f3d01b8f0ceb17b32108d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "datachainlab",
+        "repo": "solidity-protobuf",
+        "type": "github"
       }
     },
     "systems": {

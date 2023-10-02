@@ -22,8 +22,32 @@ contract ICS20TransferBank is ICS20Transfer {
         address receiver,
         string calldata sourcePort,
         string calldata sourceChannel,
+        uint64 timeoutHeight,
+        string calldata memo
+    ) external {
+        _sendTransfer(denom, amount, receiver, sourcePort, sourceChannel, timeoutHeight, memo);
+    }
+
+    function sendTransfer(
+        string calldata denom,
+        uint64 amount,
+        address receiver,
+        string calldata sourcePort,
+        string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
+        _sendTransfer(denom, amount, receiver, sourcePort, sourceChannel, timeoutHeight, "");
+    }
+
+    function _sendTransfer(
+        string calldata denom,
+        uint64 amount,
+        address receiver,
+        string calldata sourcePort,
+        string calldata sourceChannel,
+        uint64 timeoutHeight,
+        string memory memo
+    ) private {
         if (!denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) {
             // sender is source chain
             require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
@@ -36,7 +60,8 @@ contract ICS20TransferBank is ICS20Transfer {
                 denom: denom,
                 amount: amount,
                 sender: abi.encodePacked(_msgSender()),
-                receiver: abi.encodePacked(receiver)
+                receiver: abi.encodePacked(receiver),
+                memo : memo
             }),
             sourcePort,
             sourceChannel,

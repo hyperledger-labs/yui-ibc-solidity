@@ -56,7 +56,7 @@ $ make network-e2e
 
 After launch the chains, execute the following command:
 
-```
+```sh
 $ make e2e-test
 ```
 
@@ -73,7 +73,7 @@ To generate the proto encoders and decoders in solidity from proto files, you ne
 Currently, [v0.1.0](https://github.com/datachainlab/solidity-protobuf/tree/v0.1.0) is required.
 
 If you edit the proto definitions, you should execute the following command:
-```
+```sh
 $ make SOLPB_DIR=/path/to/solidity-protobuf proto-sol
 ```
 

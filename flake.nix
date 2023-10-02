@@ -9,6 +9,11 @@
       url =
         "github:nix-community/ethereum.nix";
     };
+    solidity-protobuf = {
+      flake = false;
+      url =
+        "github:datachainlab/solidity-protobuf";
+    };
   };
 
   outputs = inputs@{ flake-parts, ... }:
@@ -18,13 +23,22 @@
       systems = [ "x86_64-linux" ];
       perSystem = { config, self', inputs', pkgs, system, ... }: {
         devShells.default = pkgs.mkShell {
+          SOLPB_DIR = inputs.solidity-protobuf;
           packages =
             [
               inputs.ethereum.packages.${system}.foundry
               pkgs.solc
               pkgs.go
               pkgs.protobuf
+              pkgs.python3
+              pkgs.python3Packages.protobuf3
+              pkgs.python3Packages.wrapt
+              pkgs.python3Packages.google
+              pkgs.nodejs
             ];
+          enterShell = '' 
+             npm install
+             '';
         };
 
       };

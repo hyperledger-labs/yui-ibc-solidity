@@ -12,6 +12,7 @@ library FungibleTokenPacketData {
     uint64 amount;
     bytes sender;
     bytes receiver;
+    string memo;
   }
 
   // Decoder section
@@ -70,6 +71,9 @@ library FungibleTokenPacketData {
       } else
       if (fieldId == 4) {
         pointer += _read_receiver(pointer, bs, r);
+      } else
+      if (fieldId == 5) {
+        pointer += _read_memo(pointer, bs, r);
       } else
       {
         pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
@@ -149,6 +153,23 @@ library FungibleTokenPacketData {
     return sz;
   }
 
+  /**
+   * @dev The decoder for reading a field
+   * @param p The offset of bytes array to start decode
+   * @param bs The bytes array to be decoded
+   * @param r The in-memory struct
+   * @return The number of bytes decoded
+   */
+  function _read_memo(
+    uint256 p,
+    bytes memory bs,
+    Data memory r
+  ) internal pure returns (uint) {
+    (string memory x, uint256 sz) = ProtoBufRuntime._decode_string(p, bs);
+    r.memo = x;
+    return sz;
+  }
+
 
   // Encoder section
 
@@ -218,6 +239,15 @@ library FungibleTokenPacketData {
     );
     pointer += ProtoBufRuntime._encode_bytes(r.receiver, pointer, bs);
     }
+    if (bytes(r.memo).length != 0) {
+    pointer += ProtoBufRuntime._encode_key(
+      5,
+      ProtoBufRuntime.WireType.LengthDelim,
+      pointer,
+      bs
+    );
+    pointer += ProtoBufRuntime._encode_string(r.memo, pointer, bs);
+    }
     return pointer - offset;
   }
   // nested encoder
@@ -265,6 +295,7 @@ library FungibleTokenPacketData {
     e += 1 + ProtoBufRuntime._sz_uint64(r.amount);
     e += 1 + ProtoBufRuntime._sz_lendelim(r.sender.length);
     e += 1 + ProtoBufRuntime._sz_lendelim(r.receiver.length);
+    e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.memo).length);
     return e;
   }
   // empty checker
@@ -289,6 +320,10 @@ library FungibleTokenPacketData {
     return false;
   }
 
+  if (bytes(r.memo).length != 0) {
+    return false;
+  }
+
     return true;
   }
 
@@ -304,6 +339,7 @@ library FungibleTokenPacketData {
     output.amount = input.amount;
     output.sender = input.sender;
     output.receiver = input.receiver;
+    output.memo = input.memo;
 
   }
 
