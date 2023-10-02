@@ -457,8 +457,12 @@ func (c *Coordinator) RelayLastSentPacket(
 ) {
 	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
 	require.NoError(c.t, err)
+	c.t.Logf("packet found: %v", string(packet.Data))
 	require.NoError(c.t, c.HandlePacketRecv(ctx, counterparty, source, counterpartyChannel, sourceChannel, *packet))
-	require.NoError(c.t, c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, []byte{1}))
+	ack, err := counterparty.FindAcknowledgement(ctx, counterpartyChannel.PortID, counterpartyChannel.ID, packet.Sequence)
+	require.NoError(c.t, err)
+	c.t.Logf("ack found: %v", string(ack))
+	require.NoError(c.t, c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, ack))
 }
 
 func (c *Coordinator) RelayLastSentPacketWithDelay(

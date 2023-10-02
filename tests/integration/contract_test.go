@@ -9,6 +9,7 @@ import (
 
 	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
@@ -129,7 +130,7 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 				chainA.TxOpts(ctx, alice),
 				denomA,
 				big.NewInt(100),
-				chainB.CallOpts(ctx, bob).From,
+				addressToHexString(chainB.CallOpts(ctx, bob).From),
 				chanA.PortID, chanA.ID,
 				uint64(chainB.LastHeader().Number.Int64())+1000,
 			),
@@ -160,7 +161,7 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 				chainB.TxOpts(ctx, bob),
 				denomB,
 				big.NewInt(100),
-				chainA.CallOpts(ctx, alice).From,
+				addressToHexString(chainA.CallOpts(ctx, alice).From),
 				chanB.PortID,
 				chanB.ID,
 				uint64(chainA.LastHeader().Number.Int64())+1000,
@@ -211,7 +212,7 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 			chainA.TxOpts(ctx, alice),
 			denomA,
 			big.NewInt(100),
-			chainB.CallOpts(ctx, bob).From,
+			addressToHexString(chainB.CallOpts(ctx, bob).From),
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1,
 		),
@@ -251,7 +252,7 @@ func (suite *ContractTestSuite) TestTimeoutOnClose() {
 			chainA.TxOpts(ctx, alice),
 			strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
 			big.NewInt(100),
-			chainB.CallOpts(ctx, bob).From,
+			addressToHexString(chainB.CallOpts(ctx, bob).From),
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
@@ -271,6 +272,10 @@ func (suite *ContractTestSuite) TestTimeoutOnClose() {
 			big.NewInt(100),
 			chainA.CallOpts(ctx, deployer).From,
 		)))
+}
+
+func addressToHexString(addr common.Address) string {
+	return strings.TrimPrefix(addr.String(), "0x")
 }
 
 func TestContractTestSuite(t *testing.T) {

@@ -49,6 +49,7 @@ const (
 var (
 	abiIBCHandler abi.ABI
 	abiSendPacket,
+	abiWriteAcknowledgement,
 	abiGeneratedClientIdentifier,
 	abiGeneratedConnectionIdentifier,
 	abiGeneratedChannelIdentifier abi.Event
@@ -61,6 +62,7 @@ func init() {
 		panic(err)
 	}
 	abiSendPacket = abiIBCHandler.Events["SendPacket"]
+	abiWriteAcknowledgement = abiIBCHandler.Events["WriteAcknowledgement"]
 	abiGeneratedClientIdentifier = abiIBCHandler.Events["GeneratedClientIdentifier"]
 	abiGeneratedConnectionIdentifier = abiIBCHandler.Events["GeneratedConnectionIdentifier"]
 	abiGeneratedChannelIdentifier = abiIBCHandler.Events["GeneratedChannelIdentifier"]
@@ -1006,6 +1008,38 @@ func (chain *Chain) FindPacket(
 	}
 
 	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
+}
+
+func (chain *Chain) FindAcknowledgement(
+	ctx context.Context,
+	portID string,
+	channelID string,
+	sequence uint64,
+) ([]byte, error) {
+	query := ethereum.FilterQuery{
+		FromBlock: chain.startBlockNumber,
+		Addresses: []common.Address{
+			chain.ContractConfig.IBCHandlerAddress,
+		},
+		Topics: [][]common.Hash{{
+			abiWriteAcknowledgement.ID,
+		}},
+	}
+	logs, err := chain.client.FilterLogs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	for _, log := range logs {
+		var writeAcknowledgement ibchandler.IbchandlerWriteAcknowledgement
+		if err := abiIBCHandler.UnpackIntoInterface(&writeAcknowledgement, "WriteAcknowledgement", log.Data); err != nil {
+			return nil, err
+		}
+		if writeAcknowledgement.DestinationPortId != portID || writeAcknowledgement.DestinationChannel != channelID || writeAcknowledgement.Sequence != sequence {
+			continue
+		}
+		return writeAcknowledgement.Acknowledgement, nil
+	}
+	return nil, fmt.Errorf("acknowledgement not found: portID=%v channelID=%v sequence=%v", portID, channelID, sequence)
 }
 
 func (chain *Chain) AdvanceBlockNumber(

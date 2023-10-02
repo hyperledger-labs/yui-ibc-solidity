@@ -8,8 +8,8 @@ import "../../core/25-handler/IBCHandler.sol";
 contract ICS20TransferBank is ICS20Transfer {
     using strings for *;
 
-    IBCHandler private ibcHandler;
-    IICS20Bank private bank;
+    IBCHandler private immutable ibcHandler;
+    IICS20Bank private immutable bank;
 
     constructor(IBCHandler ibcHandler_, IICS20Bank bank_) {
         ibcHandler = ibcHandler_;
@@ -19,7 +19,7 @@ contract ICS20TransferBank is ICS20Transfer {
     function sendTransfer(
         string calldata denom,
         uint256 amount,
-        address receiver,
+        string calldata receiver,
         string calldata sourcePort,
         string calldata sourceChannel,
         uint64 timeoutHeight
@@ -31,17 +31,19 @@ contract ICS20TransferBank is ICS20Transfer {
             require(_burn(_msgSender(), denom, amount));
         }
 
-        _sendPacket(
-            ICS20Packet.PacketData({
-                denom: denom,
-                amount: amount,
-                sender: string(abi.encodePacked(_msgSender())),
-                receiver: string(abi.encodePacked(receiver)),
-                memo: ""
-            }),
+        ICS20Lib.PacketData memory data = ICS20Lib.PacketData({
+            denom: denom,
+            amount: amount,
+            sender: _encodeSender(_msgSender()),
+            receiver: receiver,
+            memo: ""
+        });
+        IBCHandler(ibcAddress()).sendPacket(
             sourcePort,
             sourceChannel,
-            timeoutHeight
+            Height.Data({revision_number: 0, revision_height: timeoutHeight}),
+            0,
+            ICS20Lib.marshalUnsafeJSON(data)
         );
     }
 
@@ -71,6 +73,20 @@ contract ICS20TransferBank is ICS20Transfer {
         } catch (bytes memory) {
             return false;
         }
+    }
+
+    function _encodeSender(address sender) internal pure override returns (string memory) {
+        return ICS20Lib.addressToHexString(sender);
+    }
+
+    function _decodeSender(string memory sender) internal pure override returns (address) {
+        (address addr, bool ok) = ICS20Lib.hexStringToAddress(sender);
+        require(ok);
+        return addr;
+    }
+
+    function _decodeReceiver(string memory receiver) internal pure override returns (address, bool) {
+        return ICS20Lib.hexStringToAddress(receiver);
     }
 
     function ibcAddress() public view virtual override returns (address) {

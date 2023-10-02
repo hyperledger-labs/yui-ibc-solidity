@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
@@ -63,8 +64,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, aliceA),
 			baseDenom,
-			100,
-			chainB.CallOpts(ctx, bobB).From,
+			big.NewInt(100),
+			addressToHexString(chainB.CallOpts(ctx, bobB).From),
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
@@ -90,8 +91,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
-			100,
-			chainA.CallOpts(ctx, aliceA).From,
+			big.NewInt(100),
+			addressToHexString(chainA.CallOpts(ctx, aliceA).From),
 			chanB.PortID,
 			chanB.ID,
 			uint64(chainA.LastHeader().Number.Int64())+1000,
@@ -107,8 +108,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
 				baseDenom,
-				50,
-				chainB.CallOpts(ctx, bobB).From,
+				big.NewInt(50),
+				addressToHexString(chainB.CallOpts(ctx, bobB).From),
 				chanA.PortID, chanA.ID,
 				uint64(chainB.LastHeader().Number.Int64())+1,
 			),
@@ -133,8 +134,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
 				strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
-				50,
-				chainB.CallOpts(ctx, bobB).From,
+				big.NewInt(50),
+				addressToHexString(chainB.CallOpts(ctx, bobB).From),
 				chanA.PortID, chanA.ID,
 				uint64(chainB.LastHeader().Number.Int64())+1000,
 			),
@@ -200,8 +201,8 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, aliceA),
 			baseDenom,
-			100,
-			chainB.CallOpts(ctx, bobB).From,
+			big.NewInt(100),
+			addressToHexString(chainB.CallOpts(ctx, bobB).From),
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
@@ -238,8 +239,8 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
-			100,
-			chainA.CallOpts(ctx, aliceA).From,
+			big.NewInt(100),
+			addressToHexString(chainA.CallOpts(ctx, aliceA).From),
 			chanB.PortID,
 			chanB.ID,
 			uint64(chainA.LastHeader().Number.Int64())+1000,
@@ -251,6 +252,10 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 
 	// relay the packet
 	coordinator.RelayLastSentPacketWithDelay(ctx, chainB, chainA, chanB, chanA, delayPeriodExtensionB, delayPeriodExtensionA, delayStartTimeForRecv)
+}
+
+func addressToHexString(addr common.Address) string {
+	return strings.TrimPrefix(addr.String(), "0x")
 }
 
 func TestChainTestSuite(t *testing.T) {
