@@ -4,6 +4,9 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 library ICS20Lib {
+    /**
+     * @dev PacketData is defined in [ICS-20](https://github.com/cosmos/ibc/tree/main/spec/app/ics-020-fungible-token-transfer).
+     */
     struct PacketData {
         string denom;
         string sender;
@@ -28,36 +31,68 @@ library ICS20Lib {
 
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";
 
+    /**
+     * @dev marshalUnsafeJSON marshals PacketData into JSON bytes without escaping.
+     *      `memo` field is omitted if it is empty.
+     */
     function marshalUnsafeJSON(PacketData memory data) internal pure returns (bytes memory) {
         if (bytes(data.memo).length == 0) {
-            return abi.encodePacked(
-                '{"amount":"',
-                Strings.toString(data.amount),
-                '","denom":"',
-                data.denom,
-                '","receiver":"',
-                data.receiver,
-                '","sender":"',
-                data.sender,
-                '"}'
-            );
+            return marshalJSON(data.denom, data.amount, data.sender, data.receiver);
         } else {
-            return abi.encodePacked(
-                '{"amount":"',
-                Strings.toString(data.amount),
-                '","denom":"',
-                data.denom,
-                '","memo":"',
-                data.memo,
-                '","receiver":"',
-                data.receiver,
-                '","sender":"',
-                data.sender,
-                '"}'
-            );
+            return marshalJSON(data.denom, data.amount, data.sender, data.receiver, data.memo);
         }
     }
 
+    /**
+     * @dev marshalJSON marshals PacketData into JSON bytes with escaping.
+     */
+    function marshalJSON(
+        string memory escapedDenom,
+        uint256 amount,
+        string memory escapedSender,
+        string memory escapedReceiver,
+        string memory escapedMemo
+    ) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            '{"amount":"',
+            Strings.toString(amount),
+            '","denom":"',
+            escapedDenom,
+            '","memo":"',
+            escapedMemo,
+            '","receiver":"',
+            escapedReceiver,
+            '","sender":"',
+            escapedSender,
+            '"}'
+        );
+    }
+
+    /**
+     * @dev marshalJSON marshals PacketData into JSON bytes with escaping.
+     */
+    function marshalJSON(
+        string memory escapedDenom,
+        uint256 amount,
+        string memory escapedSender,
+        string memory escapedReceiver
+    ) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            '{"amount":"',
+            Strings.toString(amount),
+            '","denom":"',
+            escapedDenom,
+            '","receiver":"',
+            escapedReceiver,
+            '","sender":"',
+            escapedSender,
+            '"}'
+        );
+    }
+
+    /**
+     * @dev unmarshalJSON unmarshals JSON bytes into PacketData.
+     */
     function unmarshalJSON(bytes calldata bz) internal pure returns (PacketData memory) {
         PacketData memory pd;
         uint256 pos = 0;
@@ -86,28 +121,34 @@ library ICS20Lib {
         return pd;
     }
 
-    function parseUint256String(bytes calldata s, uint256 pos) internal pure returns (uint256, uint256) {
+    /**
+     * @dev parseUint256String parses `bz` from a position `pos` to produce a uint256.
+     */
+    function parseUint256String(bytes calldata bz, uint256 pos) internal pure returns (uint256, uint256) {
         uint256 ret = 0;
         unchecked {
-            for (; pos < s.length; pos++) {
-                uint256 c = uint256(uint8(s[pos]));
+            for (; pos < bz.length; pos++) {
+                uint256 c = uint256(uint8(bz[pos]));
                 if (c < 48 || c > 57) {
                     break;
                 }
                 ret = ret * 10 + (c - 48);
             }
-            require(pos < s.length && uint256(uint8(s[pos])) == CHAR_DOUBLE_QUOTE, "unterminated string");
+            require(pos < bz.length && uint256(uint8(bz[pos])) == CHAR_DOUBLE_QUOTE, "unterminated string");
             return (ret, pos + 1);
         }
     }
 
-    function parseString(bytes calldata s, uint256 pos) internal pure returns (string memory, uint256) {
+    /**
+     * @dev parseString parses `bz` from a position `pos` to produce a string.
+     */
+    function parseString(bytes calldata bz, uint256 pos) internal pure returns (string memory, uint256) {
         unchecked {
-            for (uint256 i = pos; i < s.length; i++) {
-                uint256 c = uint256(uint8(s[i]));
+            for (uint256 i = pos; i < bz.length; i++) {
+                uint256 c = uint256(uint8(bz[i]));
                 if (c == CHAR_DOUBLE_QUOTE) {
-                    return (string(s[pos:i]), i + 1);
-                } else if (c == CHAR_BACKSLASH && i + 1 < s.length) {
+                    return (string(bz[pos:i]), i + 1);
+                } else if (c == CHAR_BACKSLASH && i + 1 < bz.length) {
                     i++;
                     require(
                         c == CHAR_DOUBLE_QUOTE || c == CHAR_SLASH || c == CHAR_BACKSLASH || c == CHAR_F || c == CHAR_R
@@ -120,17 +161,9 @@ library ICS20Lib {
         revert("unterminated string");
     }
 
-    function parseStringWithoutEscape(bytes calldata s, uint256 pos) internal pure returns (string memory, uint256) {
-        unchecked {
-            for (uint256 i = pos; i < s.length; i++) {
-                if (uint256(uint8(s[i])) == CHAR_DOUBLE_QUOTE) {
-                    return (string(s[pos:i]), i + 1);
-                }
-            }
-        }
-        revert("unterminated string");
-    }
-
+    /**
+     * @dev addressToHexString converts an address to a hex string.
+     */
     function addressToHexString(address addr) internal pure returns (string memory) {
         uint256 localValue = uint256(uint160(addr));
         bytes memory buffer = new bytes(40);
@@ -146,6 +179,9 @@ library ICS20Lib {
         return string(buffer);
     }
 
+    /**
+     * @dev hexStringToAddress converts a hex string to an address.
+     */
     function hexStringToAddress(string memory addrHexString) internal pure returns (address, bool) {
         bytes memory addrBytes = bytes(addrHexString);
         if (addrBytes.length != 40) {
