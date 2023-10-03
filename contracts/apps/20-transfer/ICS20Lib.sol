@@ -150,6 +150,7 @@ library ICS20Lib {
                     return (string(bz[pos:i]), i + 1);
                 } else if (c == CHAR_BACKSLASH && i + 1 < bz.length) {
                     i++;
+                    c = uint256(uint8(bz[i]));
                     require(
                         c == CHAR_DOUBLE_QUOTE || c == CHAR_SLASH || c == CHAR_BACKSLASH || c == CHAR_F || c == CHAR_R
                             || c == CHAR_N || c == CHAR_B || c == CHAR_T,
