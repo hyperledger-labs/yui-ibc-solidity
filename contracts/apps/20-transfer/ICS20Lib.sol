@@ -161,6 +161,28 @@ library ICS20Lib {
         revert("unterminated string");
     }
 
+    function isEscapedJSONString(string calldata s) internal pure returns (bool) {
+        bytes memory bz = bytes(s);
+        unchecked {
+            for (uint256 i = 0; i < bz.length; i++) {
+                uint256 c = uint256(uint8(bz[i]));
+                if (c == CHAR_DOUBLE_QUOTE) {
+                    return false;
+                } else if (c == CHAR_BACKSLASH && i + 1 < bz.length) {
+                    i++;
+                    c = uint256(uint8(bz[i]));
+                    if (
+                        c != CHAR_DOUBLE_QUOTE && c != CHAR_SLASH && c != CHAR_BACKSLASH && c != CHAR_F && c != CHAR_R
+                            && c != CHAR_N && c != CHAR_B && c != CHAR_T
+                    ) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     /**
      * @dev addressToHexString converts an address to a hex string.
      */

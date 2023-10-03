@@ -50,6 +50,22 @@ contract TestICS20 is Test {
         }
     }
 
+    function testIsEscapedString() public {
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("abc"));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("abc\\\""));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("abc\\\\"));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("abc\\/"));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("abc\\"));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString('\\"abc'));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString('abc\\"'));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString('a\\"bc'));
+        assertFalse(ICS20LibTestHelper.isEscapedJSONString('abc"'));
+        assertFalse(ICS20LibTestHelper.isEscapedJSONString('"abc'));
+        assertFalse(ICS20LibTestHelper.isEscapedJSONString('a"bc'));
+
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("cosmos12xjp5l0x5q2rts3jkujjvxskx4z0ckfzhxchkd"));
+    }
+
     function testAddressToHex(address addr) public {
         string memory hexStr = ICS20LibTestHelper.addressToHexString(addr);
         (address addr2, bool ok) = ICS20LibTestHelper.hexStringToAddress(hexStr);
@@ -78,5 +94,9 @@ library ICS20LibTestHelper {
 
     function unmarshalJSON(bytes calldata bz) public pure returns (ICS20Lib.PacketData memory) {
         return ICS20Lib.unmarshalJSON(bz);
+    }
+
+    function isEscapedJSONString(string calldata s) public pure returns (bool) {
+        return ICS20Lib.isEscapedJSONString(s);
     }
 }
