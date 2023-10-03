@@ -7,7 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	ibcclienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
@@ -144,7 +146,23 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 		suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
 		// relay the packet
-		suite.coordinator.RelayLastSentPacket(ctx, chainA, chainB, chanA, chanB)
+		suite.coordinator.RelayLastSentPacket(ctx, chainA, chainB, chanA, chanB, func(b []byte) {
+			var data transfertypes.FungibleTokenPacketData
+			suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &data))
+			suite.Require().NoError(data.ValidateBasic())
+			suite.Require().Equal(denomA, data.Denom)
+			suite.Require().Equal("100", data.Amount)
+			suite.Require().Equal(addressToHexString(chainA.CallOpts(ctx, alice).From), data.Sender)
+			suite.Require().Equal(addressToHexString(chainB.CallOpts(ctx, bob).From), data.Receiver)
+			suite.Require().Equal("", data.Memo)
+			suite.Require().Equal(data.GetBytes(), b)
+		}, func(b []byte) {
+			var ack ibcchanneltypes.Acknowledgement
+			suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &ack))
+			suite.Require().NoError(ack.ValidateBasic())
+			suite.Require().True(ack.Success())
+			suite.Require().Equal(ibcchanneltypes.NewResultAcknowledgement([]byte{byte(1)}).Acknowledgement(), b)
+		})
 	}
 
 	denomB := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, denomA)
@@ -171,7 +189,23 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 		suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 		// relay the packet
-		suite.coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA)
+		suite.coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA, func(b []byte) {
+			var data transfertypes.FungibleTokenPacketData
+			suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &data))
+			suite.Require().NoError(data.ValidateBasic())
+			suite.Require().Equal(denomB, data.Denom)
+			suite.Require().Equal("100", data.Amount)
+			suite.Require().Equal(addressToHexString(chainB.CallOpts(ctx, bob).From), data.Sender)
+			suite.Require().Equal(addressToHexString(chainA.CallOpts(ctx, alice).From), data.Receiver)
+			suite.Require().Equal("", data.Memo)
+			suite.Require().Equal(data.GetBytes(), b)
+		}, func(b []byte) {
+			var ack ibcchanneltypes.Acknowledgement
+			suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &ack))
+			suite.Require().NoError(ack.ValidateBasic())
+			suite.Require().True(ack.Success())
+			suite.Require().Equal(ibcchanneltypes.NewResultAcknowledgement([]byte{byte(1)}).Acknowledgement(), b)
+		})
 
 		// withdraw tokens from the bank
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -275,7 +309,7 @@ func (suite *ContractTestSuite) TestTimeoutOnClose() {
 }
 
 func addressToHexString(addr common.Address) string {
-	return strings.TrimPrefix(addr.String(), "0x")
+	return strings.TrimPrefix(strings.ToLower(addr.String()), "0x")
 }
 
 func TestContractTestSuite(t *testing.T) {

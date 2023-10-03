@@ -454,14 +454,22 @@ func (c *Coordinator) RelayLastSentPacket(
 	ctx context.Context,
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
+	packetCb func([]byte),
+	ackCb func([]byte),
 ) {
 	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
 	require.NoError(c.t, err)
 	c.t.Logf("packet found: %v", string(packet.Data))
+	if packetCb != nil {
+		packetCb(packet.Data)
+	}
 	require.NoError(c.t, c.HandlePacketRecv(ctx, counterparty, source, counterpartyChannel, sourceChannel, *packet))
 	ack, err := counterparty.FindAcknowledgement(ctx, counterpartyChannel.PortID, counterpartyChannel.ID, packet.Sequence)
 	require.NoError(c.t, err)
 	c.t.Logf("ack found: %v", string(ack))
+	if ackCb != nil {
+		ackCb(ack)
+	}
 	require.NoError(c.t, c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, ack))
 }
 
