@@ -6,11 +6,9 @@ import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
 import "../../proto/Channel.sol";
 import "./ICS20Lib.sol";
-import "solidity-stringutils/src/strings.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 abstract contract ICS20Transfer is IBCAppBase {
-    using strings for *;
     using BytesLib for bytes;
 
     mapping(string => address) channelEscrowAddresses;
@@ -23,24 +21,32 @@ abstract contract ICS20Transfer is IBCAppBase {
         returns (bytes memory acknowledgement)
     {
         ICS20Lib.PacketData memory data = ICS20Lib.unmarshalJSON(packet.data);
-        strings.slice memory denom = data.denom.toSlice();
-        strings.slice memory trimedDenom =
-            data.denom.toSlice().beyond(_makeDenomPrefix(packet.source_port, packet.source_channel));
         bool success;
         address receiver;
         (receiver, success) = _decodeReceiver(data.receiver);
         if (!success) {
             return ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON;
         }
-        if (!denom.equals(trimedDenom)) {
-            // receiver is source chain
+
+        bytes memory denomPrefix = _getDenomPrefix(packet.source_port, packet.source_channel);
+        bytes memory denom = bytes(data.denom);
+        if (denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
+            // sender chain is not the source, unescrow tokens
+            bytes memory unprefixedDenom = denom.slice(denomPrefix.length, denom.length - denomPrefix.length);
             success = _transferFrom(
-                _getEscrowAddress(packet.destination_channel), receiver, trimedDenom.toString(), data.amount
+                _getEscrowAddress(packet.destination_channel), receiver, string(unprefixedDenom), data.amount
             );
         } else {
-            string memory prefixedDenom =
-                _makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            success = _mint(receiver, prefixedDenom, data.amount);
+            // sender chain is the source, mint vouchers
+            if (ICS20Lib.isEscapeNeededString(denom)) {
+                success = false;
+            } else {
+                success = _mint(
+                    receiver,
+                    string(_getPrefixedDenom(packet.destination_port, packet.destination_channel, data.denom)),
+                    data.amount
+                );
+            }
         }
         if (success) {
             return ICS20Lib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON;
@@ -97,7 +103,8 @@ abstract contract ICS20Transfer is IBCAppBase {
         internal
         virtual
     {
-        if (!data.denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) {
+        bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
+        if (!bytes(data.denom).slice(0, denomPrefix.length).equal(denomPrefix)) {
             // sender was source chain
             require(
                 _transferFrom(_getEscrowAddress(sourceChannel), _decodeSender(data.sender), data.denom, data.amount)
@@ -107,13 +114,16 @@ abstract contract ICS20Transfer is IBCAppBase {
         }
     }
 
-    function _makeDenomPrefix(string memory port, string memory channel)
+    function _getDenomPrefix(string memory port, string memory channel) internal pure returns (bytes memory) {
+        return abi.encodePacked(port, "/", channel, "/");
+    }
+
+    function _getPrefixedDenom(string memory port, string memory channel, string memory baseDenom)
         internal
         pure
-        virtual
-        returns (strings.slice memory)
+        returns (bytes memory)
     {
-        return string(abi.encodePacked(port, "/", channel, "/")).toSlice();
+        return abi.encodePacked(port, "/", channel, "/", baseDenom);
     }
 
     function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)

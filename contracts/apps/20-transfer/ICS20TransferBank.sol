@@ -4,9 +4,10 @@ pragma solidity ^0.8.9;
 import "./ICS20Transfer.sol";
 import "./IICS20Bank.sol";
 import "../../core/25-handler/IBCHandler.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
-    using strings for *;
+    using BytesLib for bytes;
 
     IBCHandler private immutable ibcHandler;
     IICS20Bank private immutable bank;
@@ -24,13 +25,16 @@ contract ICS20TransferBank is ICS20Transfer {
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        if (!denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) {
+        require(ICS20Lib.isEscapedJSONString(receiver), "unescaped receiver");
+
+        bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
+        if (!bytes(denom).slice(0, denomPrefix.length).equal(denomPrefix)) {
             // sender is source chain
             require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
         } else {
             require(_burn(_msgSender(), denom, amount));
         }
-
+        // CONTRACT: assume that `denom` is not required to be escaped
         bytes memory packetData = ICS20Lib.marshalJSON(denom, amount, _encodeSender(_msgSender()), receiver);
         IBCHandler(ibcAddress()).sendPacket(
             sourcePort, sourceChannel, Height.Data({revision_number: 0, revision_height: timeoutHeight}), 0, packetData

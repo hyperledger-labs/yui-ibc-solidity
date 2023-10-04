@@ -184,6 +184,18 @@ library ICS20Lib {
         return true;
     }
 
+    function isEscapeNeededString(bytes memory bz) internal pure returns (bool) {
+        unchecked {
+            for (uint256 i = 0; i < bz.length; i++) {
+                uint256 c = uint256(uint8(bz[i]));
+                if (c == CHAR_DOUBLE_QUOTE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * @dev addressToHexString converts an address to a hex string.
      */
