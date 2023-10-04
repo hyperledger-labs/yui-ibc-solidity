@@ -49,7 +49,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         require(authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel)));
         bytes memory res = ibcPacket.functionDelegateCall(
             abi.encodeWithSelector(
-                IIBCPacket.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
+                IICS04Wrapper.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
             )
         );
         emit SendPacket(abi.decode(res, (uint64)), sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
@@ -62,7 +62,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         if (acknowledgement.length > 0) {
             ibcPacket.functionDelegateCall(
                 abi.encodeWithSelector(
-                    IIBCPacket.writeAcknowledgement.selector,
+                    IICS04Wrapper.writeAcknowledgement.selector,
                     msg_.packet.destination_port,
                     msg_.packet.destination_channel,
                     msg_.packet.sequence,
@@ -85,7 +85,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         require(authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel)));
         ibcPacket.functionDelegateCall(
             abi.encodeWithSelector(
-                IIBCPacket.writeAcknowledgement.selector,
+                IICS04Wrapper.writeAcknowledgement.selector,
                 destinationPortId,
                 destinationChannel,
                 sequence,
