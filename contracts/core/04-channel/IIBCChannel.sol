@@ -49,7 +49,18 @@ interface IIBCChannelHandshake {
     ) external;
 }
 
-interface IIBCPacket {
+interface IICS04Wrapper {
+    /**
+     * @dev writeAcknowledgement writes the packet execution acknowledgement to the state,
+     * which will be verified by the counterparty chain using AcknowledgePacket.
+     */
+    function writeAcknowledgement(
+        string calldata destinationPortId,
+        string calldata destinationChannel,
+        uint64 sequence,
+        bytes calldata acknowledgement
+    ) external;
+
     /**
      * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
      * The packet sequence generated for the packet to be sent is returned. An error
@@ -62,23 +73,14 @@ interface IIBCPacket {
         uint64 timeoutTimestamp,
         bytes calldata data
     ) external returns (uint64);
+}
 
+interface IIBCPacket is IICS04Wrapper {
     /**
      * @dev recvPacket is called by a module in order to receive & process an IBC packet
      * sent on the corresponding channel end on the counterparty chain.
      */
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external;
-
-    /**
-     * @dev writeAcknowledgement writes the packet execution acknowledgement to the state,
-     * which will be verified by the counterparty chain using AcknowledgePacket.
-     */
-    function writeAcknowledgement(
-        string calldata destinationPortId,
-        string calldata destinationChannel,
-        uint64 sequence,
-        bytes calldata acknowledgement
-    ) external;
 
     /**
      * @dev AcknowledgePacket is called by a module to process the acknowledgement of a

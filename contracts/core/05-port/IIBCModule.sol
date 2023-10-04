@@ -100,7 +100,7 @@ interface IIBCModule {
      * otherwise the application state changes are discarded. In either case the packet is received
      * and the acknowledgement is written (in synchronous cases).
      */
-    function onRecvPacket(Packet.Data calldata, address relayer) external returns (bytes memory);
+    function onRecvPacket(Packet.Data calldata, address relayer) external returns (bytes memory, bool);
 
     /**
      * @dev onAcknowledgementPacket is called when a packet sent by this module has been acknowledged.

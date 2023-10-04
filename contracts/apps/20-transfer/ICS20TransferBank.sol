@@ -6,14 +6,13 @@ import "./IICS20Bank.sol";
 import "../../core/25-handler/IBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
+/// Instance of this contracts implementes whole ICS20 app logic with ERC20 itegration
 contract ICS20TransferBank is ICS20Transfer {
     using BytesLib for bytes;
 
-    IBCHandler private immutable ibcHandler;
     IICS20Bank private immutable bank;
 
-    constructor(IBCHandler ibcHandler_, IICS20Bank bank_) {
-        ibcHandler = ibcHandler_;
+    constructor(IICS04Wrapper ibcHandler_, IICS20Bank bank_) ICS20Transfer(ibcHandler_) {
         bank = bank_;
     }
 
@@ -43,7 +42,7 @@ contract ICS20TransferBank is ICS20Transfer {
             require(_burn(_msgSender(), denom, amount));
         }
         bytes memory packetData = ICS20Lib.marshalJSON(denom, amount, _encodeSender(_msgSender()), receiver);
-        IBCHandler(ibcAddress()).sendPacket(
+        IICS04Wrapper(ibcAddress()).sendPacket(
             sourcePort, sourceChannel, Height.Data({revision_number: 0, revision_height: timeoutHeight}), 0, packetData
         );
     }
@@ -74,9 +73,5 @@ contract ICS20TransferBank is ICS20Transfer {
         } catch (bytes memory) {
             return false;
         }
-    }
-
-    function ibcAddress() public view virtual override returns (address) {
-        return address(ibcHandler);
     }
 }

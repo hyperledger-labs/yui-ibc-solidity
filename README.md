@@ -50,7 +50,7 @@ Here are some such examples:
 ### Unit test
 
 ```sh
-$ make test
+make test
 ```
 
 ### E2E test
@@ -58,13 +58,13 @@ $ make test
 Launch two Hyperledger Besu chains(ethereum-compatible) with the contracts deployed with the following command:
 
 ```sh
-$ make network-e2e
+make network-e2e
 ```
 
 After launch the chains, execute the following command:
 
-```
-$ make e2e-test
+```sh
+make e2e-test
 ```
 
 ### E2E-test with IBC-Relayer
@@ -80,7 +80,7 @@ To generate the proto encoders and decoders in solidity from proto files, you ne
 Currently, [v0.1.0](https://github.com/datachainlab/solidity-protobuf/tree/v0.1.0) is required.
 
 If you edit the proto definitions, you should execute the following command:
-```
+```sh
 $ make SOLPB_DIR=/path/to/solidity-protobuf proto-sol
 ```
 

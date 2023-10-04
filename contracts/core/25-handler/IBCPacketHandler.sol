@@ -12,7 +12,7 @@ import "../05-port/IIBCModule.sol";
 /**
  * @dev IBCPacketHandler is a contract that calls a contract that implements `IIBCPacket` with delegatecall.
  */
-abstract contract IBCPacketHandler is Context, ModuleManager {
+abstract contract IBCPacketHandler is IICS04Wrapper, Context, ModuleManager {
     using Address for address;
 
     // IBC Packet contract address
@@ -47,14 +47,12 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         bytes calldata data
     ) external returns (uint64) {
         require(authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel)));
-        uint64 sequence = abi.decode(
-            ibcPacket.functionDelegateCall(
-                abi.encodeWithSelector(
-                    IIBCPacket.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
-                )
-            ),
-            (uint64)
+        bytes memory res = ibcPacket.functionDelegateCall(
+            abi.encodeWithSelector(
+                IICS04Wrapper.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
+            )
         );
+        uint64 sequence = abi.decode(res, (uint64));
         emit SendPacket(sequence, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
         return sequence;
     }
@@ -62,11 +60,11 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external {
         IIBCModule module = lookupModuleByChannel(msg_.packet.destination_port, msg_.packet.destination_channel);
         ibcPacket.functionDelegateCall(abi.encodeWithSelector(IIBCPacket.recvPacket.selector, msg_));
-        bytes memory acknowledgement = module.onRecvPacket(msg_.packet, _msgSender());
+        (bytes memory acknowledgement, bool success) = module.onRecvPacket(msg_.packet, _msgSender());
         if (acknowledgement.length > 0) {
             ibcPacket.functionDelegateCall(
                 abi.encodeWithSelector(
-                    IIBCPacket.writeAcknowledgement.selector,
+                    IICS04Wrapper.writeAcknowledgement.selector,
                     msg_.packet.destination_port,
                     msg_.packet.destination_channel,
                     msg_.packet.sequence,
@@ -89,7 +87,7 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         require(authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel)));
         ibcPacket.functionDelegateCall(
             abi.encodeWithSelector(
-                IIBCPacket.writeAcknowledgement.selector,
+                IICS04Wrapper.writeAcknowledgement.selector,
                 destinationPortId,
                 destinationChannel,
                 sequence,

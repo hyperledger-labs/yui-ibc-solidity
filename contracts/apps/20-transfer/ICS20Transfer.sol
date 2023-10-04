@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 import "../commons/IBCAppBase.sol";
 import "../../core/05-port/IIBCModule.sol";
-import "../../core/25-handler/IBCHandler.sol";
+import "../../core/04-channel/IIBCChannel.sol";
 import "../../proto/Channel.sol";
 import "./ICS20Lib.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
@@ -13,21 +13,23 @@ abstract contract ICS20Transfer is IBCAppBase {
 
     string public constant ICS20_VERSION = "ics20-1";
 
+    constructor(IICS04Wrapper ics04Wrapper_) IBCAppBase(ics04Wrapper_) {}
+
     mapping(string => address) channelEscrowAddresses;
 
-    function onRecvPacket(Packet.Data calldata packet, address)
-        external
+    function onRecvPacket(Packet.Data memory packet, address)
+        public
         virtual
         override
         onlyIBC
-        returns (bytes memory acknowledgement)
+        returns (bytes memory acknowledgement, bool success)
     {
         ICS20Lib.PacketData memory data = ICS20Lib.unmarshalJSON(packet.data);
         bool success;
         address receiver;
         (receiver, success) = _decodeReceiver(data.receiver);
         if (!success) {
-            return ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON;
+            return (ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON, success);
         }
 
         bytes memory denomPrefix = _getDenomPrefix(packet.source_port, packet.source_channel);
@@ -55,9 +57,9 @@ abstract contract ICS20Transfer is IBCAppBase {
             }
         }
         if (success) {
-            return ICS20Lib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON;
+            return (ICS20Lib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON, success);
         } else {
-            return ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON;
+            return (ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON, success);
         }
     }
 
@@ -133,7 +135,7 @@ abstract contract ICS20Transfer is IBCAppBase {
         }
     }
 
-    function _getDenomPrefix(string calldata port, string calldata channel) internal pure returns (bytes memory) {
+    function _getDenomPrefix(string memory port, string memory channel) internal pure returns (bytes memory) {
         return abi.encodePacked(port, "/", channel, "/");
     }
 

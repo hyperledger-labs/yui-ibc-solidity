@@ -113,3 +113,6 @@ dist
 cache/
 out/
 broadcast/
+
+.nix
+flake.lock

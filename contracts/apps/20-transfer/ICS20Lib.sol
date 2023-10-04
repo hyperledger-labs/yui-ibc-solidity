@@ -2,8 +2,11 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 library ICS20Lib {
+    using BytesLib for bytes;
+
     /**
      * @dev PacketData is defined in [ICS-20](https://github.com/cosmos/ibc/tree/main/spec/app/ics-020-fungible-token-transfer).
      */
@@ -31,6 +34,10 @@ library ICS20Lib {
     uint256 private constant CHAR_M = 0x6d;
 
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";
+
+    function isSuccess(bytes calldata acknowledgement) internal pure returns (bool) {
+        return keccak256(acknowledgement) == ICS20Lib.KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON;
+    }
 
     /**
      * @dev marshalUnsafeJSON marshals PacketData into JSON bytes without escaping.
@@ -92,40 +99,66 @@ library ICS20Lib {
     }
 
     /**
-     * @dev unmarshalJSON unmarshals JSON bytes into PacketData.
+     * @dev tryUnmarshalJSON unmarshals JSON bytes into PacketData.
      */
-    function unmarshalJSON(bytes calldata bz) internal pure returns (PacketData memory) {
+    function unmarshalJSON(bytes memory bz) internal pure returns (PacketData memory) {
+        bool isIcs20;
+        PacketData memory data;
+        (isIcs20, data) = tryUnmarshalJSON(bz);
+        require(isIcs20, "packet must be ICS20 packet");
+        return data;
+    }
+
+    /**
+     * @dev tryUnmarshalJSON tries to unmarshal JSON bytes into PacketData.
+     */
+    function tryUnmarshalJSON(bytes memory bz) internal pure returns (bool isIcs20, PacketData memory) {
         PacketData memory pd;
         uint256 pos = 0;
 
         unchecked {
-            require(bytes32(bz[pos:pos + 11]) == bytes32('{"amount":"'), "amount");
-            (pd.amount, pos) = parseUint256String(bz, pos + 11);
-
-            require(bytes32(bz[pos:pos + 10]) == bytes32(',"denom":"'), "denom");
-            (pd.denom, pos) = parseString(bz, pos + 10);
-
-            if (uint256(uint8(bz[pos + 2])) == CHAR_M) {
-                require(bytes32(bz[pos:pos + 9]) == bytes32(',"memo":"'), "memo");
-                (pd.memo, pos) = parseString(bz, pos + 9);
+            if (bytes32(bz.slice(pos, 11)) == bytes32('{"amount":"')) {
+                (pd.amount, pos) = parseUint256String(bz, pos + 11);
+            } else {
+                return (false, pd);
             }
 
-            require(bytes32(bz[pos:pos + 13]) == bytes32(',"receiver":"'), "receiver");
-            (pd.receiver, pos) = parseString(bz, pos + 13);
+            if (bytes32(bz.slice(pos, 10)) == bytes32(',"denom":"')) {
+                (pd.denom, pos) = parseString(bz, pos + 10);
+            } else {
+                return (false, pd);
+            }
 
-            require(bytes32(bz[pos:pos + 11]) == bytes32(',"sender":"'), "sender");
-            (pd.sender, pos) = parseString(bz, pos + 11);
+            if (uint256(uint8(bz[pos + 2])) == CHAR_M) {
+                if (bytes32(bz.slice(pos, 9)) == bytes32(',"memo":"')) {
+                    (pd.memo, pos) = parseString(bz, pos + 9);
+                } else {
+                    return (false, pd);
+                }
+            }
+
+            if (bytes32(bz.slice(pos, 13)) == bytes32(',"receiver":"')) {
+                (pd.receiver, pos) = parseString(bz, pos + 13);
+            } else {
+                return (false, pd);
+            }
+
+            if (bytes32(bz.slice(pos, 11)) == bytes32(',"sender":"')) {
+                (pd.sender, pos) = parseString(bz, pos + 11);
+            } else {
+                return (false, pd);
+            }
 
             require(pos == bz.length - 1 && uint256(uint8(bz[pos])) == CHAR_CLOSING_BRACE, "closing brace");
         }
 
-        return pd;
+        return (true, pd);
     }
 
     /**
      * @dev parseUint256String parses `bz` from a position `pos` to produce a uint256.
      */
-    function parseUint256String(bytes calldata bz, uint256 pos) internal pure returns (uint256, uint256) {
+    function parseUint256String(bytes memory bz, uint256 pos) internal pure returns (uint256, uint256) {
         uint256 ret = 0;
         unchecked {
             for (; pos < bz.length; pos++) {
@@ -143,12 +176,12 @@ library ICS20Lib {
     /**
      * @dev parseString parses `bz` from a position `pos` to produce a string.
      */
-    function parseString(bytes calldata bz, uint256 pos) internal pure returns (string memory, uint256) {
+    function parseString(bytes memory bz, uint256 pos) internal pure returns (string memory, uint256) {
         unchecked {
             for (uint256 i = pos; i < bz.length; i++) {
                 uint256 c = uint256(uint8(bz[i]));
                 if (c == CHAR_DOUBLE_QUOTE) {
-                    return (string(bz[pos:i]), i + 1);
+                    return (string(bz.slice(pos, i - pos)), i + 1);
                 } else if (c == CHAR_BACKSLASH && i + 1 < bz.length) {
                     i++;
                     c = uint256(uint8(bz[i]));

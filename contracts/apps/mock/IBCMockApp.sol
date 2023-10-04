@@ -11,7 +11,7 @@ contract IBCMockApp is IBCAppBase {
 
     IBCHandler immutable ibcHandler;
 
-    constructor(IBCHandler ibcHandler_) {
+    constructor(IBCHandler ibcHandler_) IBCAppBase(ibcHandler_) {
         ibcHandler = ibcHandler_;
     }
 
@@ -29,18 +29,18 @@ contract IBCMockApp is IBCAppBase {
         return ibcHandler.sendPacket(sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, message);
     }
 
-    function onRecvPacket(Packet.Data calldata packet, address)
-        external
+    function onRecvPacket(Packet.Data memory packet, address)
+        public
         override
         onlyIBC
-        returns (bytes memory acknowledgement)
+        returns (bytes memory acknowledgement, bool success)
     {
         if (keccak256(packet.data) == keccak256(IBCMockLib.MOCK_PACKET_DATA)) {
-            return IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON;
+            return (IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON, true);
         } else if (keccak256(packet.data) == keccak256(IBCMockLib.MOCK_ASYNC_PACKET_DATA)) {
-            return bytes("");
+            return (bytes(""), true);
         } else {
-            return IBCMockLib.FAILED_ACKNOWLEDGEMENT_JSON;
+            return (IBCMockLib.FAILED_ACKNOWLEDGEMENT_JSON, false);
         }
     }
 
