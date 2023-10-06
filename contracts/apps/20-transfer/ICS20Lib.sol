@@ -17,6 +17,7 @@ library ICS20Lib {
 
     bytes public constant SUCCESSFUL_ACKNOWLEDGEMENT_JSON = bytes('{"result":"AQ=="}');
     bytes public constant FAILED_ACKNOWLEDGEMENT_JSON = bytes('{"error":"failed"}');
+    bytes32 public constant KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON = keccak256(SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
 
     uint256 private constant CHAR_DOUBLE_QUOTE = 0x22;
     uint256 private constant CHAR_SLASH = 0x2f;

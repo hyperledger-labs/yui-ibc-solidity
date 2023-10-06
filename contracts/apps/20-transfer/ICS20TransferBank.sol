@@ -25,8 +25,7 @@ contract ICS20TransferBank is ICS20Transfer {
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        require(ICS20Lib.isEscapedJSONString(receiver), "unescaped receiver");
-
+        require(ICS20Lib.isEscapedJSONString(denom) && ICS20Lib.isEscapedJSONString(receiver), "unescaped string");
         bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
         if (!bytes(denom).slice(0, denomPrefix.length).equal(denomPrefix)) {
             // sender is source chain
@@ -34,7 +33,6 @@ contract ICS20TransferBank is ICS20Transfer {
         } else {
             require(_burn(_msgSender(), denom, amount));
         }
-        // CONTRACT: assume that `denom` is not required to be escaped
         bytes memory packetData = ICS20Lib.marshalJSON(denom, amount, _encodeSender(_msgSender()), receiver);
         IBCHandler(ibcAddress()).sendPacket(
             sourcePort, sourceChannel, Height.Data({revision_number: 0, revision_height: timeoutHeight}), 0, packetData
@@ -75,7 +73,7 @@ contract ICS20TransferBank is ICS20Transfer {
 
     function _decodeSender(string memory sender) internal pure override returns (address) {
         (address addr, bool ok) = ICS20Lib.hexStringToAddress(sender);
-        require(ok);
+        require(ok, "invalid address");
         return addr;
     }
 

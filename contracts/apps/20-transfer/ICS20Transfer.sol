@@ -65,7 +65,7 @@ abstract contract ICS20Transfer is IBCAppBase {
         override
         onlyIBC
     {
-        if (keccak256(acknowledgement) != keccak256(ICS20Lib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON)) {
+        if (keccak256(acknowledgement) != ICS20Lib.KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON) {
             _refundTokens(ICS20Lib.unmarshalJSON(packet.data), packet.source_port, packet.source_channel);
         }
     }
