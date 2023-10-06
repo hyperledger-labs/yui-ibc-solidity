@@ -43,7 +43,11 @@ abstract contract ICS20Transfer is IBCAppBase {
             } else {
                 success = _mint(
                     receiver,
-                    string(_getPrefixedDenom(packet.destination_port, packet.destination_channel, data.denom)),
+                    string(
+                        abi.encodePacked(
+                            _getDenomPrefix(packet.destination_port, packet.destination_channel), data.denom
+                        )
+                    ),
                     data.amount
                 );
             }
@@ -99,7 +103,7 @@ abstract contract ICS20Transfer is IBCAppBase {
         return escrow;
     }
 
-    function _refundTokens(ICS20Lib.PacketData memory data, string memory sourcePort, string memory sourceChannel)
+    function _refundTokens(ICS20Lib.PacketData memory data, string calldata sourcePort, string calldata sourceChannel)
         internal
         virtual
     {
@@ -114,16 +118,8 @@ abstract contract ICS20Transfer is IBCAppBase {
         }
     }
 
-    function _getDenomPrefix(string memory port, string memory channel) internal pure returns (bytes memory) {
+    function _getDenomPrefix(string calldata port, string calldata channel) internal pure returns (bytes memory) {
         return abi.encodePacked(port, "/", channel, "/");
-    }
-
-    function _getPrefixedDenom(string memory port, string memory channel, string memory baseDenom)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encodePacked(port, "/", channel, "/", baseDenom);
     }
 
     function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
