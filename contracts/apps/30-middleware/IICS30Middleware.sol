@@ -1,24 +1,45 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
+import "@openzeppelin/contracts/utils/Context.sol";
 import "../../core/05-port/IIBCModule.sol";
 import "../../core/04-channel/IIBCChannel.sol";
 import "../commons/IBCAppBase.sol";
 
-/// by default delegates all call to underlying app
-abstract contract IIBCMiddleware is IBCAppBase {
-    IBCAppBase _ibcModule;
-    IICS04Wrapper _ics04Wrapper;
+/**
+ * IBC host callbacacaks are delegated to underlying IBCAppBase module.
+ * IBCAppBase must be initialized with address of IIBCMiddleware as `ibcAddress`.
+ * IBCAppBase calls
+ */
+abstract contract IIBCMiddleware is Context, IBCAppBase, IICS04Wrapper {
+    
+    // can be applicaiton module or middleware, called by this contract
+    IBCAppBase private ibcModule;
+    
+    // can be raw IBC handler or middleware, called by this contrat
+    IICS04Wrapper private ics04Wrapper;
 
-    constructor(address ibcModule, address ics04Wrapper) {
-        require(ibcModule != address(0), "IIBCModule is the zero address");
-        require(ics04Wrapper != address(0), "IICS04Wrapper is the zero address");
-        _ibcModule = IBCAppBase(ibcModule);
-        _ics04Wrapper = IICS04Wrapper(ics04Wrapper);
+    /// either raw IBC handler or other middleware
+    address private ibcHandler;
+
+
+    constructor(IBCAppBase ibcModule_, IICS04Wrapper ics04Wrapper_, address ibcHandler_) {
+        ibcModule = ibcModule_;
+        ics04Wrapper = ics04Wrapper_;
+        ibcHandler = ibcHandler_;
     }
 
     function ibcAddress() public view virtual override returns (address) {
-        return _ibcModule.ibcAddress();
+        return ibcHandler;
+    }
+
+    modifier onlyWrapped() {
+        require(
+            _msgSender() == address(ibcModule) 
+            || _msgSender() == address(this),
+            "IIBCMiddleware: caller is not the IBCAppBase or IICS04Wrapper"
+        );
+        _;
     }
 
     function onChanOpenInit(
@@ -29,8 +50,112 @@ abstract contract IIBCMiddleware is IBCAppBase {
         ChannelCounterparty.Data calldata counterparty,
         string calldata version
     ) external virtual override onlyIBC {
-        _ibcModule.onChanOpenInit(order, connectionHops, portId, channelId, counterparty, version);
+        ibcModule.onChanOpenInit(
+            order,
+            connectionHops,
+            portId,
+            channelId,
+            counterparty,
+            version
+        );
     }
 
-    /// ... here to fill all remaining default delegations
+    function onChanOpenTry(
+        Channel.Order order,
+        string[] calldata connectionHops,
+        string calldata portId,
+        string calldata channelId,
+        ChannelCounterparty.Data calldata counterparty,
+        string calldata version,
+        string calldata counterpartyVersion
+    ) external virtual override onlyIBC {
+        ibcModule.onChanOpenTry(
+            order,
+            connectionHops,
+            portId,
+            channelId,
+            counterparty,
+            version,
+            counterpartyVersion
+        );
+    }
+
+    function onChanOpenConfirm(
+        string calldata portId,
+        string calldata channelId
+    ) external virtual override onlyIBC {
+        ibcModule.onChanOpenConfirm(portId, channelId);
+    }
+
+    function onChanCloseInit(
+        string calldata portId,
+        string calldata channelId
+    ) external virtual override onlyIBC {
+        ibcModule.onChanCloseInit(portId, channelId);
+    }
+
+    function onChanCloseConfirm(
+        string calldata portId,
+        string calldata channelId
+    ) external virtual override onlyIBC {
+        ibcModule.onChanCloseConfirm(portId, channelId);
+    }
+
+    function onRecvPacket(
+        Packet.Data calldata packet,
+        address relayer
+    ) external virtual override onlyIBC returns (bytes memory acknowledgement) {
+        return ibcModule.onRecvPacket(packet, relayer);
+    }
+
+    function onAcknowledgementPacket(
+        Packet.Data calldata packet,
+        bytes calldata acknowledgement,
+        address relayer
+    ) external virtual override onlyIBC {
+        return
+            ibcModule.onAcknowledgementPacket(
+                packet,
+                acknowledgement,
+                relayer
+            );
+    }
+
+    function onTimeoutPacket(
+        Packet.Data calldata packet,
+        address relayer
+    ) external virtual override onlyIBC {
+        return ibcModule.onTimeoutPacket(packet, relayer);
+    }
+
+    function writeAcknowledgement(
+        string calldata destinationPortId,
+        string calldata destinationChannel,
+        uint64 sequence,
+        bytes calldata acknowledgement
+    ) external virtual override onlyWrapped {
+        ics04Wrapper.writeAcknowledgement(
+            destinationPortId,
+            destinationChannel,
+            sequence,
+            acknowledgement
+        );
+    }
+
+    function sendPacket(
+        string calldata sourcePort,
+        string calldata sourceChannel,
+        Height.Data calldata timeoutHeight,
+        uint64 timeoutTimestamp,
+        bytes calldata data
+    ) external virtual override onlyWrapped returns (uint64) {
+        return
+            ics04Wrapper.sendPacket(
+                sourcePort,
+                sourceChannel,
+                timeoutHeight,
+                timeoutTimestamp,
+                data
+            );
+    }
 }

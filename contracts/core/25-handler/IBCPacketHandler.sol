@@ -12,7 +12,7 @@ import "../05-port/IIBCModule.sol";
 /**
  * @dev IBCPacketHandler is a contract that calls a contract that implements `IIBCPacket` with delegatecall.
  */
-abstract contract IBCPacketHandler is Context, ModuleManager {
+abstract contract IBCPacketHandler is IICS04Wrapper, Context, ModuleManager {
     using Address for address;
 
     // IBC Packet contract address
@@ -45,14 +45,16 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         Height.Data calldata timeoutHeight,
         uint64 timeoutTimestamp,
         bytes calldata data
-    ) external {
+    ) external returns (uint64) {
         require(authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel)));
         bytes memory res = ibcPacket.functionDelegateCall(
             abi.encodeWithSelector(
                 IICS04Wrapper.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
             )
         );
-        emit SendPacket(abi.decode(res, (uint64)), sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
+        uint64 sequence = abi.decode(res, (uint64)); 
+        emit SendPacket(sequence, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
+        return sequence;
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external {

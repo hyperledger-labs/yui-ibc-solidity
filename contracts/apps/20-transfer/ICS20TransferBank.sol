@@ -9,10 +9,11 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 contract ICS20TransferBank is ICS20Transfer {
     using BytesLib for bytes;
 
-    IBCHandler private immutable ibcHandler;
+    // either raw IBC Handler or middleware
+    IICS04Wrapper private immutable ibcHandler;
     IICS20Bank private immutable bank;
 
-    constructor(IBCHandler ibcHandler_, IICS20Bank bank_) {
+    constructor(IICS04Wrapper ibcHandler_, IICS20Bank bank_) {
         ibcHandler = ibcHandler_;
         bank = bank_;
     }
