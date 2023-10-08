@@ -52,7 +52,7 @@ abstract contract IBCPacketHandler is IICS04Wrapper, Context, ModuleManager {
                 IICS04Wrapper.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
             )
         );
-        uint64 sequence = abi.decode(res, (uint64)); 
+        uint64 sequence = abi.decode(res, (uint64));
         emit SendPacket(sequence, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
         return sequence;
     }

@@ -12,16 +12,16 @@ import "../commons/IBCAppBase.sol";
  * IBCAppBase calls
  */
 abstract contract IIBCMiddleware is Context, IBCAppBase, IICS04Wrapper {
-    
-    // can be applicaiton module or middleware, called by this contract
+    // middleware has acccess to an underlying application which may be wrapped
+    // by more middleware.
     IBCAppBase private ibcModule;
-    
-    // can be raw IBC handler or middleware, called by this contrat
+
+    // middleware has access to ICS4Wrapper which may be core IBC Channel Handler
+    // or a higher-level middleware that wraps this middleware.
     IICS04Wrapper private ics04Wrapper;
 
     /// either raw IBC handler or other middleware
     address private ibcHandler;
-
 
     constructor(IBCAppBase ibcModule_, IICS04Wrapper ics04Wrapper_, address ibcHandler_) {
         ibcModule = ibcModule_;
@@ -35,8 +35,7 @@ abstract contract IIBCMiddleware is Context, IBCAppBase, IICS04Wrapper {
 
     modifier onlyWrapped() {
         require(
-            _msgSender() == address(ibcModule) 
-            || _msgSender() == address(this),
+            _msgSender() == address(ibcModule) || _msgSender() == address(this),
             "IIBCMiddleware: caller is not the IBCAppBase or IICS04Wrapper"
         );
         _;
@@ -50,14 +49,7 @@ abstract contract IIBCMiddleware is Context, IBCAppBase, IICS04Wrapper {
         ChannelCounterparty.Data calldata counterparty,
         string calldata version
     ) external virtual override onlyIBC {
-        ibcModule.onChanOpenInit(
-            order,
-            connectionHops,
-            portId,
-            channelId,
-            counterparty,
-            version
-        );
+        ibcModule.onChanOpenInit(order, connectionHops, portId, channelId, counterparty, version);
     }
 
     function onChanOpenTry(
@@ -69,62 +61,41 @@ abstract contract IIBCMiddleware is Context, IBCAppBase, IICS04Wrapper {
         string calldata version,
         string calldata counterpartyVersion
     ) external virtual override onlyIBC {
-        ibcModule.onChanOpenTry(
-            order,
-            connectionHops,
-            portId,
-            channelId,
-            counterparty,
-            version,
-            counterpartyVersion
-        );
+        ibcModule.onChanOpenTry(order, connectionHops, portId, channelId, counterparty, version, counterpartyVersion);
     }
 
-    function onChanOpenConfirm(
-        string calldata portId,
-        string calldata channelId
-    ) external virtual override onlyIBC {
+    function onChanOpenConfirm(string calldata portId, string calldata channelId) external virtual override onlyIBC {
         ibcModule.onChanOpenConfirm(portId, channelId);
     }
 
-    function onChanCloseInit(
-        string calldata portId,
-        string calldata channelId
-    ) external virtual override onlyIBC {
+    function onChanCloseInit(string calldata portId, string calldata channelId) external virtual override onlyIBC {
         ibcModule.onChanCloseInit(portId, channelId);
     }
 
-    function onChanCloseConfirm(
-        string calldata portId,
-        string calldata channelId
-    ) external virtual override onlyIBC {
+    function onChanCloseConfirm(string calldata portId, string calldata channelId) external virtual override onlyIBC {
         ibcModule.onChanCloseConfirm(portId, channelId);
     }
 
-    function onRecvPacket(
-        Packet.Data calldata packet,
-        address relayer
-    ) external virtual override onlyIBC returns (bytes memory acknowledgement) {
+    function onRecvPacket(Packet.Data calldata packet, address relayer)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (bytes memory acknowledgement)
+    {
         return ibcModule.onRecvPacket(packet, relayer);
     }
 
-    function onAcknowledgementPacket(
-        Packet.Data calldata packet,
-        bytes calldata acknowledgement,
-        address relayer
-    ) external virtual override onlyIBC {
-        return
-            ibcModule.onAcknowledgementPacket(
-                packet,
-                acknowledgement,
-                relayer
-            );
+    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address relayer)
+        external
+        virtual
+        override
+        onlyIBC
+    {
+        return ibcModule.onAcknowledgementPacket(packet, acknowledgement, relayer);
     }
 
-    function onTimeoutPacket(
-        Packet.Data calldata packet,
-        address relayer
-    ) external virtual override onlyIBC {
+    function onTimeoutPacket(Packet.Data calldata packet, address relayer) external virtual override onlyIBC {
         return ibcModule.onTimeoutPacket(packet, relayer);
     }
 
@@ -134,12 +105,7 @@ abstract contract IIBCMiddleware is Context, IBCAppBase, IICS04Wrapper {
         uint64 sequence,
         bytes calldata acknowledgement
     ) external virtual override onlyWrapped {
-        ics04Wrapper.writeAcknowledgement(
-            destinationPortId,
-            destinationChannel,
-            sequence,
-            acknowledgement
-        );
+        ics04Wrapper.writeAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
     function sendPacket(
@@ -149,13 +115,6 @@ abstract contract IIBCMiddleware is Context, IBCAppBase, IICS04Wrapper {
         uint64 timeoutTimestamp,
         bytes calldata data
     ) external virtual override onlyWrapped returns (uint64) {
-        return
-            ics04Wrapper.sendPacket(
-                sourcePort,
-                sourceChannel,
-                timeoutHeight,
-                timeoutTimestamp,
-                data
-            );
+        return ics04Wrapper.sendPacket(sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
     }
 }
