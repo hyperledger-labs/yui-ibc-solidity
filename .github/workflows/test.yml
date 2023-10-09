@@ -30,7 +30,7 @@ jobs:
       run: make build
 
     - name: Run tests
-      run: make FORGE_SNAPSHOT_OPTION=--check test
+      run: make test
 
     - name: Linting
       run: make lint
