@@ -48,6 +48,21 @@ contract TestICS20 is Test {
             assertEq(data.amount, 100);
             assertEq(data.memo, "");
         }
+
+        {
+            bytes memory bz = bytes(
+                '{"amount":"100","denom":"transfer/gaiachannel/atom","memo":"{\\"wasm\\":{\\"contract\\":\\"osmo1contractAddr\\",\\"msg\\":{\\"raw_message_fields\\":\\"raw_message_data\\"}}}","receiver":"osmosis1w3jhxarjv43k26tkv4eq8wv34g","sender":"cosmos12xjp5l0x5q2rts3jkujjvxskx4z0ckfzhxchkd"}'
+            );
+            ICS20Lib.PacketData memory data = ICS20LibTestHelper.unmarshalJSON(bz);
+            assertEq(data.denom, "transfer/gaiachannel/atom");
+            assertEq(data.sender, "cosmos12xjp5l0x5q2rts3jkujjvxskx4z0ckfzhxchkd");
+            assertEq(data.receiver, "osmosis1w3jhxarjv43k26tkv4eq8wv34g");
+            assertEq(data.amount, 100);
+            assertEq(
+                data.memo,
+                '{\\"wasm\\":{\\"contract\\":\\"osmo1contractAddr\\",\\"msg\\":{\\"raw_message_fields\\":\\"raw_message_data\\"}}}'
+            );
+        }
     }
 
     function testIsEscapedString() public {
@@ -64,6 +79,20 @@ contract TestICS20 is Test {
         assertFalse(ICS20LibTestHelper.isEscapedJSONString('a"bc'));
 
         assertTrue(ICS20LibTestHelper.isEscapedJSONString("cosmos12xjp5l0x5q2rts3jkujjvxskx4z0ckfzhxchkd"));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("transfer/gaiachannel/atom"));
+        assertTrue(ICS20LibTestHelper.isEscapedJSONString("portidone/channel-0/portidtwo/channel-1/uatom"));
+    }
+
+    function testParseAmount(uint256 amount) public {
+        ICS20Lib.PacketData memory data =
+            ICS20Lib.PacketData({denom: "", sender: "", receiver: "", amount: amount, memo: ""});
+        bytes memory bz = ICS20LibTestHelper.marshalUnsafeJSON(data);
+        ICS20Lib.PacketData memory data2 = ICS20LibTestHelper.unmarshalJSON(bz);
+        assertEq(data2.denom, data.denom);
+        assertEq(data2.sender, data.sender);
+        assertEq(data2.receiver, data.receiver);
+        assertEq(data2.amount, data.amount);
+        assertEq(data2.memo, data.memo);
     }
 
     function testAddressToHex(address addr) public {
