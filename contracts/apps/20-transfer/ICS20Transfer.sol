@@ -122,19 +122,47 @@ abstract contract ICS20Transfer is IBCAppBase {
         return abi.encodePacked(port, "/", channel, "/");
     }
 
+    /**
+     * @dev _transferFrom transfers tokens from `sender` to `receiver` in the bank.
+     */
     function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
         internal
         virtual
         returns (bool);
 
+    /**
+     * @dev _mint mints tokens to `account` in the bank.
+     */
     function _mint(address account, string memory denom, uint256 amount) internal virtual returns (bool);
 
+    /**
+     * @dev _burn burns tokens from `account` in the bank.
+     */
     function _burn(address account, string memory denom, uint256 amount) internal virtual returns (bool);
 
-    function _encodeSender(address sender) internal pure virtual returns (string memory);
+    /**
+     * @dev _encodeSender encodes an address to a hex string.
+     *      The encoded sender is used as `sender` field in the packet data.
+     */
+    function _encodeSender(address sender) internal pure virtual returns (string memory) {
+        return ICS20Lib.addressToHexString(sender);
+    }
 
-    function _decodeSender(string memory sender) internal pure virtual returns (address);
+    /**
+     * @dev _decodeSender decodes a hex string to an address.
+     *      `sender` must be a valid address format.
+     */
+    function _decodeSender(string memory sender) internal pure virtual returns (address) {
+        (address addr, bool ok) = ICS20Lib.hexStringToAddress(sender);
+        require(ok, "invalid address");
+        return addr;
+    }
 
-    // @dev `receiver` may be a invalid address.
-    function _decodeReceiver(string memory receiver) internal pure virtual returns (address, bool);
+    /**
+     * @dev _decodeSender decodes a hex string to an address.
+     *       `receiver` may be an invalid address format.
+     */
+    function _decodeReceiver(string memory receiver) internal pure virtual returns (address, bool) {
+        return ICS20Lib.hexStringToAddress(receiver);
+    }
 }

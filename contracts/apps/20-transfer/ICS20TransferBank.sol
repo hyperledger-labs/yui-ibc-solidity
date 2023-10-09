@@ -76,20 +76,6 @@ contract ICS20TransferBank is ICS20Transfer {
         }
     }
 
-    function _encodeSender(address sender) internal pure override returns (string memory) {
-        return ICS20Lib.addressToHexString(sender);
-    }
-
-    function _decodeSender(string memory sender) internal pure override returns (address) {
-        (address addr, bool ok) = ICS20Lib.hexStringToAddress(sender);
-        require(ok, "invalid address");
-        return addr;
-    }
-
-    function _decodeReceiver(string memory receiver) internal pure override returns (address, bool) {
-        return ICS20Lib.hexStringToAddress(receiver);
-    }
-
     function ibcAddress() public view virtual override returns (address) {
         return address(ibcHandler);
     }
