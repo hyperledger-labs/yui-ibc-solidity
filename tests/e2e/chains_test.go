@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
@@ -63,8 +66,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, aliceA),
 			baseDenom,
-			100,
-			chainB.CallOpts(ctx, bobB).From,
+			big.NewInt(100),
+			addressToHexString(chainB.CallOpts(ctx, bobB).From),
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
@@ -77,7 +80,23 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 
 	// relay the packet
-	coordinator.RelayLastSentPacket(ctx, chainA, chainB, chanA, chanB)
+	coordinator.RelayLastSentPacket(ctx, chainA, chainB, chanA, chanB, func(b []byte) {
+		var data transfertypes.FungibleTokenPacketData
+		suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &data))
+		suite.Require().NoError(data.ValidateBasic())
+		suite.Require().Equal(baseDenom, data.Denom)
+		suite.Require().Equal("100", data.Amount)
+		suite.Require().Equal(addressToHexString(chainA.CallOpts(ctx, aliceA).From), data.Sender)
+		suite.Require().Equal(addressToHexString(chainB.CallOpts(ctx, bobB).From), data.Receiver)
+		suite.Require().Equal("", data.Memo)
+		suite.Require().Equal(data.GetBytes(), b)
+	}, func(b []byte) {
+		var ack ibcchanneltypes.Acknowledgement
+		suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &ack))
+		suite.Require().NoError(ack.ValidateBasic())
+		suite.Require().True(ack.Success())
+		suite.Require().Equal(ibcchanneltypes.NewResultAcknowledgement([]byte{byte(1)}).Acknowledgement(), b)
+	})
 
 	// ensure that chainB has correct balance
 	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, baseDenom)
@@ -90,8 +109,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
-			100,
-			chainA.CallOpts(ctx, aliceA).From,
+			big.NewInt(100),
+			addressToHexString(chainA.CallOpts(ctx, aliceA).From),
 			chanB.PortID,
 			chanB.ID,
 			uint64(chainA.LastHeader().Number.Int64())+1000,
@@ -100,15 +119,31 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 	suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 	// relay the packet
-	coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA)
+	coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA, func(b []byte) {
+		var data transfertypes.FungibleTokenPacketData
+		suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &data))
+		suite.Require().NoError(data.ValidateBasic())
+		suite.Require().Equal(expectedDenom, data.Denom)
+		suite.Require().Equal("100", data.Amount)
+		suite.Require().Equal(addressToHexString(chainB.CallOpts(ctx, bobB).From), data.Sender)
+		suite.Require().Equal(addressToHexString(chainA.CallOpts(ctx, aliceA).From), data.Receiver)
+		suite.Require().Equal("", data.Memo)
+		suite.Require().Equal(data.GetBytes(), b)
+	}, func(b []byte) {
+		var ack ibcchanneltypes.Acknowledgement
+		suite.Require().NoError(transfertypes.ModuleCdc.UnmarshalJSON(b, &ack))
+		suite.Require().NoError(ack.ValidateBasic())
+		suite.Require().True(ack.Success())
+		suite.Require().Equal(ibcchanneltypes.NewResultAcknowledgement([]byte{byte(1)}).Acknowledgement(), b)
+	})
 
 	{
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
 				baseDenom,
-				50,
-				chainB.CallOpts(ctx, bobB).From,
+				big.NewInt(50),
+				addressToHexString(chainB.CallOpts(ctx, bobB).From),
 				chanA.PortID, chanA.ID,
 				uint64(chainB.LastHeader().Number.Int64())+1,
 			),
@@ -133,8 +168,8 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
 				strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
-				50,
-				chainB.CallOpts(ctx, bobB).From,
+				big.NewInt(50),
+				addressToHexString(chainB.CallOpts(ctx, bobB).From),
 				chanA.PortID, chanA.ID,
 				uint64(chainB.LastHeader().Number.Int64())+1000,
 			),
@@ -200,8 +235,8 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, aliceA),
 			baseDenom,
-			100,
-			chainB.CallOpts(ctx, bobB).From,
+			big.NewInt(100),
+			addressToHexString(chainB.CallOpts(ctx, bobB).From),
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
@@ -238,8 +273,8 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
-			100,
-			chainA.CallOpts(ctx, aliceA).From,
+			big.NewInt(100),
+			addressToHexString(chainA.CallOpts(ctx, aliceA).From),
 			chanB.PortID,
 			chanB.ID,
 			uint64(chainA.LastHeader().Number.Int64())+1000,
@@ -251,6 +286,10 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 
 	// relay the packet
 	coordinator.RelayLastSentPacketWithDelay(ctx, chainB, chainA, chanB, chanA, delayPeriodExtensionB, delayPeriodExtensionA, delayStartTimeForRecv)
+}
+
+func addressToHexString(addr common.Address) string {
+	return strings.ToLower(addr.String())
 }
 
 func TestChainTestSuite(t *testing.T) {
