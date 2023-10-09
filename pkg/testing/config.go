@@ -14,6 +14,7 @@ type ContractConfig struct {
 	ICS20BankAddress               common.Address
 	IBCCommitmentTestHelperAddress common.Address
 	ERC20TokenAddress              common.Address
+	IBCMockAppAddress              common.Address
 }
 
 func (cc *ContractConfig) Validate() error {
@@ -28,6 +29,8 @@ func (cc *ContractConfig) Validate() error {
 		return errors.New("IBCCommitmentTestHelperAddress is empty")
 	} else if cc.ERC20TokenAddress == zero {
 		return errors.New("ERC20TokenAddress is empty")
+	} else if cc.IBCMockAppAddress == zero {
+		return errors.New("IBCMockAppAddress is empty")
 	} else {
 		return nil
 	}
@@ -69,6 +72,8 @@ func buildContractConfigFromBroadcastLog(path string) (*ContractConfig, error) {
 			cc.IBCCommitmentTestHelperAddress = tx.ContractAddress
 		case "ERC20Token":
 			cc.ERC20TokenAddress = tx.ContractAddress
+		case "IBCMockApp":
+			cc.IBCMockAppAddress = tx.ContractAddress
 		}
 	}
 	if err := cc.Validate(); err != nil {

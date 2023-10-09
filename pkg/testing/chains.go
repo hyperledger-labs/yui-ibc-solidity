@@ -26,6 +26,7 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	ibccommitment "github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitmenttesthelper"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2"
@@ -96,6 +97,7 @@ type Chain struct {
 	ERC20         erc20.Erc20
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
+	IBCMockApp    ibcmockapp.Ibcmockapp
 
 	// Input data for light client
 	LatestLCInputData LightClientInputData
@@ -127,6 +129,10 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		t.Fatal(err)
 	}
 	ibcCommitment, err := ibccommitment.NewIbccommitmenttesthelper(config.IBCCommitmentTestHelperAddress, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ibcMockApp, err := ibcmockapp.NewIbcmockapp(config.IBCMockAppAddress, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,6 +171,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		ERC20:         *erc20_,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
+		IBCMockApp:    *ibcMockApp,
 	}
 }
 
