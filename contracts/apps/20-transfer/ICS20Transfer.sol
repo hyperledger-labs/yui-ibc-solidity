@@ -30,7 +30,7 @@ abstract contract ICS20Transfer is IBCAppBase {
 
         bytes memory denomPrefix = _getDenomPrefix(packet.source_port, packet.source_channel);
         bytes memory denom = bytes(data.denom);
-        if (denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
+        if (denom.length >= denomPrefix.length && denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
             // sender chain is not the source, unescrow tokens
             bytes memory unprefixedDenom = denom.slice(denomPrefix.length, denom.length - denomPrefix.length);
             success = _transferFrom(
@@ -108,13 +108,14 @@ abstract contract ICS20Transfer is IBCAppBase {
         virtual
     {
         bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
-        if (!bytes(data.denom).slice(0, denomPrefix.length).equal(denomPrefix)) {
+        bytes memory denom = bytes(data.denom);
+        if (denom.length >= denomPrefix.length && denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
+            require(_mint(_decodeSender(data.sender), data.denom, data.amount));
+        } else {
             // sender was source chain
             require(
                 _transferFrom(_getEscrowAddress(sourceChannel), _decodeSender(data.sender), data.denom, data.amount)
             );
-        } else {
-            require(_mint(_decodeSender(data.sender), data.denom, data.amount));
         }
     }
 
