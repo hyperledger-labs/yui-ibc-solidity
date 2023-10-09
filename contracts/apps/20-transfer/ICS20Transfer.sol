@@ -38,15 +38,15 @@ abstract contract ICS20Transfer is IBCAppBase {
             );
         } else {
             // sender chain is the source, mint vouchers
+
+            // ensure denom is not required to be escaped
             if (ICS20Lib.isEscapeNeededString(denom)) {
                 success = false;
             } else {
                 success = _mint(
                     receiver,
                     string(
-                        abi.encodePacked(
-                            _getDenomPrefix(packet.destination_port, packet.destination_channel), data.denom
-                        )
+                        abi.encodePacked(_getDenomPrefix(packet.destination_port, packet.destination_channel), denom)
                     ),
                     data.amount
                 );

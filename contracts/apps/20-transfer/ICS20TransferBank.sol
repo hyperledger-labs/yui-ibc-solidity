@@ -17,6 +17,15 @@ contract ICS20TransferBank is ICS20Transfer {
         bank = bank_;
     }
 
+    /**
+     * @dev sendTransfer sends a transfer packet to the destination chain.
+     * @param denom denomination of the token. It can assume the denom string is escaped or not required to be escaped.
+     * @param amount amount of the token
+     * @param receiver receiver address on the destination chain
+     * @param sourcePort source port of the packet
+     * @param sourceChannel source channel of the packet
+     * @param timeoutHeight timeout height of the packet
+     */
     function sendTransfer(
         string calldata denom,
         uint256 amount,
@@ -25,7 +34,7 @@ contract ICS20TransferBank is ICS20Transfer {
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        require(ICS20Lib.isEscapedJSONString(denom) && ICS20Lib.isEscapedJSONString(receiver), "unescaped string");
+        require(ICS20Lib.isEscapedJSONString(receiver), "unescaped receiver");
         bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
         if (!bytes(denom).slice(0, denomPrefix.length).equal(denomPrefix)) {
             // sender is source chain

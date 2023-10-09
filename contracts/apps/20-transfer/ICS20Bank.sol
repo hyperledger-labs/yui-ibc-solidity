@@ -26,56 +26,59 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
         _setupRole(OPERATOR_ROLE, operator);
     }
 
-    function balanceOf(address account, string calldata id) external view virtual returns (uint256) {
+    function balanceOf(address account, string calldata denom) external view virtual returns (uint256) {
         require(account != address(0), "ICS20Bank: balance query for the zero address");
-        return _balances[id][account];
+        return _balances[denom][account];
     }
 
-    function transferFrom(address from, address to, string calldata id, uint256 amount) external virtual override {
+    function transferFrom(address from, address to, string calldata denom, uint256 amount) external virtual override {
         require(to != address(0), "ICS20Bank: transfer to the zero address");
         require(
             from == _msgSender() || hasRole(OPERATOR_ROLE, _msgSender()), "ICS20Bank: caller is not owner nor approved"
         );
-
-        uint256 fromBalance = _balances[id][from];
+        uint256 fromBalance = _balances[denom][from];
         require(fromBalance >= amount, "ICS20Bank: insufficient balance for transfer");
-        _balances[id][from] = fromBalance - amount;
-        _balances[id][to] += amount;
+        unchecked {
+            _balances[denom][from] = fromBalance - amount;
+        }
+        _balances[denom][to] += amount;
     }
 
-    function mint(address account, string calldata id, uint256 amount) external virtual override {
+    function mint(address account, string calldata denom, uint256 amount) external virtual override {
         require(hasRole(OPERATOR_ROLE, _msgSender()), "ICS20Bank: must have minter role to mint");
-        _mint(account, id, amount);
+        _mint(account, denom, amount);
     }
 
-    function burn(address account, string calldata id, uint256 amount) external virtual override {
+    function burn(address account, string calldata denom, uint256 amount) external virtual override {
         require(hasRole(OPERATOR_ROLE, _msgSender()), "ICS20Bank: must have minter role to mint");
-        _burn(account, id, amount);
+        _burn(account, denom, amount);
     }
 
-    function deposit(address tokenContract, uint256 amount, address receiver) external virtual {
+    function addressToDenom(address tokenContract) public pure virtual override returns (string memory) {
+        return Strings.toHexString(tokenContract);
+    }
+
+    function deposit(address tokenContract, uint256 amount, address receiver) external virtual override {
         require(tokenContract.isContract());
         require(IERC20(tokenContract).transferFrom(_msgSender(), address(this), amount));
-        _mint(receiver, _genDenom(tokenContract), amount);
+        _mint(receiver, addressToDenom(tokenContract), amount);
     }
 
-    function withdraw(address tokenContract, uint256 amount, address receiver) external virtual {
+    function withdraw(address tokenContract, uint256 amount, address receiver) external virtual override {
         require(tokenContract.isContract());
-        _burn(_msgSender(), _genDenom(tokenContract), amount);
+        _burn(_msgSender(), addressToDenom(tokenContract), amount);
         require(IERC20(tokenContract).transfer(receiver, amount));
     }
 
-    function _mint(address account, string memory id, uint256 amount) internal virtual {
-        _balances[id][account] += amount;
+    function _mint(address account, string memory denom, uint256 amount) internal virtual {
+        _balances[denom][account] += amount;
     }
 
-    function _burn(address account, string memory id, uint256 amount) internal virtual {
-        uint256 accountBalance = _balances[id][account];
+    function _burn(address account, string memory denom, uint256 amount) internal virtual {
+        uint256 accountBalance = _balances[denom][account];
         require(accountBalance >= amount, "ICS20Bank: burn amount exceeds balance");
-        _balances[id][account] = accountBalance - amount;
-    }
-
-    function _genDenom(address tokenContract) internal pure virtual returns (string memory) {
-        return Strings.toHexString(tokenContract);
+        unchecked {
+            _balances[denom][account] = accountBalance - amount;
+        }
     }
 }
