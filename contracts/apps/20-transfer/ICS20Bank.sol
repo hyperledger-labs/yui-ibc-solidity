@@ -4,8 +4,8 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "./ICS20Lib.sol";
 import "./IICS20Bank.sol";
 
 contract ICS20Bank is Context, AccessControl, IICS20Bank {
@@ -55,7 +55,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank {
     }
 
     function addressToDenom(address tokenContract) public pure virtual override returns (string memory) {
-        return Strings.toHexString(tokenContract);
+        return ICS20Lib.addressToHexString(tokenContract);
     }
 
     function deposit(address tokenContract, uint256 amount, address receiver) external virtual override {

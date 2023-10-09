@@ -289,7 +289,7 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 }
 
 func addressToHexString(addr common.Address) string {
-	return strings.TrimPrefix(strings.ToLower(addr.String()), "0x")
+	return strings.ToLower(addr.String())
 }
 
 func TestChainTestSuite(t *testing.T) {

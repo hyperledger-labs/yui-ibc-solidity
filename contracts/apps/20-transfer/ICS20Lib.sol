@@ -202,9 +202,11 @@ library ICS20Lib {
      */
     function addressToHexString(address addr) internal pure returns (string memory) {
         uint256 localValue = uint256(uint160(addr));
-        bytes memory buffer = new bytes(40);
+        bytes memory buffer = new bytes(42);
+        buffer[0] = "0";
+        buffer[1] = "x";
         unchecked {
-            for (int256 i = 39; i >= 0; --i) {
+            for (int256 i = 41; i >= 2; --i) {
                 buffer[uint256(i)] = HEX_DIGITS[localValue & 0xf];
                 localValue >>= 4;
             }
@@ -220,12 +222,14 @@ library ICS20Lib {
      */
     function hexStringToAddress(string memory addrHexString) internal pure returns (address, bool) {
         bytes memory addrBytes = bytes(addrHexString);
-        if (addrBytes.length != 40) {
+        if (addrBytes.length != 42) {
+            return (address(0), false);
+        } else if (addrBytes[0] != "0" || addrBytes[1] != "x") {
             return (address(0), false);
         }
         uint256 addr = 0;
         unchecked {
-            for (uint256 i = 0; i < 40; i++) {
+            for (uint256 i = 2; i < 42; i++) {
                 uint256 c = uint256(uint8(addrBytes[i]));
                 if (c >= 48 && c <= 57) {
                     addr = addr * 16 + (c - 48);
