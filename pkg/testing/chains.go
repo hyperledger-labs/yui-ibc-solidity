@@ -760,6 +760,7 @@ func (chain *Chain) TimeoutPacket(
 	packet channeltypes.Packet,
 	counterparty *Chain,
 	channel TestChannel,
+	counterpartyChannel TestChannel,
 ) error {
 	counterpartyCh, found, err := counterparty.IBCHandler.GetChannel(
 		counterparty.CallOpts(ctx, RelayerKeyIndex),
@@ -779,7 +780,11 @@ func (chain *Chain) TimeoutPacket(
 	var proof []byte
 	proofHeight := counterparty.LatestLCInputData.Header().Number
 	if counterpartyCh.Ordering == uint8(channeltypes.ORDERED) {
-		panic("not implemented")
+		p, err := counterparty.QueryNextSequenceRecvProof(chain, counterpartyChannel.ClientID, counterpartyChannel, proofHeight)
+		if err != nil {
+			return err
+		}
+		proof = p.Data
 	} else {
 		ok, err := counterparty.IBCHandler.HasPacketReceipt(
 			counterparty.CallOpts(ctx, RelayerKeyIndex),
@@ -798,6 +803,13 @@ func (chain *Chain) TimeoutPacket(
 		proof = p.Data
 	}
 
+	nextSequenceRecv, err := counterparty.IBCHandler.GetNextSequenceRecv(
+		counterparty.CallOpts(ctx, RelayerKeyIndex),
+		counterpartyChannel.PortID, counterpartyChannel.ID,
+	)
+	if err != nil {
+		return err
+	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.TimeoutPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
@@ -808,6 +820,7 @@ func (chain *Chain) TimeoutPacket(
 					RevisionNumber: 0,
 					RevisionHeight: proofHeight.Uint64(),
 				},
+				NextSequenceRecv: nextSequenceRecv,
 			},
 		),
 	)
@@ -843,14 +856,6 @@ func (chain *Chain) TimeoutOnClose(
 	}
 	proofClose := p.Data
 
-	nextSequenceRecv, err := counterparty.IBCHandler.GetNextSequenceRecv(
-		counterparty.CallOpts(ctx, RelayerKeyIndex),
-		counterpartyChannel.PortID, counterpartyChannel.ID,
-	)
-	if err != nil {
-		return err
-	}
-
 	var proofUnreceived []byte
 	if counterpartyCh.Ordering == uint8(channeltypes.ORDERED) {
 		proof, err := counterparty.QueryNextSequenceRecvProof(chain, counterpartyChannel.ClientID, counterpartyChannel, proofHeight)
@@ -880,6 +885,13 @@ func (chain *Chain) TimeoutOnClose(
 		}
 	}
 
+	nextSequenceRecv, err := counterparty.IBCHandler.GetNextSequenceRecv(
+		counterparty.CallOpts(ctx, RelayerKeyIndex),
+		counterpartyChannel.PortID, counterpartyChannel.ID,
+	)
+	if err != nil {
+		return err
+	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.TimeoutOnClose(
 			chain.TxOpts(ctx, RelayerKeyIndex),

@@ -510,13 +510,3 @@ func (c *Coordinator) RelayLastSentPacketWithDelay(
 	c.t.Logf("delay for ack@%v %s", source.chainID, delayForAck)
 	require.Greater(c.t, delayForAck, time.Duration(sourceDelayPeriodExtension*source.GetDelayPeriod()))
 }
-
-func (c *Coordinator) TimeoutLastSentPacket(
-	ctx context.Context,
-	source, counterparty *Chain,
-	sourceChannel TestChannel,
-) error {
-	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
-	require.NoError(c.t, err)
-	return source.TimeoutPacket(ctx, *packet, counterparty, sourceChannel)
-}

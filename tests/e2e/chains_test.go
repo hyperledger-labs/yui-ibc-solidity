@@ -151,13 +151,13 @@ func (suite *ChainTestSuite) TestPacketRelay() {
 		transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
 		suite.Require().NoError(err)
 		// should fail to timeout packet because the timeout height is not reached
-		suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
+		suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA, chanB))
 		suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
 		// then, update the client to reach the timeout height
 		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
-		suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
+		suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA, chanB))
 		// confirm that the packet commitment is deleted
 		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
 	}
