@@ -13,6 +13,7 @@ import (
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
@@ -107,7 +108,7 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 	})
 }
 
-func (suite *ContractTestSuite) TestPacketRelay() {
+func (suite *ContractTestSuite) TestICS20() {
 	ctx := context.Background()
 
 	chainA := suite.chainA
@@ -221,91 +222,118 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 		suite.Require().NoError(err)
 		suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 	}
-
-	// close channel
-	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 }
 
-func (suite *ContractTestSuite) TestTimeoutPacket() {
+func (suite *ContractTestSuite) TestTimeoutAndClose() {
 	ctx := context.Background()
-
+	coordinator := suite.coordinator
 	chainA := suite.chainA
 	chainB := suite.chainB
 
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
-	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	chanA, _ := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
+	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 
-	denomA := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
-
-	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
-
-	// try to transfer the token to chainB
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ICS20Transfer.SendTransfer(
+	// Case: timeoutOnClose on ordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, alice),
-			denomA,
-			big.NewInt(100),
-			addressToHexString(chainB.CallOpts(ctx, bob).From),
+			ibctesting.MockPacketData,
 			chanA.PortID, chanA.ID,
-			uint64(chainB.LastHeader().Number.Int64())+1,
-		),
-	))
-	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
-	suite.Require().NoError(err)
-
-	// should fail to timeout packet because the timeout height is not reached
-	suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
-
-	suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
-
-	// then, update the client to reach the timeout height
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
-
-	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
-	suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
-	// confirm that the packet commitment is deleted
-	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
-}
-
-func (suite *ContractTestSuite) TestTimeoutOnClose() {
-	ctx := context.Background()
-
-	chainA := suite.chainA
-	chainB := suite.chainB
-
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
-	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
-
-	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
-
-	// try to transfer the token to chainB
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ICS20Transfer.SendTransfer(
-			chainA.TxOpts(ctx, alice),
-			strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
-			big.NewInt(100),
-			addressToHexString(chainB.CallOpts(ctx, bob).From),
-			chanA.PortID, chanA.ID,
-			uint64(chainB.LastHeader().Number.Int64())+1000,
-		),
-	))
-
-	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
-	suite.Require().NoError(err)
-
-	suite.Require().NoError(suite.coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
-	suite.Require().NoError(suite.chainA.TimeoutOnClose(ctx, *transferPacket, chainB, chanA, chanB))
-
-	// withdraw tokens from the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ICS20Bank.Withdraw(
-			chainA.TxOpts(ctx, alice),
-			chainA.ContractConfig.ERC20TokenAddress,
-			big.NewInt(100),
-			chainA.CallOpts(ctx, deployer).From,
+			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
+			0,
 		)))
+		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
+		suite.Require().NoError(chainA.TimeoutOnClose(ctx, *packet, chainB, chanA, chanB))
+		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
+	}
+
+	// Case: timeoutOnClose on unordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+			chainA.TxOpts(ctx, alice),
+			ibctesting.MockPacketData,
+			chanA.PortID, chanA.ID,
+			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
+			0,
+		)))
+		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
+		suite.Require().NoError(chainA.TimeoutOnClose(ctx, *packet, chainB, chanA, chanB))
+		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
+	}
+
+	// Case: timeout packet on ordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+			chainA.TxOpts(ctx, alice),
+			ibctesting.MockPacketData,
+			chanA.PortID, chanA.ID,
+			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1},
+			0,
+		)))
+		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+
+		// should fail to timeout packet because the timeout height is not reached
+		suite.Require().Error(chainA.TimeoutPacket(ctx, *packet, chainB, chanA, chanB))
+
+		suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
+
+		// then, update the client to reach the timeout height
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+
+		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, packet.SourcePort, packet.SourceChannel, packet.Sequence))
+		suite.Require().NoError(chainA.TimeoutPacket(ctx, *packet, chainB, chanA, chanB))
+		// confirm that the packet commitment is deleted
+		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, packet.SourcePort, packet.SourceChannel, packet.Sequence))
+		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
+	}
+
+	// Case: timeout packet on unordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+			chainA.TxOpts(ctx, alice),
+			ibctesting.MockPacketData,
+			chanA.PortID, chanA.ID,
+			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1},
+			0,
+		)))
+		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+
+		// should fail to timeout packet because the timeout height is not reached
+		suite.Require().Error(chainA.TimeoutPacket(ctx, *packet, chainB, chanA, chanB))
+
+		suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
+
+		// then, update the client to reach the timeout height
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+
+		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, packet.SourcePort, packet.SourceChannel, packet.Sequence))
+		suite.Require().NoError(chainA.TimeoutPacket(ctx, *packet, chainB, chanA, chanB))
+		// confirm that the packet commitment is deleted
+		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, packet.SourcePort, packet.SourceChannel, packet.Sequence))
+		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.OPEN)
+	}
+
+	// Case: close channel on ordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
+		coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
+	}
+
+	// Case: close channel on unordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
+		coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
+	}
 }
 
 func addressToHexString(addr common.Address) string {

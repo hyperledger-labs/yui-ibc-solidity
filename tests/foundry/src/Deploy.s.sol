@@ -13,6 +13,7 @@ import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
 import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
 import {ERC20Token} from "../../../contracts/apps/20-transfer/ERC20Token.sol";
 import {IBCCommitmentTestHelper} from "./helpers/IBCCommitmentTestHelper.sol";
+import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
 contract DeployScript is Script {
     string private constant MOCK_CLIENT_TYPE = "mock-client";
@@ -30,11 +31,15 @@ contract DeployScript is Script {
         address ibcPacket = address(new IBCPacket());
         OwnableIBCHandler handler = new OwnableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
 
-        // deploy app contracts
+        // deploy ics20 contract
         ICS20Bank bank = new ICS20Bank();
         address transferBank = address(new ICS20TransferBank(handler, bank));
         bank.setOperator(transferBank);
         handler.bindPort("transfer", transferBank);
+
+        // deploy mock app contract
+        IBCMockApp mockApp = new IBCMockApp(handler);
+        handler.bindPort("mock", address(mockApp));
 
         // deploy client contracts
         MockClient mockClient = new MockClient(address(handler));

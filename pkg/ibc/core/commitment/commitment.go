@@ -39,6 +39,10 @@ func PacketReceiptCommitmentSlot(portID, channelID string, sequence uint64) stri
 	return CalculateCommitmentSlot(host.PacketReceiptKey(portID, channelID, sequence))
 }
 
+func NextSequenceRecvCommitmentSlot(portID, channelID string) string {
+	return CalculateCommitmentSlot(host.NextSequenceRecvKey(portID, channelID))
+}
+
 func CalculateCommitmentSlot(path []byte) string {
 	return crypto.Keccak256Hash(crypto.Keccak256Hash(path).Bytes(), ibcHostCommitmentSlot[:]).Hex()
 }

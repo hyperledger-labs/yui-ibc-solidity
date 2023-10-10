@@ -36,6 +36,8 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         nextSequenceRecvs[msg_.portId][channelId] = 1;
         nextSequenceAcks[msg_.portId][channelId] = 1;
         updateChannelCommitment(msg_.portId, channelId);
+        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
+            keccak256(abi.encodePacked((bytes8(uint64(1)))));
         return channelId;
     }
 
@@ -80,6 +82,8 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         nextSequenceRecvs[msg_.portId][channelId] = 1;
         nextSequenceAcks[msg_.portId][channelId] = 1;
         updateChannelCommitment(msg_.portId, channelId);
+        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
+            keccak256(abi.encodePacked((bytes8(uint64(1)))));
         return channelId;
     }
 
