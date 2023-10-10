@@ -26,10 +26,6 @@ const (
 	deployer        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain
 	alice    uint32 = 1                          // the key-index of alice on chain
 	bob      uint32 = 2                          // the key-index of bob on chain
-
-	mockPacketData      = "mock packet data"
-	mockFailPacketData  = "mock failed packet data"
-	mockAsyncPacketData = "mock async packet data"
 )
 
 /*
@@ -112,7 +108,7 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 	})
 }
 
-func (suite *ContractTestSuite) TestICS20Relay() {
+func (suite *ContractTestSuite) TestICS20() {
 	ctx := context.Background()
 
 	chainA := suite.chainA
@@ -226,12 +222,9 @@ func (suite *ContractTestSuite) TestICS20Relay() {
 		suite.Require().NoError(err)
 		suite.Require().Equal(balanceA0.Int64(), balanceA2.Int64())
 	}
-
-	// close channel
-	suite.coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 }
 
-func (suite *ContractTestSuite) TestTimeoutPacket() {
+func (suite *ContractTestSuite) TestTimeoutAndClose() {
 	ctx := context.Background()
 	coordinator := suite.coordinator
 	chainA := suite.chainA
@@ -240,12 +233,46 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
 	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 
+	// Case: timeoutOnClose on ordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+			chainA.TxOpts(ctx, alice),
+			ibctesting.MockPacketData,
+			chanA.PortID, chanA.ID,
+			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
+			0,
+		)))
+		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
+		suite.Require().NoError(chainA.TimeoutOnClose(ctx, *packet, chainB, chanA, chanB))
+		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
+	}
+
+	// Case: timeoutOnClose on unordered channel
+	{
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
+		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+			chainA.TxOpts(ctx, alice),
+			ibctesting.MockPacketData,
+			chanA.PortID, chanA.ID,
+			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
+			0,
+		)))
+		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+		suite.Require().NoError(err)
+		suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
+		suite.Require().NoError(chainA.TimeoutOnClose(ctx, *packet, chainB, chanA, chanB))
+		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
+	}
+
 	// Case: timeout packet on ordered channel
 	{
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, alice),
-			mockPacketData,
+			ibctesting.MockPacketData,
 			chanA.PortID, chanA.ID,
 			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1},
 			0,
@@ -273,7 +300,7 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, alice),
-			mockPacketData,
+			ibctesting.MockPacketData,
 			chanA.PortID, chanA.ID,
 			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1},
 			0,
@@ -295,47 +322,17 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, packet.SourcePort, packet.SourceChannel, packet.Sequence))
 		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.OPEN)
 	}
-}
 
-func (suite *ContractTestSuite) TestTimeoutOnClose() {
-	ctx := context.Background()
-	coordinator := suite.coordinator
-	chainA := suite.chainA
-	chainB := suite.chainB
-
-	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
-	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-
+	// Case: close channel on ordered channel
 	{
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
-		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
-			chainA.TxOpts(ctx, alice),
-			mockPacketData,
-			chanA.PortID, chanA.ID,
-			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
-			0,
-		)))
-		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
-		suite.Require().NoError(err)
-		suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
-		suite.Require().NoError(chainA.TimeoutOnClose(ctx, *packet, chainB, chanA, chanB))
-		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
+		coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 	}
 
+	// Case: close channel on unordered channel
 	{
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
-		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
-			chainA.TxOpts(ctx, alice),
-			mockPacketData,
-			chanA.PortID, chanA.ID,
-			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
-			0,
-		)))
-		packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
-		suite.Require().NoError(err)
-		suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
-		suite.Require().NoError(chainA.TimeoutOnClose(ctx, *packet, chainB, chanA, chanB))
-		chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
+		coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 	}
 }
 

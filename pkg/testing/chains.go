@@ -47,6 +47,10 @@ const (
 	MockPort                     = "mock"
 
 	RelayerKeyIndex uint32 = 0
+
+	MockPacketData      = "mock packet data"
+	MockFailPacketData  = "mock failed packet data"
+	MockAsyncPacketData = "mock async packet data"
 )
 
 var (
@@ -453,7 +457,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	if err != nil {
 		return "", err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
 	if err != nil {
 		return "", err
 	}
@@ -493,7 +497,7 @@ func (chain *Chain) ConnectionOpenAck(
 	if err != nil {
 		return err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
 	if err != nil {
 		return err
 	}
@@ -850,7 +854,7 @@ func (chain *Chain) TimeoutOnClose(
 
 	proofHeight := counterparty.LatestLCInputData.Header().Number
 
-	p, err := counterparty.QueryChannelProof(chain, counterpartyChannel.ClientID, counterpartyChannel, proofHeight)
+	p, err := counterparty.QueryChannelProof(chain, channel.ClientID, counterpartyChannel, proofHeight)
 	if err != nil {
 		return err
 	}
@@ -1170,18 +1174,18 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	}, nil
 }
 
-func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
-	cs, found, err := counterparty.IBCHandler.GetClientState(counterparty.CallOpts(context.Background(), RelayerKeyIndex), counterpartyClientID)
+func (chain *Chain) QueryClientProof(counterparty *Chain, clientID, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
+	cs, found, err := chain.IBCHandler.GetClientState(chain.CallOpts(context.Background(), RelayerKeyIndex), clientID)
 	if err != nil {
 		return nil, nil, err
 	} else if !found {
 		return nil, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
 	}
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ClientStateCommitmentSlot(counterpartyClientID), height)
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ClientStateCommitmentSlot(clientID), height)
 	if err != nil {
 		return nil, nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
 		h := sha256.Sum256(cs)
 		proof.Data = h[:]
@@ -1189,21 +1193,21 @@ func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID s
 	return cs, proof, nil
 }
 
-func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string, height *big.Int) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ConnectionStateCommitmentSlot(counterpartyConnectionID), height)
+func (chain *Chain) QueryConnectionProof(counterparty *Chain, counterpartyClientID string, connectionID string, height *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ConnectionStateCommitmentSlot(connectionID), height)
 	if err != nil {
 		return nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		conn, found, err := counterparty.IBCHandler.GetConnection(
-			counterparty.CallOpts(context.Background(), RelayerKeyIndex),
-			counterpartyConnectionID,
+		conn, found, err := chain.IBCHandler.GetConnection(
+			chain.CallOpts(context.Background(), RelayerKeyIndex),
+			connectionID,
 		)
 		if err != nil {
 			return nil, err
 		} else if !found {
-			return nil, fmt.Errorf("connection not found: %v", counterpartyConnectionID)
+			return nil, fmt.Errorf("connection not found: %v", connectionID)
 		}
 		bz, err := proto.Marshal(connectionEndToPB(conn))
 		if err != nil {
@@ -1215,21 +1219,21 @@ func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClient
 	return proof, nil
 }
 
-func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID string, counterpartyChannel TestChannel, height *big.Int) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ChannelStateCommitmentSlot(counterpartyChannel.PortID, counterpartyChannel.ID), height)
+func (chain *Chain) QueryChannelProof(counterparty *Chain, counterpartyClientID string, channel TestChannel, height *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ChannelStateCommitmentSlot(channel.PortID, channel.ID), height)
 	if err != nil {
 		return nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		ch, found, err := counterparty.IBCHandler.GetChannel(
-			counterparty.CallOpts(context.Background(), RelayerKeyIndex),
-			counterpartyChannel.PortID, counterpartyChannel.ID,
+		ch, found, err := chain.IBCHandler.GetChannel(
+			chain.CallOpts(context.Background(), RelayerKeyIndex),
+			channel.PortID, channel.ID,
 		)
 		if err != nil {
 			return nil, err
 		} else if !found {
-			return nil, fmt.Errorf("channel not found: %v", counterpartyChannel)
+			return nil, fmt.Errorf("channel not found: %v", channel)
 		}
 		bz, err := proto.Marshal(channelToPB(ch))
 		if err != nil {
@@ -1250,7 +1254,7 @@ func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyCli
 	if err != nil {
 		return nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
 		exists, err := chain.IBCHandler.HasPacketReceipt(chain.CallOpts(context.Background(), RelayerKeyIndex), packetFromCounterparty.DestinationPort, packetFromCounterparty.DestinationChannel, packetFromCounterparty.Sequence)
 		if err != nil {
@@ -1265,14 +1269,14 @@ func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyCli
 	return proof, nil
 }
 
-func (chain *Chain) QueryNextSequenceRecvProof(counterparty *Chain, counterpartyClientID string, counterpartyChannel TestChannel, height *big.Int) (*Proof, error) {
-	proof, err := chain.QueryProof(chain, counterpartyClientID, commitment.NextSequenceRecvCommitmentSlot(counterpartyChannel.PortID, counterpartyChannel.ID), height)
+func (chain *Chain) QueryNextSequenceRecvProof(counterparty *Chain, counterpartyClientID string, channel TestChannel, height *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.NextSequenceRecvCommitmentSlot(channel.PortID, channel.ID), height)
 	if err != nil {
 		return nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		seq, err := chain.IBCHandler.GetNextSequenceRecv(chain.CallOpts(context.Background(), RelayerKeyIndex), counterpartyChannel.PortID, counterpartyChannel.ID)
+		seq, err := chain.IBCHandler.GetNextSequenceRecv(chain.CallOpts(context.Background(), RelayerKeyIndex), channel.PortID, channel.ID)
 		if err != nil {
 			return nil, err
 		}
