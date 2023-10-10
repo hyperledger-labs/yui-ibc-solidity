@@ -44,7 +44,7 @@ contract ICS20TransferBank is ICS20Transfer {
             require(_burn(_msgSender(), denom, amount));
         }
         bytes memory packetData = ICS20Lib.marshalJSON(denom, amount, _encodeSender(_msgSender()), receiver);
-        IBCHandler(ibcAddress()).sendPacket(
+        IICS04Wrapper(ibcAddress()).sendPacket(
             sourcePort, sourceChannel, Height.Data({revision_number: 0, revision_height: timeoutHeight}), 0, packetData
         );
     }
