@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -43,6 +44,7 @@ const (
 	DefaultDelayPeriod    uint64 = 0
 	DefaultPrefix                = "ibc"
 	TransferPort                 = "transfer"
+	MockPort                     = "mock"
 
 	RelayerKeyIndex uint32 = 0
 )
@@ -818,11 +820,6 @@ func (chain *Chain) TimeoutOnClose(
 	channel TestChannel,
 	counterpartyChannel TestChannel,
 ) error {
-	var (
-		proofClose      []byte
-		proofUnreceived []byte
-	)
-
 	counterpartyCh, found, err := counterparty.IBCHandler.GetChannel(
 		counterparty.CallOpts(ctx, RelayerKeyIndex),
 		packet.DestinationPort,
@@ -844,10 +841,23 @@ func (chain *Chain) TimeoutOnClose(
 	if err != nil {
 		return err
 	}
-	proofClose = p.Data
+	proofClose := p.Data
 
+	nextSequenceRecv, err := counterparty.IBCHandler.GetNextSequenceRecv(
+		counterparty.CallOpts(ctx, RelayerKeyIndex),
+		counterpartyChannel.PortID, counterpartyChannel.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	var proofUnreceived []byte
 	if counterpartyCh.Ordering == uint8(channeltypes.ORDERED) {
-		panic("not implemented")
+		proof, err := counterparty.QueryNextSequenceRecvProof(chain, counterpartyChannel.ClientID, counterpartyChannel, proofHeight)
+		if err != nil {
+			return err
+		}
+		proofUnreceived = proof.Data
 	} else {
 		if chain.ClientType() == ibcclient.MockClient {
 			proofUnreceived = []byte{}
@@ -879,8 +889,9 @@ func (chain *Chain) TimeoutOnClose(
 				ProofUnreceived: proofUnreceived,
 				ProofHeight: ibchandler.HeightData{
 					RevisionNumber: 0,
-					RevisionHeight: uint64(counterparty.LatestLCInputData.Header().Number.Int64()),
+					RevisionHeight: proofHeight.Uint64(),
 				},
+				NextSequenceRecv: nextSequenceRecv,
 			},
 		),
 	)
@@ -1238,6 +1249,25 @@ func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyCli
 		} else {
 			proof.Data = []byte{}
 		}
+	}
+	return proof, nil
+}
+
+func (chain *Chain) QueryNextSequenceRecvProof(counterparty *Chain, counterpartyClientID string, counterpartyChannel TestChannel, height *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(chain, counterpartyClientID, commitment.NextSequenceRecvCommitmentSlot(counterpartyChannel.PortID, counterpartyChannel.ID), height)
+	if err != nil {
+		return nil, err
+	}
+	switch counterparty.ClientType() {
+	case ibcclient.MockClient:
+		seq, err := chain.IBCHandler.GetNextSequenceRecv(chain.CallOpts(context.Background(), RelayerKeyIndex), counterpartyChannel.PortID, counterpartyChannel.ID)
+		if err != nil {
+			return nil, err
+		}
+		bz := make([]byte, 8)
+		binary.BigEndian.PutUint64(bz, seq)
+		h := sha256.Sum256(bz)
+		proof.Data = h[:]
 	}
 	return proof, nil
 }

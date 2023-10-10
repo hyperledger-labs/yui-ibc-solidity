@@ -13,6 +13,7 @@ import (
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
@@ -25,6 +26,10 @@ const (
 	deployer        = ibctesting.RelayerKeyIndex // the key-index of contract deployer on chain
 	alice    uint32 = 1                          // the key-index of alice on chain
 	bob      uint32 = 2                          // the key-index of bob on chain
+
+	mockPacketData      = "mock packet data"
+	mockFailPacketData  = "mock failed packet data"
+	mockAsyncPacketData = "mock async packet data"
 )
 
 /*
@@ -107,7 +112,7 @@ func (suite *ContractTestSuite) TestIBCCompatibility() {
 	})
 }
 
-func (suite *ContractTestSuite) TestPacketRelay() {
+func (suite *ContractTestSuite) TestICS20Relay() {
 	ctx := context.Background()
 
 	chainA := suite.chainA
@@ -228,17 +233,18 @@ func (suite *ContractTestSuite) TestPacketRelay() {
 
 func (suite *ContractTestSuite) TestTimeoutPacket() {
 	ctx := context.Background()
-
+	coordinator := suite.coordinator
 	chainA := suite.chainA
 	chainB := suite.chainB
 
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
-	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	chanA, _ := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
+	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+
+	chanA, _ := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
 
 	denomA := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
 
-	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
+	suite.Require().NoError(coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
 
 	// try to transfer the token to chainB
 	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
@@ -260,52 +266,39 @@ func (suite *ContractTestSuite) TestTimeoutPacket() {
 	suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
 
 	// then, update the client to reach the timeout height
-	suite.Require().NoError(suite.coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+	suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 
 	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
 	suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA))
 	// confirm that the packet commitment is deleted
 	suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, false, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
+	chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.OPEN)
 }
 
 func (suite *ContractTestSuite) TestTimeoutOnClose() {
 	ctx := context.Background()
-
+	coordinator := suite.coordinator
 	chainA := suite.chainA
 	chainB := suite.chainB
 
-	clientA, clientB := suite.coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
-	connA, connB := suite.coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	chanA, chanB := suite.coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.MockClient)
+	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
+	chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
 
-	suite.Require().NoError(suite.coordinator.ApproveAndDepositToken(ctx, chainA, deployer, 100, alice))
+	suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+		chainA.TxOpts(ctx, alice),
+		mockPacketData,
+		chanA.PortID, chanA.ID,
+		ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
+		0,
+	)))
 
-	// try to transfer the token to chainB
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ICS20Transfer.SendTransfer(
-			chainA.TxOpts(ctx, alice),
-			strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String()),
-			big.NewInt(100),
-			addressToHexString(chainB.CallOpts(ctx, bob).From),
-			chanA.PortID, chanA.ID,
-			uint64(chainB.LastHeader().Number.Int64())+1000,
-		),
-	))
-
-	transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
+	packet, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
 	suite.Require().NoError(err)
 
-	suite.Require().NoError(suite.coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
-	suite.Require().NoError(suite.chainA.TimeoutOnClose(ctx, *transferPacket, chainB, chanA, chanB))
-
-	// withdraw tokens from the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
-		chainA.ICS20Bank.Withdraw(
-			chainA.TxOpts(ctx, alice),
-			chainA.ContractConfig.ERC20TokenAddress,
-			big.NewInt(100),
-			chainA.CallOpts(ctx, deployer).From,
-		)))
+	suite.Require().NoError(coordinator.ChanCloseInit(ctx, chainB, chainA, chanB))
+	suite.Require().NoError(chainA.TimeoutOnClose(ctx, *packet, chainB, chanA, chanB))
+	chainA.EnsureChannelState(ctx, chanA.PortID, chanA.ID, channeltypes.CLOSED)
 }
 
 func addressToHexString(addr common.Address) string {
