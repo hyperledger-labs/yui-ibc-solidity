@@ -5,7 +5,7 @@
 
 [IBC](https://github.com/cosmos/ibc) implementations in Solidity.
 
-**IBC compatibility:** [v4.0.0](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0)
+**IBC compatibility:** [v4](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0)
 
 This is available not only for Ethereum and Hyperledger Besu, but also for Polygon PoS and other blockchains that supports EVM-compatible.
 
@@ -15,7 +15,7 @@ NOTE: This is yet pre-beta non-production-quality software.
 
 - Implementation of [ICS](https://github.com/cosmos/ibc/tree/master/spec/core)
 - Implementation of [ICS-20](https://github.com/cosmos/ibc/tree/master/spec/app/ics-020-fungible-token-transfer)
-- [ERC-20 Token Transfer](./contracts/app/ICS20TransferBank.sol)
+- [ERC-20 Token Transfer](./contracts/apps/20-transfer/ICS20TransferBank.sol)
 
 ## Documents
 
@@ -32,11 +32,18 @@ Here are some such examples:
 - [Tendermint Light Client](https://github.com/datachainlab/tendermint-sol/tree/use-ibc-sol-hmy)
 - [Mock Client](./contracts/clients/MockClient.sol)
 
+## IBC relayer support
+
+- [yui-relayer](https://github.com/datachainlab/yui-relayer): An IBC relayer for heterogeneous chains
+- [ethereum-ibc-relay-chain](https://github.com/datachainlab/ethereum-ibc-relay-chain): A relay-chain module for EVM-compatible chains
+- [ethereum-ibc-relay-prover](https://github.com/datachainlab/ethereum-ibc-relay-prover): A relay-prover module for Ethereum sync committee
+
 ## Related projects
 
 - A demo of trustless bridge
     - between Harmony and Cosmos(Tendermint): https://github.com/datachainlab/harmony-cosmos-bridge-demo
     - between Celo and Cosmos: https://github.com/ChorusOne/celo-cosmos-bridge
+- A demo of bridge between Cosmos(ibc-go) and Ethereum using IBC and LCP: https://github.com/datachainlab/cosmos-ethereum-ibc-lcp
 
 ## For Developers
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -26,6 +27,7 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	ibccommitment "github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitmenttesthelper"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2"
@@ -42,13 +44,19 @@ const (
 	DefaultDelayPeriod    uint64 = 0
 	DefaultPrefix                = "ibc"
 	TransferPort                 = "transfer"
+	MockPort                     = "mock"
 
 	RelayerKeyIndex uint32 = 0
+
+	MockPacketData      = "mock packet data"
+	MockFailPacketData  = "mock failed packet data"
+	MockAsyncPacketData = "mock async packet data"
 )
 
 var (
 	abiIBCHandler abi.ABI
 	abiSendPacket,
+	abiWriteAcknowledgement,
 	abiGeneratedClientIdentifier,
 	abiGeneratedConnectionIdentifier,
 	abiGeneratedChannelIdentifier abi.Event
@@ -61,6 +69,7 @@ func init() {
 		panic(err)
 	}
 	abiSendPacket = abiIBCHandler.Events["SendPacket"]
+	abiWriteAcknowledgement = abiIBCHandler.Events["WriteAcknowledgement"]
 	abiGeneratedClientIdentifier = abiIBCHandler.Events["GeneratedClientIdentifier"]
 	abiGeneratedConnectionIdentifier = abiIBCHandler.Events["GeneratedConnectionIdentifier"]
 	abiGeneratedChannelIdentifier = abiIBCHandler.Events["GeneratedChannelIdentifier"]
@@ -94,6 +103,7 @@ type Chain struct {
 	ERC20         erc20.Erc20
 	ICS20Transfer ics20transferbank.Ics20transferbank
 	ICS20Bank     ics20bank.Ics20bank
+	IBCMockApp    ibcmockapp.Ibcmockapp
 
 	// Input data for light client
 	LatestLCInputData LightClientInputData
@@ -125,6 +135,10 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		t.Fatal(err)
 	}
 	ibcCommitment, err := ibccommitment.NewIbccommitmenttesthelper(config.IBCCommitmentTestHelperAddress, client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ibcMockApp, err := ibcmockapp.NewIbcmockapp(config.IBCMockAppAddress, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,6 +177,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		ERC20:         *erc20_,
 		ICS20Transfer: *ics20transfer,
 		ICS20Bank:     *ics20bank,
+		IBCMockApp:    *ibcMockApp,
 	}
 }
 
@@ -442,7 +457,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	if err != nil {
 		return "", err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
 	if err != nil {
 		return "", err
 	}
@@ -482,7 +497,7 @@ func (chain *Chain) ConnectionOpenAck(
 	if err != nil {
 		return err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
 	if err != nil {
 		return err
 	}
@@ -749,6 +764,7 @@ func (chain *Chain) TimeoutPacket(
 	packet channeltypes.Packet,
 	counterparty *Chain,
 	channel TestChannel,
+	counterpartyChannel TestChannel,
 ) error {
 	counterpartyCh, found, err := counterparty.IBCHandler.GetChannel(
 		counterparty.CallOpts(ctx, RelayerKeyIndex),
@@ -768,7 +784,11 @@ func (chain *Chain) TimeoutPacket(
 	var proof []byte
 	proofHeight := counterparty.LatestLCInputData.Header().Number
 	if counterpartyCh.Ordering == uint8(channeltypes.ORDERED) {
-		panic("not implemented")
+		p, err := counterparty.QueryNextSequenceRecvProof(chain, counterpartyChannel.ClientID, counterpartyChannel, proofHeight)
+		if err != nil {
+			return err
+		}
+		proof = p.Data
 	} else {
 		ok, err := counterparty.IBCHandler.HasPacketReceipt(
 			counterparty.CallOpts(ctx, RelayerKeyIndex),
@@ -787,6 +807,13 @@ func (chain *Chain) TimeoutPacket(
 		proof = p.Data
 	}
 
+	nextSequenceRecv, err := counterparty.IBCHandler.GetNextSequenceRecv(
+		counterparty.CallOpts(ctx, RelayerKeyIndex),
+		counterpartyChannel.PortID, counterpartyChannel.ID,
+	)
+	if err != nil {
+		return err
+	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.TimeoutPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
@@ -797,6 +824,7 @@ func (chain *Chain) TimeoutPacket(
 					RevisionNumber: 0,
 					RevisionHeight: proofHeight.Uint64(),
 				},
+				NextSequenceRecv: nextSequenceRecv,
 			},
 		),
 	)
@@ -809,11 +837,6 @@ func (chain *Chain) TimeoutOnClose(
 	channel TestChannel,
 	counterpartyChannel TestChannel,
 ) error {
-	var (
-		proofClose      []byte
-		proofUnreceived []byte
-	)
-
 	counterpartyCh, found, err := counterparty.IBCHandler.GetChannel(
 		counterparty.CallOpts(ctx, RelayerKeyIndex),
 		packet.DestinationPort,
@@ -831,14 +854,19 @@ func (chain *Chain) TimeoutOnClose(
 
 	proofHeight := counterparty.LatestLCInputData.Header().Number
 
-	p, err := counterparty.QueryChannelProof(chain, counterpartyChannel.ClientID, counterpartyChannel, proofHeight)
+	p, err := counterparty.QueryChannelProof(chain, channel.ClientID, counterpartyChannel, proofHeight)
 	if err != nil {
 		return err
 	}
-	proofClose = p.Data
+	proofClose := p.Data
 
+	var proofUnreceived []byte
 	if counterpartyCh.Ordering == uint8(channeltypes.ORDERED) {
-		panic("not implemented")
+		proof, err := counterparty.QueryNextSequenceRecvProof(chain, counterpartyChannel.ClientID, counterpartyChannel, proofHeight)
+		if err != nil {
+			return err
+		}
+		proofUnreceived = proof.Data
 	} else {
 		if chain.ClientType() == ibcclient.MockClient {
 			proofUnreceived = []byte{}
@@ -861,6 +889,13 @@ func (chain *Chain) TimeoutOnClose(
 		}
 	}
 
+	nextSequenceRecv, err := counterparty.IBCHandler.GetNextSequenceRecv(
+		counterparty.CallOpts(ctx, RelayerKeyIndex),
+		counterpartyChannel.PortID, counterpartyChannel.ID,
+	)
+	if err != nil {
+		return err
+	}
 	return chain.WaitIfNoError(ctx)(
 		chain.IBCHandler.TimeoutOnClose(
 			chain.TxOpts(ctx, RelayerKeyIndex),
@@ -870,8 +905,9 @@ func (chain *Chain) TimeoutOnClose(
 				ProofUnreceived: proofUnreceived,
 				ProofHeight: ibchandler.HeightData{
 					RevisionNumber: 0,
-					RevisionHeight: uint64(counterparty.LatestLCInputData.Header().Number.Int64()),
+					RevisionHeight: proofHeight.Uint64(),
 				},
+				NextSequenceRecv: nextSequenceRecv,
 			},
 		),
 	)
@@ -1008,6 +1044,38 @@ func (chain *Chain) FindPacket(
 	return nil, fmt.Errorf("packet not found: sourcePortID=%v sourceChannel=%v sequence=%v", sourcePortID, sourceChannel, sequence)
 }
 
+func (chain *Chain) FindAcknowledgement(
+	ctx context.Context,
+	portID string,
+	channelID string,
+	sequence uint64,
+) ([]byte, error) {
+	query := ethereum.FilterQuery{
+		FromBlock: chain.startBlockNumber,
+		Addresses: []common.Address{
+			chain.ContractConfig.IBCHandlerAddress,
+		},
+		Topics: [][]common.Hash{{
+			abiWriteAcknowledgement.ID,
+		}},
+	}
+	logs, err := chain.client.FilterLogs(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	for _, log := range logs {
+		var writeAcknowledgement ibchandler.IbchandlerWriteAcknowledgement
+		if err := abiIBCHandler.UnpackIntoInterface(&writeAcknowledgement, "WriteAcknowledgement", log.Data); err != nil {
+			return nil, err
+		}
+		if writeAcknowledgement.DestinationPortId != portID || writeAcknowledgement.DestinationChannel != channelID || writeAcknowledgement.Sequence != sequence {
+			continue
+		}
+		return writeAcknowledgement.Acknowledgement, nil
+	}
+	return nil, fmt.Errorf("acknowledgement not found: portID=%v channelID=%v sequence=%v", portID, channelID, sequence)
+}
+
 func (chain *Chain) AdvanceBlockNumber(
 	ctx context.Context,
 	toBlockNumber uint64,
@@ -1106,18 +1174,18 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	}, nil
 }
 
-func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
-	cs, found, err := counterparty.IBCHandler.GetClientState(counterparty.CallOpts(context.Background(), RelayerKeyIndex), counterpartyClientID)
+func (chain *Chain) QueryClientProof(counterparty *Chain, clientID, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
+	cs, found, err := chain.IBCHandler.GetClientState(chain.CallOpts(context.Background(), RelayerKeyIndex), clientID)
 	if err != nil {
 		return nil, nil, err
 	} else if !found {
 		return nil, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
 	}
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ClientStateCommitmentSlot(counterpartyClientID), height)
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ClientStateCommitmentSlot(clientID), height)
 	if err != nil {
 		return nil, nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
 		h := sha256.Sum256(cs)
 		proof.Data = h[:]
@@ -1125,21 +1193,21 @@ func (counterparty *Chain) QueryClientProof(chain *Chain, counterpartyClientID s
 	return cs, proof, nil
 }
 
-func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClientID string, counterpartyConnectionID string, height *big.Int) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ConnectionStateCommitmentSlot(counterpartyConnectionID), height)
+func (chain *Chain) QueryConnectionProof(counterparty *Chain, counterpartyClientID string, connectionID string, height *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ConnectionStateCommitmentSlot(connectionID), height)
 	if err != nil {
 		return nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		conn, found, err := counterparty.IBCHandler.GetConnection(
-			counterparty.CallOpts(context.Background(), RelayerKeyIndex),
-			counterpartyConnectionID,
+		conn, found, err := chain.IBCHandler.GetConnection(
+			chain.CallOpts(context.Background(), RelayerKeyIndex),
+			connectionID,
 		)
 		if err != nil {
 			return nil, err
 		} else if !found {
-			return nil, fmt.Errorf("connection not found: %v", counterpartyConnectionID)
+			return nil, fmt.Errorf("connection not found: %v", connectionID)
 		}
 		bz, err := proto.Marshal(connectionEndToPB(conn))
 		if err != nil {
@@ -1151,21 +1219,21 @@ func (counterparty *Chain) QueryConnectionProof(chain *Chain, counterpartyClient
 	return proof, nil
 }
 
-func (counterparty *Chain) QueryChannelProof(chain *Chain, counterpartyClientID string, counterpartyChannel TestChannel, height *big.Int) (*Proof, error) {
-	proof, err := counterparty.QueryProof(chain, counterpartyClientID, commitment.ChannelStateCommitmentSlot(counterpartyChannel.PortID, counterpartyChannel.ID), height)
+func (chain *Chain) QueryChannelProof(counterparty *Chain, counterpartyClientID string, channel TestChannel, height *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ChannelStateCommitmentSlot(channel.PortID, channel.ID), height)
 	if err != nil {
 		return nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		ch, found, err := counterparty.IBCHandler.GetChannel(
-			counterparty.CallOpts(context.Background(), RelayerKeyIndex),
-			counterpartyChannel.PortID, counterpartyChannel.ID,
+		ch, found, err := chain.IBCHandler.GetChannel(
+			chain.CallOpts(context.Background(), RelayerKeyIndex),
+			channel.PortID, channel.ID,
 		)
 		if err != nil {
 			return nil, err
 		} else if !found {
-			return nil, fmt.Errorf("channel not found: %v", counterpartyChannel)
+			return nil, fmt.Errorf("channel not found: %v", channel)
 		}
 		bz, err := proto.Marshal(channelToPB(ch))
 		if err != nil {
@@ -1186,7 +1254,7 @@ func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyCli
 	if err != nil {
 		return nil, err
 	}
-	switch counterparty.ClientType() {
+	switch chain.ClientType() {
 	case ibcclient.MockClient:
 		exists, err := chain.IBCHandler.HasPacketReceipt(chain.CallOpts(context.Background(), RelayerKeyIndex), packetFromCounterparty.DestinationPort, packetFromCounterparty.DestinationChannel, packetFromCounterparty.Sequence)
 		if err != nil {
@@ -1197,6 +1265,25 @@ func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyCli
 		} else {
 			proof.Data = []byte{}
 		}
+	}
+	return proof, nil
+}
+
+func (chain *Chain) QueryNextSequenceRecvProof(counterparty *Chain, counterpartyClientID string, channel TestChannel, height *big.Int) (*Proof, error) {
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.NextSequenceRecvCommitmentSlot(channel.PortID, channel.ID), height)
+	if err != nil {
+		return nil, err
+	}
+	switch chain.ClientType() {
+	case ibcclient.MockClient:
+		seq, err := chain.IBCHandler.GetNextSequenceRecv(chain.CallOpts(context.Background(), RelayerKeyIndex), channel.PortID, channel.ID)
+		if err != nil {
+			return nil, err
+		}
+		bz := make([]byte, 8)
+		binary.BigEndian.PutUint64(bz, seq)
+		h := sha256.Sum256(bz)
+		proof.Data = h[:]
 	}
 	return proof, nil
 }

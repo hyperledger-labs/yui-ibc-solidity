@@ -31,7 +31,7 @@ var (
 
 // Ics20bankMetaData contains all meta data concerning the Ics20bank contract.
 var Ics20bankMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"previousAdminRole\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"newAdminRole\",\"type\":\"bytes32\"}],\"name\":\"RoleAdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleGranted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleRevoked\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"DEFAULT_ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"OPERATOR_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"id\",\"type\":\"string\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"id\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"burn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleAdmin\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"grantRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"hasRole\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"id\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"renounceRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"revokeRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"setOperator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"id\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"previousAdminRole\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"newAdminRole\",\"type\":\"bytes32\"}],\"name\":\"RoleAdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleGranted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleRevoked\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"DEFAULT_ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"OPERATOR_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenContract\",\"type\":\"address\"}],\"name\":\"addressToDenom\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"burn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleAdmin\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"grantRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"hasRole\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"renounceRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"revokeRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"}],\"name\":\"setOperator\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenContract\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // Ics20bankABI is the input ABI used to generate the binding from.
@@ -273,12 +273,43 @@ func (_Ics20bank *Ics20bankCallerSession) OPERATORROLE() ([32]byte, error) {
 	return _Ics20bank.Contract.OPERATORROLE(&_Ics20bank.CallOpts)
 }
 
+// AddressToDenom is a free data retrieval call binding the contract method 0x95469df8.
+//
+// Solidity: function addressToDenom(address tokenContract) pure returns(string)
+func (_Ics20bank *Ics20bankCaller) AddressToDenom(opts *bind.CallOpts, tokenContract common.Address) (string, error) {
+	var out []interface{}
+	err := _Ics20bank.contract.Call(opts, &out, "addressToDenom", tokenContract)
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// AddressToDenom is a free data retrieval call binding the contract method 0x95469df8.
+//
+// Solidity: function addressToDenom(address tokenContract) pure returns(string)
+func (_Ics20bank *Ics20bankSession) AddressToDenom(tokenContract common.Address) (string, error) {
+	return _Ics20bank.Contract.AddressToDenom(&_Ics20bank.CallOpts, tokenContract)
+}
+
+// AddressToDenom is a free data retrieval call binding the contract method 0x95469df8.
+//
+// Solidity: function addressToDenom(address tokenContract) pure returns(string)
+func (_Ics20bank *Ics20bankCallerSession) AddressToDenom(tokenContract common.Address) (string, error) {
+	return _Ics20bank.Contract.AddressToDenom(&_Ics20bank.CallOpts, tokenContract)
+}
+
 // BalanceOf is a free data retrieval call binding the contract method 0xb9b092c8.
 //
-// Solidity: function balanceOf(address account, string id) view returns(uint256)
-func (_Ics20bank *Ics20bankCaller) BalanceOf(opts *bind.CallOpts, account common.Address, id string) (*big.Int, error) {
+// Solidity: function balanceOf(address account, string denom) view returns(uint256)
+func (_Ics20bank *Ics20bankCaller) BalanceOf(opts *bind.CallOpts, account common.Address, denom string) (*big.Int, error) {
 	var out []interface{}
-	err := _Ics20bank.contract.Call(opts, &out, "balanceOf", account, id)
+	err := _Ics20bank.contract.Call(opts, &out, "balanceOf", account, denom)
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -292,16 +323,16 @@ func (_Ics20bank *Ics20bankCaller) BalanceOf(opts *bind.CallOpts, account common
 
 // BalanceOf is a free data retrieval call binding the contract method 0xb9b092c8.
 //
-// Solidity: function balanceOf(address account, string id) view returns(uint256)
-func (_Ics20bank *Ics20bankSession) BalanceOf(account common.Address, id string) (*big.Int, error) {
-	return _Ics20bank.Contract.BalanceOf(&_Ics20bank.CallOpts, account, id)
+// Solidity: function balanceOf(address account, string denom) view returns(uint256)
+func (_Ics20bank *Ics20bankSession) BalanceOf(account common.Address, denom string) (*big.Int, error) {
+	return _Ics20bank.Contract.BalanceOf(&_Ics20bank.CallOpts, account, denom)
 }
 
 // BalanceOf is a free data retrieval call binding the contract method 0xb9b092c8.
 //
-// Solidity: function balanceOf(address account, string id) view returns(uint256)
-func (_Ics20bank *Ics20bankCallerSession) BalanceOf(account common.Address, id string) (*big.Int, error) {
-	return _Ics20bank.Contract.BalanceOf(&_Ics20bank.CallOpts, account, id)
+// Solidity: function balanceOf(address account, string denom) view returns(uint256)
+func (_Ics20bank *Ics20bankCallerSession) BalanceOf(account common.Address, denom string) (*big.Int, error) {
+	return _Ics20bank.Contract.BalanceOf(&_Ics20bank.CallOpts, account, denom)
 }
 
 // GetRoleAdmin is a free data retrieval call binding the contract method 0x248a9ca3.
@@ -399,23 +430,23 @@ func (_Ics20bank *Ics20bankCallerSession) SupportsInterface(interfaceId [4]byte)
 
 // Burn is a paid mutator transaction binding the contract method 0xc45b71de.
 //
-// Solidity: function burn(address account, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankTransactor) Burn(opts *bind.TransactOpts, account common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.contract.Transact(opts, "burn", account, id, amount)
+// Solidity: function burn(address account, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankTransactor) Burn(opts *bind.TransactOpts, account common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.contract.Transact(opts, "burn", account, denom, amount)
 }
 
 // Burn is a paid mutator transaction binding the contract method 0xc45b71de.
 //
-// Solidity: function burn(address account, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankSession) Burn(account common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.Contract.Burn(&_Ics20bank.TransactOpts, account, id, amount)
+// Solidity: function burn(address account, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankSession) Burn(account common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.Contract.Burn(&_Ics20bank.TransactOpts, account, denom, amount)
 }
 
 // Burn is a paid mutator transaction binding the contract method 0xc45b71de.
 //
-// Solidity: function burn(address account, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankTransactorSession) Burn(account common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.Contract.Burn(&_Ics20bank.TransactOpts, account, id, amount)
+// Solidity: function burn(address account, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankTransactorSession) Burn(account common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.Contract.Burn(&_Ics20bank.TransactOpts, account, denom, amount)
 }
 
 // Deposit is a paid mutator transaction binding the contract method 0xf45346dc.
@@ -462,23 +493,23 @@ func (_Ics20bank *Ics20bankTransactorSession) GrantRole(role [32]byte, account c
 
 // Mint is a paid mutator transaction binding the contract method 0xba7aef43.
 //
-// Solidity: function mint(address account, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankTransactor) Mint(opts *bind.TransactOpts, account common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.contract.Transact(opts, "mint", account, id, amount)
+// Solidity: function mint(address account, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankTransactor) Mint(opts *bind.TransactOpts, account common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.contract.Transact(opts, "mint", account, denom, amount)
 }
 
 // Mint is a paid mutator transaction binding the contract method 0xba7aef43.
 //
-// Solidity: function mint(address account, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankSession) Mint(account common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.Contract.Mint(&_Ics20bank.TransactOpts, account, id, amount)
+// Solidity: function mint(address account, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankSession) Mint(account common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.Contract.Mint(&_Ics20bank.TransactOpts, account, denom, amount)
 }
 
 // Mint is a paid mutator transaction binding the contract method 0xba7aef43.
 //
-// Solidity: function mint(address account, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankTransactorSession) Mint(account common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.Contract.Mint(&_Ics20bank.TransactOpts, account, id, amount)
+// Solidity: function mint(address account, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankTransactorSession) Mint(account common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.Contract.Mint(&_Ics20bank.TransactOpts, account, denom, amount)
 }
 
 // RenounceRole is a paid mutator transaction binding the contract method 0x36568abe.
@@ -546,23 +577,23 @@ func (_Ics20bank *Ics20bankTransactorSession) SetOperator(operator common.Addres
 
 // TransferFrom is a paid mutator transaction binding the contract method 0xf24dc1da.
 //
-// Solidity: function transferFrom(address from, address to, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankTransactor) TransferFrom(opts *bind.TransactOpts, from common.Address, to common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.contract.Transact(opts, "transferFrom", from, to, id, amount)
+// Solidity: function transferFrom(address from, address to, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankTransactor) TransferFrom(opts *bind.TransactOpts, from common.Address, to common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.contract.Transact(opts, "transferFrom", from, to, denom, amount)
 }
 
 // TransferFrom is a paid mutator transaction binding the contract method 0xf24dc1da.
 //
-// Solidity: function transferFrom(address from, address to, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankSession) TransferFrom(from common.Address, to common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.Contract.TransferFrom(&_Ics20bank.TransactOpts, from, to, id, amount)
+// Solidity: function transferFrom(address from, address to, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankSession) TransferFrom(from common.Address, to common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.Contract.TransferFrom(&_Ics20bank.TransactOpts, from, to, denom, amount)
 }
 
 // TransferFrom is a paid mutator transaction binding the contract method 0xf24dc1da.
 //
-// Solidity: function transferFrom(address from, address to, string id, uint256 amount) returns()
-func (_Ics20bank *Ics20bankTransactorSession) TransferFrom(from common.Address, to common.Address, id string, amount *big.Int) (*types.Transaction, error) {
-	return _Ics20bank.Contract.TransferFrom(&_Ics20bank.TransactOpts, from, to, id, amount)
+// Solidity: function transferFrom(address from, address to, string denom, uint256 amount) returns()
+func (_Ics20bank *Ics20bankTransactorSession) TransferFrom(from common.Address, to common.Address, denom string, amount *big.Int) (*types.Transaction, error) {
+	return _Ics20bank.Contract.TransferFrom(&_Ics20bank.TransactOpts, from, to, denom, amount)
 }
 
 // Withdraw is a paid mutator transaction binding the contract method 0x69328dec.

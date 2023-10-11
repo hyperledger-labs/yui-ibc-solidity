@@ -1,8 +1,8 @@
 package commitment
 
 import (
-	host "github.com/cosmos/ibc-go/v4/modules/core/24-host"
-	"github.com/cosmos/ibc-go/v4/modules/core/exported"
+	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
+	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -37,6 +37,10 @@ func PacketAcknowledgementCommitmentSlot(portID, channelID string, sequence uint
 
 func PacketReceiptCommitmentSlot(portID, channelID string, sequence uint64) string {
 	return CalculateCommitmentSlot(host.PacketReceiptKey(portID, channelID, sequence))
+}
+
+func NextSequenceRecvCommitmentSlot(portID, channelID string) string {
+	return CalculateCommitmentSlot(host.NextSequenceRecvKey(portID, channelID))
 }
 
 func CalculateCommitmentSlot(path []byte) string {

@@ -454,11 +454,23 @@ func (c *Coordinator) RelayLastSentPacket(
 	ctx context.Context,
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
+	packetCb func([]byte),
+	ackCb func([]byte),
 ) {
 	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
 	require.NoError(c.t, err)
+	c.t.Logf("packet found: %v", string(packet.Data))
+	if packetCb != nil {
+		packetCb(packet.Data)
+	}
 	require.NoError(c.t, c.HandlePacketRecv(ctx, counterparty, source, counterpartyChannel, sourceChannel, *packet))
-	require.NoError(c.t, c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, []byte{1}))
+	ack, err := counterparty.FindAcknowledgement(ctx, counterpartyChannel.PortID, counterpartyChannel.ID, packet.Sequence)
+	require.NoError(c.t, err)
+	c.t.Logf("ack found: %v", string(ack))
+	if ackCb != nil {
+		ackCb(ack)
+	}
+	require.NoError(c.t, c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, ack))
 }
 
 func (c *Coordinator) RelayLastSentPacketWithDelay(
@@ -472,6 +484,7 @@ func (c *Coordinator) RelayLastSentPacketWithDelay(
 
 	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
 	require.NoError(c.t, err)
+	c.t.Logf("packet found: %v", string(packet.Data))
 	require.NoError(c.t, retry.Do(
 		func() error {
 			delayStartTimeForAck = time.Now()
@@ -483,9 +496,12 @@ func (c *Coordinator) RelayLastSentPacketWithDelay(
 	delayForRecv := time.Since(delayStartTimeForRecv)
 	c.t.Logf("delay for recv@%v %s", counterparty.chainID, delayForRecv)
 	require.Greater(c.t, delayForRecv, time.Duration(counterpartyDelayPeriodExtension*counterparty.GetDelayPeriod()))
+	ack, err := counterparty.FindAcknowledgement(ctx, counterpartyChannel.PortID, counterpartyChannel.ID, packet.Sequence)
+	require.NoError(c.t, err)
+	c.t.Logf("ack found: %v", string(ack))
 	require.NoError(c.t, retry.Do(
 		func() error {
-			return c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, []byte{1})
+			return c.HandlePacketAcknowledgement(ctx, source, counterparty, sourceChannel, counterpartyChannel, *packet, ack)
 		},
 		retry.Delay(time.Second),
 		retry.Attempts(60),
@@ -493,14 +509,4 @@ func (c *Coordinator) RelayLastSentPacketWithDelay(
 	delayForAck := time.Since(delayStartTimeForAck)
 	c.t.Logf("delay for ack@%v %s", source.chainID, delayForAck)
 	require.Greater(c.t, delayForAck, time.Duration(sourceDelayPeriodExtension*source.GetDelayPeriod()))
-}
-
-func (c *Coordinator) TimeoutLastSentPacket(
-	ctx context.Context,
-	source, counterparty *Chain,
-	sourceChannel TestChannel,
-) error {
-	packet, err := source.GetLastSentPacket(ctx, sourceChannel.PortID, sourceChannel.ID)
-	require.NoError(c.t, err)
-	return source.TimeoutPacket(ctx, *packet, counterparty, sourceChannel)
 }

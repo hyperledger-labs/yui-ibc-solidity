@@ -21,6 +21,7 @@ function main() {
     "ERC20"
     "ICS20TransferBank"
     "ICS20Bank"
+    "IBCMockApp"
     "IBCCommitmentTestHelper"
   )
   for src in "${srcs[@]}" ; do

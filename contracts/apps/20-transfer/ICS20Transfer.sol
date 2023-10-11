@@ -5,17 +5,13 @@ import "../commons/IBCAppBase.sol";
 import "../../core/05-port/IIBCModule.sol";
 import "../../core/25-handler/IBCHandler.sol";
 import "../../proto/Channel.sol";
-import "../../proto/FungibleTokenPacketData.sol";
-import "solidity-stringutils/src/strings.sol";
+import "./ICS20Lib.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 abstract contract ICS20Transfer is IBCAppBase {
-    using strings for *;
     using BytesLib for bytes;
 
     mapping(string => address) channelEscrowAddresses;
-
-    /// Module callbacks ///
 
     function onRecvPacket(Packet.Data calldata packet, address)
         external
@@ -24,24 +20,42 @@ abstract contract ICS20Transfer is IBCAppBase {
         onlyIBC
         returns (bytes memory acknowledgement)
     {
-        FungibleTokenPacketData.Data memory data = FungibleTokenPacketData.decode(packet.data);
-        strings.slice memory denom = data.denom.toSlice();
-        strings.slice memory trimedDenom =
-            data.denom.toSlice().beyond(_makeDenomPrefix(packet.source_port, packet.source_channel));
-        if (!denom.equals(trimedDenom)) {
-            // receiver is source chain
-            return _newAcknowledgement(
-                _transferFrom(
-                    _getEscrowAddress(packet.destination_channel),
-                    data.receiver.toAddress(0),
-                    trimedDenom.toString(),
-                    data.amount
-                )
+        ICS20Lib.PacketData memory data = ICS20Lib.unmarshalJSON(packet.data);
+        bool success;
+        address receiver;
+        (receiver, success) = _decodeReceiver(data.receiver);
+        if (!success) {
+            return ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON;
+        }
+
+        bytes memory denomPrefix = _getDenomPrefix(packet.source_port, packet.source_channel);
+        bytes memory denom = bytes(data.denom);
+        if (denom.length >= denomPrefix.length && denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
+            // sender chain is not the source, unescrow tokens
+            bytes memory unprefixedDenom = denom.slice(denomPrefix.length, denom.length - denomPrefix.length);
+            success = _transferFrom(
+                _getEscrowAddress(packet.destination_channel), receiver, string(unprefixedDenom), data.amount
             );
         } else {
-            string memory prefixedDenom =
-                _makeDenomPrefix(packet.destination_port, packet.destination_channel).concat(denom);
-            return _newAcknowledgement(_mint(data.receiver.toAddress(0), prefixedDenom, data.amount));
+            // sender chain is the source, mint vouchers
+
+            // ensure denom is not required to be escaped
+            if (ICS20Lib.isEscapeNeededString(denom)) {
+                success = false;
+            } else {
+                success = _mint(
+                    receiver,
+                    string(
+                        abi.encodePacked(_getDenomPrefix(packet.destination_port, packet.destination_channel), denom)
+                    ),
+                    data.amount
+                );
+            }
+        }
+        if (success) {
+            return ICS20Lib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON;
+        } else {
+            return ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON;
         }
     }
 
@@ -51,8 +65,8 @@ abstract contract ICS20Transfer is IBCAppBase {
         override
         onlyIBC
     {
-        if (!_isSuccessAcknowledgement(acknowledgement)) {
-            _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
+        if (keccak256(acknowledgement) != ICS20Lib.KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON) {
+            _refundTokens(ICS20Lib.unmarshalJSON(packet.data), packet.source_port, packet.source_channel);
         }
     }
 
@@ -80,33 +94,7 @@ abstract contract ICS20Transfer is IBCAppBase {
     }
 
     function onTimeoutPacket(Packet.Data calldata packet, address) external virtual override onlyIBC {
-        _refundTokens(FungibleTokenPacketData.decode(packet.data), packet.source_port, packet.source_channel);
-    }
-
-    /// Internal functions ///
-
-    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
-        internal
-        virtual
-        returns (bool);
-
-    function _mint(address account, string memory denom, uint256 amount) internal virtual returns (bool);
-
-    function _burn(address account, string memory denom, uint256 amount) internal virtual returns (bool);
-
-    function _sendPacket(
-        FungibleTokenPacketData.Data memory data,
-        string memory sourcePort,
-        string memory sourceChannel,
-        uint64 timeoutHeight
-    ) internal virtual {
-        IBCHandler(ibcAddress()).sendPacket(
-            sourcePort,
-            sourceChannel,
-            Height.Data({revision_number: 0, revision_height: timeoutHeight}),
-            0,
-            FungibleTokenPacketData.encode(data)
-        );
+        _refundTokens(ICS20Lib.unmarshalJSON(packet.data), packet.source_port, packet.source_channel);
     }
 
     function _getEscrowAddress(string memory sourceChannel) internal view virtual returns (address) {
@@ -115,43 +103,67 @@ abstract contract ICS20Transfer is IBCAppBase {
         return escrow;
     }
 
-    function _newAcknowledgement(bool success) internal pure virtual returns (bytes memory) {
-        bytes memory acknowledgement = new bytes(1);
-        if (success) {
-            acknowledgement[0] = 0x01;
-        } else {
-            acknowledgement[0] = 0x00;
-        }
-        return acknowledgement;
-    }
-
-    function _isSuccessAcknowledgement(bytes memory acknowledgement) internal pure virtual returns (bool) {
-        require(acknowledgement.length == 1);
-        return acknowledgement[0] == 0x01;
-    }
-
-    function _refundTokens(
-        FungibleTokenPacketData.Data memory data,
-        string memory sourcePort,
-        string memory sourceChannel
-    ) internal virtual {
-        if (!data.denom.toSlice().startsWith(_makeDenomPrefix(sourcePort, sourceChannel))) {
-            // sender was source chain
-            require(_transferFrom(_getEscrowAddress(sourceChannel), data.sender.toAddress(0), data.denom, data.amount));
-        } else {
-            require(_mint(data.sender.toAddress(0), data.denom, data.amount));
-        }
-    }
-
-    /// Helper functions ///
-
-    function _makeDenomPrefix(string memory port, string memory channel)
+    function _refundTokens(ICS20Lib.PacketData memory data, string calldata sourcePort, string calldata sourceChannel)
         internal
-        pure
         virtual
-        returns (strings.slice memory)
     {
-        return port.toSlice().concat("/".toSlice()).toSlice().concat(channel.toSlice()).toSlice().concat("/".toSlice())
-            .toSlice();
+        bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
+        bytes memory denom = bytes(data.denom);
+        if (denom.length >= denomPrefix.length && denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
+            require(_mint(_decodeSender(data.sender), data.denom, data.amount));
+        } else {
+            // sender was source chain
+            require(
+                _transferFrom(_getEscrowAddress(sourceChannel), _decodeSender(data.sender), data.denom, data.amount)
+            );
+        }
+    }
+
+    function _getDenomPrefix(string calldata port, string calldata channel) internal pure returns (bytes memory) {
+        return abi.encodePacked(port, "/", channel, "/");
+    }
+
+    /**
+     * @dev _transferFrom transfers tokens from `sender` to `receiver` in the bank.
+     */
+    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
+        internal
+        virtual
+        returns (bool);
+
+    /**
+     * @dev _mint mints tokens to `account` in the bank.
+     */
+    function _mint(address account, string memory denom, uint256 amount) internal virtual returns (bool);
+
+    /**
+     * @dev _burn burns tokens from `account` in the bank.
+     */
+    function _burn(address account, string memory denom, uint256 amount) internal virtual returns (bool);
+
+    /**
+     * @dev _encodeSender encodes an address to a hex string.
+     *      The encoded sender is used as `sender` field in the packet data.
+     */
+    function _encodeSender(address sender) internal pure virtual returns (string memory) {
+        return ICS20Lib.addressToHexString(sender);
+    }
+
+    /**
+     * @dev _decodeSender decodes a hex string to an address.
+     *      `sender` must be a valid address format.
+     */
+    function _decodeSender(string memory sender) internal pure virtual returns (address) {
+        (address addr, bool ok) = ICS20Lib.hexStringToAddress(sender);
+        require(ok, "invalid address");
+        return addr;
+    }
+
+    /**
+     * @dev _decodeSender decodes a hex string to an address.
+     *       `receiver` may be an invalid address format.
+     */
+    function _decodeReceiver(string memory receiver) internal pure virtual returns (address, bool) {
+        return ICS20Lib.hexStringToAddress(receiver);
     }
 }
