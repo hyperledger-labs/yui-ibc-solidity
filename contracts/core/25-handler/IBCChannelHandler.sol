@@ -24,13 +24,16 @@ abstract contract IBCChannelHandler is ModuleManager {
         ibcChannel = _ibcChannel;
     }
 
-    function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) external returns (string memory channelId) {
+    function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_)
+        external
+        returns (string memory channelId, string memory version)
+    {
         bytes memory res =
             ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenInit.selector, msg_));
         channelId = abi.decode(res, (string));
 
         IIBCModule module = lookupModuleByPort(msg_.portId);
-        module.onChanOpenInit(
+        version = module.onChanOpenInit(
             msg_.channel.ordering,
             msg_.channel.connection_hops,
             msg_.portId,
@@ -40,30 +43,28 @@ abstract contract IBCChannelHandler is ModuleManager {
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
         emit GeneratedChannelIdentifier(channelId);
-        return channelId;
+        return (channelId, version);
     }
 
-    function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) external returns (string memory channelId) {
-        {
-            // avoid "Stack too deep" error
-            bytes memory res = ibcChannel.functionDelegateCall(
-                abi.encodeWithSelector(IIBCChannelHandshake.channelOpenTry.selector, msg_)
-            );
-            channelId = abi.decode(res, (string));
-        }
+    function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_)
+        external
+        returns (string memory channelId, string memory version)
+    {
+        bytes memory res =
+            ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenTry.selector, msg_));
+        channelId = abi.decode(res, (string));
         IIBCModule module = lookupModuleByPort(msg_.portId);
-        module.onChanOpenTry(
+        version = module.onChanOpenTry(
             msg_.channel.ordering,
             msg_.channel.connection_hops,
             msg_.portId,
             channelId,
             msg_.channel.counterparty,
-            msg_.channel.version,
             msg_.counterpartyVersion
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
         emit GeneratedChannelIdentifier(channelId);
-        return channelId;
+        return (channelId, version);
     }
 
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck calldata msg_) external {
