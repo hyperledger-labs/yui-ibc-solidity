@@ -40,7 +40,7 @@ abstract contract IBCAppBase is Context, IIBCModule {
         string calldata channelId,
         ChannelCounterparty.Data calldata,
         string calldata
-    ) external virtual override onlyIBC {}
+    ) external virtual override onlyIBC returns (string memory) {}
 
     /**
      * @dev See IIBCModule-onChanOpenTry
@@ -53,9 +53,8 @@ abstract contract IBCAppBase is Context, IIBCModule {
         string calldata,
         string calldata channelId,
         ChannelCounterparty.Data calldata,
-        string calldata,
         string calldata
-    ) external virtual override onlyIBC {}
+    ) external virtual override onlyIBC returns (string memory) {}
 
     /**
      * @dev See IIBCModule-onChanOpenAck

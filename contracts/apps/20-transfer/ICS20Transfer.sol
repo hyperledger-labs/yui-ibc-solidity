@@ -11,6 +11,8 @@ import "solidity-bytes-utils/contracts/BytesLib.sol";
 abstract contract ICS20Transfer is IBCAppBase {
     using BytesLib for bytes;
 
+    string public constant ICS20_VERSION = "ics20-1";
+
     mapping(string => address) channelEscrowAddresses;
 
     function onRecvPacket(Packet.Data calldata packet, address)
@@ -71,26 +73,45 @@ abstract contract ICS20Transfer is IBCAppBase {
     }
 
     function onChanOpenInit(
-        Channel.Order,
+        Channel.Order order,
         string[] calldata,
         string calldata,
         string calldata channelId,
         ChannelCounterparty.Data calldata,
-        string calldata
-    ) external virtual override onlyIBC {
+        string calldata version
+    ) external virtual override onlyIBC returns (string memory) {
+        require(order == Channel.Order.ORDER_UNORDERED, "must be unordered");
+        bytes memory versionBytes = bytes(version);
+        require(versionBytes.length == 0 || keccak256(versionBytes) == keccak256(bytes(ICS20_VERSION)));
         channelEscrowAddresses[channelId] = address(this);
+        return ICS20_VERSION;
     }
 
     function onChanOpenTry(
-        Channel.Order,
+        Channel.Order order,
         string[] calldata,
         string calldata,
         string calldata channelId,
         ChannelCounterparty.Data calldata,
-        string calldata,
-        string calldata
-    ) external virtual override onlyIBC {
+        string calldata counterpartyVersion
+    ) external virtual override onlyIBC returns (string memory) {
+        require(order == Channel.Order.ORDER_UNORDERED, "must be unordered");
+        require(keccak256(bytes(counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
         channelEscrowAddresses[channelId] = address(this);
+        return ICS20_VERSION;
+    }
+
+    function onChanOpenAck(string calldata, string calldata, string calldata counterpartyVersion)
+        external
+        virtual
+        override
+        onlyIBC
+    {
+        require(keccak256(bytes(counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
+    }
+
+    function onChanCloseInit(string calldata, string calldata) external virtual override onlyIBC {
+        revert("not allowed");
     }
 
     function onTimeoutPacket(Packet.Data calldata packet, address) external virtual override onlyIBC {

@@ -55,7 +55,7 @@ type PacketData struct {
 
 // Ics20transferbankMetaData contains all meta data concerning the Ics20transferbank contract.
 var Ics20transferbankMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"contractIBCHandler\",\"name\":\"ibcHandler_\",\"type\":\"address\"},{\"internalType\":\"contractIICS20Bank\",\"name\":\"bank_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"ibcAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"onAcknowledgementPacket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"onChanCloseConfirm\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"onChanCloseInit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"counterpartyVersion\",\"type\":\"string\"}],\"name\":\"onChanOpenAck\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"onChanOpenConfirm\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumChannel.Order\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"onChanOpenInit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumChannel.Order\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"onChanOpenTry\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"onRecvPacket\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"onTimeoutPacket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"receiver\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"sourcePort\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"sourceChannel\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"timeoutHeight\",\"type\":\"uint64\"}],\"name\":\"sendTransfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"contractIBCHandler\",\"name\":\"ibcHandler_\",\"type\":\"address\"},{\"internalType\":\"contractIICS20Bank\",\"name\":\"bank_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"ICS20_VERSION\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ibcAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"onAcknowledgementPacket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"onChanCloseConfirm\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"onChanCloseInit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"counterpartyVersion\",\"type\":\"string\"}],\"name\":\"onChanOpenAck\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"portId\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"}],\"name\":\"onChanOpenConfirm\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumChannel.Order\",\"name\":\"order\",\"type\":\"uint8\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"}],\"name\":\"onChanOpenInit\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumChannel.Order\",\"name\":\"order\",\"type\":\"uint8\"},{\"internalType\":\"string[]\",\"name\":\"\",\"type\":\"string[]\"},{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channelId\",\"type\":\"string\"},{\"components\":[{\"internalType\":\"string\",\"name\":\"port_id\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"channel_id\",\"type\":\"string\"}],\"internalType\":\"structChannelCounterparty.Data\",\"name\":\"\",\"type\":\"tuple\"},{\"internalType\":\"string\",\"name\":\"counterpartyVersion\",\"type\":\"string\"}],\"name\":\"onChanOpenTry\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"onRecvPacket\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"acknowledgement\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint64\",\"name\":\"sequence\",\"type\":\"uint64\"},{\"internalType\":\"string\",\"name\":\"source_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"source_channel\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_port\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"destination_channel\",\"type\":\"string\"},{\"internalType\":\"bytes\",\"name\":\"data\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"revision_number\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"revision_height\",\"type\":\"uint64\"}],\"internalType\":\"structHeight.Data\",\"name\":\"timeout_height\",\"type\":\"tuple\"},{\"internalType\":\"uint64\",\"name\":\"timeout_timestamp\",\"type\":\"uint64\"}],\"internalType\":\"structPacket.Data\",\"name\":\"packet\",\"type\":\"tuple\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"onTimeoutPacket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"denom\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"receiver\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"sourcePort\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"sourceChannel\",\"type\":\"string\"},{\"internalType\":\"uint64\",\"name\":\"timeoutHeight\",\"type\":\"uint64\"}],\"name\":\"sendTransfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // Ics20transferbankABI is the input ABI used to generate the binding from.
@@ -204,6 +204,37 @@ func (_Ics20transferbank *Ics20transferbankTransactorRaw) Transact(opts *bind.Tr
 	return _Ics20transferbank.Contract.contract.Transact(opts, method, params...)
 }
 
+// ICS20VERSION is a free data retrieval call binding the contract method 0x025183eb.
+//
+// Solidity: function ICS20_VERSION() view returns(string)
+func (_Ics20transferbank *Ics20transferbankCaller) ICS20VERSION(opts *bind.CallOpts) (string, error) {
+	var out []interface{}
+	err := _Ics20transferbank.contract.Call(opts, &out, "ICS20_VERSION")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// ICS20VERSION is a free data retrieval call binding the contract method 0x025183eb.
+//
+// Solidity: function ICS20_VERSION() view returns(string)
+func (_Ics20transferbank *Ics20transferbankSession) ICS20VERSION() (string, error) {
+	return _Ics20transferbank.Contract.ICS20VERSION(&_Ics20transferbank.CallOpts)
+}
+
+// ICS20VERSION is a free data retrieval call binding the contract method 0x025183eb.
+//
+// Solidity: function ICS20_VERSION() view returns(string)
+func (_Ics20transferbank *Ics20transferbankCallerSession) ICS20VERSION() (string, error) {
+	return _Ics20transferbank.Contract.ICS20VERSION(&_Ics20transferbank.CallOpts)
+}
+
 // IbcAddress is a free data retrieval call binding the contract method 0x696a9bf4.
 //
 // Solidity: function ibcAddress() view returns(address)
@@ -279,44 +310,44 @@ func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanCloseConfirm
 
 // OnChanCloseInit is a paid mutator transaction binding the contract method 0xe74a1ac2.
 //
-// Solidity: function onChanCloseInit(string portId, string channelId) returns()
-func (_Ics20transferbank *Ics20transferbankTransactor) OnChanCloseInit(opts *bind.TransactOpts, portId string, channelId string) (*types.Transaction, error) {
-	return _Ics20transferbank.contract.Transact(opts, "onChanCloseInit", portId, channelId)
+// Solidity: function onChanCloseInit(string , string ) returns()
+func (_Ics20transferbank *Ics20transferbankTransactor) OnChanCloseInit(opts *bind.TransactOpts, arg0 string, arg1 string) (*types.Transaction, error) {
+	return _Ics20transferbank.contract.Transact(opts, "onChanCloseInit", arg0, arg1)
 }
 
 // OnChanCloseInit is a paid mutator transaction binding the contract method 0xe74a1ac2.
 //
-// Solidity: function onChanCloseInit(string portId, string channelId) returns()
-func (_Ics20transferbank *Ics20transferbankSession) OnChanCloseInit(portId string, channelId string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanCloseInit(&_Ics20transferbank.TransactOpts, portId, channelId)
+// Solidity: function onChanCloseInit(string , string ) returns()
+func (_Ics20transferbank *Ics20transferbankSession) OnChanCloseInit(arg0 string, arg1 string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanCloseInit(&_Ics20transferbank.TransactOpts, arg0, arg1)
 }
 
 // OnChanCloseInit is a paid mutator transaction binding the contract method 0xe74a1ac2.
 //
-// Solidity: function onChanCloseInit(string portId, string channelId) returns()
-func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanCloseInit(portId string, channelId string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanCloseInit(&_Ics20transferbank.TransactOpts, portId, channelId)
+// Solidity: function onChanCloseInit(string , string ) returns()
+func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanCloseInit(arg0 string, arg1 string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanCloseInit(&_Ics20transferbank.TransactOpts, arg0, arg1)
 }
 
 // OnChanOpenAck is a paid mutator transaction binding the contract method 0x4942d1ac.
 //
-// Solidity: function onChanOpenAck(string portId, string channelId, string counterpartyVersion) returns()
-func (_Ics20transferbank *Ics20transferbankTransactor) OnChanOpenAck(opts *bind.TransactOpts, portId string, channelId string, counterpartyVersion string) (*types.Transaction, error) {
-	return _Ics20transferbank.contract.Transact(opts, "onChanOpenAck", portId, channelId, counterpartyVersion)
+// Solidity: function onChanOpenAck(string , string , string counterpartyVersion) returns()
+func (_Ics20transferbank *Ics20transferbankTransactor) OnChanOpenAck(opts *bind.TransactOpts, arg0 string, arg1 string, counterpartyVersion string) (*types.Transaction, error) {
+	return _Ics20transferbank.contract.Transact(opts, "onChanOpenAck", arg0, arg1, counterpartyVersion)
 }
 
 // OnChanOpenAck is a paid mutator transaction binding the contract method 0x4942d1ac.
 //
-// Solidity: function onChanOpenAck(string portId, string channelId, string counterpartyVersion) returns()
-func (_Ics20transferbank *Ics20transferbankSession) OnChanOpenAck(portId string, channelId string, counterpartyVersion string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanOpenAck(&_Ics20transferbank.TransactOpts, portId, channelId, counterpartyVersion)
+// Solidity: function onChanOpenAck(string , string , string counterpartyVersion) returns()
+func (_Ics20transferbank *Ics20transferbankSession) OnChanOpenAck(arg0 string, arg1 string, counterpartyVersion string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanOpenAck(&_Ics20transferbank.TransactOpts, arg0, arg1, counterpartyVersion)
 }
 
 // OnChanOpenAck is a paid mutator transaction binding the contract method 0x4942d1ac.
 //
-// Solidity: function onChanOpenAck(string portId, string channelId, string counterpartyVersion) returns()
-func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanOpenAck(portId string, channelId string, counterpartyVersion string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanOpenAck(&_Ics20transferbank.TransactOpts, portId, channelId, counterpartyVersion)
+// Solidity: function onChanOpenAck(string , string , string counterpartyVersion) returns()
+func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanOpenAck(arg0 string, arg1 string, counterpartyVersion string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanOpenAck(&_Ics20transferbank.TransactOpts, arg0, arg1, counterpartyVersion)
 }
 
 // OnChanOpenConfirm is a paid mutator transaction binding the contract method 0xa113e411.
@@ -342,44 +373,44 @@ func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanOpenConfirm(
 
 // OnChanOpenInit is a paid mutator transaction binding the contract method 0x44dd9638.
 //
-// Solidity: function onChanOpenInit(uint8 , string[] , string , string channelId, (string,string) , string ) returns()
-func (_Ics20transferbank *Ics20transferbankTransactor) OnChanOpenInit(opts *bind.TransactOpts, arg0 uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, arg5 string) (*types.Transaction, error) {
-	return _Ics20transferbank.contract.Transact(opts, "onChanOpenInit", arg0, arg1, arg2, channelId, arg4, arg5)
+// Solidity: function onChanOpenInit(uint8 order, string[] , string , string channelId, (string,string) , string version) returns(string)
+func (_Ics20transferbank *Ics20transferbankTransactor) OnChanOpenInit(opts *bind.TransactOpts, order uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, version string) (*types.Transaction, error) {
+	return _Ics20transferbank.contract.Transact(opts, "onChanOpenInit", order, arg1, arg2, channelId, arg4, version)
 }
 
 // OnChanOpenInit is a paid mutator transaction binding the contract method 0x44dd9638.
 //
-// Solidity: function onChanOpenInit(uint8 , string[] , string , string channelId, (string,string) , string ) returns()
-func (_Ics20transferbank *Ics20transferbankSession) OnChanOpenInit(arg0 uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, arg5 string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanOpenInit(&_Ics20transferbank.TransactOpts, arg0, arg1, arg2, channelId, arg4, arg5)
+// Solidity: function onChanOpenInit(uint8 order, string[] , string , string channelId, (string,string) , string version) returns(string)
+func (_Ics20transferbank *Ics20transferbankSession) OnChanOpenInit(order uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, version string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanOpenInit(&_Ics20transferbank.TransactOpts, order, arg1, arg2, channelId, arg4, version)
 }
 
 // OnChanOpenInit is a paid mutator transaction binding the contract method 0x44dd9638.
 //
-// Solidity: function onChanOpenInit(uint8 , string[] , string , string channelId, (string,string) , string ) returns()
-func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanOpenInit(arg0 uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, arg5 string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanOpenInit(&_Ics20transferbank.TransactOpts, arg0, arg1, arg2, channelId, arg4, arg5)
+// Solidity: function onChanOpenInit(uint8 order, string[] , string , string channelId, (string,string) , string version) returns(string)
+func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanOpenInit(order uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, version string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanOpenInit(&_Ics20transferbank.TransactOpts, order, arg1, arg2, channelId, arg4, version)
 }
 
-// OnChanOpenTry is a paid mutator transaction binding the contract method 0x981389f2.
+// OnChanOpenTry is a paid mutator transaction binding the contract method 0x6a894813.
 //
-// Solidity: function onChanOpenTry(uint8 , string[] , string , string channelId, (string,string) , string , string ) returns()
-func (_Ics20transferbank *Ics20transferbankTransactor) OnChanOpenTry(opts *bind.TransactOpts, arg0 uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, arg5 string, arg6 string) (*types.Transaction, error) {
-	return _Ics20transferbank.contract.Transact(opts, "onChanOpenTry", arg0, arg1, arg2, channelId, arg4, arg5, arg6)
+// Solidity: function onChanOpenTry(uint8 order, string[] , string , string channelId, (string,string) , string counterpartyVersion) returns(string)
+func (_Ics20transferbank *Ics20transferbankTransactor) OnChanOpenTry(opts *bind.TransactOpts, order uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, counterpartyVersion string) (*types.Transaction, error) {
+	return _Ics20transferbank.contract.Transact(opts, "onChanOpenTry", order, arg1, arg2, channelId, arg4, counterpartyVersion)
 }
 
-// OnChanOpenTry is a paid mutator transaction binding the contract method 0x981389f2.
+// OnChanOpenTry is a paid mutator transaction binding the contract method 0x6a894813.
 //
-// Solidity: function onChanOpenTry(uint8 , string[] , string , string channelId, (string,string) , string , string ) returns()
-func (_Ics20transferbank *Ics20transferbankSession) OnChanOpenTry(arg0 uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, arg5 string, arg6 string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanOpenTry(&_Ics20transferbank.TransactOpts, arg0, arg1, arg2, channelId, arg4, arg5, arg6)
+// Solidity: function onChanOpenTry(uint8 order, string[] , string , string channelId, (string,string) , string counterpartyVersion) returns(string)
+func (_Ics20transferbank *Ics20transferbankSession) OnChanOpenTry(order uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, counterpartyVersion string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanOpenTry(&_Ics20transferbank.TransactOpts, order, arg1, arg2, channelId, arg4, counterpartyVersion)
 }
 
-// OnChanOpenTry is a paid mutator transaction binding the contract method 0x981389f2.
+// OnChanOpenTry is a paid mutator transaction binding the contract method 0x6a894813.
 //
-// Solidity: function onChanOpenTry(uint8 , string[] , string , string channelId, (string,string) , string , string ) returns()
-func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanOpenTry(arg0 uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, arg5 string, arg6 string) (*types.Transaction, error) {
-	return _Ics20transferbank.Contract.OnChanOpenTry(&_Ics20transferbank.TransactOpts, arg0, arg1, arg2, channelId, arg4, arg5, arg6)
+// Solidity: function onChanOpenTry(uint8 order, string[] , string , string channelId, (string,string) , string counterpartyVersion) returns(string)
+func (_Ics20transferbank *Ics20transferbankTransactorSession) OnChanOpenTry(order uint8, arg1 []string, arg2 string, channelId string, arg4 ChannelCounterpartyData, counterpartyVersion string) (*types.Transaction, error) {
+	return _Ics20transferbank.Contract.OnChanOpenTry(&_Ics20transferbank.TransactOpts, order, arg1, arg2, channelId, arg4, counterpartyVersion)
 }
 
 // OnRecvPacket is a paid mutator transaction binding the contract method 0x2301c6f5.

@@ -23,7 +23,7 @@ interface IIBCModule {
         string calldata channelId,
         ChannelCounterparty.Data calldata counterparty,
         string calldata version
-    ) external;
+    ) external returns (string memory);
 
     // OnChanOpenTry will verify the relayer-chosen parameters along with the
     // counterparty-chosen version string and perform custom TRY logic.
@@ -39,9 +39,8 @@ interface IIBCModule {
         string calldata portId,
         string calldata channelId,
         ChannelCounterparty.Data calldata counterparty,
-        string calldata version,
         string calldata counterpartyVersion
-    ) external;
+    ) external returns (string memory);
 
     // OnChanOpenAck will error if the counterparty selected version string
     // is invalid to abort the handshake. It may also perform custom ACK logic.
