@@ -72,45 +72,38 @@ abstract contract ICS20Transfer is IBCAppBase {
         }
     }
 
-    function onChanOpenInit(
-        Channel.Order order,
-        string[] calldata,
-        string calldata,
-        string calldata channelId,
-        ChannelCounterparty.Data calldata,
-        string calldata version
-    ) external virtual override onlyIBC returns (string memory) {
-        require(order == Channel.Order.ORDER_UNORDERED, "must be unordered");
-        bytes memory versionBytes = bytes(version);
-        require(versionBytes.length == 0 || keccak256(versionBytes) == keccak256(bytes(ICS20_VERSION)));
-        channelEscrowAddresses[channelId] = address(this);
-        return ICS20_VERSION;
-    }
-
-    function onChanOpenTry(
-        Channel.Order order,
-        string[] calldata,
-        string calldata,
-        string calldata channelId,
-        ChannelCounterparty.Data calldata,
-        string calldata counterpartyVersion
-    ) external virtual override onlyIBC returns (string memory) {
-        require(order == Channel.Order.ORDER_UNORDERED, "must be unordered");
-        require(keccak256(bytes(counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
-        channelEscrowAddresses[channelId] = address(this);
-        return ICS20_VERSION;
-    }
-
-    function onChanOpenAck(string calldata, string calldata, string calldata counterpartyVersion)
+    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata msg_)
         external
         virtual
         override
         onlyIBC
+        returns (string memory)
     {
-        require(keccak256(bytes(counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
+        require(msg_.order == Channel.Order.ORDER_UNORDERED, "must be unordered");
+        bytes memory versionBytes = bytes(msg_.version);
+        require(versionBytes.length == 0 || keccak256(versionBytes) == keccak256(bytes(ICS20_VERSION)));
+        channelEscrowAddresses[msg_.channelId] = address(this);
+        return ICS20_VERSION;
     }
 
-    function onChanCloseInit(string calldata, string calldata) external virtual override onlyIBC {
+    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata msg_)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (string memory)
+    {
+        require(msg_.order == Channel.Order.ORDER_UNORDERED, "must be unordered");
+        require(keccak256(bytes(msg_.counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
+        channelEscrowAddresses[msg_.channelId] = address(this);
+        return ICS20_VERSION;
+    }
+
+    function onChanOpenAck(IIBCModule.MsgOnChanOpenAck calldata msg_) external virtual override onlyIBC {
+        require(keccak256(bytes(msg_.counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
+    }
+
+    function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata) external virtual override onlyIBC {
         revert("not allowed");
     }
 

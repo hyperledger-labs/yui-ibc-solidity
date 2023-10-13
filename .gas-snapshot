@@ -1,5 +1,5 @@
 IBCTest:testBenchmarkCreateMockClient() (gas: 214230)
-IBCTest:testBenchmarkRecvPacket() (gas: 157447)
+IBCTest:testBenchmarkRecvPacket() (gas: 157491)
 IBCTest:testBenchmarkSendPacket() (gas: 86050)
 IBCTest:testBenchmarkUpdateMockClient() (gas: 129918)
 IBCTest:testConnectionOpenInit() (gas: 496526)
