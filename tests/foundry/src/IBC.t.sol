@@ -12,8 +12,8 @@ import "../../../contracts/clients/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";
+import "../../../contracts/apps/mock/IBCMockApp.sol";
 import "./TestableIBCHandler.t.sol";
-import "./MockApp.t.sol";
 
 // TODO split setup code into other contracts
 contract IBCTest is Test {
@@ -21,7 +21,7 @@ contract IBCTest is Test {
 
     TestableIBCHandler handler;
     MockClient mockClient;
-    MockApp mockApp;
+    IBCMockApp mockApp;
 
     string private constant MOCK_CLIENT_TYPE = "mock-client";
     string private constant MOCK_PORT_ID = "mock";
@@ -83,7 +83,7 @@ contract IBCTest is Test {
     }
 
     function setUpMockApp() internal {
-        mockApp = new MockApp(address(handler));
+        mockApp = new IBCMockApp(handler);
         handler.bindPort(MOCK_PORT_ID, address(mockApp));
         handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(mockApp));
         handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(this));
@@ -136,12 +136,8 @@ contract IBCTest is Test {
         );
     }
 
-    event MockRecv(bool ok);
-
     function testBenchmarkRecvPacket() public {
         Packet.Data memory packet = createPacket(0, 100);
-        vm.expectEmit(false, false, false, true);
-        emit MockRecv(true);
         handler.recvPacket(
             IBCMsgs.MsgPacketRecv({
                 packet: packet,
