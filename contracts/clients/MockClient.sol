@@ -40,6 +40,7 @@ contract MockClient is ILightClient {
      */
     function createClient(string calldata clientId, bytes calldata clientStateBytes, bytes calldata consensusStateBytes)
         external
+        virtual
         override
         onlyIBC
         returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok)
@@ -80,6 +81,7 @@ contract MockClient is ILightClient {
     function getTimestampAtHeight(string calldata clientId, Height.Data calldata height)
         external
         view
+        virtual
         override
         returns (uint64, bool)
     {
@@ -90,7 +92,13 @@ contract MockClient is ILightClient {
     /**
      * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
      */
-    function getLatestHeight(string calldata clientId) external view override returns (Height.Data memory, bool) {
+    function getLatestHeight(string calldata clientId)
+        external
+        view
+        virtual
+        override
+        returns (Height.Data memory, bool)
+    {
         ClientState.Data storage clientState = clientStates[clientId];
         return (clientState.latest_height, clientState.latest_height.revision_height != 0);
     }
@@ -105,6 +113,7 @@ contract MockClient is ILightClient {
      */
     function updateClient(string calldata clientId, bytes calldata clientMessageBytes)
         external
+        virtual
         override
         onlyIBC
         returns (bytes32 clientStateCommitment, ConsensusStateUpdate[] memory updates, bool ok)
@@ -147,7 +156,7 @@ contract MockClient is ILightClient {
         bytes calldata prefix,
         bytes memory,
         bytes calldata value
-    ) external view override returns (bool) {
+    ) external view virtual override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
         require(keccak256(IBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
         return sha256(value) == proof.toBytes32(0);
@@ -165,7 +174,7 @@ contract MockClient is ILightClient {
         bytes calldata proof,
         bytes calldata prefix,
         bytes memory
-    ) external view override returns (bool) {
+    ) external view virtual override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
         require(keccak256(IBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
         return proof.length == 0;
@@ -177,7 +186,12 @@ contract MockClient is ILightClient {
      * @dev getClientState returns the clientState corresponding to `clientId`.
      *      If it's not found, the function returns false.
      */
-    function getClientState(string calldata clientId) external view returns (bytes memory clientStateBytes, bool) {
+    function getClientState(string calldata clientId)
+        external
+        view
+        virtual
+        returns (bytes memory clientStateBytes, bool)
+    {
         ClientState.Data storage clientState = clientStates[clientId];
         if (clientState.latest_height.revision_height == 0) {
             return (clientStateBytes, false);
@@ -192,6 +206,7 @@ contract MockClient is ILightClient {
     function getConsensusState(string calldata clientId, Height.Data calldata height)
         external
         view
+        virtual
         returns (bytes memory consensusStateBytes, bool)
     {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
