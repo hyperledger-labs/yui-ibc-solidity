@@ -29,6 +29,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
         // ensure the client exists
         checkAndGetClient(msg_.clientId);
+        require(bytes(msg_.counterparty.connection_id).length == 0, "counterparty connectionId must be empty");
         connection.client_id = msg_.clientId;
         setSupportedVersions(connection.versions);
         connection.state = ConnectionEnd.State.STATE_INIT;
@@ -120,7 +121,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
 
         require(
             verifyConnectionState(
-                connection, msg_.proofHeight, msg_.proofTry, msg_.counterpartyConnectionID, expectedConnection
+                connection, msg_.proofHeight, msg_.proofTry, msg_.counterpartyConnectionId, expectedConnection
             ),
             "failed to verify connection state"
         );
@@ -138,7 +139,7 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
         copyVersions(expectedConnection.versions, connection.versions);
-        connection.counterparty.connection_id = msg_.counterpartyConnectionID;
+        connection.counterparty.connection_id = msg_.counterpartyConnectionId;
         updateConnectionCommitment(msg_.connectionId);
     }
 
