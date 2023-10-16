@@ -8,6 +8,22 @@ contract TestableIBCHandler is OwnableIBCHandler {
         OwnableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket)
     {}
 
+    function commitment(bytes32 path) external view returns (bytes32) {
+        return commitments[path];
+    }
+
+    function clientImplByClientType(string calldata clientType_) external view returns (address) {
+        return clientRegistry[clientType_];
+    }
+
+    function clientType(string calldata clientId) external view returns (string memory) {
+        return clientTypes[clientId];
+    }
+
+    function clientImpl(string calldata clientId) external view returns (address) {
+        return clientImpls[clientId];
+    }
+
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) external {
         connections[connectionId].client_id = connection.client_id;
         connections[connectionId].state = connection.state;
