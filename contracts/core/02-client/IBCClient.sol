@@ -17,6 +17,7 @@ contract IBCClient is IBCStore, IIBCClient {
      * @dev registerClient registers a new client type into the client registry
      */
     function registerClient(string calldata clientType, ILightClient client) external override {
+        require(validateClientType(bytes(clientType)), "invalid clientType");
         require(address(clientRegistry[clientType]) == address(0), "clientType already exists");
         require(address(client) != address(this) && Address.isContract(address(client)), "invalid client address");
         clientRegistry[clientType] = address(client);
@@ -36,7 +37,7 @@ contract IBCClient is IBCStore, IIBCClient {
         require(ok, "failed to create client");
 
         // update commitments
-        commitments[keccak256(IBCCommitment.clientStatePath(clientId))] = clientStateCommitment;
+        commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = clientStateCommitment;
         commitments[IBCCommitment.consensusStateCommitmentKey(
             clientId, update.height.revision_number, update.height.revision_height
         )] = update.consensusStateCommitment;
@@ -55,7 +56,7 @@ contract IBCClient is IBCStore, IIBCClient {
 
         // update commitments
         if (clientStateCommitment != 0) {
-            commitments[keccak256(IBCCommitment.clientStatePath(msg_.clientId))] = clientStateCommitment;
+            commitments[IBCCommitment.clientStateCommitmentKey(msg_.clientId)] = clientStateCommitment;
         }
         for (uint256 i = 0; i < updates.length; i++) {
             commitments[IBCCommitment.consensusStateCommitmentKey(
@@ -64,9 +65,44 @@ contract IBCClient is IBCStore, IIBCClient {
         }
     }
 
+    /**
+     * @dev generateClientIdentifier generates a new client identifier for a given client type
+     */
     function generateClientIdentifier(string calldata clientType) private returns (string memory) {
         string memory identifier = string(abi.encodePacked(clientType, "-", Strings.toString(nextClientSequence)));
         nextClientSequence++;
         return identifier;
+    }
+
+    /**
+     * @dev validateClientType validates the client type
+     *   - clientType must be non-empty
+     *   - clientType must be in the form of `^[a-z][a-z0-9-]*[a-z0-9]$`
+     */
+    function validateClientType(bytes memory clientTypeBytes) internal pure returns (bool) {
+        if (clientTypeBytes.length == 0) {
+            return false;
+        }
+        unchecked {
+            for (uint256 i = 0; i < clientTypeBytes.length; i++) {
+                uint256 c = uint256(uint8(clientTypeBytes[i]));
+                if (0x61 <= c && c <= 0x7a) {
+                    // a-z
+                    continue;
+                } else if (c == 0x2d) {
+                    // hyphen cannot be the first or last character
+                    if (i == 0 || i == clientTypeBytes.length - 1) {
+                        return false;
+                    }
+                    continue;
+                } else if (0x30 <= c && c <= 0x39) {
+                    // 0-9
+                    continue;
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

@@ -33,62 +33,54 @@ abstract contract IBCAppBase is Context, IIBCModule {
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onChanOpenInit(
-        Channel.Order,
-        string[] calldata,
-        string calldata,
-        string calldata channelId,
-        ChannelCounterparty.Data calldata,
-        string calldata
-    ) external virtual override onlyIBC {}
+    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (string memory)
+    {}
 
     /**
      * @dev See IIBCModule-onChanOpenTry
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onChanOpenTry(
-        Channel.Order,
-        string[] calldata,
-        string calldata,
-        string calldata channelId,
-        ChannelCounterparty.Data calldata,
-        string calldata,
-        string calldata
-    ) external virtual override onlyIBC {}
+    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (string memory)
+    {}
 
     /**
      * @dev See IIBCModule-onChanOpenAck
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onChanOpenAck(string calldata portId, string calldata channelId, string calldata counterpartyVersion)
-        external
-        virtual
-        override
-        onlyIBC
-    {}
+    function onChanOpenAck(IIBCModule.MsgOnChanOpenAck calldata) external virtual override onlyIBC {}
 
     /**
      * @dev See IIBCModule-onChanOpenConfirm
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onChanOpenConfirm(string calldata portId, string calldata channelId) external virtual override onlyIBC {}
+    function onChanOpenConfirm(IIBCModule.MsgOnChanOpenConfirm calldata) external virtual override onlyIBC {}
 
     /**
      * @dev See IIBCModule-onChanCloseInit
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onChanCloseInit(string calldata portId, string calldata channelId) external virtual override onlyIBC {}
+    function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata) external virtual override onlyIBC {}
 
     /**
      * @dev See IIBCModule-onChanCloseConfirm
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onChanCloseConfirm(string calldata portId, string calldata channelId) external virtual override onlyIBC {}
+    function onChanCloseConfirm(IIBCModule.MsgOnChanCloseConfirm calldata) external virtual override onlyIBC {}
 
     /**
      * @dev See IIBCModule-onRecvPacket

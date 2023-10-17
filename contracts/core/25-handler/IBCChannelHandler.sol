@@ -24,65 +24,82 @@ abstract contract IBCChannelHandler is ModuleManager {
         ibcChannel = _ibcChannel;
     }
 
-    function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_) external returns (string memory channelId) {
+    function channelOpenInit(IBCMsgs.MsgChannelOpenInit calldata msg_)
+        external
+        returns (string memory channelId, string memory version)
+    {
         bytes memory res =
             ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenInit.selector, msg_));
         channelId = abi.decode(res, (string));
 
         IIBCModule module = lookupModuleByPort(msg_.portId);
-        module.onChanOpenInit(
-            msg_.channel.ordering,
-            msg_.channel.connection_hops,
-            msg_.portId,
-            channelId,
-            msg_.channel.counterparty,
-            msg_.channel.version
+        version = module.onChanOpenInit(
+            IIBCModule.MsgOnChanOpenInit({
+                order: msg_.channel.ordering,
+                connectionHops: msg_.channel.connection_hops,
+                portId: msg_.portId,
+                channelId: channelId,
+                counterparty: msg_.channel.counterparty,
+                version: msg_.channel.version
+            })
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
         emit GeneratedChannelIdentifier(channelId);
-        return channelId;
+        return (channelId, version);
     }
 
-    function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) external returns (string memory channelId) {
-        {
-            // avoid "Stack too deep" error
-            bytes memory res = ibcChannel.functionDelegateCall(
-                abi.encodeWithSelector(IIBCChannelHandshake.channelOpenTry.selector, msg_)
-            );
-            channelId = abi.decode(res, (string));
-        }
+    function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_)
+        external
+        returns (string memory channelId, string memory version)
+    {
+        bytes memory res =
+            ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenTry.selector, msg_));
+        channelId = abi.decode(res, (string));
         IIBCModule module = lookupModuleByPort(msg_.portId);
-        module.onChanOpenTry(
-            msg_.channel.ordering,
-            msg_.channel.connection_hops,
-            msg_.portId,
-            channelId,
-            msg_.channel.counterparty,
-            msg_.channel.version,
-            msg_.counterpartyVersion
+        version = module.onChanOpenTry(
+            IIBCModule.MsgOnChanOpenTry({
+                order: msg_.channel.ordering,
+                connectionHops: msg_.channel.connection_hops,
+                portId: msg_.portId,
+                channelId: channelId,
+                counterparty: msg_.channel.counterparty,
+                counterpartyVersion: msg_.counterpartyVersion
+            })
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
         emit GeneratedChannelIdentifier(channelId);
-        return channelId;
+        return (channelId, version);
     }
 
     function channelOpenAck(IBCMsgs.MsgChannelOpenAck calldata msg_) external {
         ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenAck.selector, msg_));
-        lookupModuleByPort(msg_.portId).onChanOpenAck(msg_.portId, msg_.channelId, msg_.counterpartyVersion);
+        lookupModuleByPort(msg_.portId).onChanOpenAck(
+            IIBCModule.MsgOnChanOpenAck({
+                portId: msg_.portId,
+                channelId: msg_.channelId,
+                counterpartyVersion: msg_.counterpartyVersion
+            })
+        );
     }
 
     function channelOpenConfirm(IBCMsgs.MsgChannelOpenConfirm calldata msg_) external {
         ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenConfirm.selector, msg_));
-        lookupModuleByPort(msg_.portId).onChanOpenConfirm(msg_.portId, msg_.channelId);
+        lookupModuleByPort(msg_.portId).onChanOpenConfirm(
+            IIBCModule.MsgOnChanOpenConfirm({portId: msg_.portId, channelId: msg_.channelId})
+        );
     }
 
     function channelCloseInit(IBCMsgs.MsgChannelCloseInit calldata msg_) external {
         ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelCloseInit.selector, msg_));
-        lookupModuleByPort(msg_.portId).onChanCloseInit(msg_.portId, msg_.channelId);
+        lookupModuleByPort(msg_.portId).onChanCloseInit(
+            IIBCModule.MsgOnChanCloseInit({portId: msg_.portId, channelId: msg_.channelId})
+        );
     }
 
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) external {
         ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelCloseConfirm.selector, msg_));
-        lookupModuleByPort(msg_.portId).onChanCloseConfirm(msg_.portId, msg_.channelId);
+        lookupModuleByPort(msg_.portId).onChanCloseConfirm(
+            IIBCModule.MsgOnChanCloseConfirm({portId: msg_.portId, channelId: msg_.channelId})
+        );
     }
 }
