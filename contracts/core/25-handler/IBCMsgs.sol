@@ -27,6 +27,7 @@ library IBCMsgs {
     struct MsgConnectionOpenInit {
         string clientId;
         Counterparty.Data counterparty;
+        Version.Data version;
         uint64 delayPeriod;
     }
 
