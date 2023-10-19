@@ -66,7 +66,10 @@ contract IBCMockApp is IBCAppBase {
         onlyIBC
         returns (string memory)
     {
-        require(keccak256(bytes(msg_.version)) == keccak256(bytes(version)), "version mismatch");
+        require(
+            bytes(msg_.version).length == 0 || keccak256(bytes(msg_.version)) == keccak256(bytes(version)),
+            "version mismatch"
+        );
         return version;
     }
 
