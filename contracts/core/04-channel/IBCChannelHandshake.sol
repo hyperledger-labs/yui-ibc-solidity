@@ -3,11 +3,12 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../proto/Channel.sol";
-import "../25-handler/IBCMsgs.sol";
 import "../02-client/IBCHeight.sol";
+import "../03-connection/IBCConnection.sol";
+import "../04-channel/IIBCChannel.sol";
 import "../24-host/IBCStore.sol";
 import "../24-host/IBCCommitment.sol";
-import "../04-channel/IIBCChannel.sol";
+import "../25-handler/IBCMsgs.sol";
 
 /**
  * @dev IBCChannelHandshake is a contract that implements [ICS-4](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics).
@@ -26,9 +27,13 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(
             connection.versions.length == 1, "single version must be negotiated on connection before opening channel"
         );
+        require(
+            IBCConnectionLib.verifySupportedFeature(
+                connection.versions[0], IBCChannelLib.toString(msg_.channel.ordering)
+            ),
+            "feature not supported"
+        );
         require(msg_.channel.state == Channel.State.STATE_INIT, "channel state must STATE_INIT");
-
-        // TODO verifySupportedFeature
 
         string memory channelId = generateChannelIdentifier();
         channels[msg_.portId][channelId] = msg_.channel;
@@ -50,10 +55,15 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(
             connection.versions.length == 1, "single version must be negotiated on connection before opening channel"
         );
+        require(
+            IBCConnectionLib.verifySupportedFeature(
+                connection.versions[0], IBCChannelLib.toString(msg_.channel.ordering)
+            ),
+            "feature not supported"
+        );
+
         require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");
         require(msg_.channel.connection_hops.length == 1);
-
-        // TODO verifySupportedFeature
 
         ChannelCounterparty.Data memory expectedCounterparty =
             ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""});
@@ -248,5 +258,17 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         string memory identifier = string(abi.encodePacked("channel-", Strings.toString(nextChannelSequence)));
         nextChannelSequence++;
         return identifier;
+    }
+}
+
+library IBCChannelLib {
+    function toString(Channel.Order order) internal pure returns (string memory) {
+        if (order == Channel.Order.ORDER_UNORDERED) {
+            return "ORDER_UNORDERED";
+        } else if (order == Channel.Order.ORDER_ORDERED) {
+            return "ORDER_ORDERED";
+        } else {
+            revert("unknown order");
+        }
     }
 }

@@ -36,6 +36,20 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
         }
     }
 
+    function orderedIBCVersion() internal pure returns (Version.Data memory) {
+        Version.Data memory version =
+            Version.Data({identifier: IBCConnectionLib.IBC_VERSION_IDENTIFIER, features: new string[](1)});
+        version.features[0] = IBCConnectionLib.ORDER_ORDERED;
+        return version;
+    }
+
+    function unorderedIBCVersion() internal pure returns (Version.Data memory) {
+        Version.Data memory version =
+            Version.Data({identifier: IBCConnectionLib.IBC_VERSION_IDENTIFIER, features: new string[](1)});
+        version.features[0] = IBCConnectionLib.ORDER_UNORDERED;
+        return version;
+    }
+
     function msgConnectionOpenInit(string memory clientId, string memory counterpartyClientId)
         internal
         pure

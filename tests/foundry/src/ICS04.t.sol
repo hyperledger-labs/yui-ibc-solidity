@@ -217,4 +217,33 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             assertEq(version, "mockapp-1");
         }
     }
+
+    function testInvalidChanOpenInit() public {
+        string memory clientId = createMockClient(handler, 1);
+        string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
+        string memory connectionId = genConnectionId(0);
+        string memory counterpartyConnectionId = genConnectionId(1);
+
+        Version.Data memory orderedVersion = orderedIBCVersion();
+        Version.Data memory unorderedVersion = unorderedIBCVersion();
+
+        {
+            setConnection(
+                handler, clientId, connectionId, counterpartyClientId, counterpartyConnectionId, orderedVersion
+            );
+            vm.expectRevert();
+            handler.channelOpenInit(
+                msgChannelOpenInit(connectionId, "portidone", Channel.Order.ORDER_UNORDERED, "mockapp-1", "portidtwo")
+            );
+        }
+        {
+            setConnection(
+                handler, clientId, connectionId, counterpartyClientId, counterpartyConnectionId, unorderedVersion
+            );
+            vm.expectRevert();
+            handler.channelOpenInit(
+                msgChannelOpenInit(connectionId, "portidone", Channel.Order.ORDER_ORDERED, "mockapp-1", "portidtwo")
+            );
+        }
+    }
 }
