@@ -27,6 +27,7 @@ abstract contract TestIBCBase is Test {
         return new TestableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
     }
 
+    // solhint-disable func-name-mixedcase
     function H(uint64 revisionNumber, uint64 revisionHeight) internal pure returns (Height.Data memory) {
         return Height.Data({revision_number: revisionNumber, revision_height: revisionHeight});
     }
