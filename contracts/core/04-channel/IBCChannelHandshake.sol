@@ -34,6 +34,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
             "feature not supported"
         );
         require(msg_.channel.state == Channel.State.STATE_INIT, "channel state must STATE_INIT");
+        require(bytes(msg_.channel.counterparty.channel_id).length == 0, "counterparty channel_id must be empty");
 
         string memory channelId = generateChannelIdentifier();
         channels[msg_.portId][channelId] = msg_.channel;

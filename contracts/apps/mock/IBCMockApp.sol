@@ -59,23 +59,25 @@ contract IBCMockApp is IBCAppBase {
         }
     }
 
-    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata)
+    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata msg_)
         external
         virtual
         override
         onlyIBC
         returns (string memory)
     {
+        require(keccak256(bytes(msg_.version)) == keccak256(bytes(version)), "version mismatch");
         return version;
     }
 
-    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata)
+    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata msg_)
         external
         virtual
         override
         onlyIBC
         returns (string memory)
     {
+        require(keccak256(bytes(msg_.counterpartyVersion)) == keccak256(bytes(version)), "version mismatch");
         return version;
     }
 }

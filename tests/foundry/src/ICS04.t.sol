@@ -78,7 +78,7 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
                 Channel.Data({
                     state: Channel.State.STATE_INIT,
                     ordering: ordering,
-                    counterparty: ChannelCounterparty.Data({port_id: counterpartyPortId, channel_id: ""}),
+                    counterparty: ChannelCounterparty.Data({port_id: counterpartyPortId, channel_id: counterpartyChannelId}),
                     connection_hops: newConnectionHops(counterpartyConnectionId),
                     version: counterpartyVersion
                 })
@@ -159,6 +159,7 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
     TestableIBCHandler counterpartyHandler;
     IBCMockApp mockApp;
     IBCMockApp counterpartyMockApp;
+    string internal constant MOCK_APP_VERSION = "mockapp-1";
 
     function setUp() public {
         (TestableIBCHandler _handler,) = ibcHandlerMockClient();
@@ -197,24 +198,30 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
 
         {
             (string memory channelId, string memory version) = handler.channelOpenInit(
-                msgChannelOpenInit(connectionId, "portidone", Channel.Order.ORDER_ORDERED, "mockapp-1", "portidtwo")
+                msgChannelOpenInit(
+                    connectionId, "portidone", Channel.Order.ORDER_ORDERED, MOCK_APP_VERSION, "portidtwo"
+                )
             );
             assertEq(channelId, "channel-0");
-            assertEq(version, "mockapp-1");
+            assertEq(version, MOCK_APP_VERSION);
         }
         {
             (string memory channelId, string memory version) = handler.channelOpenInit(
-                msgChannelOpenInit(connectionId, "portidone", Channel.Order.ORDER_ORDERED, "mockapp-1", "portidtwo")
+                msgChannelOpenInit(
+                    connectionId, "portidone", Channel.Order.ORDER_ORDERED, MOCK_APP_VERSION, "portidtwo"
+                )
             );
             assertEq(channelId, "channel-1");
-            assertEq(version, "mockapp-1");
+            assertEq(version, MOCK_APP_VERSION);
         }
         {
             (string memory channelId, string memory version) = handler.channelOpenInit(
-                msgChannelOpenInit(connectionId, "portidone", Channel.Order.ORDER_UNORDERED, "mockapp-1", "portidtwo")
+                msgChannelOpenInit(
+                    connectionId, "portidone", Channel.Order.ORDER_UNORDERED, MOCK_APP_VERSION, "portidtwo"
+                )
             );
             assertEq(channelId, "channel-2");
-            assertEq(version, "mockapp-1");
+            assertEq(version, MOCK_APP_VERSION);
         }
     }
 
@@ -227,23 +234,74 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         Version.Data memory orderedVersion = orderedIBCVersion();
         Version.Data memory unorderedVersion = unorderedIBCVersion();
 
+        // connection does not exist
+        {
+            vm.expectRevert();
+            handler.channelOpenInit(
+                msgChannelOpenInit(
+                    connectionId, "portidone", Channel.Order.ORDER_ORDERED, MOCK_APP_VERSION, "portidtwo"
+                )
+            );
+        }
+        // not binded port
         {
             setConnection(
                 handler, clientId, connectionId, counterpartyClientId, counterpartyConnectionId, orderedVersion
             );
             vm.expectRevert();
             handler.channelOpenInit(
-                msgChannelOpenInit(connectionId, "portidone", Channel.Order.ORDER_UNORDERED, "mockapp-1", "portidtwo")
+                msgChannelOpenInit(
+                    connectionId, "portidthree", Channel.Order.ORDER_ORDERED, MOCK_APP_VERSION, "portidtwo"
+                )
             );
         }
+        // connection does not support UNORDERED channel
+        {
+            setConnection(
+                handler, clientId, connectionId, counterpartyClientId, counterpartyConnectionId, orderedVersion
+            );
+            vm.expectRevert();
+            handler.channelOpenInit(
+                msgChannelOpenInit(
+                    connectionId, "portidone", Channel.Order.ORDER_UNORDERED, MOCK_APP_VERSION, "portidtwo"
+                )
+            );
+        }
+        // connection does not support ORDERED channel
         {
             setConnection(
                 handler, clientId, connectionId, counterpartyClientId, counterpartyConnectionId, unorderedVersion
             );
             vm.expectRevert();
             handler.channelOpenInit(
-                msgChannelOpenInit(connectionId, "portidone", Channel.Order.ORDER_ORDERED, "mockapp-1", "portidtwo")
+                msgChannelOpenInit(
+                    connectionId, "portidone", Channel.Order.ORDER_ORDERED, MOCK_APP_VERSION, "portidtwo"
+                )
             );
+        }
+        // channel state must be STATE_INIT
+        {
+            setConnection(
+                handler, clientId, connectionId, counterpartyClientId, counterpartyConnectionId, unorderedVersion
+            );
+            IBCMsgs.MsgChannelOpenInit memory msg_ = msgChannelOpenInit(
+                connectionId, "portidone", Channel.Order.ORDER_UNORDERED, MOCK_APP_VERSION, "portidtwo"
+            );
+            msg_.channel.state = Channel.State.STATE_TRYOPEN;
+            vm.expectRevert();
+            handler.channelOpenInit(msg_);
+        }
+        // channel.counterparty.channelId must be empty
+        {
+            setConnection(
+                handler, clientId, connectionId, counterpartyClientId, counterpartyConnectionId, unorderedVersion
+            );
+            IBCMsgs.MsgChannelOpenInit memory msg_ = msgChannelOpenInit(
+                connectionId, "portidone", Channel.Order.ORDER_UNORDERED, MOCK_APP_VERSION, "portidtwo"
+            );
+            msg_.channel.counterparty.channel_id = "channel-0";
+            vm.expectRevert();
+            handler.channelOpenInit(msg_);
         }
     }
 }
