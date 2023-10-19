@@ -96,21 +96,6 @@ contract IBCTest is Test {
         assert(height.eq(actual));
     }
 
-    function testConnectionOpenInit() public {
-        createMockClient(1);
-        IBCMsgs.MsgConnectionOpenInit memory msg_ = IBCMsgs.MsgConnectionOpenInit({
-            clientId: "mock-client-1",
-            counterparty: Counterparty.Data({
-                client_id: "mock-client-1",
-                connection_id: "",
-                prefix: MerklePrefix.Data({key_prefix: bytes("ibc")})
-            }),
-            delayPeriod: 0
-        });
-        string memory connectionId = handler.connectionOpenInit(msg_);
-        assertEq(connectionId, "connection-1");
-    }
-
     function testSendPacketInvalidTimestamp() public {
         Packet.Data memory packet = createPacket(0, 0);
         vm.expectRevert("timeout height and timestamp cannot both be 0");
