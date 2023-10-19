@@ -116,18 +116,16 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         );
         require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
 
-        Counterparty.Data memory expectedCounterparty = Counterparty.Data({
-            client_id: connection.client_id,
-            connection_id: msg_.connectionId,
-            prefix: MerklePrefix.Data({key_prefix: getCommitmentPrefix()})
-        });
-
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: connection.counterparty.client_id,
             versions: IBCConnectionLib.newVersions(msg_.version),
             state: ConnectionEnd.State.STATE_TRYOPEN,
             delay_period: connection.delay_period,
-            counterparty: expectedCounterparty
+            counterparty: Counterparty.Data({
+                client_id: connection.client_id,
+                connection_id: msg_.connectionId,
+                prefix: MerklePrefix.Data({key_prefix: getCommitmentPrefix()})
+            })
         });
 
         require(
@@ -162,18 +160,16 @@ contract IBCConnection is IBCStore, IIBCConnectionHandshake {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
         require(connection.state == ConnectionEnd.State.STATE_TRYOPEN, "connection state is not TRYOPEN");
 
-        Counterparty.Data memory expectedCounterparty = Counterparty.Data({
-            client_id: connection.client_id,
-            connection_id: msg_.connectionId,
-            prefix: MerklePrefix.Data({key_prefix: getCommitmentPrefix()})
-        });
-
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: connection.counterparty.client_id,
             versions: connection.versions,
             state: ConnectionEnd.State.STATE_OPEN,
             delay_period: connection.delay_period,
-            counterparty: expectedCounterparty
+            counterparty: Counterparty.Data({
+                client_id: connection.client_id,
+                connection_id: msg_.connectionId,
+                prefix: MerklePrefix.Data({key_prefix: getCommitmentPrefix()})
+            })
         });
 
         require(
