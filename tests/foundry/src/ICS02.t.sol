@@ -104,6 +104,16 @@ abstract contract TestMockClientHelper is TestIBCBase {
         });
     }
 
+    function genMockProof(Height.Data memory proofHeight, bytes memory prefix, bytes memory path, bytes memory value)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked(
+            sha256(abi.encodePacked(proofHeight.toUint128(), sha256(prefix), sha256(path), sha256(value)))
+        );
+    }
+
     function genMockClientStateProof(
         Height.Data memory proofHeight,
         string memory clientId,
@@ -123,14 +133,6 @@ abstract contract TestMockClientHelper is TestIBCBase {
         return genMockConsensusStateProof(
             proofHeight, DEFAULT_COMMITMENT_PREFIX, clientId, revisionNumber, revisionHeight, timestamp
         );
-    }
-
-    function genMockConnectionStateProof(
-        Height.Data memory proofHeight,
-        string memory connectionId,
-        ConnectionEnd.Data memory connection
-    ) internal pure returns (bytes memory) {
-        return genMockConnectionStateProof(proofHeight, DEFAULT_COMMITMENT_PREFIX, connectionId, connection);
     }
 
     function genMockClientStateProof(
@@ -166,6 +168,14 @@ abstract contract TestMockClientHelper is TestIBCBase {
 
     function genMockConnectionStateProof(
         Height.Data memory proofHeight,
+        string memory connectionId,
+        ConnectionEnd.Data memory connection
+    ) internal pure returns (bytes memory) {
+        return genMockConnectionStateProof(proofHeight, DEFAULT_COMMITMENT_PREFIX, connectionId, connection);
+    }
+
+    function genMockConnectionStateProof(
+        Height.Data memory proofHeight,
         bytes memory prefix,
         string memory connectionId,
         ConnectionEnd.Data memory connection
@@ -175,13 +185,17 @@ abstract contract TestMockClientHelper is TestIBCBase {
         );
     }
 
-    function genMockProof(Height.Data memory proofHeight, bytes memory prefix, bytes memory path, bytes memory value)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encodePacked(
-            sha256(abi.encodePacked(proofHeight.toUint128(), sha256(prefix), sha256(path), sha256(value)))
+    function genMockChannelStateProof(
+        Height.Data memory proofHeight,
+        string memory portId,
+        string memory channelId,
+        Channel.Data memory channel
+    ) internal pure returns (bytes memory) {
+        return genMockProof(
+            proofHeight,
+            DEFAULT_COMMITMENT_PREFIX,
+            IBCCommitment.channelPath(portId, channelId),
+            Channel.encode(channel)
         );
     }
 

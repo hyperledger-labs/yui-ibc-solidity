@@ -7,6 +7,8 @@ import "../../core/25-handler/IBCHandler.sol";
 import "./IBCMockLib.sol";
 
 contract IBCMockApp is IBCAppBase {
+    string public constant version = "mockapp-1";
+
     IBCHandler ibcHandler;
 
     constructor(IBCHandler ibcHandler_) {
@@ -55,5 +57,25 @@ contract IBCMockApp is IBCAppBase {
         } else {
             require(keccak256(acknowledgement) == keccak256(IBCMockLib.FAILED_ACKNOWLEDGEMENT_JSON));
         }
+    }
+
+    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (string memory)
+    {
+        return version;
+    }
+
+    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (string memory)
+    {
+        return version;
     }
 }
