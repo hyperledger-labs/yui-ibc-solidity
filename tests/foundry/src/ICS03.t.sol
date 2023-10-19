@@ -653,4 +653,76 @@ contract TestICS03Version is Test, TestICS03Helper {
             assertFalse(IBCConnectionLib.verifySupportedFeature(version, "ORDER_ORDERED"));
         }
     }
+
+    Version.Data[] internal versions;
+
+    function testCopyVersions() public {
+        {
+            clearVersions();
+            Version.Data[] memory vs = getConnectionVersions();
+            IBCConnectionLib.copyVersions(vs, versions);
+            matchVersions(vs);
+        }
+        {
+            clearVersions();
+            Version.Data[] memory vs = new Version.Data[](0);
+            IBCConnectionLib.copyVersions(vs, versions);
+            matchVersions(vs);
+        }
+        {
+            clearVersions();
+            Version.Data[] memory vs = new Version.Data[](2);
+            vs[0] = IBCConnectionLib.defaultIBCVersion();
+            vs[1] = Version.Data({identifier: "2", features: new string[](1)});
+            vs[1].features[0] = "ORDER_DAG";
+            IBCConnectionLib.copyVersions(vs, versions);
+            matchVersions(vs);
+        }
+        {
+            clearVersions();
+            versions.push(IBCConnectionLib.defaultIBCVersion());
+            Version.Data[] memory vs = new Version.Data[](1);
+            vs[0] = Version.Data({identifier: "2", features: new string[](1)});
+            vs[0].features[0] = "ORDER_DAG";
+            IBCConnectionLib.copyVersions(vs, versions);
+            matchVersions(vs);
+        }
+        {
+            clearVersions();
+            versions.push(IBCConnectionLib.defaultIBCVersion());
+            Version.Data[] memory vs = new Version.Data[](0);
+            IBCConnectionLib.copyVersions(vs, versions);
+            matchVersions(vs);
+        }
+        {
+            clearVersions();
+            versions.push(IBCConnectionLib.defaultIBCVersion());
+            versions.push(Version.Data({identifier: "2", features: new string[](1)}));
+            versions[1].features[0] = "ORDER_DAG";
+            Version.Data[] memory vs = new Version.Data[](1);
+            vs[0] = Version.Data({identifier: "3", features: new string[](1)});
+            vs[0].features[0] = "ORDERED-ZK";
+            IBCConnectionLib.copyVersions(vs, versions);
+            matchVersions(vs);
+        }
+    }
+
+    function clearVersions() internal {
+        uint256 versionsLength = versions.length;
+        for (uint256 i = 0; i < versionsLength; i++) {
+            versions.pop();
+        }
+        assert(versions.length == 0);
+    }
+
+    function matchVersions(Version.Data[] memory vs) internal {
+        assertEq(versions.length, vs.length);
+        for (uint256 i = 0; i < vs.length; i++) {
+            assertEq(versions[i].identifier, vs[i].identifier);
+            assertEq(versions[i].features.length, vs[i].features.length);
+            for (uint256 j = 0; j < vs[i].features.length; j++) {
+                assertEq(versions[i].features[j], vs[i].features[j]);
+            }
+        }
+    }
 }

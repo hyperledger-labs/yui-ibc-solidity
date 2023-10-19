@@ -402,9 +402,26 @@ library IBCConnectionLib {
      * @dev copyVersions copies `src` to `dst`
      */
     function copyVersions(Version.Data[] memory src, Version.Data[] storage dst) internal {
-        require(dst.length == src.length, "length mismatch");
-        for (uint256 i = 0; i < src.length; i++) {
-            copyVersion(src[i], dst[i]);
+        uint256 srcLength = src.length;
+        uint256 dstLength = dst.length;
+        if (srcLength == dstLength) {
+            for (uint256 i = 0; i < srcLength; i++) {
+                copyVersion(src[i], dst[i]);
+            }
+        } else if (srcLength > dstLength) {
+            for (uint256 i = 0; i < dstLength; i++) {
+                copyVersion(src[i], dst[i]);
+            }
+            for (uint256 i = dstLength; i < srcLength; i++) {
+                dst.push(src[i]);
+            }
+        } else {
+            for (uint256 i = 0; i < srcLength; i++) {
+                copyVersion(src[i], dst[i]);
+            }
+            for (uint256 i = srcLength; i < dstLength; i++) {
+                dst.pop();
+            }
         }
     }
 
@@ -452,8 +469,27 @@ library IBCConnectionLib {
 
     function copyVersion(Version.Data memory src, Version.Data storage dst) private {
         dst.identifier = src.identifier;
-        for (uint256 i = 0; i < src.features.length; i++) {
-            dst.features[i] = src.features[i];
+        uint256 srcLength = src.features.length;
+        uint256 dstLength = dst.features.length;
+
+        if (srcLength == dstLength) {
+            for (uint256 i = 0; i < srcLength; i++) {
+                dst.features[i] = src.features[i];
+            }
+        } else if (srcLength > dstLength) {
+            for (uint256 i = 0; i < dstLength; i++) {
+                dst.features[i] = src.features[i];
+            }
+            for (uint256 i = dstLength; i < srcLength; i++) {
+                dst.features.push(src.features[i]);
+            }
+        } else {
+            for (uint256 i = 0; i < srcLength; i++) {
+                dst.features[i] = src.features[i];
+            }
+            for (uint256 i = srcLength; i < dstLength; i++) {
+                dst.features.pop();
+            }
         }
     }
 
