@@ -25,11 +25,15 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
     }
 
     function matchDefaultConnectionVersions(Version.Data[] memory versions) internal {
-        assertEq(versions.length, 1);
-        assertEq(versions[0].identifier, "1");
-        assertEq(versions[0].features.length, 2);
-        assertEq(versions[0].features[0], "ORDER_ORDERED");
-        assertEq(versions[0].features[1], "ORDER_UNORDERED");
+        Version.Data[] memory defaultVersions = getConnectionVersions();
+        assertEq(versions.length, defaultVersions.length);
+        for (uint256 i = 0; i < versions.length; i++) {
+            assertEq(versions[i].identifier, defaultVersions[i].identifier);
+            assertEq(versions[i].features.length, defaultVersions[i].features.length);
+            for (uint256 j = 0; j < versions[i].features.length; j++) {
+                assertEq(versions[i].features[j], defaultVersions[i].features[j]);
+            }
+        }
     }
 
     function msgConnectionOpenInit(string memory clientId, string memory counterpartyClientId)
@@ -53,7 +57,8 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
         string memory clientId,
         string memory counterpartyClientId,
         string memory counterpartyConnectionId,
-        bytes memory counterpartyPrefix
+        bytes memory counterpartyPrefix,
+        Height.Data memory proofHeight
     ) internal view returns (IBCMsgs.MsgConnectionOpenTry memory) {
         return IBCMsgs.MsgConnectionOpenTry({
             clientId: clientId,
@@ -65,8 +70,9 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
             }),
             clientStateBytes: mockClientState(0, 1),
             counterpartyVersions: getConnectionVersions(),
-            proofHeight: Height.Data({revision_number: 0, revision_height: 1}),
+            proofHeight: proofHeight,
             proofInit: genMockConnectionStateProof(
+                proofHeight,
                 counterpartyPrefix,
                 counterpartyConnectionId,
                 ConnectionEnd.Data({
@@ -81,36 +87,44 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
                     })
                 })
                 ),
-            proofClient: genMockClientStateProof(counterpartyClientId, 0, 1),
-            proofConsensus: genMockConsensusStateProof(counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)),
-            consensusHeight: Height.Data({revision_number: 0, revision_height: 1})
+            proofClient: genMockClientStateProof(proofHeight, counterpartyClientId, 0, 1),
+            proofConsensus: genMockConsensusStateProof(
+                proofHeight, counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)
+                ),
+            consensusHeight: H(0, 1)
         });
     }
 
     function msgConnectionOpenTry(
         string memory clientId,
         string memory counterpartyClientId,
-        string memory counterpartyConnectionId
+        string memory counterpartyConnectionId,
+        Height.Data memory proofHeight
     ) internal view returns (IBCMsgs.MsgConnectionOpenTry memory) {
-        return msgConnectionOpenTry(clientId, counterpartyClientId, counterpartyConnectionId, DEFAULT_COMMITMENT_PREFIX);
+        return msgConnectionOpenTry(
+            clientId, counterpartyClientId, counterpartyConnectionId, DEFAULT_COMMITMENT_PREFIX, proofHeight
+        );
     }
 
     function msgConnectionOpenAck(
         string memory connectionId,
         string memory counterpartyConnectionId,
         string memory counterpartyClientId,
-        ConnectionEnd.Data memory counterpartyConnection
+        ConnectionEnd.Data memory counterpartyConnection,
+        Height.Data memory proofHeight
     ) internal view returns (IBCMsgs.MsgConnectionOpenAck memory) {
         return IBCMsgs.MsgConnectionOpenAck({
             connectionId: connectionId,
             counterpartyConnectionId: counterpartyConnectionId,
             version: getConnectionVersions()[0],
             clientStateBytes: mockClientState(0, 1),
-            proofHeight: Height.Data({revision_number: 0, revision_height: 1}),
-            proofTry: genMockConnectionStateProof(counterpartyConnectionId, counterpartyConnection),
-            proofClient: genMockClientStateProof(counterpartyClientId, 0, 1),
-            proofConsensus: genMockConsensusStateProof(counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)),
-            consensusHeight: Height.Data({revision_number: 0, revision_height: 1})
+            proofHeight: proofHeight,
+            proofTry: genMockConnectionStateProof(proofHeight, counterpartyConnectionId, counterpartyConnection),
+            proofClient: genMockClientStateProof(proofHeight, counterpartyClientId, 0, 1),
+            proofConsensus: genMockConsensusStateProof(
+                proofHeight, counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)
+                ),
+            consensusHeight: H(0, 1)
         });
     }
 
@@ -119,18 +133,21 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
         string memory counterpartyConnectionId,
         string memory counterpartyClientId,
         ConnectionEnd.Data memory counterpartyConnection,
-        bytes memory prefix
+        bytes memory prefix,
+        Height.Data memory proofHeight
     ) internal view returns (IBCMsgs.MsgConnectionOpenAck memory) {
         return IBCMsgs.MsgConnectionOpenAck({
             connectionId: connectionId,
             counterpartyConnectionId: counterpartyConnectionId,
             version: getConnectionVersions()[0],
             clientStateBytes: mockClientState(0, 1),
-            proofHeight: Height.Data({revision_number: 0, revision_height: 1}),
-            proofTry: genMockConnectionStateProof(prefix, counterpartyConnectionId, counterpartyConnection),
-            proofClient: genMockClientStateProof(counterpartyClientId, 0, 1),
-            proofConsensus: genMockConsensusStateProof(counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)),
-            consensusHeight: Height.Data({revision_number: 0, revision_height: 1})
+            proofHeight: proofHeight,
+            proofTry: genMockConnectionStateProof(proofHeight, prefix, counterpartyConnectionId, counterpartyConnection),
+            proofClient: genMockClientStateProof(proofHeight, counterpartyClientId, 0, 1),
+            proofConsensus: genMockConsensusStateProof(
+                proofHeight, counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)
+                ),
+            consensusHeight: H(0, 1)
         });
     }
 
@@ -138,12 +155,13 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
         string memory connectionId,
         string memory counterpartyConnectionId,
         ConnectionEnd.Data memory counterpartyConnection,
-        bytes memory prefix
+        bytes memory prefix,
+        Height.Data memory proofHeight
     ) internal view returns (IBCMsgs.MsgConnectionOpenConfirm memory) {
         return IBCMsgs.MsgConnectionOpenConfirm({
             connectionId: connectionId,
-            proofHeight: Height.Data({revision_number: 0, revision_height: 1}),
-            proofAck: genMockConnectionStateProof(prefix, counterpartyConnectionId, counterpartyConnection)
+            proofHeight: proofHeight,
+            proofAck: genMockConnectionStateProof(proofHeight, prefix, counterpartyConnectionId, counterpartyConnection)
         });
     }
 
@@ -159,14 +177,16 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
         TestableIBCHandler counterpartyHandler,
         string memory clientId,
         string memory counterpartyClientId,
-        ConnectionHandshakeStep step
+        ConnectionHandshakeStep step,
+        Height.Data memory proofHeight
     ) internal returns (string memory connectionId, string memory counterpartyConnectionId) {
         connectionId = handler.connectionOpenInit(msgConnectionOpenInit(clientId, counterpartyClientId));
         if (step == ConnectionHandshakeStep.INIT) {
             return (connectionId, "");
         }
-        counterpartyConnectionId =
-            counterpartyHandler.connectionOpenTry(msgConnectionOpenTry(counterpartyClientId, clientId, connectionId));
+        counterpartyConnectionId = counterpartyHandler.connectionOpenTry(
+            msgConnectionOpenTry(counterpartyClientId, clientId, connectionId, proofHeight)
+        );
         if (step == ConnectionHandshakeStep.TRY) {
             return (connectionId, counterpartyConnectionId);
         }
@@ -175,7 +195,8 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
                 connectionId,
                 counterpartyConnectionId,
                 counterpartyClientId,
-                getConnectionEnd(counterpartyHandler, counterpartyConnectionId, ConnectionEnd.State.STATE_TRYOPEN)
+                getConnectionEnd(counterpartyHandler, counterpartyConnectionId, ConnectionEnd.State.STATE_TRYOPEN),
+                proofHeight
             )
         );
         if (step == ConnectionHandshakeStep.ACK) {
@@ -186,7 +207,8 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
                 counterpartyConnectionId,
                 connectionId,
                 getConnectionEnd(handler, connectionId, ConnectionEnd.State.STATE_OPEN),
-                DEFAULT_COMMITMENT_PREFIX
+                DEFAULT_COMMITMENT_PREFIX,
+                proofHeight
             )
         );
         return (connectionId, counterpartyConnectionId);
@@ -246,13 +268,13 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
         {
             (, string memory connectionId) = handshakeConnection(
-                counterpartyHandler, handler, counterpartyClientId, clientId, ConnectionHandshakeStep.TRY
+                counterpartyHandler, handler, counterpartyClientId, clientId, ConnectionHandshakeStep.TRY, H(0, 1)
             );
             assertEq(connectionId, genConnectionId(0));
         }
         {
             (, string memory connectionId) = handshakeConnection(
-                counterpartyHandler, handler, counterpartyClientId, clientId, ConnectionHandshakeStep.TRY
+                counterpartyHandler, handler, counterpartyClientId, clientId, ConnectionHandshakeStep.TRY, H(0, 1)
             );
             assertEq(connectionId, genConnectionId(1));
         }
@@ -262,13 +284,14 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         string memory clientId = createMockClient(handler, 1);
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
         (string memory counterpartyConnectionId,) = handshakeConnection(
-            counterpartyHandler, handler, counterpartyClientId, clientId, ConnectionHandshakeStep.INIT
+            counterpartyHandler, handler, counterpartyClientId, clientId, ConnectionHandshakeStep.INIT, H(0, 1)
         );
         {
             // commitment prefix is invalid
             IBCMsgs.MsgConnectionOpenTry memory msg_ =
-                msgConnectionOpenTry(clientId, counterpartyClientId, counterpartyConnectionId);
+                msgConnectionOpenTry(clientId, counterpartyClientId, counterpartyConnectionId, H(0, 1));
             msg_.proofInit = genMockConnectionStateProof(
+                H(0, 1),
                 bytes("ibcibc"),
                 genConnectionId(0),
                 ConnectionEnd.Data({
@@ -289,16 +312,16 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         {
             // proof height not found
             IBCMsgs.MsgConnectionOpenTry memory msg_ =
-                msgConnectionOpenTry(clientId, counterpartyClientId, counterpartyConnectionId);
-            msg_.proofHeight = Height.Data({revision_number: 0, revision_height: 2});
+                msgConnectionOpenTry(clientId, counterpartyClientId, counterpartyConnectionId, H(0, 2));
             vm.expectRevert();
             handler.connectionOpenTry(msg_);
         }
         {
             // invalid connection state
             IBCMsgs.MsgConnectionOpenTry memory msg_ =
-                msgConnectionOpenTry(clientId, counterpartyClientId, counterpartyConnectionId);
+                msgConnectionOpenTry(clientId, counterpartyClientId, counterpartyConnectionId, H(0, 1));
             msg_.proofInit = genMockConnectionStateProof(
+                H(0, 1),
                 genConnectionId(0),
                 ConnectionEnd.Data({
                     client_id: counterpartyClientId,
@@ -324,14 +347,16 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         string memory clientId = createMockClient(handler, 1);
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
 
-        handshakeConnection(handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.ACK);
+        handshakeConnection(
+            handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.ACK, H(0, 1)
+        );
     }
 
     function testInvalidConnOpenAck() public {
         string memory clientId = createMockClient(handler, 1);
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
         (string memory connectionId, string memory counterpartyConnectionId) = handshakeConnection(
-            handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.TRY
+            handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.TRY, H(0, 1)
         );
 
         {
@@ -343,7 +368,7 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             for (uint256 i = 0; i < invalidStates.length; i++) {
                 counterpartyConnection.state = invalidStates[i];
                 IBCMsgs.MsgConnectionOpenAck memory msg_ = msgConnectionOpenAck(
-                    connectionId, counterpartyConnectionId, counterpartyClientId, counterpartyConnection
+                    connectionId, counterpartyConnectionId, counterpartyClientId, counterpartyConnection, H(0, 1)
                 );
                 vm.expectRevert();
                 handler.connectionOpenAck(msg_);
@@ -354,9 +379,8 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             ConnectionEnd.Data memory counterpartyConnection =
                 getConnectionEnd(counterpartyHandler, counterpartyConnectionId, ConnectionEnd.State.STATE_TRYOPEN);
             IBCMsgs.MsgConnectionOpenAck memory msg_ = msgConnectionOpenAck(
-                connectionId, counterpartyConnectionId, counterpartyClientId, counterpartyConnection
+                connectionId, counterpartyConnectionId, counterpartyClientId, counterpartyConnection, H(0, 2)
             );
-            msg_.proofHeight = Height.Data({revision_number: 0, revision_height: 2});
             vm.expectRevert();
             handler.connectionOpenAck(msg_);
         }
@@ -365,7 +389,12 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             ConnectionEnd.Data memory counterpartyConnection =
                 getConnectionEnd(counterpartyHandler, counterpartyConnectionId, ConnectionEnd.State.STATE_TRYOPEN);
             IBCMsgs.MsgConnectionOpenAck memory msg_ = msgConnectionOpenAck(
-                connectionId, counterpartyConnectionId, counterpartyClientId, counterpartyConnection, bytes("ibcibc")
+                connectionId,
+                counterpartyConnectionId,
+                counterpartyClientId,
+                counterpartyConnection,
+                bytes("ibcibc"),
+                H(0, 1)
             );
             vm.expectRevert();
             handler.connectionOpenAck(msg_);
@@ -376,7 +405,7 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         string memory clientId = createMockClient(handler, 1);
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
         handshakeConnection(
-            handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.CONFIRM
+            handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.CONFIRM, H(0, 1)
         );
     }
 
@@ -384,7 +413,7 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         string memory clientId = createMockClient(handler, 1);
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
         (string memory connectionId, string memory counterpartyConnectionId) = handshakeConnection(
-            handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.ACK
+            handler, counterpartyHandler, clientId, counterpartyClientId, ConnectionHandshakeStep.ACK, H(0, 1)
         );
 
         {
@@ -393,9 +422,9 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
                 counterpartyConnectionId,
                 connectionId,
                 getConnectionEnd(handler, connectionId, ConnectionEnd.State.STATE_OPEN),
-                DEFAULT_COMMITMENT_PREFIX
+                DEFAULT_COMMITMENT_PREFIX,
+                H(0, 2)
             );
-            msg_.proofHeight = Height.Data({revision_number: 0, revision_height: 2});
             vm.expectRevert();
             counterpartyHandler.connectionOpenConfirm(msg_);
         }
@@ -405,7 +434,8 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
                 counterpartyConnectionId,
                 connectionId,
                 getConnectionEnd(handler, connectionId, ConnectionEnd.State.STATE_OPEN),
-                bytes("ibcibc")
+                bytes("ibcibc"),
+                H(0, 1)
             );
             vm.expectRevert();
             counterpartyHandler.connectionOpenConfirm(msg_);
@@ -419,7 +449,7 @@ contract TestICS03Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             for (uint256 i = 0; i < invalidStates.length; i++) {
                 connection.state = invalidStates[i];
                 IBCMsgs.MsgConnectionOpenConfirm memory msg_ = msgConnectionOpenConfirm(
-                    counterpartyConnectionId, connectionId, connection, DEFAULT_COMMITMENT_PREFIX
+                    counterpartyConnectionId, connectionId, connection, DEFAULT_COMMITMENT_PREFIX, H(0, 1)
                 );
                 vm.expectRevert();
                 counterpartyHandler.connectionOpenConfirm(msg_);

@@ -26,9 +26,15 @@ abstract contract TestIBCBase is Test {
         address ibcPacket = address(new IBCPacket());
         return new TestableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
     }
+
+    function H(uint64 revisionNumber, uint64 revisionHeight) internal pure returns (Height.Data memory) {
+        return Height.Data({revision_number: revisionNumber, revision_height: revisionHeight});
+    }
 }
 
 abstract contract TestMockClientHelper is TestIBCBase {
+    using IBCHeight for Height.Data;
+
     function ibcHandlerMockClient() internal returns (TestableIBCHandler, ModifiedMockClient) {
         TestableIBCHandler handler = defaultIBCHandler();
         ModifiedMockClient mockClient = new ModifiedMockClient(address(handler));
@@ -57,9 +63,7 @@ abstract contract TestMockClientHelper is TestIBCBase {
 
     function mockClientState(uint64 revisionNumber, uint64 revisionHeight) internal pure returns (bytes memory) {
         return wrapAnyMockClientState(
-            IbcLightclientsMockV1ClientState.Data({
-                latest_height: Height.Data({revision_number: revisionNumber, revision_height: revisionHeight})
-            })
+            IbcLightclientsMockV1ClientState.Data({latest_height: H(revisionNumber, revisionHeight)})
         );
     }
 
@@ -92,51 +96,59 @@ abstract contract TestMockClientHelper is TestIBCBase {
             clientId: clientId,
             clientMessage: wrapAnyMockHeader(
                 IbcLightclientsMockV1Header.Data({
-                    height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
+                    height: H(0, nextRevisionHeight),
                     timestamp: uint64(block.timestamp * 1e9)
                 })
                 )
         });
     }
 
-    function genMockClientStateProof(string memory clientId, uint64 revisionNumber, uint64 revisionHeight)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return genMockClientStateProof(DEFAULT_COMMITMENT_PREFIX, clientId, revisionNumber, revisionHeight);
+    function genMockClientStateProof(
+        Height.Data memory proofHeight,
+        string memory clientId,
+        uint64 revisionNumber,
+        uint64 revisionHeight
+    ) internal pure returns (bytes memory) {
+        return genMockClientStateProof(proofHeight, DEFAULT_COMMITMENT_PREFIX, clientId, revisionNumber, revisionHeight);
     }
 
     function genMockConsensusStateProof(
+        Height.Data memory proofHeight,
         string memory clientId,
         uint64 revisionNumber,
         uint64 revisionHeight,
         uint64 timestamp
     ) internal pure returns (bytes memory) {
-        return
-            genMockConsensusStateProof(DEFAULT_COMMITMENT_PREFIX, clientId, revisionNumber, revisionHeight, timestamp);
+        return genMockConsensusStateProof(
+            proofHeight, DEFAULT_COMMITMENT_PREFIX, clientId, revisionNumber, revisionHeight, timestamp
+        );
     }
 
-    function genMockConnectionStateProof(string memory connectionId, ConnectionEnd.Data memory connection)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return genMockConnectionStateProof(DEFAULT_COMMITMENT_PREFIX, connectionId, connection);
+    function genMockConnectionStateProof(
+        Height.Data memory proofHeight,
+        string memory connectionId,
+        ConnectionEnd.Data memory connection
+    ) internal pure returns (bytes memory) {
+        return genMockConnectionStateProof(proofHeight, DEFAULT_COMMITMENT_PREFIX, connectionId, connection);
     }
 
     function genMockClientStateProof(
+        Height.Data memory proofHeight,
         bytes memory prefix,
         string memory clientId,
         uint64 revisionNumber,
         uint64 revisionHeight
     ) internal pure returns (bytes memory) {
         return genMockProof(
-            prefix, IBCCommitment.clientStatePath(clientId), mockClientState(revisionNumber, revisionHeight)
+            proofHeight,
+            prefix,
+            IBCCommitment.clientStatePath(clientId),
+            mockClientState(revisionNumber, revisionHeight)
         );
     }
 
     function genMockConsensusStateProof(
+        Height.Data memory proofHeight,
         bytes memory prefix,
         string memory clientId,
         uint64 revisionNumber,
@@ -144,6 +156,7 @@ abstract contract TestMockClientHelper is TestIBCBase {
         uint64 timestamp
     ) internal pure returns (bytes memory) {
         return genMockProof(
+            proofHeight,
             prefix,
             IBCCommitment.consensusStatePath(clientId, revisionNumber, revisionHeight),
             mockConsensusState(timestamp)
@@ -151,19 +164,24 @@ abstract contract TestMockClientHelper is TestIBCBase {
     }
 
     function genMockConnectionStateProof(
+        Height.Data memory proofHeight,
         bytes memory prefix,
         string memory connectionId,
         ConnectionEnd.Data memory connection
     ) internal pure returns (bytes memory) {
-        return genMockProof(prefix, IBCCommitment.connectionPath(connectionId), ConnectionEnd.encode(connection));
+        return genMockProof(
+            proofHeight, prefix, IBCCommitment.connectionPath(connectionId), ConnectionEnd.encode(connection)
+        );
     }
 
-    function genMockProof(bytes memory prefix, bytes memory path, bytes memory value)
+    function genMockProof(Height.Data memory proofHeight, bytes memory prefix, bytes memory path, bytes memory value)
         internal
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(sha256(abi.encodePacked(sha256(prefix), sha256(path), sha256(value))));
+        return abi.encodePacked(
+            sha256(abi.encodePacked(proofHeight.toUint128(), sha256(prefix), sha256(path), sha256(value)))
+        );
     }
 
     function wrapAnyMockHeader(IbcLightclientsMockV1Header.Data memory header) internal pure returns (bytes memory) {
