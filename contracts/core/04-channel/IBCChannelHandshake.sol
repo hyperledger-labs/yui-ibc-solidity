@@ -53,6 +53,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
     function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) external returns (string memory) {
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
+        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state must be STATE_OPEN");
         require(
             connection.versions.length == 1, "single version must be negotiated on connection before opening channel"
         );
@@ -62,9 +63,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
             ),
             "feature not supported"
         );
-
         require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");
-        require(msg_.channel.connection_hops.length == 1);
 
         ChannelCounterparty.Data memory expectedCounterparty =
             ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""});
