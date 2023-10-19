@@ -27,6 +27,7 @@ library IBCMsgs {
     struct MsgConnectionOpenInit {
         string clientId;
         Counterparty.Data counterparty;
+        Version.Data version;
         uint64 delayPeriod;
     }
 
@@ -47,7 +48,7 @@ library IBCMsgs {
         string connectionId;
         bytes clientStateBytes; // client state for chainA on chainB
         Version.Data version; // version that ChainB chose in ConnOpenTry
-        string counterpartyConnectionID;
+        string counterpartyConnectionId;
         bytes proofTry; // proof that connectionEnd was added to ChainB state in ConnOpenTry
         bytes proofClient; // proof of client state on chainB for chainA
         bytes proofConsensus; // proof that chainB has stored ConsensusState of chainA on its client
