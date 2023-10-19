@@ -139,9 +139,10 @@ func (c *Coordinator) CreateChannel(
 	connA, connB *TestConnection,
 	sourcePortID, counterpartyPortID string,
 	order channeltypes.Channel_Order,
+	version string,
 ) (TestChannel, TestChannel) {
 
-	channelA, channelB, err := c.ChanOpenInit(ctx, chainA, chainB, connA, connB, sourcePortID, counterpartyPortID, order)
+	channelA, channelB, err := c.ChanOpenInit(ctx, chainA, chainB, connA, connB, sourcePortID, counterpartyPortID, order, version)
 	require.NoError(c.t, err)
 
 	err = c.ChanOpenTry(ctx, chainB, chainA, &channelB, &channelA, connB, order)
@@ -278,9 +279,10 @@ func (c *Coordinator) ChanOpenInit(
 	connection, counterpartyConnection *TestConnection,
 	sourcePortID, counterpartyPortID string,
 	order channeltypes.Channel_Order,
+	version string,
 ) (TestChannel, TestChannel, error) {
-	sourceChannel := source.AddTestChannel(connection, sourcePortID)
-	counterpartyChannel := counterparty.AddTestChannel(counterpartyConnection, counterpartyPortID)
+	sourceChannel := source.AddTestChannel(connection, sourcePortID, version)
+	counterpartyChannel := counterparty.AddTestChannel(counterpartyConnection, counterpartyPortID, version)
 
 	if channelID, err := source.ChannelOpenInit(ctx, sourceChannel, counterpartyChannel, order, connection.ID); err != nil {
 		return sourceChannel, counterpartyChannel, err

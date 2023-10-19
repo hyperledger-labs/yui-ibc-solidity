@@ -39,12 +39,13 @@ import (
 )
 
 const (
-	DefaultChannelVersion        = "ics20-1"
-	BlockTime             uint64 = 1000 * 1000 * 1000 // 1[sec]
-	DefaultDelayPeriod    uint64 = 0
-	DefaultPrefix                = "ibc"
-	TransferPort                 = "transfer"
-	MockPort                     = "mock"
+	ICS20Version              = "ics20-1"
+	MockAppVersion            = "mockapp-1"
+	BlockTime          uint64 = 1000 * 1000 * 1000 // 1[sec]
+	DefaultDelayPeriod uint64 = 0
+	DefaultPrefix             = "ibc"
+	TransferPort              = "transfer"
+	MockPort                  = "mock"
 
 	RelayerKeyIndex uint32 = 0
 
@@ -1332,15 +1333,14 @@ func (chain *Chain) ConstructNextTestConnection(clientID, counterpartyClientID s
 	return &TestConnection{
 		ID:                   "",
 		ClientID:             clientID,
-		NextChannelVersion:   DefaultChannelVersion,
 		CounterpartyClientID: counterpartyClientID,
 	}
 }
 
 // AddTestChannel appends a new TestChannel which contains references to the port and channel ID
 // used for channel creation and interaction. See 'NextTestChannel' for channel ID naming format.
-func (chain *Chain) AddTestChannel(conn *TestConnection, portID string) TestChannel {
-	channel := chain.NextTestChannel(conn, portID)
+func (chain *Chain) AddTestChannel(conn *TestConnection, portID string, version string) TestChannel {
+	channel := chain.NextTestChannel(conn, portID, version)
 	conn.Channels = append(conn.Channels, channel)
 	return channel
 }
@@ -1351,13 +1351,13 @@ func (chain *Chain) AddTestChannel(conn *TestConnection, portID string) TestChan
 // non-existent channel usually to test for its non-existence.
 //
 // The port is passed in by the caller.
-func (chain *Chain) NextTestChannel(conn *TestConnection, portID string) TestChannel {
+func (chain *Chain) NextTestChannel(conn *TestConnection, portID string, version string) TestChannel {
 	return TestChannel{
 		PortID:               portID,
 		ID:                   "",
 		ClientID:             conn.ClientID,
 		CounterpartyClientID: conn.CounterpartyClientID,
-		Version:              conn.NextChannelVersion,
+		Version:              version,
 	}
 }
 
