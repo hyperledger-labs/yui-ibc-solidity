@@ -16,8 +16,6 @@ import "../25-handler/IBCMsgs.sol";
 contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
     using IBCHeight for Height.Data;
 
-    /* Handshake functions */
-
     /**
      * @dev channelOpenInit is called by a module to initiate a channel opening handshake with a module on another chain.
      */
@@ -37,11 +35,9 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(bytes(msg_.channel.counterparty.channel_id).length == 0, "counterparty channel_id must be empty");
 
         string memory channelId = generateChannelIdentifier();
-        channels[msg_.portId][channelId] = msg_.channel;
         nextSequenceSends[msg_.portId][channelId] = 1;
         nextSequenceRecvs[msg_.portId][channelId] = 1;
         nextSequenceAcks[msg_.portId][channelId] = 1;
-        updateChannelCommitment(msg_.portId, channelId);
         commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
             keccak256(abi.encodePacked((bytes8(uint64(1)))));
         return channelId;
@@ -87,11 +83,9 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         );
 
         string memory channelId = generateChannelIdentifier();
-        channels[msg_.portId][channelId] = msg_.channel;
         nextSequenceSends[msg_.portId][channelId] = 1;
         nextSequenceRecvs[msg_.portId][channelId] = 1;
         nextSequenceAcks[msg_.portId][channelId] = 1;
-        updateChannelCommitment(msg_.portId, channelId);
         commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
             keccak256(abi.encodePacked((bytes8(uint64(1)))));
         return channelId;
@@ -217,6 +211,29 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         );
         channel.state = Channel.State.STATE_CLOSED;
         updateChannelCommitment(msg_.portId, msg_.channelId);
+    }
+
+    /**
+     * @dev writeChannel writes a channel which has successfully passed the OpenInit or OpenTry handshake step.
+     */
+    function writeChannel(
+        string calldata portId,
+        string calldata channelId,
+        Channel.State state,
+        Channel.Order order,
+        ChannelCounterparty.Data calldata counterparty,
+        string[] calldata connectionHops,
+        string calldata version
+    ) external {
+        Channel.Data storage channel = channels[portId][channelId];
+        channel.state = state;
+        channel.ordering = order;
+        channel.counterparty = counterparty;
+        for (uint256 i = 0; i < connectionHops.length; i++) {
+            channel.connection_hops.push(connectionHops[i]);
+        }
+        channel.version = version;
+        updateChannelCommitment(portId, channelId);
     }
 
     function updateChannelCommitment(string memory portId, string memory channelId) private {
