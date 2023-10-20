@@ -179,6 +179,39 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
         }
         assertEq(channel.version, version);
     }
+
+    enum ChannelHandshakeStep {
+        INIT,
+        TRY,
+        ACK,
+        CONFIRM
+    }
+
+    function handshakeChannel(
+        TestableIBCHandler handler,
+        TestableIBCHandler counterpartyHandler,
+        ChannelInfo memory channelInfo,
+        ChannelInfo memory counterpartyChannelInfo,
+        ChannelHandshakeStep step,
+        Height.Data memory proofHeight
+    ) internal returns (ChannelInfo memory, ChannelInfo memory) {
+        (channelInfo.channelId, channelInfo.version) =
+            handler.channelOpenInit(msgChannelOpenInit(channelInfo, counterpartyChannelInfo.portId));
+        if (step == ChannelHandshakeStep.INIT) {
+            return (channelInfo, counterpartyChannelInfo);
+        }
+        (counterpartyChannelInfo.channelId, counterpartyChannelInfo.version) =
+            counterpartyHandler.channelOpenTry(msgChannelOpenTry(counterpartyChannelInfo, channelInfo, proofHeight));
+        if (step == ChannelHandshakeStep.TRY) {
+            return (channelInfo, counterpartyChannelInfo);
+        }
+        handler.channelOpenAck(msgChannelOpenAck(channelInfo, counterpartyChannelInfo, proofHeight));
+        if (step == ChannelHandshakeStep.ACK) {
+            return (channelInfo, counterpartyChannelInfo);
+        }
+        counterpartyHandler.channelOpenConfirm(msgChannelOpenConfirm(counterpartyChannelInfo, channelInfo, proofHeight));
+        return (channelInfo, counterpartyChannelInfo);
+    }
 }
 
 contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helper, TestICS04Helper {
@@ -543,5 +576,47 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             vm.expectRevert();
             handler.channelOpenTry(msg_);
         }
+    }
+
+    function testChanOpenAck() public {
+        string memory clientId = createMockClient(handler, 1);
+        string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
+        string memory connectionId = genConnectionId(0);
+        string memory counterpartyConnectionId = genConnectionId(1);
+
+        setConnection(
+            handler,
+            clientId,
+            connectionId,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+        setConnection(
+            counterpartyHandler,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            clientId,
+            connectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+
+        handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo("portidone", "", Channel.Order.ORDER_ORDERED, "", connectionId),
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_ORDERED, "", counterpartyConnectionId),
+            ChannelHandshakeStep.ACK,
+            H(0, 1)
+        );
+
+        handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo("portidone", "", Channel.Order.ORDER_UNORDERED, "", connectionId),
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_UNORDERED, "", counterpartyConnectionId),
+            ChannelHandshakeStep.ACK,
+            H(0, 1)
+        );
     }
 }
