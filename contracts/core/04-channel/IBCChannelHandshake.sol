@@ -61,12 +61,10 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         );
         require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");
 
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_INIT,
             ordering: msg_.channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""}),
             connection_hops: getCounterpartyHops(msg_.channel.connection_hops[0]),
             version: msg_.counterpartyVersion
         });
@@ -102,12 +100,10 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
         require(channel.connection_hops.length == 1);
 
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_TRYOPEN,
             ordering: channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: msg_.counterpartyVersion
         });
@@ -139,12 +135,10 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
         require(channel.connection_hops.length == 1);
 
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_OPEN,
             ordering: channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: channel.version
         });
@@ -189,12 +183,10 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_CLOSED,
             ordering: channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: channel.version
         });

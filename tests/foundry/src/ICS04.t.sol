@@ -656,6 +656,53 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         );
     }
 
+    function testInvalidChanOpenAck() public {
+        string memory clientId = createMockClient(handler, 1);
+        string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
+        string memory connectionId = genConnectionId(0);
+        string memory counterpartyConnectionId = genConnectionId(1);
+
+        setConnection(
+            handler,
+            clientId,
+            connectionId,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+        setConnection(
+            counterpartyHandler,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            clientId,
+            connectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+
+        (ChannelInfo memory channelInfo, ChannelInfo memory counterpartyChannelInfo) = handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo("portidone", "", Channel.Order.ORDER_ORDERED, "", connectionId),
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_ORDERED, "", counterpartyConnectionId),
+            ChannelHandshakeStep.TRY,
+            H(0, 1)
+        );
+
+        // app version mismatch between proof and msg
+        {
+            IBCMsgs.MsgChannelOpenAck memory msg_ = msgChannelOpenAck(channelInfo, counterpartyChannelInfo, H(0, 1));
+            msg_.counterpartyVersion = "mockapp-2";
+            vm.expectRevert();
+            handler.channelOpenAck(msg_);
+        }
+        // invalid proof height
+        {
+            IBCMsgs.MsgChannelOpenAck memory msg_ = msgChannelOpenAck(channelInfo, counterpartyChannelInfo, H(0, 2));
+            vm.expectRevert();
+            handler.channelOpenAck(msg_);
+        }
+    }
+
     function testChanOpenConfirm() public {
         string memory clientId = createMockClient(handler, 1);
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
@@ -696,5 +743,46 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             ChannelHandshakeStep.CONFIRM,
             H(0, 1)
         );
+    }
+
+    function testInvalidChanOpenConfirm() public {
+        string memory clientId = createMockClient(handler, 1);
+        string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
+        string memory connectionId = genConnectionId(0);
+        string memory counterpartyConnectionId = genConnectionId(1);
+
+        setConnection(
+            handler,
+            clientId,
+            connectionId,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+        setConnection(
+            counterpartyHandler,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            clientId,
+            connectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+
+        (ChannelInfo memory channelInfo, ChannelInfo memory counterpartyChannelInfo) = handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo("portidone", "", Channel.Order.ORDER_ORDERED, "", connectionId),
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_ORDERED, "", counterpartyConnectionId),
+            ChannelHandshakeStep.ACK,
+            H(0, 1)
+        );
+
+        // invalid proof height
+        {
+            IBCMsgs.MsgChannelOpenConfirm memory msg_ =
+                msgChannelOpenConfirm(counterpartyChannelInfo, channelInfo, H(0, 2));
+            vm.expectRevert();
+            counterpartyHandler.channelOpenConfirm(msg_);
+        }
     }
 }
