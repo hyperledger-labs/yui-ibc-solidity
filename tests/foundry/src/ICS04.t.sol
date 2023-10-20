@@ -180,6 +180,23 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
         assertEq(channel.version, version);
     }
 
+    function validatePostStateAfterChanOpenAck(
+        IBCMsgs.MsgChannelOpenAck memory msg_,
+        Channel.Data memory channel,
+        string memory version
+    ) internal {
+        assertTrue(channel.state == Channel.State.STATE_OPEN);
+        assertEq(channel.counterparty.channel_id, msg_.counterpartyChannelId);
+        assertEq(channel.version, version);
+    }
+
+    function validatePostStateAfterChanOpenConfirm(
+        IBCMsgs.MsgChannelOpenConfirm memory msg_,
+        Channel.Data memory channel
+    ) internal {
+        assertTrue(channel.state == Channel.State.STATE_OPEN);
+    }
+
     enum ChannelHandshakeStep {
         INIT,
         TRY,
@@ -195,21 +212,47 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
         ChannelHandshakeStep step,
         Height.Data memory proofHeight
     ) internal returns (ChannelInfo memory, ChannelInfo memory) {
-        (channelInfo.channelId, channelInfo.version) =
-            handler.channelOpenInit(msgChannelOpenInit(channelInfo, counterpartyChannelInfo.portId));
+        {
+            IBCMsgs.MsgChannelOpenInit memory msg_ = msgChannelOpenInit(channelInfo, counterpartyChannelInfo.portId);
+            (channelInfo.channelId, channelInfo.version) = handler.channelOpenInit(msg_);
+            (Channel.Data memory channel, bool ok) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
+            assertTrue(ok);
+            validatePostStateAfterChanOpenInit(msg_, channel, channelInfo.version);
+        }
         if (step == ChannelHandshakeStep.INIT) {
             return (channelInfo, counterpartyChannelInfo);
         }
-        (counterpartyChannelInfo.channelId, counterpartyChannelInfo.version) =
-            counterpartyHandler.channelOpenTry(msgChannelOpenTry(counterpartyChannelInfo, channelInfo, proofHeight));
+        {
+            IBCMsgs.MsgChannelOpenTry memory msg_ = msgChannelOpenTry(counterpartyChannelInfo, channelInfo, proofHeight);
+            (counterpartyChannelInfo.channelId, counterpartyChannelInfo.version) =
+                counterpartyHandler.channelOpenTry(msg_);
+            (Channel.Data memory channel, bool ok) =
+                counterpartyHandler.getChannel(counterpartyChannelInfo.portId, counterpartyChannelInfo.channelId);
+            assertTrue(ok);
+            validatePostStateAfterChanOpenTry(msg_, channel, counterpartyChannelInfo.version);
+        }
         if (step == ChannelHandshakeStep.TRY) {
             return (channelInfo, counterpartyChannelInfo);
         }
-        handler.channelOpenAck(msgChannelOpenAck(channelInfo, counterpartyChannelInfo, proofHeight));
+        {
+            IBCMsgs.MsgChannelOpenAck memory msg_ = msgChannelOpenAck(channelInfo, counterpartyChannelInfo, proofHeight);
+            handler.channelOpenAck(msg_);
+            (Channel.Data memory channel, bool ok) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
+            assertTrue(ok);
+            validatePostStateAfterChanOpenAck(msg_, channel, channelInfo.version);
+        }
         if (step == ChannelHandshakeStep.ACK) {
             return (channelInfo, counterpartyChannelInfo);
         }
-        counterpartyHandler.channelOpenConfirm(msgChannelOpenConfirm(counterpartyChannelInfo, channelInfo, proofHeight));
+        {
+            IBCMsgs.MsgChannelOpenConfirm memory msg_ =
+                msgChannelOpenConfirm(counterpartyChannelInfo, channelInfo, proofHeight);
+            counterpartyHandler.channelOpenConfirm(msg_);
+            (Channel.Data memory channel, bool ok) =
+                counterpartyHandler.getChannel(counterpartyChannelInfo.portId, counterpartyChannelInfo.channelId);
+            assertTrue(ok);
+            validatePostStateAfterChanOpenConfirm(msg_, channel);
+        }
         return (channelInfo, counterpartyChannelInfo);
     }
 }
@@ -395,54 +438,47 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             IBCConnectionLib.defaultIBCVersion()
         );
 
-        {
-            IBCMsgs.MsgChannelOpenTry memory msg_ = msgChannelOpenTry(
-                ChannelInfo({
-                    portId: "portidone",
-                    channelId: "",
-                    ordering: Channel.Order.ORDER_ORDERED,
-                    version: "",
-                    connectionId: connectionId
-                }),
-                ChannelInfo({
-                    portId: "portidtwo",
-                    channelId: "channel-0",
-                    ordering: Channel.Order.ORDER_ORDERED,
-                    version: MOCK_APP_VERSION,
-                    connectionId: counterpartyConnectionId
-                }),
-                H(0, 1)
-            );
-            (string memory channelId, string memory version) = handler.channelOpenTry(msg_);
-            assertEq(channelId, "channel-0");
-            assertEq(version, MOCK_APP_VERSION);
-            (Channel.Data memory channel,) = handler.getChannel("portidone", channelId);
-            validatePostStateAfterChanOpenTry(msg_, channel, MOCK_APP_VERSION);
-        }
-        {
-            IBCMsgs.MsgChannelOpenTry memory msg_ = msgChannelOpenTry(
-                ChannelInfo({
-                    portId: "portidone",
-                    channelId: "",
-                    ordering: Channel.Order.ORDER_UNORDERED,
-                    version: "",
-                    connectionId: connectionId
-                }),
-                ChannelInfo({
-                    portId: "portidtwo",
-                    channelId: "channel-0",
-                    ordering: Channel.Order.ORDER_UNORDERED,
-                    version: MOCK_APP_VERSION,
-                    connectionId: counterpartyConnectionId
-                }),
-                H(0, 1)
-            );
-            (string memory channelId, string memory version) = handler.channelOpenTry(msg_);
-            assertEq(channelId, "channel-1");
-            assertEq(version, MOCK_APP_VERSION);
-            (Channel.Data memory channel,) = handler.getChannel("portidone", channelId);
-            validatePostStateAfterChanOpenTry(msg_, channel, MOCK_APP_VERSION);
-        }
+        handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo({
+                portId: "portidone",
+                channelId: "",
+                ordering: Channel.Order.ORDER_ORDERED,
+                version: "",
+                connectionId: connectionId
+            }),
+            ChannelInfo({
+                portId: "portidtwo",
+                channelId: "",
+                ordering: Channel.Order.ORDER_ORDERED,
+                version: "",
+                connectionId: counterpartyConnectionId
+            }),
+            ChannelHandshakeStep.TRY,
+            H(0, 1)
+        );
+
+        handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo({
+                portId: "portidone",
+                channelId: "",
+                ordering: Channel.Order.ORDER_UNORDERED,
+                version: "",
+                connectionId: connectionId
+            }),
+            ChannelInfo({
+                portId: "portidtwo",
+                channelId: "",
+                ordering: Channel.Order.ORDER_UNORDERED,
+                version: "",
+                connectionId: counterpartyConnectionId
+            }),
+            ChannelHandshakeStep.TRY,
+            H(0, 1)
+        );
     }
 
     function testInvalidChanOpenTry() public {
@@ -616,6 +652,48 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             ChannelInfo("portidone", "", Channel.Order.ORDER_UNORDERED, "", connectionId),
             ChannelInfo("portidtwo", "", Channel.Order.ORDER_UNORDERED, "", counterpartyConnectionId),
             ChannelHandshakeStep.ACK,
+            H(0, 1)
+        );
+    }
+
+    function testChanOpenConfirm() public {
+        string memory clientId = createMockClient(handler, 1);
+        string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
+        string memory connectionId = genConnectionId(0);
+        string memory counterpartyConnectionId = genConnectionId(1);
+
+        setConnection(
+            handler,
+            clientId,
+            connectionId,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+        setConnection(
+            counterpartyHandler,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            clientId,
+            connectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+
+        handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo("portidone", "", Channel.Order.ORDER_ORDERED, "", connectionId),
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_ORDERED, "", counterpartyConnectionId),
+            ChannelHandshakeStep.CONFIRM,
+            H(0, 1)
+        );
+
+        handshakeChannel(
+            handler,
+            counterpartyHandler,
+            ChannelInfo("portidone", "", Channel.Order.ORDER_UNORDERED, "", connectionId),
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_UNORDERED, "", counterpartyConnectionId),
+            ChannelHandshakeStep.CONFIRM,
             H(0, 1)
         );
     }
