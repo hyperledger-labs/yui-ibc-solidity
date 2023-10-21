@@ -102,7 +102,7 @@ contract TestICS20 is Test {
         assertEq(addr, addr2);
     }
 
-    function testHexToAddress(string memory any) public {
+    function testHexToAddress(string memory any) public pure {
         // This should not revert if the input is not a valid hex string.
         ICS20LibTestHelper.hexStringToAddress(any);
     }

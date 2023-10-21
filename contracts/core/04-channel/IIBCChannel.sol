@@ -34,6 +34,19 @@ interface IIBCChannelHandshake {
      * channel, since the other end has been closed.
      */
     function channelCloseConfirm(IBCMsgs.MsgChannelCloseConfirm calldata msg_) external;
+
+    /**
+     * @dev writeChannel writes a channel which has successfully passed the OpenInit or OpenTry handshake step.
+     */
+    function writeChannel(
+        string calldata portId,
+        string calldata channelId,
+        Channel.State state,
+        Channel.Order order,
+        ChannelCounterparty.Data calldata counterparty,
+        string[] calldata connectionHops,
+        string calldata version
+    ) external;
 }
 
 interface IIBCPacket {

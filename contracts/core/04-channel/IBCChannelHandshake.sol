@@ -3,19 +3,18 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "../../proto/Channel.sol";
-import "../25-handler/IBCMsgs.sol";
 import "../02-client/IBCHeight.sol";
+import "../03-connection/IBCConnection.sol";
+import "../04-channel/IIBCChannel.sol";
 import "../24-host/IBCStore.sol";
 import "../24-host/IBCCommitment.sol";
-import "../04-channel/IIBCChannel.sol";
+import "../25-handler/IBCMsgs.sol";
 
 /**
  * @dev IBCChannelHandshake is a contract that implements [ICS-4](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics).
  */
 contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
     using IBCHeight for Height.Data;
-
-    /* Handshake functions */
 
     /**
      * @dev channelOpenInit is called by a module to initiate a channel opening handshake with a module on another chain.
@@ -26,18 +25,17 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(
             connection.versions.length == 1, "single version must be negotiated on connection before opening channel"
         );
+        require(
+            IBCConnectionLib.verifySupportedFeature(
+                connection.versions[0], IBCChannelLib.toString(msg_.channel.ordering)
+            ),
+            "feature not supported"
+        );
         require(msg_.channel.state == Channel.State.STATE_INIT, "channel state must STATE_INIT");
-
-        // TODO verifySupportedFeature
+        require(bytes(msg_.channel.counterparty.channel_id).length == 0, "counterparty channel_id must be empty");
 
         string memory channelId = generateChannelIdentifier();
-        channels[msg_.portId][channelId] = msg_.channel;
-        nextSequenceSends[msg_.portId][channelId] = 1;
-        nextSequenceRecvs[msg_.portId][channelId] = 1;
-        nextSequenceAcks[msg_.portId][channelId] = 1;
-        updateChannelCommitment(msg_.portId, channelId);
-        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
-            keccak256(abi.encodePacked((bytes8(uint64(1)))));
+        initializeSequences(msg_.portId, channelId);
         return channelId;
     }
 
@@ -47,20 +45,22 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
     function channelOpenTry(IBCMsgs.MsgChannelOpenTry calldata msg_) external returns (string memory) {
         require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
         ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
+        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state must be STATE_OPEN");
         require(
             connection.versions.length == 1, "single version must be negotiated on connection before opening channel"
         );
+        require(
+            IBCConnectionLib.verifySupportedFeature(
+                connection.versions[0], IBCChannelLib.toString(msg_.channel.ordering)
+            ),
+            "feature not supported"
+        );
         require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");
-        require(msg_.channel.connection_hops.length == 1);
 
-        // TODO verifySupportedFeature
-
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_INIT,
             ordering: msg_.channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""}),
             connection_hops: getCounterpartyHops(msg_.channel.connection_hops[0]),
             version: msg_.counterpartyVersion
         });
@@ -77,13 +77,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         );
 
         string memory channelId = generateChannelIdentifier();
-        channels[msg_.portId][channelId] = msg_.channel;
-        nextSequenceSends[msg_.portId][channelId] = 1;
-        nextSequenceRecvs[msg_.portId][channelId] = 1;
-        nextSequenceAcks[msg_.portId][channelId] = 1;
-        updateChannelCommitment(msg_.portId, channelId);
-        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
-            keccak256(abi.encodePacked((bytes8(uint64(1)))));
+        initializeSequences(msg_.portId, channelId);
         return channelId;
     }
 
@@ -98,12 +92,10 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
         require(channel.connection_hops.length == 1);
 
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_TRYOPEN,
             ordering: channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: msg_.counterpartyVersion
         });
@@ -135,12 +127,10 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
         require(channel.connection_hops.length == 1);
 
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_OPEN,
             ordering: channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: channel.version
         });
@@ -185,12 +175,10 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
-        ChannelCounterparty.Data memory expectedCounterparty =
-            ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId});
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_CLOSED,
             ordering: channel.ordering,
-            counterparty: expectedCounterparty,
+            counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: channel.version
         });
@@ -207,6 +195,29 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         );
         channel.state = Channel.State.STATE_CLOSED;
         updateChannelCommitment(msg_.portId, msg_.channelId);
+    }
+
+    /**
+     * @dev writeChannel writes a channel which has successfully passed the OpenInit or OpenTry handshake step.
+     */
+    function writeChannel(
+        string calldata portId,
+        string calldata channelId,
+        Channel.State state,
+        Channel.Order order,
+        ChannelCounterparty.Data calldata counterparty,
+        string[] calldata connectionHops,
+        string calldata version
+    ) external {
+        Channel.Data storage channel = channels[portId][channelId];
+        channel.state = state;
+        channel.ordering = order;
+        channel.counterparty = counterparty;
+        for (uint256 i = 0; i < connectionHops.length; i++) {
+            channel.connection_hops.push(connectionHops[i]);
+        }
+        channel.version = version;
+        updateChannelCommitment(portId, channelId);
     }
 
     function updateChannelCommitment(string memory portId, string memory channelId) private {
@@ -238,6 +249,14 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
 
     /* Internal functions */
 
+    function initializeSequences(string memory portId, string memory channelId) internal {
+        nextSequenceSends[portId][channelId] = 1;
+        nextSequenceRecvs[portId][channelId] = 1;
+        nextSequenceAcks[portId][channelId] = 1;
+        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
+            keccak256(abi.encodePacked((bytes8(uint64(1)))));
+    }
+
     function getCounterpartyHops(string memory connectionId) internal view returns (string[] memory hops) {
         hops = new string[](1);
         hops[0] = connections[connectionId].counterparty.connection_id;
@@ -248,5 +267,17 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         string memory identifier = string(abi.encodePacked("channel-", Strings.toString(nextChannelSequence)));
         nextChannelSequence++;
         return identifier;
+    }
+}
+
+library IBCChannelLib {
+    function toString(Channel.Order order) internal pure returns (string memory) {
+        if (order == Channel.Order.ORDER_UNORDERED) {
+            return "ORDER_UNORDERED";
+        } else if (order == Channel.Order.ORDER_ORDERED) {
+            return "ORDER_ORDERED";
+        } else {
+            revert("unknown order");
+        }
     }
 }

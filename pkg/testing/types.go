@@ -14,13 +14,12 @@ import (
 )
 
 // TestConnection is a testing helper struct to keep track of the connectionID, source clientID,
-// counterparty clientID, and the next channel version used in creating and interacting with a
+// , and counterparty clientID used in creating and interacting with a
 // connection.
 type TestConnection struct {
 	ID                   string
 	ClientID             string
 	CounterpartyClientID string
-	NextChannelVersion   string
 	Channels             []TestChannel
 }
 

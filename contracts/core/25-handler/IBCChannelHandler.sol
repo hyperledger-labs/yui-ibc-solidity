@@ -28,10 +28,10 @@ abstract contract IBCChannelHandler is ModuleManager {
         external
         returns (string memory channelId, string memory version)
     {
-        bytes memory res =
-            ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenInit.selector, msg_));
-        channelId = abi.decode(res, (string));
-
+        channelId = abi.decode(
+            ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenInit.selector, msg_)),
+            (string)
+        );
         IIBCModule module = lookupModuleByPort(msg_.portId);
         version = module.onChanOpenInit(
             IIBCModule.MsgOnChanOpenInit({
@@ -44,6 +44,18 @@ abstract contract IBCChannelHandler is ModuleManager {
             })
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
+        ibcChannel.functionDelegateCall(
+            abi.encodeWithSelector(
+                IIBCChannelHandshake.writeChannel.selector,
+                msg_.portId,
+                channelId,
+                msg_.channel.state,
+                msg_.channel.ordering,
+                msg_.channel.counterparty,
+                msg_.channel.connection_hops,
+                version
+            )
+        );
         emit GeneratedChannelIdentifier(channelId);
         return (channelId, version);
     }
@@ -52,9 +64,10 @@ abstract contract IBCChannelHandler is ModuleManager {
         external
         returns (string memory channelId, string memory version)
     {
-        bytes memory res =
-            ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenTry.selector, msg_));
-        channelId = abi.decode(res, (string));
+        channelId = abi.decode(
+            ibcChannel.functionDelegateCall(abi.encodeWithSelector(IIBCChannelHandshake.channelOpenTry.selector, msg_)),
+            (string)
+        );
         IIBCModule module = lookupModuleByPort(msg_.portId);
         version = module.onChanOpenTry(
             IIBCModule.MsgOnChanOpenTry({
@@ -67,6 +80,18 @@ abstract contract IBCChannelHandler is ModuleManager {
             })
         );
         claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
+        ibcChannel.functionDelegateCall(
+            abi.encodeWithSelector(
+                IIBCChannelHandshake.writeChannel.selector,
+                msg_.portId,
+                channelId,
+                msg_.channel.state,
+                msg_.channel.ordering,
+                msg_.channel.counterparty,
+                msg_.channel.connection_hops,
+                version
+            )
+        );
         emit GeneratedChannelIdentifier(channelId);
         return (channelId, version);
     }

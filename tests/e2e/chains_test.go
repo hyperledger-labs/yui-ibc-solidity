@@ -50,7 +50,7 @@ func (suite *ChainTestSuite) TestICS20() {
 
 	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.BesuIBFT2Client)
 	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+	chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ibctesting.ICS20Version)
 
 	/// Tests for Transfer module ///
 
@@ -196,7 +196,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 
 	// Case: timeoutOnClose on ordered channel
 	{
-		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
 		suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB))
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
@@ -215,7 +215,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 
 	// Case: timeoutOnClose on unordered channel
 	{
-		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, aliceA),
 			ibctesting.MockPacketData,
@@ -232,7 +232,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 
 	// Case: timeout packet on ordered channel
 	{
-		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, aliceA),
 			ibctesting.MockPacketData,
@@ -260,7 +260,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 
 	// Case: timeout packet on unordered channel
 	{
-		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, aliceA),
 			ibctesting.MockPacketData,
@@ -288,13 +288,13 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 
 	// Case: close channel on ordered channel
 	{
-		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED)
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED, ibctesting.MockAppVersion)
 		coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 	}
 
 	// Case: close channel on unordered channel
 	{
-		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED)
+		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED, ibctesting.MockAppVersion)
 		coordinator.CloseChannel(ctx, chainA, chainB, chanA, chanB)
 	}
 }
@@ -315,7 +315,7 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 
 	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.BesuIBFT2Client)
 	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
-	chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED)
+	chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ibctesting.ICS20Version)
 
 	/// Tests for Transfer module ///
 
