@@ -148,6 +148,18 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
         return connectionHops;
     }
 
+    function validateInitializedSequences(TestableIBCHandler handler, string memory portId, string memory channelId)
+        internal
+    {
+        assertEq(handler.getNextSequenceSend(portId, channelId), 1);
+        assertEq(handler.getNextSequenceRecv(portId, channelId), 1);
+        assertEq(handler.getNextSequenceAck(portId, channelId), 1);
+        assertEq(
+            handler.getCommitment(IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)),
+            keccak256(abi.encodePacked(uint64(1)))
+        );
+    }
+
     function validatePostStateAfterChanOpenInit(
         TestableIBCHandler handler,
         IBCMsgs.MsgChannelOpenInit memory msg_,
@@ -165,8 +177,7 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
             assertEq(channel.connection_hops[i], msg_.channel.connection_hops[i]);
         }
         assertEq(channel.version, version);
-        assertEq(handler.getNextSequenceRecv(msg_.portId, channelId), 1);
-        assertEq(handler.getNextSequenceSend(msg_.portId, channelId), 1);
+        validateInitializedSequences(handler, msg_.portId, channelId);
     }
 
     function validatePostStateAfterChanOpenTry(
@@ -186,8 +197,7 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
             assertEq(channel.connection_hops[i], msg_.channel.connection_hops[i]);
         }
         assertEq(channel.version, version);
-        assertEq(handler.getNextSequenceRecv(msg_.portId, channelId), 1);
-        assertEq(handler.getNextSequenceSend(msg_.portId, channelId), 1);
+        validateInitializedSequences(handler, msg_.portId, channelId);
     }
 
     function validatePostStateAfterChanOpenAck(

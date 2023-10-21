@@ -35,11 +35,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         require(bytes(msg_.channel.counterparty.channel_id).length == 0, "counterparty channel_id must be empty");
 
         string memory channelId = generateChannelIdentifier();
-        nextSequenceSends[msg_.portId][channelId] = 1;
-        nextSequenceRecvs[msg_.portId][channelId] = 1;
-        nextSequenceAcks[msg_.portId][channelId] = 1;
-        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
-            keccak256(abi.encodePacked((bytes8(uint64(1)))));
+        initializeSequences(msg_.portId, channelId);
         return channelId;
     }
 
@@ -81,11 +77,7 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
         );
 
         string memory channelId = generateChannelIdentifier();
-        nextSequenceSends[msg_.portId][channelId] = 1;
-        nextSequenceRecvs[msg_.portId][channelId] = 1;
-        nextSequenceAcks[msg_.portId][channelId] = 1;
-        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(msg_.portId, channelId)] =
-            keccak256(abi.encodePacked((bytes8(uint64(1)))));
+        initializeSequences(msg_.portId, channelId);
         return channelId;
     }
 
@@ -256,6 +248,14 @@ contract IBCChannelHandshake is IBCStore, IIBCChannelHandshake {
     }
 
     /* Internal functions */
+
+    function initializeSequences(string memory portId, string memory channelId) internal {
+        nextSequenceSends[portId][channelId] = 1;
+        nextSequenceRecvs[portId][channelId] = 1;
+        nextSequenceAcks[portId][channelId] = 1;
+        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
+            keccak256(abi.encodePacked((bytes8(uint64(1)))));
+    }
 
     function getCounterpartyHops(string memory connectionId) internal view returns (string[] memory hops) {
         hops = new string[](1);
