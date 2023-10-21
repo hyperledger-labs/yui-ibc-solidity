@@ -268,16 +268,18 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
             assertEq(clientId, mockClientId(0));
             assertEq(handler.clientType(clientId), MOCK_CLIENT_TYPE);
             assertEq(handler.clientImpl(clientId), address(mockClient));
-            assertFalse(handler.commitment(IBCCommitment.clientStateCommitmentKey(clientId)) == bytes32(0));
-            assertFalse(handler.commitment(IBCCommitment.consensusStateCommitmentKey(clientId, 0, 1)) == bytes32(0));
+            assertFalse(handler.getCommitment(IBCCommitment.clientStateCommitmentKey(clientId)) == bytes32(0));
+            assertFalse(handler.getCommitment(IBCCommitment.consensusStateCommitmentKey(clientId, 0, 1)) == bytes32(0));
         }
         {
             string memory clientId = handler.createClient(msgCreateMockClient(100));
             assertEq(clientId, mockClientId(1));
             assertEq(handler.clientType(clientId), MOCK_CLIENT_TYPE);
             assertEq(handler.clientImpl(clientId), address(mockClient));
-            assertFalse(handler.commitment(IBCCommitment.clientStateCommitmentKey(clientId)) == bytes32(0));
-            assertFalse(handler.commitment(IBCCommitment.consensusStateCommitmentKey(clientId, 0, 100)) == bytes32(0));
+            assertFalse(handler.getCommitment(IBCCommitment.clientStateCommitmentKey(clientId)) == bytes32(0));
+            assertFalse(
+                handler.getCommitment(IBCCommitment.consensusStateCommitmentKey(clientId, 0, 100)) == bytes32(0)
+            );
         }
     }
 
@@ -313,11 +315,11 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
         bytes32 prevClientStateCommitment;
         (TestableIBCHandler handler,) = ibcHandlerMockClient();
         string memory clientId = handler.createClient(msgCreateMockClient(1));
-        prevClientStateCommitment = handler.commitment(IBCCommitment.clientStateCommitmentKey(clientId));
+        prevClientStateCommitment = handler.getCommitment(IBCCommitment.clientStateCommitmentKey(clientId));
 
         {
             handler.updateClient(msgUpdateMockClient(clientId, 2));
-            bytes32 commitment = handler.commitment(IBCCommitment.clientStateCommitmentKey(clientId));
+            bytes32 commitment = handler.getCommitment(IBCCommitment.clientStateCommitmentKey(clientId));
             assertTrue(
                 commitment != prevClientStateCommitment && commitment != bytes32(0), "commitment should be updated"
             );
@@ -325,7 +327,7 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
         }
         {
             handler.updateClient(msgUpdateMockClient(clientId, 3));
-            bytes32 commitment = handler.commitment(IBCCommitment.clientStateCommitmentKey(clientId));
+            bytes32 commitment = handler.getCommitment(IBCCommitment.clientStateCommitmentKey(clientId));
             assertTrue(
                 commitment != prevClientStateCommitment && commitment != bytes32(0), "commitment should be updated"
             );

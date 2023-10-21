@@ -36,6 +36,10 @@ abstract contract IBCQuerier is IBCStore {
         return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
+    function getCommitment(bytes32 hashedPath) public view returns (bytes32) {
+        return commitments[hashedPath];
+    }
+
     function getHashedPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
         external
         view
