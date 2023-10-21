@@ -149,10 +149,13 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
     }
 
     function validatePostStateAfterChanOpenInit(
+        TestableIBCHandler handler,
         IBCMsgs.MsgChannelOpenInit memory msg_,
-        Channel.Data memory channel,
+        string memory channelId,
         string memory version
     ) internal {
+        (Channel.Data memory channel, bool ok) = handler.getChannel(msg_.portId, channelId);
+        assertTrue(ok);
         assertTrue(channel.state == Channel.State.STATE_INIT);
         assertTrue(channel.ordering == msg_.channel.ordering);
         assertEq(channel.counterparty.port_id, msg_.channel.counterparty.port_id);
@@ -162,13 +165,18 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
             assertEq(channel.connection_hops[i], msg_.channel.connection_hops[i]);
         }
         assertEq(channel.version, version);
+        assertEq(handler.getNextSequenceRecv(msg_.portId, channelId), 1);
+        assertEq(handler.getNextSequenceSend(msg_.portId, channelId), 1);
     }
 
     function validatePostStateAfterChanOpenTry(
+        TestableIBCHandler handler,
         IBCMsgs.MsgChannelOpenTry memory msg_,
-        Channel.Data memory channel,
+        string memory channelId,
         string memory version
     ) internal {
+        (Channel.Data memory channel, bool ok) = handler.getChannel(msg_.portId, channelId);
+        assertTrue(ok);
         assertTrue(channel.state == Channel.State.STATE_TRYOPEN);
         assertTrue(channel.ordering == msg_.channel.ordering);
         assertEq(channel.counterparty.port_id, msg_.channel.counterparty.port_id);
@@ -178,22 +186,28 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
             assertEq(channel.connection_hops[i], msg_.channel.connection_hops[i]);
         }
         assertEq(channel.version, version);
+        assertEq(handler.getNextSequenceRecv(msg_.portId, channelId), 1);
+        assertEq(handler.getNextSequenceSend(msg_.portId, channelId), 1);
     }
 
     function validatePostStateAfterChanOpenAck(
+        TestableIBCHandler handler,
         IBCMsgs.MsgChannelOpenAck memory msg_,
-        Channel.Data memory channel,
         string memory version
     ) internal {
+        (Channel.Data memory channel, bool ok) = handler.getChannel(msg_.portId, msg_.channelId);
+        assertTrue(ok);
         assertTrue(channel.state == Channel.State.STATE_OPEN);
         assertEq(channel.counterparty.channel_id, msg_.counterpartyChannelId);
         assertEq(channel.version, version);
     }
 
     function validatePostStateAfterChanOpenConfirm(
-        IBCMsgs.MsgChannelOpenConfirm memory msg_,
-        Channel.Data memory channel
+        TestableIBCHandler handler,
+        IBCMsgs.MsgChannelOpenConfirm memory msg_
     ) internal {
+        (Channel.Data memory channel, bool ok) = handler.getChannel(msg_.portId, msg_.channelId);
+        assertTrue(ok);
         assertTrue(channel.state == Channel.State.STATE_OPEN);
     }
 
@@ -215,9 +229,7 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
         {
             IBCMsgs.MsgChannelOpenInit memory msg_ = msgChannelOpenInit(channelInfo, counterpartyChannelInfo.portId);
             (channelInfo.channelId, channelInfo.version) = handler.channelOpenInit(msg_);
-            (Channel.Data memory channel, bool ok) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
-            assertTrue(ok);
-            validatePostStateAfterChanOpenInit(msg_, channel, channelInfo.version);
+            validatePostStateAfterChanOpenInit(handler, msg_, channelInfo.channelId, channelInfo.version);
         }
         if (step == ChannelHandshakeStep.INIT) {
             return (channelInfo, counterpartyChannelInfo);
@@ -226,10 +238,9 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
             IBCMsgs.MsgChannelOpenTry memory msg_ = msgChannelOpenTry(counterpartyChannelInfo, channelInfo, proofHeight);
             (counterpartyChannelInfo.channelId, counterpartyChannelInfo.version) =
                 counterpartyHandler.channelOpenTry(msg_);
-            (Channel.Data memory channel, bool ok) =
-                counterpartyHandler.getChannel(counterpartyChannelInfo.portId, counterpartyChannelInfo.channelId);
-            assertTrue(ok);
-            validatePostStateAfterChanOpenTry(msg_, channel, counterpartyChannelInfo.version);
+            validatePostStateAfterChanOpenTry(
+                counterpartyHandler, msg_, counterpartyChannelInfo.channelId, counterpartyChannelInfo.version
+            );
         }
         if (step == ChannelHandshakeStep.TRY) {
             return (channelInfo, counterpartyChannelInfo);
@@ -237,9 +248,7 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
         {
             IBCMsgs.MsgChannelOpenAck memory msg_ = msgChannelOpenAck(channelInfo, counterpartyChannelInfo, proofHeight);
             handler.channelOpenAck(msg_);
-            (Channel.Data memory channel, bool ok) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
-            assertTrue(ok);
-            validatePostStateAfterChanOpenAck(msg_, channel, channelInfo.version);
+            validatePostStateAfterChanOpenAck(handler, msg_, channelInfo.version);
         }
         if (step == ChannelHandshakeStep.ACK) {
             return (channelInfo, counterpartyChannelInfo);
@@ -248,10 +257,7 @@ abstract contract TestICS04Helper is TestIBCBase, TestMockClientHelper {
             IBCMsgs.MsgChannelOpenConfirm memory msg_ =
                 msgChannelOpenConfirm(counterpartyChannelInfo, channelInfo, proofHeight);
             counterpartyHandler.channelOpenConfirm(msg_);
-            (Channel.Data memory channel, bool ok) =
-                counterpartyHandler.getChannel(counterpartyChannelInfo.portId, counterpartyChannelInfo.channelId);
-            assertTrue(ok);
-            validatePostStateAfterChanOpenConfirm(msg_, channel);
+            validatePostStateAfterChanOpenConfirm(counterpartyHandler, msg_);
         }
         return (channelInfo, counterpartyChannelInfo);
     }
@@ -306,8 +312,7 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             (string memory channelId, string memory version) = handler.channelOpenInit(msg_);
             assertEq(channelId, "channel-0");
             assertEq(version, MOCK_APP_VERSION);
-            (Channel.Data memory channel,) = handler.getChannel("portidone", channelId);
-            validatePostStateAfterChanOpenInit(msg_, channel, MOCK_APP_VERSION);
+            validatePostStateAfterChanOpenInit(handler, msg_, channelId, MOCK_APP_VERSION);
         }
         {
             IBCMsgs.MsgChannelOpenInit memory msg_ = msgChannelOpenInit(
@@ -316,8 +321,7 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             (string memory channelId, string memory version) = handler.channelOpenInit(msg_);
             assertEq(channelId, "channel-1");
             assertEq(version, MOCK_APP_VERSION);
-            (Channel.Data memory channel,) = handler.getChannel("portidone", channelId);
-            validatePostStateAfterChanOpenInit(msg_, channel, MOCK_APP_VERSION);
+            validatePostStateAfterChanOpenInit(handler, msg_, channelId, MOCK_APP_VERSION);
         }
         {
             IBCMsgs.MsgChannelOpenInit memory msg_ = msgChannelOpenInit(
@@ -326,8 +330,7 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
             (string memory channelId, string memory version) = handler.channelOpenInit(msg_);
             assertEq(channelId, "channel-2");
             assertEq(version, MOCK_APP_VERSION);
-            (Channel.Data memory channel,) = handler.getChannel("portidone", channelId);
-            validatePostStateAfterChanOpenInit(msg_, channel, MOCK_APP_VERSION);
+            validatePostStateAfterChanOpenInit(handler, msg_, channelId, MOCK_APP_VERSION);
         }
     }
 
