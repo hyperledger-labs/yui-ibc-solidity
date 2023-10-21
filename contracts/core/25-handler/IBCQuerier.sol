@@ -75,6 +75,10 @@ abstract contract IBCQuerier is IBCStore {
         return nextSequenceRecvs[portId][channelId];
     }
 
+    function getNextSequenceAck(string calldata portId, string calldata channelId) external view returns (uint64) {
+        return nextSequenceAcks[portId][channelId];
+    }
+
     function getExpectedTimePerBlock() external view returns (uint64) {
         return expectedTimePerBlock;
     }
