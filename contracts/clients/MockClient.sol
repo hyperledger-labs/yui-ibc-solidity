@@ -30,6 +30,7 @@ contract MockClient is ILightClient {
     address internal ibcHandler;
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
+    mapping(string => ClientStatus) internal statuses;
 
     constructor(address ibcHandler_) {
         ibcHandler = ibcHandler_;
@@ -64,6 +65,7 @@ contract MockClient is ILightClient {
         }
         clientStates[clientId] = clientState;
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
+        statuses[clientId] = ClientStatus.Active;
         return (
             keccak256(clientStateBytes),
             ConsensusStateUpdate({
@@ -101,6 +103,13 @@ contract MockClient is ILightClient {
     {
         ClientState.Data storage clientState = clientStates[clientId];
         return (clientState.latest_height, clientState.latest_height.revision_height != 0);
+    }
+
+    /**
+     * @dev getStatus returns the status of the client corresponding to `clientId`.
+     */
+    function getStatus(string calldata clientId) external view virtual override returns (ClientStatus) {
+        return statuses[clientId];
     }
 
     /**

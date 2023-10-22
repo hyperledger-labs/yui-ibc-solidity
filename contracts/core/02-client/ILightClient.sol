@@ -31,6 +31,11 @@ interface ILightClient {
     function getLatestHeight(string calldata clientId) external view returns (Height.Data memory, bool);
 
     /**
+     * @dev getStatus returns the status of the client corresponding to `clientId`.
+     */
+    function getStatus(string calldata clientId) external view returns (ClientStatus);
+
+    /**
      * @dev updateClient updates the client corresponding to `clientId`.
      * If succeeded, it returns a commitment for the updated state.
      * If there is no update for client state, this function should returns bytes32(0) as `clientStateCommitment`
@@ -92,9 +97,21 @@ interface ILightClient {
         returns (bytes memory, bool);
 }
 
+/**
+ * @dev ConsensusStateUpdate represents a consensus state update.
+ */
 struct ConsensusStateUpdate {
     // commitment for updated consensusState
     bytes32 consensusStateCommitment;
     // updated height
     Height.Data height;
+}
+
+/**
+ * @dev ClientStatus represents the status of a client.
+ */
+enum ClientStatus {
+    Active,
+    Expired,
+    Frozen
 }
