@@ -9,7 +9,7 @@ import "./IBCMockLib.sol";
 contract IBCMockApp is IBCAppBase {
     string public constant MOCKAPP_VERSION = "mockapp-1";
 
-    IBCHandler ibcHandler;
+    IBCHandler immutable ibcHandler;
 
     constructor(IBCHandler ibcHandler_) {
         ibcHandler = ibcHandler_;
@@ -20,13 +20,13 @@ contract IBCMockApp is IBCAppBase {
     }
 
     function sendPacket(
-        string calldata message,
+        bytes memory message,
         string calldata sourcePort,
         string calldata sourceChannel,
         Height.Data calldata timeoutHeight,
         uint64 timeoutTimestamp
-    ) external {
-        ibcHandler.sendPacket(sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, bytes(message));
+    ) external returns (uint64) {
+        return ibcHandler.sendPacket(sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, message);
     }
 
     function onRecvPacket(Packet.Data calldata packet, address)

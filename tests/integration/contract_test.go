@@ -238,7 +238,7 @@ func (suite *ContractTestSuite) TestTimeoutAndClose() {
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, alice),
-			ibctesting.MockPacketData,
+			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
 			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
 			0,
@@ -255,7 +255,7 @@ func (suite *ContractTestSuite) TestTimeoutAndClose() {
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, alice),
-			ibctesting.MockPacketData,
+			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
 			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1000},
 			0,
@@ -272,7 +272,7 @@ func (suite *ContractTestSuite) TestTimeoutAndClose() {
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, alice),
-			ibctesting.MockPacketData,
+			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
 			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1},
 			0,
@@ -300,7 +300,7 @@ func (suite *ContractTestSuite) TestTimeoutAndClose() {
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED, ibctesting.MockAppVersion)
 		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, alice),
-			ibctesting.MockPacketData,
+			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
 			ibcmockapp.HeightData{RevisionNumber: 0, RevisionHeight: uint64(chainB.LastHeader().Number.Int64()) + 1},
 			0,

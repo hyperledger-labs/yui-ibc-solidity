@@ -114,6 +114,13 @@ contract IBFT2Client is ILightClient {
     }
 
     /**
+     * @dev getStatus returns the status of the client corresponding to `clientId`.
+     */
+    function getStatus(string calldata) external pure override returns (ClientStatus) {
+        return ClientStatus.Active;
+    }
+
+    /**
      * @dev updateClient is intended to perform the followings:
      * 1. verify a given client message(e.g. header)
      * 2. check misbehaviour such like duplicate block height

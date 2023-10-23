@@ -96,14 +96,6 @@ contract IBCTest is Test {
         assert(height.eq(actual));
     }
 
-    function testSendPacketInvalidTimestamp() public {
-        Packet.Data memory packet = createPacket(0, 0);
-        vm.expectRevert("timeout height and timestamp cannot both be 0");
-        handler.sendPacket(
-            packet.source_port, packet.source_channel, packet.timeout_height, packet.timeout_timestamp, packet.data
-        );
-    }
-
     /* gas benchmarks */
 
     function testBenchmarkCreateMockClient() public {

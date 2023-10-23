@@ -41,6 +41,7 @@ contract IBCPacket is IBCStore, IIBCPacket {
             ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
             ILightClient client = ILightClient(clientImpls[connection.client_id]);
             require(address(client) != address(0), "client not found");
+            require(client.getStatus(connection.client_id) == ClientStatus.Active, "client state is not active");
 
             require(!timeoutHeight.isZero() || timeoutTimestamp != 0, "timeout height and timestamp cannot both be 0");
             (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
