@@ -805,8 +805,8 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
 
     TestableIBCHandler handler;
     TestableIBCHandler counterpartyHandler;
-    ILightClient client;
-    ILightClient counterpartyClient;
+    ModifiedMockClient client;
+    ModifiedMockClient counterpartyClient;
     IBCMockApp mockApp;
     IBCMockApp counterpartyMockApp;
 
@@ -816,8 +816,8 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
     string counterpartyConnectionId;
 
     function setUp() public {
-        (TestableIBCHandler _handler, ILightClient _client) = ibcHandlerMockClient();
-        (TestableIBCHandler _counterpartyHandler, ILightClient _counterpartyClient) = ibcHandlerMockClient();
+        (TestableIBCHandler _handler, ModifiedMockClient _client) = ibcHandlerMockClient();
+        (TestableIBCHandler _counterpartyHandler, ModifiedMockClient _counterpartyClient) = ibcHandlerMockClient();
         handler = _handler;
         counterpartyHandler = _counterpartyHandler;
         client = _client;
@@ -943,6 +943,21 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
                 mockApp.sendPacket(
                     IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(0, 0), timeoutTimestamp
                 );
+            }
+
+            {
+                Height.Data memory timeoutHeight = getHeight(client, clientId, 1);
+                client.setStatus(clientId, ClientStatus.Frozen);
+                vm.expectRevert();
+                mockApp.sendPacket(
+                    IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, timeoutHeight, 0
+                );
+                client.setStatus(clientId, ClientStatus.Expired);
+                vm.expectRevert();
+                mockApp.sendPacket(
+                    IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, timeoutHeight, 0
+                );
+                client.setStatus(clientId, ClientStatus.Active);
             }
         }
     }
