@@ -13,6 +13,13 @@ contract ModifiedMockClient is MockClient {
     constructor(address _ibcHandler) MockClient(_ibcHandler) {}
 
     /**
+     * @dev setStatus sets the status of the client corresponding to `clientId`.
+     */
+    function setStatus(string calldata clientId, ClientStatus status) external virtual {
+        statuses[clientId] = status;
+    }
+
+    /**
      * @dev verifyMembership is a generic proof verification method which verifies a proof of the existence of a value at a given CommitmentPath at the specified height.
      * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
      */
