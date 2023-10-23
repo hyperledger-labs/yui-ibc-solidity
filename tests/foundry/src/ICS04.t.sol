@@ -799,3 +799,71 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         }
     }
 }
+
+contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, TestICS04Helper {
+    string internal constant MOCK_APP_VERSION = "mockapp-1";
+
+    TestableIBCHandler handler;
+    TestableIBCHandler counterpartyHandler;
+    IBCMockApp mockApp;
+    IBCMockApp counterpartyMockApp;
+
+    string connectionId;
+    string counterpartyConnectionId;
+
+    function setUp() public {
+        (TestableIBCHandler _handler,) = ibcHandlerMockClient();
+        (TestableIBCHandler _counterpartyHandler,) = ibcHandlerMockClient();
+        handler = _handler;
+        counterpartyHandler = _counterpartyHandler;
+
+        mockApp = new IBCMockApp(handler);
+        handler.bindPort("portidone", address(mockApp));
+        counterpartyMockApp = new IBCMockApp(counterpartyHandler);
+        counterpartyHandler.bindPort("portidtwo", address(counterpartyMockApp));
+
+        string memory clientId = createMockClient(handler, 1);
+        string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
+        connectionId = genConnectionId(0);
+        counterpartyConnectionId = genConnectionId(1);
+
+        setConnection(
+            handler,
+            clientId,
+            connectionId,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+        setConnection(
+            counterpartyHandler,
+            counterpartyClientId,
+            counterpartyConnectionId,
+            clientId,
+            connectionId,
+            IBCConnectionLib.defaultIBCVersion()
+        );
+    }
+
+    function testSendPacketOrdered() public {
+        ChannelInfo memory channelInfo = ChannelInfo("portidone", "", Channel.Order.ORDER_ORDERED, "", connectionId);
+        ChannelInfo memory counterpartyChannelInfo =
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_ORDERED, "", counterpartyConnectionId);
+        (channelInfo, counterpartyChannelInfo) = handshakeChannel(
+            handler, counterpartyHandler, channelInfo, counterpartyChannelInfo, ChannelHandshakeStep.CONFIRM, H(0, 1)
+        );
+
+        mockApp.sendPacket(string(IBCMockLib.MOCK_PACKET_DATA), channelInfo.portId, channelInfo.channelId, H(0, 2), 0);
+    }
+
+    function testSendPacketUnordered() public {
+        ChannelInfo memory channelInfo = ChannelInfo("portidone", "", Channel.Order.ORDER_UNORDERED, "", connectionId);
+        ChannelInfo memory counterpartyChannelInfo =
+            ChannelInfo("portidtwo", "", Channel.Order.ORDER_UNORDERED, "", counterpartyConnectionId);
+        (channelInfo, counterpartyChannelInfo) = handshakeChannel(
+            handler, counterpartyHandler, channelInfo, counterpartyChannelInfo, ChannelHandshakeStep.CONFIRM, H(0, 1)
+        );
+
+        mockApp.sendPacket(string(IBCMockLib.MOCK_PACKET_DATA), channelInfo.portId, channelInfo.channelId, H(0, 2), 0);
+    }
+}
