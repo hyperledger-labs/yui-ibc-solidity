@@ -45,14 +45,18 @@ abstract contract IBCPacketHandler is Context, ModuleManager {
         Height.Data calldata timeoutHeight,
         uint64 timeoutTimestamp,
         bytes calldata data
-    ) external {
+    ) external returns (uint64) {
         require(authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel)));
-        bytes memory res = ibcPacket.functionDelegateCall(
-            abi.encodeWithSelector(
-                IIBCPacket.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
-            )
+        uint64 sequence = abi.decode(
+            ibcPacket.functionDelegateCall(
+                abi.encodeWithSelector(
+                    IIBCPacket.sendPacket.selector, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data
+                )
+            ),
+            (uint64)
         );
-        emit SendPacket(abi.decode(res, (uint64)), sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
+        emit SendPacket(sequence, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, data);
+        return sequence;
     }
 
     function recvPacket(IBCMsgs.MsgPacketRecv calldata msg_) external {

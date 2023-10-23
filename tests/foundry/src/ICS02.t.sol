@@ -227,6 +227,36 @@ abstract contract TestMockClientHelper is TestIBCBase {
         anyConsensusState.value = IbcLightclientsMockV1ConsensusState.encode(consensusState);
         return Any.encode(anyConsensusState);
     }
+
+    function getTimestamp(ILightClient client, string memory clientId, int64 diff) internal view returns (uint64) {
+        (, uint64 timestamp) = getClientLatestInfo(client, clientId);
+        return uint64(int64(timestamp) + diff);
+    }
+
+    function getHeight(ILightClient client, string memory clientId, int64 diff)
+        internal
+        view
+        returns (Height.Data memory)
+    {
+        (Height.Data memory latestHeight,) = getClientLatestInfo(client, clientId);
+        return Height.Data({
+            revision_number: latestHeight.revision_number,
+            revision_height: uint64(int64(latestHeight.revision_height) + diff)
+        });
+    }
+
+    function getClientLatestInfo(ILightClient client, string memory clientId)
+        internal
+        view
+        returns (Height.Data memory, uint64)
+    {
+        (Height.Data memory latestHeight, bool ok) = client.getLatestHeight(clientId);
+        assert(ok);
+        uint64 timestamp;
+        (timestamp, ok) = client.getTimestampAtHeight(clientId, latestHeight);
+        assert(ok);
+        return (latestHeight, timestamp);
+    }
 }
 
 contract TestICS02 is TestIBCBase, TestMockClientHelper {

@@ -805,25 +805,31 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
 
     TestableIBCHandler handler;
     TestableIBCHandler counterpartyHandler;
+    ILightClient client;
+    ILightClient counterpartyClient;
     IBCMockApp mockApp;
     IBCMockApp counterpartyMockApp;
 
+    string clientId;
+    string counterpartyClientId;
     string connectionId;
     string counterpartyConnectionId;
 
     function setUp() public {
-        (TestableIBCHandler _handler,) = ibcHandlerMockClient();
-        (TestableIBCHandler _counterpartyHandler,) = ibcHandlerMockClient();
+        (TestableIBCHandler _handler, ILightClient _client) = ibcHandlerMockClient();
+        (TestableIBCHandler _counterpartyHandler, ILightClient _counterpartyClient) = ibcHandlerMockClient();
         handler = _handler;
         counterpartyHandler = _counterpartyHandler;
+        client = _client;
+        counterpartyClient = _counterpartyClient;
 
         mockApp = new IBCMockApp(handler);
         handler.bindPort("portidone", address(mockApp));
         counterpartyMockApp = new IBCMockApp(counterpartyHandler);
         counterpartyHandler.bindPort("portidtwo", address(counterpartyMockApp));
 
-        string memory clientId = createMockClient(handler, 1);
-        string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
+        clientId = createMockClient(handler, 1);
+        counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
         connectionId = genConnectionId(0);
         counterpartyConnectionId = genConnectionId(1);
 
@@ -845,25 +851,99 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
         );
     }
 
-    function testSendPacketOrdered() public {
-        ChannelInfo memory channelInfo = ChannelInfo("portidone", "", Channel.Order.ORDER_ORDERED, "", connectionId);
-        ChannelInfo memory counterpartyChannelInfo =
-            ChannelInfo("portidtwo", "", Channel.Order.ORDER_ORDERED, "", counterpartyConnectionId);
-        (channelInfo, counterpartyChannelInfo) = handshakeChannel(
-            handler, counterpartyHandler, channelInfo, counterpartyChannelInfo, ChannelHandshakeStep.CONFIRM, H(0, 1)
-        );
+    function testSendPacket() public {
+        Channel.Order[] memory orders = new Channel.Order[](2);
+        orders[0] = Channel.Order.ORDER_ORDERED;
+        orders[1] = Channel.Order.ORDER_UNORDERED;
+        for (uint256 i = 0; i < orders.length; i++) {
+            ChannelInfo memory channelInfo = ChannelInfo("portidone", "", orders[i], "", connectionId);
+            ChannelInfo memory counterpartyChannelInfo =
+                ChannelInfo("portidtwo", "", orders[i], "", counterpartyConnectionId);
 
-        mockApp.sendPacket(string(IBCMockLib.MOCK_PACKET_DATA), channelInfo.portId, channelInfo.channelId, H(0, 2), 0);
+            (channelInfo, counterpartyChannelInfo) = handshakeChannel(
+                handler,
+                counterpartyHandler,
+                channelInfo,
+                counterpartyChannelInfo,
+                ChannelHandshakeStep.CONFIRM,
+                H(0, 1)
+            );
+
+            assertEq(
+                mockApp.sendPacket(
+                    IBCMockLib.MOCK_PACKET_DATA,
+                    channelInfo.portId,
+                    channelInfo.channelId,
+                    getHeight(client, clientId, 1),
+                    0
+                ),
+                1
+            );
+            assertEq(
+                mockApp.sendPacket(
+                    IBCMockLib.MOCK_PACKET_DATA,
+                    channelInfo.portId,
+                    channelInfo.channelId,
+                    H(0, 0),
+                    getTimestamp(client, clientId, 1)
+                ),
+                2
+            );
+            assertEq(
+                mockApp.sendPacket(
+                    IBCMockLib.MOCK_PACKET_DATA,
+                    channelInfo.portId,
+                    channelInfo.channelId,
+                    getHeight(client, clientId, 1),
+                    getTimestamp(client, clientId, 1)
+                ),
+                3
+            );
+        }
     }
 
-    function testSendPacketUnordered() public {
-        ChannelInfo memory channelInfo = ChannelInfo("portidone", "", Channel.Order.ORDER_UNORDERED, "", connectionId);
-        ChannelInfo memory counterpartyChannelInfo =
-            ChannelInfo("portidtwo", "", Channel.Order.ORDER_UNORDERED, "", counterpartyConnectionId);
-        (channelInfo, counterpartyChannelInfo) = handshakeChannel(
-            handler, counterpartyHandler, channelInfo, counterpartyChannelInfo, ChannelHandshakeStep.CONFIRM, H(0, 1)
-        );
+    function testInvalidSendPacket() public {
+        Channel.Order[] memory orders = new Channel.Order[](2);
+        orders[0] = Channel.Order.ORDER_ORDERED;
+        orders[1] = Channel.Order.ORDER_UNORDERED;
+        for (uint256 i = 0; i < orders.length; i++) {
+            ChannelInfo memory channelInfo = ChannelInfo("portidone", "", orders[i], "", connectionId);
+            ChannelInfo memory counterpartyChannelInfo =
+                ChannelInfo("portidtwo", "", orders[i], "", counterpartyConnectionId);
 
-        mockApp.sendPacket(string(IBCMockLib.MOCK_PACKET_DATA), channelInfo.portId, channelInfo.channelId, H(0, 2), 0);
+            (channelInfo, counterpartyChannelInfo) = handshakeChannel(
+                handler,
+                counterpartyHandler,
+                channelInfo,
+                counterpartyChannelInfo,
+                ChannelHandshakeStep.CONFIRM,
+                H(0, 1)
+            );
+
+            {
+                Height.Data memory timeoutHeight = getHeight(client, clientId, 1);
+                vm.expectRevert();
+                mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, "invalidport", channelInfo.channelId, timeoutHeight, 0);
+
+                vm.expectRevert();
+                mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, "channel-999", timeoutHeight, 0);
+            }
+
+            {
+                Height.Data memory timeoutHeight = getHeight(client, clientId, 0);
+                vm.expectRevert();
+                mockApp.sendPacket(
+                    IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, timeoutHeight, 0
+                );
+            }
+
+            {
+                uint64 timeoutTimestamp = getTimestamp(client, clientId, 0);
+                vm.expectRevert();
+                mockApp.sendPacket(
+                    IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(0, 0), timeoutTimestamp
+                );
+            }
+        }
     }
 }
