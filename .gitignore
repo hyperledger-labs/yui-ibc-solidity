@@ -114,5 +114,5 @@ cache/
 out/
 broadcast/
 
-.nix
+*.nix
 flake.lock
