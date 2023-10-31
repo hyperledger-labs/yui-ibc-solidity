@@ -20,7 +20,7 @@ There is a voting mechanism that allows nodes to add or remove validators from t
 
 An overview of the consensus state transitions in IBFT 2.0 is shown below:
 
-![ibft2-state-machine](./ibft2-state-machine.png)
+![ibft2-state-machine](./img/ibft2-state-machine.png)
 
 For more details on the protocol, please refer to the IBFT 2.0 protocol paper[1].
 

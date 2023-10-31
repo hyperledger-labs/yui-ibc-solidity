@@ -27,7 +27,7 @@ contracts/
 
 ## Architecture Overview
 
-![architecture](./architecture-01.png)
+![architecture](./img/architecture-01.png)
 
 To relax the contract size limit of ethereum, each ICS implementation is split into [IBCClient](../contracts/core/02-client/IBCClient.sol), [IBCConnection](../contracts/core/03-connection/IBCConnection.sol), [IBCChannel](../contracts/core/04-channel/IBCChannelHandshake.sol), [IBCPacket](../contracts/core/04-channel/IBCPacket.sol), and [IBCHandler](../contracts/core/25-handler/IBCHandler.sol) contracts, as shown in the above figure.
 

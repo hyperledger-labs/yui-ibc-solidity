@@ -1,7 +1,21 @@
-# IBC-Solidity
+<div align="center">
+  <h1>ibc-solidity</h1>
+</div>
 
-![Test](https://github.com/hyperledger-labs/yui-ibc-solidity/workflows/Test/badge.svg)
-[![GoDoc](https://godoc.org/github.com/hyperledger-labs/yui-ibc-solidity?status.svg)](https://pkg.go.dev/github.com/hyperledger-labs/yui-ibc-solidity?tab=doc)
+![banner](docs/img/IBC-solidity-cover.svg)
+
+<div align="center">
+  <img alt="Version" src="https://img.shields.io/github/tag/hyperledger-labs/yui-ibc-solidity.svg">
+  <a href="https://github.com/hyperledger-labs/yui-ibc-solidity/blob/main/LICENSE">
+    <img alt="License: Apache-2.0" src="https://img.shields.io/github/license/hyperledger-labs/yui-ibc-solidity.svg" />
+  </a>
+  <a href="https://github.com/hyperledger-labs/yui-ibc-solidity/actions/workflows/test.yml">
+    <img alt="Test" src="https://github.com/hyperledger-labs/yui-ibc-solidity/actions/workflows/test.yml/badge.svg" />
+  </a>
+  <a href="https://pkg.go.dev/github.com/hyperledger-labs/yui-ibc-solidity?tab=doc">
+    <img alt="GoDoc" src="https://godoc.org/github.com/hyperledger-labs/yui-ibc-solidity?status.svg" />
+  </a>
+</div>
 
 [IBC](https://github.com/cosmos/ibc) implementations in Solidity.
 
