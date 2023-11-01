@@ -3,16 +3,16 @@ pragma solidity ^0.8.9;
 
 import "./ICS20Transfer.sol";
 import "./IICS20Bank.sol";
-import "../../core/25-handler/IBCHandler.sol";
+import "../../core/25-handler/IIBCHandler.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
     using BytesLib for bytes;
 
-    IBCHandler private immutable ibcHandler;
+    IIBCHandler private immutable ibcHandler;
     IICS20Bank private immutable bank;
 
-    constructor(IBCHandler ibcHandler_, IICS20Bank bank_) {
+    constructor(IIBCHandler ibcHandler_, IICS20Bank bank_) {
         ibcHandler = ibcHandler_;
         bank = bank_;
     }
@@ -43,7 +43,7 @@ contract ICS20TransferBank is ICS20Transfer {
             require(_burn(_msgSender(), denom, amount));
         }
         bytes memory packetData = ICS20Lib.marshalJSON(denom, amount, _encodeSender(_msgSender()), receiver);
-        IBCHandler(ibcAddress()).sendPacket(
+        IIBCHandler(ibcAddress()).sendPacket(
             sourcePort, sourceChannel, Height.Data({revision_number: 0, revision_height: timeoutHeight}), 0, packetData
         );
     }

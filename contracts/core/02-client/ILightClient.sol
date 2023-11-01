@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../../proto/Client.sol";
+import {Height} from "../../proto/Client.sol";
 
 /**
  * @dev This defines an interface for Light Client contract can be integrated with ibc-solidity.

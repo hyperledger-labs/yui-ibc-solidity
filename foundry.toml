@@ -4,3 +4,5 @@ out = 'out'
 libs = ['tests/foundry/lib', 'node_modules']
 test = 'tests/foundry/src'
 gas_reports = ["*"]
+optimizer = true
+optimizer_runs = 9_999_999

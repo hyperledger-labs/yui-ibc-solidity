@@ -1,48 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/Context.sol";
-import "../../proto/Client.sol";
-import "../02-client/ILightClient.sol";
-import "../24-host/IBCStore.sol";
-import "../05-port/ModuleManager.sol";
+import {ILightClient} from "../02-client/ILightClient.sol";
+import {IBCStore} from "../24-host/IBCStore.sol";
 
-abstract contract IBCHost is IBCStore, Context, ModuleManager {
+contract IBCHost is IBCStore {
+    // It represents the prefix of the commitment proof(https://github.com/cosmos/ibc/tree/main/spec/core/ics-023-vector-commitments#prefix).
+    // In ibc-solidity, the prefix is not required, but for compatibility with ibc-go this must be a non-empty value.
+    bytes internal constant DEFAULT_COMMITMENT_PREFIX = bytes("ibc");
+
     /**
-     * @dev claimCapability allows the IBC app module to claim a capability that core IBC passes to it
+     * @dev _getCommitmentPrefix returns the prefix of the commitment proof.
      */
-    function claimCapability(bytes memory name, address addr) internal override {
-        for (uint32 i = 0; i < capabilities[name].length; i++) {
-            require(capabilities[name][i] != addr);
-        }
-        capabilities[name].push(addr);
+    function _getCommitmentPrefix() internal view virtual returns (bytes memory) {
+        return DEFAULT_COMMITMENT_PREFIX;
     }
 
     /**
-     * @dev authenticateCapability attempts to authenticate a given name from a caller.
-     * It allows for a caller to check that a capability does in fact correspond to a particular name.
+     * @dev checkAndGetClient returns the client implementation for the given client ID.
      */
-    function authenticateCapability(bytes memory name) internal view override returns (bool) {
-        address caller = _msgSender();
-        for (uint32 i = 0; i < capabilities[name].length; i++) {
-            if (capabilities[name][i] == caller) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * @dev lookupModules will return the IBCModule addresses bound to a given name.
-     */
-    function lookupModules(bytes memory name) internal view override returns (address[] storage, bool) {
-        return (capabilities[name], capabilities[name].length > 0);
-    }
-
-    /**
-     * @dev setExpectedTimePerBlock sets expected time per block.
-     */
-    function setExpectedTimePerBlock(uint64 expectedTimePerBlock_) public virtual {
-        expectedTimePerBlock = expectedTimePerBlock_;
+    function checkAndGetClient(string memory clientId) internal view returns (ILightClient) {
+        address clientImpl = clientImpls[clientId];
+        require(clientImpl != address(0));
+        return ILightClient(clientImpl);
     }
 }
