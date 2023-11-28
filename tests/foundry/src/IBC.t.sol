@@ -2,11 +2,12 @@
 pragma solidity ^0.8.9;
 
 import "forge-std/Test.sol";
-import "../../../contracts/core/25-handler/IBCHandler.sol";
 import "../../../contracts/core/02-client/IBCClient.sol";
-import "../../../contracts/core/03-connection/IBCConnection.sol";
+import "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
+import "../../../contracts/core/04-channel/IIBCChannel.sol";
 import "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
-import "../../../contracts/core/04-channel/IBCPacket.sol";
+import "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
+import "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
 import "../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../contracts/clients/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
@@ -28,11 +29,13 @@ contract IBCTest is Test {
     bytes32 private testPacketCommitment;
 
     function setUp() public {
-        address ibcClient = address(new IBCClient());
-        address ibcConnection = address(new IBCConnection());
-        address ibcChannelHandshake = address(new IBCChannelHandshake());
-        address ibcPacket = address(new IBCPacket());
-        handler = new TestableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
+        handler = new TestableIBCHandler(
+            new IBCClient(),
+            new IBCConnectionSelfStateNoValidation(),
+            new IBCChannelHandshake(),
+            new IBCChannelPacketSendRecv(),
+            new IBCChannelPacketTimeout()
+        );
 
         mockClient = new MockClient(address(handler));
         handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
@@ -84,9 +87,9 @@ contract IBCTest is Test {
 
     function setUpMockApp() internal {
         mockApp = new IBCMockApp(handler);
-        handler.bindPort(MOCK_PORT_ID, address(mockApp));
-        handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(mockApp));
-        handler.claimCapabilityDirectly(handler.channelCapabilityPath(MOCK_PORT_ID, "channel-0"), address(this));
+        handler.bindPort(MOCK_PORT_ID, mockApp);
+        handler.claimCapabilityDirectly(abi.encodePacked(MOCK_PORT_ID, "/channel-0"), address(mockApp));
+        handler.claimCapabilityDirectly(abi.encodePacked(MOCK_PORT_ID, "/channel-0"), address(this));
     }
 
     /* test cases */
@@ -116,7 +119,7 @@ contract IBCTest is Test {
     function testBenchmarkRecvPacket() public {
         Packet.Data memory packet = createPacket(0, 100);
         handler.recvPacket(
-            IBCMsgs.MsgPacketRecv({
+            IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: packet,
                 proof: abi.encodePacked(sha256(abi.encodePacked(testPacketCommitment))),
                 proofHeight: Height.Data({revision_number: 0, revision_height: 1})
@@ -128,7 +131,7 @@ contract IBCTest is Test {
 
     function createMockClient(uint64 revisionHeight) internal {
         handler.createClient(
-            IBCMsgs.MsgCreateClient({
+            IIBCClient.MsgCreateClient({
                 clientType: MOCK_CLIENT_TYPE,
                 clientStateBytes: wrapAnyMockClientState(
                     IbcLightclientsMockV1ClientState.Data({
@@ -144,7 +147,7 @@ contract IBCTest is Test {
 
     function updateMockClient(uint64 nextRevisionHeight) internal {
         handler.updateClient(
-            IBCMsgs.MsgUpdateClient({
+            IIBCClient.MsgUpdateClient({
                 clientId: "mock-client-0",
                 clientMessage: wrapAnyMockHeader(
                     IbcLightclientsMockV1Header.Data({

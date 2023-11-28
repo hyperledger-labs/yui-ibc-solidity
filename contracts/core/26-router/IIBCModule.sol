@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../../proto/Channel.sol";
+import {Channel, ChannelCounterparty, Packet} from "../../proto/Channel.sol";
 
 // IIBCModule defines an interface that implements all the callbacks
 // that modules must define as specified in ICS-26

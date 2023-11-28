@@ -3,10 +3,14 @@ pragma solidity ^0.8.9;
 
 import "forge-std/Script.sol";
 import {IBCClient} from "../../../contracts/core/02-client/IBCClient.sol";
+import {IBCConnectionSelfStateNoValidation} from
+    "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
 import {IBCConnection} from "../../../contracts/core/03-connection/IBCConnection.sol";
 import {IBCChannelHandshake} from "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
-import {IBCPacket} from "../../../contracts/core/04-channel/IBCPacket.sol";
-import {OwnableIBCHandler} from "../../../contracts/core/OwnableIBCHandler.sol";
+import {IBCChannelPacketSendRecv} from "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
+import {IBCChannelPacketTimeout} from "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
+import {IIBCHandler} from "../../../contracts/core/25-handler/IIBCHandler.sol";
+import {OwnableIBCHandler} from "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 import {MockClient} from "../../../contracts/clients/MockClient.sol";
 import {IBFT2Client} from "../../../contracts/clients/IBFT2Client.sol";
 import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
@@ -25,21 +29,25 @@ contract DeployScript is Script {
         vm.startBroadcast(privateKey);
 
         // deploy core contracts
-        address ibcClient = address(new IBCClient());
-        address ibcConnection = address(new IBCConnection());
-        address ibcChannelHandshake = address(new IBCChannelHandshake());
-        address ibcPacket = address(new IBCPacket());
-        OwnableIBCHandler handler = new OwnableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
+        IIBCHandler handler = IIBCHandler(
+            new OwnableIBCHandler(
+                new IBCClient(),
+                new IBCConnectionSelfStateNoValidation(),
+                new IBCChannelHandshake(),
+                new IBCChannelPacketSendRecv(),
+                new IBCChannelPacketTimeout()
+            )
+        );
 
         // deploy ics20 contract
         ICS20Bank bank = new ICS20Bank();
-        address transferBank = address(new ICS20TransferBank(handler, bank));
-        bank.setOperator(transferBank);
+        ICS20TransferBank transferBank = new ICS20TransferBank(handler, bank);
+        bank.setOperator(address(transferBank));
         handler.bindPort("transfer", transferBank);
 
         // deploy mock app contract
         IBCMockApp mockApp = new IBCMockApp(handler);
-        handler.bindPort("mock", address(mockApp));
+        handler.bindPort("mock", mockApp);
 
         // deploy client contracts
         MockClient mockClient = new MockClient(address(handler));

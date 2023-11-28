@@ -78,7 +78,7 @@ Different from ibc-go, the light client contract keeps the state in own contract
 
 ## Applications
 
-Developers can register an App module that implements [IIBCModule interface](../contracts/core/05-port/IIBCModule.sol) via `bindPort` of `IBCHandler`. The registered contract becomes available through a channel established by the handshake process with the corresponding port.
+Developers can register an App module that implements [IIBCModule interface](../contracts/core/26-router/IIBCModule.sol) via `bindPort` of `IBCHandler`. The registered contract becomes available through a channel established by the handshake process with the corresponding port.
 
 The following is a simple App example that only checks that the message sent and the one returned from the destination chain match.
 
@@ -140,6 +140,6 @@ The packet sending flow using the `EchoApp` is the following:
 	- The `IBCHandler` ensure that the acknowledgement commitment is valid and calls `onAcknowledgementPacket` of the `EchoApp`.
 	- In `onAcknowledgementPacket`, ensure that acknowledgement data matches the send message("hello")
 
-Also, an App can define callback functions for state transitions in the channel handshake. See [IIBCModule interface](../contracts/core/05-port/IIBCModule.sol) for more details.
+Also, an App can define callback functions for state transitions in the channel handshake. See [IIBCModule interface](../contracts/core/26-router/IIBCModule.sol) for more details.
 
 Further example implementations are [ICS-20 implementation](../contracts/apps/20-transfer) and a [tutorial](https://labs.hyperledger.org/yui-docs/yui-ibc-solidity/minitoken/overview) that describes e2e packet relay using a small IBC-App called minitoken.

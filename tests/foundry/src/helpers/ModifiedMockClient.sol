@@ -34,7 +34,7 @@ contract ModifiedMockClient is MockClient {
         bytes calldata value
     ) external view override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
-        require(keccak256(IBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
+        require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
         return sha256(abi.encodePacked(height.toUint128(), sha256(prefix), sha256(path), sha256(value)))
             == proof.toBytes32(0);
     }

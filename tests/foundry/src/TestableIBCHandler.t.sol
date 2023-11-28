@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../../../contracts/core/OwnableIBCHandler.sol";
+import "../../../contracts/proto/Connection.sol";
+import "../../../contracts/proto/Channel.sol";
+import "../../../contracts/core/24-host/IBCCommitment.sol";
+import "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 
 contract TestableIBCHandler is OwnableIBCHandler {
-    constructor(address ibcClient, address ibcConnection, address ibcChannelHandshake, address ibcPacket)
-        OwnableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket)
+    constructor(
+        IIBCClient ibcClient_,
+        IIBCConnection ibcConnection_,
+        IIBCChannelHandshake ibcChannelHandshake_,
+        IIBCChannelPacketSendRecv ibcChannelPacketSendRecv_,
+        IIBCChannelPacketTimeout ibcChannelPacketTimeout_
+    )
+        OwnableIBCHandler(
+            ibcClient_,
+            ibcConnection_,
+            ibcChannelHandshake_,
+            ibcChannelPacketSendRecv_,
+            ibcChannelPacketTimeout_
+        )
     {}
-
-    function clientImplByClientType(string calldata clientType_) external view returns (address) {
-        return clientRegistry[clientType_];
-    }
-
-    function clientType(string calldata clientId) external view returns (string memory) {
-        return clientTypes[clientId];
-    }
-
-    function clientImpl(string calldata clientId) external view returns (address) {
-        return clientImpls[clientId];
-    }
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) external {
         connections[connectionId].client_id = connection.client_id;

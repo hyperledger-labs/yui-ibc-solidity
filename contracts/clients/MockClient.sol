@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 import "../core/02-client/ILightClient.sol";
 import "../core/02-client/IBCHeight.sol";
-import "../core/25-handler/IBCHandler.sol";
+import "../core/25-handler/IIBCHandler.sol";
 import "../proto/Client.sol";
 import {
     IbcLightclientsMockV1ClientState as ClientState,
@@ -167,7 +167,7 @@ contract MockClient is ILightClient {
         bytes calldata value
     ) external view virtual override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
-        require(keccak256(IBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
+        require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
         return sha256(value) == proof.toBytes32(0);
     }
 
@@ -185,7 +185,7 @@ contract MockClient is ILightClient {
         bytes memory
     ) external view virtual override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
-        require(keccak256(IBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
+        require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
         return proof.length == 0;
     }
 

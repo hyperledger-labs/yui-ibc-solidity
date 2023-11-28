@@ -8,16 +8,20 @@ fi
 
 function gen_code() {
   local source=$1;
-  local target=$(echo ${source} | tr A-Z a-z)
+  if [ -z $2 ]; then
+    local target=$(echo ${source} | tr A-Z a-z)
+  else
+    local target=$2
+  fi
 
   mkdir -p ./build/abi ./pkg/contract/${target}
-  jq -r '.abi' ./out/${source}.sol/${source}.json > ./build/abi/${source}.abi
+  forge inspect ${source} abi > ./build/abi/${source}.abi
   ${ABIGEN} --abi ./build/abi/${source}.abi --pkg ${target} --out ./pkg/contract/${target}/${target}.go
 }
 
 function main() {
   local srcs=(
-    "IBCHandler"
+    "IIBCHandler ibchandler"
     "ERC20"
     "ICS20TransferBank"
     "ICS20Bank"

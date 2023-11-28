@@ -2,7 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Context.sol";
-import "../../core/05-port/IIBCModule.sol";
+import "../../core/26-router/IIBCModule.sol";
 
 /**
  * @dev Base contract of the IBC App protocol

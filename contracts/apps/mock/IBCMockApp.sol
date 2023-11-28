@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../commons/IBCAppBase.sol";
-import "../../core/05-port/IIBCModule.sol";
-import "../../core/25-handler/IBCHandler.sol";
-import "./IBCMockLib.sol";
+import {Height} from "../../proto/Client.sol";
+import {Packet} from "../../proto/Channel.sol";
+import {IBCAppBase} from "../commons/IBCAppBase.sol";
+import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
+import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
+import {IBCMockLib} from "./IBCMockLib.sol";
 
 contract IBCMockApp is IBCAppBase {
     string public constant MOCKAPP_VERSION = "mockapp-1";
 
-    IBCHandler immutable ibcHandler;
+    IIBCHandler immutable ibcHandler;
 
-    constructor(IBCHandler ibcHandler_) {
+    constructor(IIBCHandler ibcHandler_) {
         ibcHandler = ibcHandler_;
     }
 

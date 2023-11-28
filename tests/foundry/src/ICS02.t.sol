@@ -2,11 +2,11 @@
 pragma solidity ^0.8.9;
 
 import "forge-std/Test.sol";
-import "../../../contracts/core/25-handler/IBCHandler.sol";
 import "../../../contracts/core/02-client/IBCClient.sol";
-import "../../../contracts/core/03-connection/IBCConnection.sol";
+import "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
 import "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
-import "../../../contracts/core/04-channel/IBCPacket.sol";
+import "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
+import "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
 import "../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
@@ -20,11 +20,13 @@ abstract contract TestIBCBase is Test {
     string internal constant MOCK_CLIENT_TYPE = "mock-client";
 
     function defaultIBCHandler() internal returns (TestableIBCHandler) {
-        address ibcClient = address(new IBCClient());
-        address ibcConnection = address(new IBCConnection());
-        address ibcChannelHandshake = address(new IBCChannelHandshake());
-        address ibcPacket = address(new IBCPacket());
-        return new TestableIBCHandler(ibcClient, ibcConnection, ibcChannelHandshake, ibcPacket);
+        return new TestableIBCHandler(
+            new IBCClient(),
+            new IBCConnectionSelfStateNoValidation(),
+            new IBCChannelHandshake(),
+            new IBCChannelPacketSendRecv(),
+            new IBCChannelPacketTimeout()
+        );
     }
 
     // solhint-disable func-name-mixedcase
@@ -72,16 +74,16 @@ abstract contract TestMockClientHelper is TestIBCBase {
         return wrapAnyMockConsensusState(IbcLightclientsMockV1ConsensusState.Data({timestamp: timestamp}));
     }
 
-    function msgCreateMockClient(uint64 revisionHeight) internal view returns (IBCMsgs.MsgCreateClient memory) {
+    function msgCreateMockClient(uint64 revisionHeight) internal view returns (IIBCClient.MsgCreateClient memory) {
         return msgCreateMockClient(0, revisionHeight);
     }
 
     function msgCreateMockClient(uint64 revisionNumber, uint64 revisionHeight)
         internal
         view
-        returns (IBCMsgs.MsgCreateClient memory)
+        returns (IIBCClient.MsgCreateClient memory)
     {
-        return IBCMsgs.MsgCreateClient({
+        return IIBCClient.MsgCreateClient({
             clientType: MOCK_CLIENT_TYPE,
             clientStateBytes: mockClientState(revisionNumber, revisionHeight),
             consensusStateBytes: mockConsensusState(uint64(block.timestamp * 1e9))
@@ -91,9 +93,9 @@ abstract contract TestMockClientHelper is TestIBCBase {
     function msgUpdateMockClient(string memory clientId, uint64 nextRevisionHeight)
         internal
         view
-        returns (IBCMsgs.MsgUpdateClient memory)
+        returns (IIBCClient.MsgUpdateClient memory)
     {
-        return IBCMsgs.MsgUpdateClient({
+        return IIBCClient.MsgUpdateClient({
             clientId: clientId,
             clientMessage: wrapAnyMockHeader(
                 IbcLightclientsMockV1Header.Data({
@@ -296,16 +298,16 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
         {
             string memory clientId = handler.createClient(msgCreateMockClient(1));
             assertEq(clientId, mockClientId(0));
-            assertEq(handler.clientType(clientId), MOCK_CLIENT_TYPE);
-            assertEq(handler.clientImpl(clientId), address(mockClient));
+            assertEq(handler.getClientType(clientId), MOCK_CLIENT_TYPE);
+            assertEq(handler.getClient(clientId), address(mockClient));
             assertFalse(handler.getCommitment(IBCCommitment.clientStateCommitmentKey(clientId)) == bytes32(0));
             assertFalse(handler.getCommitment(IBCCommitment.consensusStateCommitmentKey(clientId, 0, 1)) == bytes32(0));
         }
         {
             string memory clientId = handler.createClient(msgCreateMockClient(100));
             assertEq(clientId, mockClientId(1));
-            assertEq(handler.clientType(clientId), MOCK_CLIENT_TYPE);
-            assertEq(handler.clientImpl(clientId), address(mockClient));
+            assertEq(handler.getClientType(clientId), MOCK_CLIENT_TYPE);
+            assertEq(handler.getClient(clientId), address(mockClient));
             assertFalse(handler.getCommitment(IBCCommitment.clientStateCommitmentKey(clientId)) == bytes32(0));
             assertFalse(
                 handler.getCommitment(IBCCommitment.consensusStateCommitmentKey(clientId, 0, 100)) == bytes32(0)
@@ -316,25 +318,25 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
     function testInvalidCreateClient() public {
         (TestableIBCHandler handler,) = ibcHandlerMockClient();
         {
-            IBCMsgs.MsgCreateClient memory msg_ = msgCreateMockClient(1);
+            IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
             msg_.clientType = "";
             vm.expectRevert("unregistered client type");
             handler.createClient(msg_);
         }
         {
-            IBCMsgs.MsgCreateClient memory msg_ = msgCreateMockClient(1);
+            IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
             msg_.clientType = "06-solomachine";
             vm.expectRevert("unregistered client type");
             handler.createClient(msg_);
         }
         {
-            IBCMsgs.MsgCreateClient memory msg_ = msgCreateMockClient(1);
+            IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
             msg_.clientStateBytes = abi.encodePacked(msg_.clientStateBytes, hex"00");
             vm.expectRevert();
             handler.createClient(msg_);
         }
         {
-            IBCMsgs.MsgCreateClient memory msg_ = msgCreateMockClient(1);
+            IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
             msg_.consensusStateBytes = abi.encodePacked(msg_.consensusStateBytes, hex"00");
             vm.expectRevert();
             handler.createClient(msg_);
@@ -370,19 +372,19 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
         string memory clientId = handler.createClient(msgCreateMockClient(1));
         assertEq(clientId, mockClientId(0));
         {
-            IBCMsgs.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 2);
+            IIBCClient.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 2);
             msg_.clientId = "";
             vm.expectRevert();
             handler.updateClient(msg_);
         }
         {
-            IBCMsgs.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 2);
+            IIBCClient.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 2);
             msg_.clientId = mockClientId(1);
             vm.expectRevert();
             handler.updateClient(msg_);
         }
         {
-            IBCMsgs.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 2);
+            IIBCClient.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 2);
             msg_.clientMessage = abi.encodePacked(msg_.clientMessage, hex"00");
             vm.expectRevert();
             handler.updateClient(msg_);

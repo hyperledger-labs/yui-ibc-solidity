@@ -2,8 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "../commons/IBCAppBase.sol";
-import "../../core/05-port/IIBCModule.sol";
-import "../../core/25-handler/IBCHandler.sol";
+import "../../core/26-router/IIBCModule.sol";
 import "../../proto/Channel.sol";
 import "./ICS20Lib.sol";
 import "solidity-bytes-utils/contracts/BytesLib.sol";
