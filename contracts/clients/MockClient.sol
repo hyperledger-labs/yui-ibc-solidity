@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../core/02-client/ILightClient.sol";
-import "../core/02-client/IBCHeight.sol";
-import "../core/25-handler/IIBCHandler.sol";
-import "../proto/Client.sol";
+import {ILightClient, ConsensusStateUpdate, ClientStatus} from "../core/02-client/ILightClient.sol";
+import {IBCHeight} from "../core/02-client/IBCHeight.sol";
+import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
+import {Height} from "../proto/Client.sol";
 import {
     IbcLightclientsMockV1ClientState as ClientState,
     IbcLightclientsMockV1ConsensusState as ConsensusState,
     IbcLightclientsMockV1Header as Header
 } from "../proto/MockClient.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
+import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 
 // MockClient implements https://github.com/datachainlab/ibc-mock-client
 // WARNING: This client is intended to be used for testing purpose. Therefore, it is not generally available in a production, except in a fully trusted environment.

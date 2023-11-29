@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/utils/Context.sol";
-import "../../core/26-router/IIBCModule.sol";
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+import {Packet} from "../../proto/Channel.sol";
+import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 
 /**
  * @dev Base contract of the IBC App protocol

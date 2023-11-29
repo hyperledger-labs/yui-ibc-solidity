@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../core/02-client/ILightClient.sol";
-import "../core/02-client/IBCHeight.sol";
-import "../core/25-handler/IIBCHandler.sol";
-import "../proto/Client.sol";
+import {ILightClient, ConsensusStateUpdate, ClientStatus} from "../core/02-client/ILightClient.sol";
+import {IBCHeight} from "../core/02-client/IBCHeight.sol";
+import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
+import {Height} from "../proto/Client.sol";
 import {
     IbcLightclientsIbft2V1ClientState as ClientState,
     IbcLightclientsIbft2V1ConsensusState as ConsensusState,
     IbcLightclientsIbft2V1Header as Header
 } from "../proto/IBFT2.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
-import "solidity-rlp/contracts/RLPReader.sol";
-import "solidity-mpt/src/MPTProof.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
+import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
+import {MPTProof} from "solidity-mpt/src/MPTProof.sol";
 
 // please see docs/ibft2-light-client.md for client spec
 contract IBFT2Client is ILightClient {
