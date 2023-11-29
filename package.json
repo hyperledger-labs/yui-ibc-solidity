@@ -14,7 +14,7 @@
     "truffle": "5.8.4"
   },
   "devDependencies": {
-    "solhint": "^3.4.1"
+    "solhint": "^4.0.0"
   },
   "author": "Jun Kimura",
   "license": "Apache-2.0"

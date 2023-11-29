@@ -5,8 +5,6 @@ import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
-import {IBCHost} from "../24-host/IBCHost.sol";
-import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 
 interface IIBCQuerier {
     function getClientByType(string calldata clientType) external view returns (address);

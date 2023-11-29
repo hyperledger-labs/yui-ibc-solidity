@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "./ICS20Transfer.sol";
-import "./IICS20Bank.sol";
-import "../../core/25-handler/IIBCHandler.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
+import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
+import {Height} from "../../proto/Client.sol";
+import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
+import {ICS20Transfer} from "./ICS20Transfer.sol";
+import {IICS20Bank} from "./IICS20Bank.sol";
+import {ICS20Lib} from "./ICS20Lib.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
     using BytesLib for bytes;

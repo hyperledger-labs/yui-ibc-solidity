@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.9;
 
-import "../commons/IBCAppBase.sol";
-import "../../core/26-router/IIBCModule.sol";
-import "../../proto/Channel.sol";
-import "./ICS20Lib.sol";
-import "solidity-bytes-utils/contracts/BytesLib.sol";
+import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
+import {IBCAppBase} from "../commons/IBCAppBase.sol";
+import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
+import {Channel, Packet} from "../../proto/Channel.sol";
+import {ICS20Lib} from "./ICS20Lib.sol";
 
 abstract contract ICS20Transfer is IBCAppBase {
     using BytesLib for bytes;
