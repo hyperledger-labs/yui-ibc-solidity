@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IBCClientLib} from "../02-client/IBCClientLib.sol";
