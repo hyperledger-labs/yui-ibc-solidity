@@ -5,6 +5,9 @@ on:
       - main
   pull_request:
 
+env:
+  MINIMAL_SOLC_VERSION: 0.8.12
+
 jobs:
   contract-test:
     name: Test
@@ -34,6 +37,12 @@ jobs:
 
     - name: Linting
       run: make lint
+
+    - name: Build and Check sizes with minimal solidity version
+      run: make SOLC_VERSION=${{ env.MINIMAL_SOLC_VERSION }} build
+
+    - name: Run tests with minimal solidity version
+      run: make SOLC_VERSION=${{ env.MINIMAL_SOLC_VERSION }} test
 
   integration-test:
     name: Integration test
