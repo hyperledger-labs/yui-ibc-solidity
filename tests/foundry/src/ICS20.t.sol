@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 import "forge-std/Test.sol";
 import "../../../contracts/apps/20-transfer/ICS20Lib.sol";

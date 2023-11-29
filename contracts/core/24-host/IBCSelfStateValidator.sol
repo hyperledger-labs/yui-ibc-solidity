@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.12;
 
 /**
  * @dev IBCSelfStateValidator is an interface that validates the self client state in the connection handshake.
