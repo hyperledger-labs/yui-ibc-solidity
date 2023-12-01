@@ -12,18 +12,18 @@ import {IIBCHostConfigurator} from "./IIBCHostConfigurator.sol";
  * @dev IBCHostConfigurator is a contract that provides the host configuration.
  */
 abstract contract IBCHostConfigurator is IBCModuleManager, IIBCHostConfigurator {
-    function _setExpectedTimePerBlock(uint64 expectedTimePerBlock_) public {
+    function _setExpectedTimePerBlock(uint64 expectedTimePerBlock_) internal virtual {
         expectedTimePerBlock = expectedTimePerBlock_;
     }
 
-    function _registerClient(string calldata clientType, ILightClient client) public virtual {
+    function _registerClient(string calldata clientType, ILightClient client) internal virtual {
         require(IBCClientLib.validateClientType(bytes(clientType)), "invalid clientType");
         require(address(clientRegistry[clientType]) == address(0), "clientType already exists");
         require(address(client) != address(this) && Address.isContract(address(client)), "invalid client address");
         clientRegistry[clientType] = address(client);
     }
 
-    function _bindPort(string calldata portId, IIBCModule moduleAddress) public virtual {
+    function _bindPort(string calldata portId, IIBCModule moduleAddress) internal virtual {
         require(validatePortIdentifier(bytes(portId)), "invalid portId");
         require(
             address(moduleAddress) != address(this) && Address.isContract(address(moduleAddress)),
