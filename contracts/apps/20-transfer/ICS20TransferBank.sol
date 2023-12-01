@@ -38,7 +38,8 @@ contract ICS20TransferBank is ICS20Transfer {
     ) external {
         require(ICS20Lib.isEscapedJSONString(receiver), "unescaped receiver");
         bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
-        if (!bytes(denom).slice(0, denomPrefix.length).equal(denomPrefix)) {
+        bytes memory denomBytes = bytes(denom);
+        if (denomBytes.length < denomPrefix.length || !denomBytes.slice(0, denomPrefix.length).equal(denomPrefix)) {
             // sender is source chain
             require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
         } else {
