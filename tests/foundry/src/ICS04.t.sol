@@ -295,6 +295,17 @@ contract TestICS04Handshake is TestIBCBase, TestMockClientHelper, TestICS03Helpe
         counterpartyHandler.bindPort("portidtwo", counterpartyMockApp);
     }
 
+    function testBindPort() public {
+        vm.expectRevert();
+        handler.bindPort("portidone", mockApp);
+        vm.expectRevert();
+        handler.bindPort("portidone", IIBCModule(address(0x01)));
+        vm.expectRevert();
+        handler.bindPort("", IIBCModule(address(0x01)));
+        vm.expectRevert();
+        handler.bindPort("portidone", IIBCModule(address(0)));
+    }
+
     function testChanOpenInit() public {
         string memory clientId = createMockClient(handler, 1);
         string memory counterpartyClientId = createMockClient(counterpartyHandler, 1, 2);
