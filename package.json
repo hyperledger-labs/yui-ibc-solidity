@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
-    "solidity-bytes-utils": "0.8.0",
     "solidity-rlp": "^2.0.8",
     "solidity-mpt": "^0.1.0",
     "truffle": "5.8.4"

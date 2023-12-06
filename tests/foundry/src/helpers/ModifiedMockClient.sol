@@ -7,7 +7,6 @@ import "../../../../contracts/clients/MockClient.sol";
  * @dev ModifiedMockClient is a modified MockClient implementation for testing purposes.
  */
 contract ModifiedMockClient is MockClient {
-    using BytesLib for bytes;
     using IBCHeight for Height.Data;
 
     constructor(address _ibcHandler) MockClient(_ibcHandler) {}
@@ -35,7 +34,8 @@ contract ModifiedMockClient is MockClient {
     ) external view override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
         require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
-        return sha256(abi.encodePacked(height.toUint128(), sha256(prefix), sha256(path), sha256(value)))
-            == proof.toBytes32(0);
+        require(proof.length == 32, "invalid proof length");
+        return
+            sha256(abi.encodePacked(height.toUint128(), sha256(prefix), sha256(path), sha256(value))) == bytes32(proof);
     }
 }
