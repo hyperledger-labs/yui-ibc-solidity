@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.12;
 
-import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 import {Height} from "../../proto/Client.sol";
 import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
 import {ICS20Transfer} from "./ICS20Transfer.sol";
@@ -9,8 +8,6 @@ import {IICS20Bank} from "./IICS20Bank.sol";
 import {ICS20Lib} from "./ICS20Lib.sol";
 
 contract ICS20TransferBank is ICS20Transfer {
-    using BytesLib for bytes;
-
     IIBCHandler private immutable ibcHandler;
     IICS20Bank private immutable bank;
 
@@ -39,7 +36,10 @@ contract ICS20TransferBank is ICS20Transfer {
         require(ICS20Lib.isEscapedJSONString(receiver), "unescaped receiver");
         bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
         bytes memory denomBytes = bytes(denom);
-        if (denomBytes.length < denomPrefix.length || !denomBytes.slice(0, denomPrefix.length).equal(denomPrefix)) {
+        if (
+            denomBytes.length < denomPrefix.length
+                || !ICS20Lib.equal(ICS20Lib.slice(denomBytes, 0, denomPrefix.length), denomPrefix)
+        ) {
             // sender is source chain
             require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
         } else {

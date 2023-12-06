@@ -12,7 +12,6 @@ import {
 } from "../proto/IBFT2.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
 import {MPTProof} from "solidity-mpt/src/MPTProof.sol";
 
@@ -21,7 +20,6 @@ contract IBFT2Client is ILightClient {
     using MPTProof for bytes;
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
-    using BytesLib for bytes;
     using IBCHeight for Height.Data;
 
     string private constant HEADER_TYPE_URL = "/ibc.lightclients.ibft2.v1.Header";
@@ -78,6 +76,8 @@ contract IBFT2Client is ILightClient {
         if (!ok) {
             return (clientStateCommitment, update, false);
         }
+        require(clientState.ibc_store_address.length == 20, "invalid address length");
+        require(consensusState.root.length == 32, "invalid root length");
         clientStates[clientId] = clientState;
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
         return (
@@ -169,7 +169,7 @@ contract IBFT2Client is ILightClient {
         consensusState.timestamp = parsedHeader.time;
         consensusState.root = abi.encodePacked(
             verifyStorageProof(
-                clientState.ibc_store_address.toAddress(0), parsedHeader.stateRoot, header.account_state_proof
+                address(bytes20(clientState.ibc_store_address)), parsedHeader.stateRoot, header.account_state_proof
             )
         );
         consensusState.validators = validators;
@@ -208,7 +208,7 @@ contract IBFT2Client is ILightClient {
         assert(consensusState.timestamp != 0);
         return verifyMembership(
             proof,
-            consensusState.root.toBytes32(0),
+            bytes32(consensusState.root),
             keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT)),
             keccak256(value)
         );
@@ -233,7 +233,7 @@ contract IBFT2Client is ILightClient {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         assert(consensusState.timestamp != 0);
         return verifyNonMembership(
-            proof, consensusState.root.toBytes32(0), keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT))
+            proof, bytes32(consensusState.root), keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT))
         );
     }
 
@@ -329,7 +329,8 @@ contract IBFT2Client is ILightClient {
             }
             address signer = ecdsaRecover(blkHash, seals[i]);
             for (uint256 j = 0; j < trustedVals.length; j++) {
-                if (!marked[j] && trustedVals[j].toAddress(0) == signer) {
+                require(trustedVals[j].length == 20, "invalid address length");
+                if (!marked[j] && address(bytes20(trustedVals[j])) == signer) {
                     success++;
                     marked[j] = true;
                 }
@@ -353,9 +354,10 @@ contract IBFT2Client is ILightClient {
         uint8 success = 0;
         for (uint256 i = 0; i < seals.length; i++) {
             validators[i] = untrustedVals[i].toBytes();
+            require(validators[i].length == 20, "invalid address length");
             if (seals[i].length == 0) {
                 continue;
-            } else if (validators[i].toAddress(0) == ecdsaRecover(blkHash, seals[i])) {
+            } else if (address(bytes20(validators[i])) == ecdsaRecover(blkHash, seals[i])) {
                 success++;
             }
         }

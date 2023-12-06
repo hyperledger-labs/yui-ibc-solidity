@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.12;
 
-import {BytesLib} from "solidity-bytes-utils/contracts/BytesLib.sol";
 import {IBCAppBase} from "../commons/IBCAppBase.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {Channel, Packet} from "../../proto/Channel.sol";
 import {ICS20Lib} from "./ICS20Lib.sol";
 
 abstract contract ICS20Transfer is IBCAppBase {
-    using BytesLib for bytes;
-
     string public constant ICS20_VERSION = "ics20-1";
 
     mapping(string => address) channelEscrowAddresses;
@@ -31,9 +28,12 @@ abstract contract ICS20Transfer is IBCAppBase {
 
         bytes memory denomPrefix = _getDenomPrefix(packet.source_port, packet.source_channel);
         bytes memory denom = bytes(data.denom);
-        if (denom.length >= denomPrefix.length && denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
+        if (
+            denom.length >= denomPrefix.length
+                && ICS20Lib.equal(ICS20Lib.slice(denom, 0, denomPrefix.length), denomPrefix)
+        ) {
             // sender chain is not the source, unescrow tokens
-            bytes memory unprefixedDenom = denom.slice(denomPrefix.length, denom.length - denomPrefix.length);
+            bytes memory unprefixedDenom = ICS20Lib.slice(denom, denomPrefix.length, denom.length - denomPrefix.length);
             success = _transferFrom(
                 _getEscrowAddress(packet.destination_channel), receiver, string(unprefixedDenom), data.amount
             );
@@ -122,7 +122,10 @@ abstract contract ICS20Transfer is IBCAppBase {
     {
         bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
         bytes memory denom = bytes(data.denom);
-        if (denom.length >= denomPrefix.length && denom.slice(0, denomPrefix.length).equal(denomPrefix)) {
+        if (
+            denom.length >= denomPrefix.length
+                && ICS20Lib.equal(ICS20Lib.slice(denom, 0, denomPrefix.length), denomPrefix)
+        ) {
             require(_mint(_decodeSender(data.sender), data.denom, data.amount));
         } else {
             // sender was source chain
