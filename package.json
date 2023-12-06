@@ -2,15 +2,10 @@
   "name": "ibc-solidity",
   "version": "0.1.0",
   "description": "IBC in Solidity",
-  "scripts": {
-    "compile": "truffle compile",
-    "postinstall": "npm run compile"
-  },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
     "solidity-rlp": "^2.0.8",
-    "solidity-mpt": "^0.1.0",
-    "truffle": "5.8.4"
+    "solidity-mpt": "^0.1.0"
   },
   "devDependencies": {
     "solhint": "^4.0.0"
