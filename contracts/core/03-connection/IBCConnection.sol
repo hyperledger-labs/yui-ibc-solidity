@@ -61,6 +61,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
     {
         require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
         require(msg_.counterpartyVersions.length > 0, "counterpartyVersions length must be greater than 0");
+        bytes memory selfConsensusState = getSelfConsensusState(msg_.consensusHeight, msg_.hostConsensusStateProof);
 
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
@@ -102,7 +103,12 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             ),
             "failed to verify clientState"
         );
-        // TODO we should also verify a consensus state
+        require(
+            verifyClientConsensusState(
+                connection, msg_.proofHeight, msg_.consensusHeight, msg_.proofConsensus, selfConsensusState
+            ),
+            "failed to verify clientConsensusState"
+        );
 
         updateConnectionCommitment(connectionId);
         emit GeneratedConnectionIdentifier(connectionId);
@@ -121,6 +127,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             "the counterparty selected version is not supported by versions selected on INIT"
         );
         require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
+        bytes memory selfConsensusState = getSelfConsensusState(msg_.consensusHeight, msg_.hostConsensusStateProof);
 
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: connection.counterparty.client_id,
@@ -150,7 +157,12 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             ),
             "failed to verify clientState"
         );
-        // TODO we should also verify a consensus state
+        require(
+            verifyClientConsensusState(
+                connection, msg_.proofHeight, msg_.consensusHeight, msg_.proofConsensus, selfConsensusState
+            ),
+            "failed to verify clientConsensusState"
+        );
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
         connection.counterparty.connection_id = msg_.counterpartyConnectionId;
