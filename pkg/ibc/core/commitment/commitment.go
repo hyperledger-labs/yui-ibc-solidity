@@ -1,9 +1,10 @@
 package commitment
 
 import (
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
-	"github.com/cosmos/ibc-go/v7/modules/core/exported"
 	"github.com/ethereum/go-ethereum/crypto"
+	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 )
 
 // This value is determined by IBCHost.sol
@@ -15,8 +16,8 @@ func ClientStateCommitmentSlot(clientID string) string {
 	return CalculateCommitmentSlot(host.FullClientStateKey(clientID))
 }
 
-func ConsensusStateCommitmentSlot(clientID string, height exported.Height) string {
-	return CalculateCommitmentSlot(host.FullConsensusStateKey(clientID, height))
+func ConsensusStateCommitmentSlot(clientID string, height ibcclient.Height) string {
+	return CalculateCommitmentSlot(host.FullConsensusStateKey(clientID, clienttypes.NewHeight(height.RevisionNumber, height.RevisionHeight)))
 }
 
 func ConnectionStateCommitmentSlot(connectionID string) string {
