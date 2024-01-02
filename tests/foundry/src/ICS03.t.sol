@@ -105,7 +105,8 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
             proofConsensus: genMockConsensusStateProof(
                 proofHeight, counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)
                 ),
-            consensusHeight: H(0, 1)
+            consensusHeight: H(0, 1),
+            hostConsensusStateProof: genMockHostConsensusStateProof(uint64(block.timestamp * 1e9))
         });
     }
 
@@ -138,7 +139,8 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
             proofConsensus: genMockConsensusStateProof(
                 proofHeight, counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)
                 ),
-            consensusHeight: H(0, 1)
+            consensusHeight: H(0, 1),
+            hostConsensusStateProof: genMockHostConsensusStateProof(uint64(block.timestamp * 1e9))
         });
     }
 
@@ -161,7 +163,8 @@ abstract contract TestICS03Helper is TestIBCBase, TestMockClientHelper {
             proofConsensus: genMockConsensusStateProof(
                 proofHeight, counterpartyClientId, 0, 1, uint64(block.timestamp * 1e9)
                 ),
-            consensusHeight: H(0, 1)
+            consensusHeight: H(0, 1),
+            hostConsensusStateProof: genMockHostConsensusStateProof(uint64(block.timestamp * 1e9))
         });
     }
 

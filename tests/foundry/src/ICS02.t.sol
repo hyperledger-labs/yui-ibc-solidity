@@ -168,6 +168,10 @@ abstract contract TestMockClientHelper is TestIBCBase {
         );
     }
 
+    function genMockHostConsensusStateProof(uint64 timestamp) internal pure returns (bytes memory) {
+        return mockConsensusState(timestamp);
+    }
+
     function genMockConnectionStateProof(
         Height.Data memory proofHeight,
         string memory connectionId,

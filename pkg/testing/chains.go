@@ -461,7 +461,11 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	if err != nil {
 		return "", err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	clientStateBytes, latestHeight, proofClient, err := counterparty.QueryClientStateProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	if err != nil {
+		return "", err
+	}
+	consensusStateBytes, proofConsensus, err := counterparty.QueryConsensusStateProof(chain, connection.ClientID, latestHeight, proofConnection.Height.ToBN())
 	if err != nil {
 		return "", err
 	}
@@ -480,9 +484,12 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 				CounterpartyVersions: []ibchandler.VersionData{
 					{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
 				},
-				ProofHeight: proofConnection.Height.ToCallData(),
-				ProofInit:   proofConnection.Data,
-				ProofClient: proofClient.Data,
+				ProofHeight:             proofConnection.Height.ToCallData(),
+				ConsensusHeight:         latestHeight.ToCallData(),
+				ProofInit:               proofConnection.Data,
+				ProofClient:             proofClient.Data,
+				ProofConsensus:          proofConsensus.Data,
+				HostConsensusStateProof: consensusStateBytes,
 			},
 		),
 	); err != nil {
@@ -501,7 +508,11 @@ func (chain *Chain) ConnectionOpenAck(
 	if err != nil {
 		return err
 	}
-	clientStateBytes, proofClient, err := counterparty.QueryClientProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	clientStateBytes, latestHeight, proofClient, err := counterparty.QueryClientStateProof(chain, connection.ClientID, counterpartyConnection.ClientID, proofConnection.Height.ToBN())
+	if err != nil {
+		return err
+	}
+	consensusStateBytes, proofConsensus, err := counterparty.QueryConsensusStateProof(chain, connection.ClientID, latestHeight, proofConnection.Height.ToBN())
 	if err != nil {
 		return err
 	}
@@ -514,8 +525,11 @@ func (chain *Chain) ConnectionOpenAck(
 				ClientStateBytes:         clientStateBytes,
 				Version:                  ibchandler.VersionData{Identifier: "1", Features: []string{"ORDER_ORDERED", "ORDER_UNORDERED"}},
 				ProofHeight:              proofConnection.Height.ToCallData(),
+				ConsensusHeight:          latestHeight.ToCallData(),
 				ProofTry:                 proofConnection.Data,
 				ProofClient:              proofClient.Data,
+				ProofConsensus:           proofConsensus.Data,
+				HostConsensusStateProof:  consensusStateBytes,
 			},
 		),
 	)
@@ -1178,23 +1192,46 @@ func (chain *Chain) QueryProof(counterparty *Chain, counterpartyClientID string,
 	}, nil
 }
 
-func (chain *Chain) QueryClientProof(counterparty *Chain, clientID, counterpartyClientID string, height *big.Int) ([]byte, *Proof, error) {
+func (chain *Chain) QueryClientStateProof(counterparty *Chain, clientID, counterpartyClientID string, height *big.Int) ([]byte, ibcclient.Height, *Proof, error) {
 	cs, found, err := chain.IBCHandler.GetClientState(chain.CallOpts(context.Background(), RelayerKeyIndex), clientID)
+	if err != nil {
+		return nil, ibcclient.Height{}, nil, err
+	} else if !found {
+		return nil, ibcclient.Height{}, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
+	}
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ClientStateCommitmentSlot(clientID), height)
+	if err != nil {
+		return nil, ibcclient.Height{}, nil, err
+	}
+	var latestHeight ibcclient.Height
+	switch chain.ClientType() {
+	case ibcclient.MockClient:
+		h := sha256.Sum256(cs)
+		proof.Data = h[:]
+		latestHeight = chain.GetMockClientState(clientID).LatestHeight
+	case ibcclient.BesuIBFT2Client:
+		latestHeight = chain.GetIBFT2ClientState(clientID).LatestHeight
+	}
+	return cs, latestHeight, proof, nil
+}
+
+func (chain *Chain) QueryConsensusStateProof(counterparty *Chain, clientID string, consensusHeight ibcclient.Height, height *big.Int) ([]byte, *Proof, error) {
+	cons, found, err := chain.IBCHandler.GetConsensusState(chain.CallOpts(context.Background(), RelayerKeyIndex), clientID, ibchandler.HeightData(consensusHeight))
 	if err != nil {
 		return nil, nil, err
 	} else if !found {
-		return nil, nil, fmt.Errorf("client not found: %v", counterpartyClientID)
+		return nil, nil, fmt.Errorf("consensus state not found: %v", consensusHeight)
 	}
-	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ClientStateCommitmentSlot(clientID), height)
+	proof, err := chain.QueryProof(counterparty, clientID, commitment.ConsensusStateCommitmentSlot(clientID, consensusHeight), height)
 	if err != nil {
 		return nil, nil, err
 	}
 	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		h := sha256.Sum256(cs)
+		h := sha256.Sum256(cons)
 		proof.Data = h[:]
 	}
-	return cs, proof, nil
+	return cons, proof, nil
 }
 
 func (chain *Chain) QueryConnectionProof(counterparty *Chain, counterpartyClientID string, connectionID string, height *big.Int) (*Proof, error) {
