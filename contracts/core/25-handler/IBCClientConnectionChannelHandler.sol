@@ -8,6 +8,13 @@ import {
     IIBCChannelHandshake, IIBCChannelPacketSendRecv, IIBCChannelPacketTimeout
 } from "../04-channel/IIBCChannel.sol";
 
+interface IBCHandlerViewFunctionWrapper {
+    function wrappedRouteUpdateClient(IIBCClient.MsgUpdateClient calldata msg_)
+        external
+        view
+        returns (address, bytes4, bytes memory);
+}
+
 /**
  * @dev IBCClientConnectionChannelHandler is a handler implements ICS-02, ICS-03, and ICS-04
  */
@@ -52,6 +59,22 @@ abstract contract IBCClientConnectionChannelHandler is
 
     function updateClient(MsgUpdateClient calldata) external {
         doFallback(ibcClient);
+    }
+
+    function updateClientCommitments(string calldata, Height.Data[] calldata) external {
+        doFallback(ibcClient);
+    }
+
+    function routeUpdateClient(MsgUpdateClient calldata msg_) external view returns (address, bytes4, bytes memory) {
+        return IBCHandlerViewFunctionWrapper(address(this)).wrappedRouteUpdateClient(msg_);
+    }
+
+    function wrappedRouteUpdateClient(MsgUpdateClient calldata msg_) public returns (address, bytes4, bytes memory) {
+        require(msg.sender == address(this), "only this contract can call routeUpdateClient");
+        (bool success, bytes memory returndata) =
+            address(ibcClient).delegatecall(abi.encodeWithSelector(IIBCClient.routeUpdateClient.selector, msg_));
+        require(success, "failed to routeUpdateClient");
+        return abi.decode(returndata, (address, bytes4, bytes));
     }
 
     function connectionOpenInit(IIBCConnection.MsgConnectionOpenInit calldata) external returns (string memory) {

@@ -25,7 +25,7 @@ contract MockClient is ILightClient {
     bytes32 private constant CLIENT_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
     bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
 
-    address internal ibcHandler;
+    address internal immutable ibcHandler;
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
     mapping(string => ClientStatus) internal statuses;
@@ -37,7 +37,7 @@ contract MockClient is ILightClient {
     /**
      * @dev createClient creates a new client with the given state
      */
-    function createClient(string calldata clientId, bytes calldata clientStateBytes, bytes calldata consensusStateBytes)
+    function createClient(string calldata clientId, bytes calldata protoClientState, bytes calldata protoConsensusState)
         external
         virtual
         override
@@ -47,11 +47,11 @@ contract MockClient is ILightClient {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
 
-        (clientState, ok) = unmarshalClientState(clientStateBytes);
+        (clientState, ok) = unmarshalClientState(protoClientState);
         if (!ok) {
             return (clientStateCommitment, update, false);
         }
-        (consensusState, ok) = unmarshalConsensusState(consensusStateBytes);
+        (consensusState, ok) = unmarshalConsensusState(protoConsensusState);
         if (!ok) {
             return (clientStateCommitment, update, false);
         }
@@ -65,13 +65,34 @@ contract MockClient is ILightClient {
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
         statuses[clientId] = ClientStatus.Active;
         return (
-            keccak256(clientStateBytes),
+            keccak256(protoClientState),
             ConsensusStateUpdate({
-                consensusStateCommitment: keccak256(consensusStateBytes),
+                consensusStateCommitment: keccak256(protoConsensusState),
                 height: clientState.latest_height
             }),
             true
         );
+    }
+
+    /**
+     * @dev routeUpdateClient returns the calldata to the receiving function of the client message.
+     *      The light client encodes a client message as ethereum ABI.
+     */
+    function routeUpdateClient(string calldata clientId, bytes calldata protoClientMessage)
+        external
+        pure
+        virtual
+        override
+        returns (bytes4, bytes memory)
+    {
+        Any.Data memory any = Any.decode(protoClientMessage);
+        require(keccak256(abi.encodePacked(any.type_url)) == HEADER_TYPE_URL_HASH, "invalid header type");
+        Header.Data memory header = Header.decode(any.value);
+        require(
+            header.height.revision_number == 0 && header.height.revision_height != 0 && header.timestamp != 0,
+            "invalid header"
+        );
+        return (this.updateClient.selector, abi.encode(clientId, header));
     }
 
     /**
@@ -110,44 +131,21 @@ contract MockClient is ILightClient {
         return statuses[clientId];
     }
 
-    /**
-     * @dev updateClient is intended to perform the followings:
-     * 1. verify a given client message(e.g. header)
-     * 2. check misbehaviour such like duplicate block height
-     * 3. if misbehaviour is found, update state accordingly and return
-     * 4. update state(s) with the client message
-     * 5. persist the state(s) on the host
-     */
-    function updateClient(string calldata clientId, bytes calldata clientMessageBytes)
-        external
-        virtual
-        override
-        onlyIBC
-        returns (bytes32 clientStateCommitment, ConsensusStateUpdate[] memory updates, bool ok)
+    function updateClient(string calldata clientId, Header.Data calldata header)
+        public
+        returns (Height.Data[] memory heights)
     {
-        Height.Data memory height;
-        uint64 timestamp;
-        Any.Data memory anyConsensusState;
-
-        (height, timestamp) = parseHeader(clientMessageBytes);
-        if (height.gt(clientStates[clientId].latest_height)) {
-            Any.Data memory anyClientState;
-            clientStates[clientId].latest_height = height;
-            anyClientState.type_url = CLIENT_STATE_TYPE_URL;
-            anyClientState.value = ClientState.encode(clientStates[clientId]);
-            clientStateCommitment = keccak256(Any.encode(anyClientState));
+        require(statuses[clientId] == ClientStatus.Active, "client not active");
+        require(header.height.revision_number == 0, "invalid revision number");
+        require(header.height.revision_height != 0, "invalid revision height");
+        require(header.timestamp != 0, "invalid timestamp");
+        if (header.height.gt(clientStates[clientId].latest_height)) {
+            clientStates[clientId].latest_height = header.height;
         }
-
-        ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        consensusState.timestamp = timestamp;
-
-        anyConsensusState.type_url = CONSENSUS_STATE_TYPE_URL;
-        anyConsensusState.value = ConsensusState.encode(consensusState);
-
-        updates = new ConsensusStateUpdate[](1);
-        updates[0] =
-            ConsensusStateUpdate({consensusStateCommitment: keccak256(Any.encode(anyConsensusState)), height: height});
-        return (clientStateCommitment, updates, true);
+        consensusStates[clientId][header.height.toUint128()].timestamp = header.timestamp;
+        heights = new Height.Data[](1);
+        heights[0] = header.height;
+        return heights;
     }
 
     /**

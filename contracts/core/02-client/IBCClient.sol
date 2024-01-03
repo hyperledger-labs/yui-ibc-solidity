@@ -3,6 +3,7 @@ pragma solidity ^0.8.12;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ILightClient, ConsensusStateUpdate} from "./ILightClient.sol";
+import {Height} from "../../proto/Client.sol";
 import {IBCHost} from "../24-host/IBCHost.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IIBCClient} from "../02-client/IIBCClient.sol";
@@ -37,19 +38,55 @@ contract IBCClient is IBCHost, IIBCClient {
      * @dev updateClient updates the consensus state and the state root from a provided header
      */
     function updateClient(MsgUpdateClient calldata msg_) external override {
-        require(commitments[IBCCommitment.clientStateCommitmentKey(msg_.clientId)] != bytes32(0));
-        (bytes32 clientStateCommitment, ConsensusStateUpdate[] memory updates, bool ok) =
-            checkAndGetClient(msg_.clientId).updateClient(msg_.clientId, msg_.clientMessage);
-        require(ok, "failed to update client");
-
-        // update commitments
-        if (clientStateCommitment != 0) {
-            commitments[IBCCommitment.clientStateCommitmentKey(msg_.clientId)] = clientStateCommitment;
+        (address lc, bytes4 selector, bytes memory args) = routeUpdateClient(msg_);
+        (bool ok, bytes memory returndata) = lc.call(abi.encodePacked(selector, args));
+        if (!ok) {
+            if (returndata.length > 0) {
+                revert(string(returndata));
+            } else {
+                revert("update client failed");
+            }
         }
-        for (uint256 i = 0; i < updates.length; i++) {
-            commitments[IBCCommitment.consensusStateCommitmentKey(
-                msg_.clientId, updates[i].height.revision_number, updates[i].height.revision_height
-            )] = updates[i].consensusStateCommitment;
+        Height.Data[] memory heights = abi.decode(returndata, (Height.Data[]));
+        if (heights.length > 0) {
+            updateClientCommitments(msg_.clientId, heights);
+        }
+    }
+
+    /**
+     * @dev routeUpdateClient returns the LC contract address and the calldata to the receiving function of the client message.
+     *      Light client contract may encode a client message as other encoding scheme(e.g. ethereum ABI)
+     */
+    function routeUpdateClient(MsgUpdateClient calldata msg_)
+        public
+        view
+        override
+        returns (address, bytes4, bytes memory)
+    {
+        ILightClient lc = checkAndGetClient(msg_.clientId);
+        (bytes4 functionId, bytes memory args) = lc.routeUpdateClient(msg_.clientId, msg_.clientMessage);
+        return (address(lc), functionId, args);
+    }
+
+    /**
+     * @dev updateClientCommitments updates the commitments of the light client's states corresponding to the given heights.
+     */
+    function updateClientCommitments(string calldata clientId, Height.Data[] memory heights) public override {
+        ILightClient lc = checkAndGetClient(clientId);
+        bytes memory clientState;
+        bytes memory consensusState;
+        bool found;
+        (clientState, found) = lc.getClientState(clientId);
+        require(found, "client not found");
+        commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = keccak256(clientState);
+        for (uint256 i = 0; i < heights.length; i++) {
+            (consensusState, found) = lc.getConsensusState(clientId, heights[i]);
+            require(found, "consensus state not found");
+            bytes32 key = IBCCommitment.consensusStateCommitmentKey(
+                clientId, heights[i].revision_number, heights[i].revision_height
+            );
+            require(commitments[key] == bytes32(0), "consensus state already exists");
+            commitments[key] = keccak256(consensusState);
         }
     }
 

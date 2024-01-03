@@ -91,6 +91,22 @@ contract IBFT2Client is ILightClient {
     }
 
     /**
+     * @dev routeUpdateClient returns the calldata to the receiving function of the client message.
+     *      The light client encodes a client message as ethereum ABI.
+     */
+    function routeUpdateClient(string calldata clientId, bytes calldata protoClientMessage)
+        external
+        pure
+        virtual
+        override
+        returns (bytes4, bytes memory)
+    {
+        (Header.Data memory header, bool ok) = unmarshalHeader(protoClientMessage);
+        require(ok, "header is invalid");
+        return (this.updateClient.selector, abi.encode(clientId, header));
+    }
+
+    /**
      * @dev getTimestampAtHeight returns the timestamp of the consensus state at the given height.
      *      The timestamp is nanoseconds since unix epoch.
      */
@@ -120,52 +136,27 @@ contract IBFT2Client is ILightClient {
         return ClientStatus.Active;
     }
 
-    /**
-     * @dev updateClient is intended to perform the followings:
-     * 1. verify a given client message(e.g. header)
-     * 2. check misbehaviour such like duplicate block height
-     * 3. if misbehaviour is found, update state accordingly and return
-     * 4. update state(s) with the client message
-     * 5. persist the state(s) on the host
-     */
-    function updateClient(string calldata clientId, bytes calldata clientMessageBytes)
-        external
-        override
-        onlyIBC
-        returns (bytes32 clientStateCommitment, ConsensusStateUpdate[] memory updates, bool ok)
+    function updateClient(string calldata clientId, Header.Data calldata header)
+        public
+        returns (Height.Data[] memory heights)
     {
-        Header.Data memory header;
-        bytes[] memory validators;
-        uint128 newHeight;
-
-        /* Validation */
-
         ClientState.Data storage clientState = clientStates[clientId];
         assert(clientState.ibc_store_address.length != 0);
 
-        // TODO add misbehaviour check support
-        (header, ok) = unmarshalHeader(clientMessageBytes);
-        require(ok, "header is invalid");
-        // check if the provided client message is valid
         ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
-        require(parsedHeader.height.gt(header.trusted_height), "header height <= consensus state height");
-        newHeight = parsedHeader.height.toUint128();
+        require(parsedHeader.height.gt(clientState.latest_height), "header height <= consensus state height");
+        uint128 newHeight = parsedHeader.height.toUint128();
 
-        /* State verification */
+        ConsensusState.Data storage trustedConsensusState = consensusStates[clientId][header.trusted_height.toUint128()];
+        require(trustedConsensusState.timestamp != 0);
 
-        ConsensusState.Data storage consensusState = consensusStates[clientId][header.trusted_height.toUint128()];
-        assert(consensusState.timestamp != 0);
-        (validators, ok) = verify(consensusState.validators, parsedHeader);
+        (bytes[] memory validators, bool ok) = verify(trustedConsensusState.validators, parsedHeader);
         require(ok, "failed to verify the header");
-
-        /* Update states */
 
         if (parsedHeader.height.gt(clientState.latest_height)) {
             clientState.latest_height = parsedHeader.height;
-            clientStateCommitment = keccak256(marshalClientState(clientState));
         }
-        // if client message is verified and there is no misbehaviour, update state
-        consensusState = consensusStates[clientId][newHeight];
+        ConsensusState.Data storage consensusState = consensusStates[clientId][newHeight];
         consensusState.timestamp = parsedHeader.time;
         consensusState.root = abi.encodePacked(
             verifyStorageProof(
@@ -174,17 +165,12 @@ contract IBFT2Client is ILightClient {
         );
         consensusState.validators = validators;
 
-        /* Make updates message */
-        updates = new ConsensusStateUpdate[](1);
-        updates[0] = ConsensusStateUpdate({
-            consensusStateCommitment: keccak256(marshalConsensusState(consensusState)),
-            height: parsedHeader.height
-        });
-
         processedTimes[clientId][newHeight] = block.timestamp;
         processedHeights[clientId][newHeight] = block.number;
 
-        return (clientStateCommitment, updates, true);
+        heights = new Height.Data[](1);
+        heights[0] = parsedHeader.height;
+        return heights;
     }
 
     /**
@@ -205,7 +191,7 @@ contract IBFT2Client is ILightClient {
             return false;
         }
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        assert(consensusState.timestamp != 0);
+        require(consensusState.timestamp != 0);
         return verifyMembership(
             proof,
             bytes32(consensusState.root),
@@ -231,7 +217,7 @@ contract IBFT2Client is ILightClient {
             return false;
         }
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        assert(consensusState.timestamp != 0);
+        require(consensusState.timestamp != 0);
         return verifyNonMembership(
             proof, bytes32(consensusState.root), keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT))
         );

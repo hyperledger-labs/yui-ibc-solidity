@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -403,7 +404,7 @@ func (chain *Chain) UpdateLCInputData() {
 
 func (chain *Chain) CreateMockClient(ctx context.Context, counterparty *Chain) (string, error) {
 	msg := chain.ConstructMockMsgCreateClient(counterparty)
-	if err := chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx, "CreateMockClient")(
 		chain.IBCHandler.CreateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
 	); err != nil {
 		return "", err
@@ -411,16 +412,14 @@ func (chain *Chain) CreateMockClient(ctx context.Context, counterparty *Chain) (
 	return chain.GetLastGeneratedClientID(ctx)
 }
 
-func (chain *Chain) UpdateMockClient(ctx context.Context, counterparty *Chain, clientID string) error {
+func (chain *Chain) UpdateMockClient(ctx context.Context, counterparty *Chain, clientID string, updateCommitment bool) error {
 	msg := chain.ConstructMockMsgUpdateClient(counterparty, clientID)
-	return chain.WaitIfNoError(ctx)(
-		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
-	)
+	return chain.updateClient(ctx, msg, updateCommitment)
 }
 
 func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain) (string, error) {
 	msg := chain.ConstructIBFT2MsgCreateClient(counterparty)
-	if err := chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx, "CreateIBFT2Client")(
 		chain.IBCHandler.CreateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
 	); err != nil {
 		return "", err
@@ -428,15 +427,30 @@ func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain) 
 	return chain.GetLastGeneratedClientID(ctx)
 }
 
-func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string) error {
+func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string, updateCommitment bool) error {
 	msg := chain.ConstructIBFT2MsgUpdateClient(counterparty, clientID)
-	return chain.WaitIfNoError(ctx)(
-		chain.IBCHandler.UpdateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
-	)
+	return chain.updateClient(ctx, msg, updateCommitment)
+}
+
+func (chain *Chain) updateClient(ctx context.Context, msg ibchandler.IIBCClientMsgUpdateClient, updateCommitment bool) error {
+	if updateCommitment {
+		return chain.WaitIfNoError(ctx, "UpdateClient")(
+			chain.IBCHandler.UpdateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
+		)
+	} else {
+		lcAddr, fnID, args, err := chain.IBCHandler.RouteUpdateClient(chain.CallOpts(ctx, RelayerKeyIndex), msg)
+		if err != nil {
+			return err
+		}
+		calldata := append(fnID[:], args...)
+		return chain.WaitIfNoError(ctx, "LightClient::UpdateClient")(
+			bind.NewBoundContract(lcAddr, abi.ABI{}, chain.client, chain.client, chain.client).RawTransact(chain.TxOpts(ctx, RelayerKeyIndex), calldata),
+		)
+	}
 }
 
 func (chain *Chain) ConnectionOpenInit(ctx context.Context, counterparty *Chain, connection, counterpartyConnection *TestConnection) (string, error) {
-	if err := chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx, "ConnectionOpenInit")(
 		chain.IBCHandler.ConnectionOpenInit(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCConnectionMsgConnectionOpenInit{
@@ -469,7 +483,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	if err != nil {
 		return "", err
 	}
-	if err := chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx, "ConnectionOpenTry")(
 		chain.IBCHandler.ConnectionOpenTry(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCConnectionMsgConnectionOpenTry{
@@ -516,7 +530,7 @@ func (chain *Chain) ConnectionOpenAck(
 	if err != nil {
 		return err
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "ConnectionOpenAck")(
 		chain.IBCHandler.ConnectionOpenAck(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCConnectionMsgConnectionOpenAck{
@@ -544,7 +558,7 @@ func (chain *Chain) ConnectionOpenConfirm(
 	if err != nil {
 		return err
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "ConnectionOpenConfirm")(
 		chain.IBCHandler.ConnectionOpenConfirm(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCConnectionMsgConnectionOpenConfirm{
@@ -562,7 +576,7 @@ func (chain *Chain) ChannelOpenInit(
 	order channeltypes.Channel_Order,
 	connectionID string,
 ) (string, error) {
-	if err := chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx, "ChannelOpenInit")(
 		chain.IBCHandler.ChannelOpenInit(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelHandshakeMsgChannelOpenInit{
@@ -596,7 +610,7 @@ func (chain *Chain) ChannelOpenTry(
 	if err != nil {
 		return "", err
 	}
-	if err := chain.WaitIfNoError(ctx)(
+	if err := chain.WaitIfNoError(ctx, "ChannelOpenTry")(
 		chain.IBCHandler.ChannelOpenTry(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelHandshakeMsgChannelOpenTry{
@@ -631,7 +645,7 @@ func (chain *Chain) ChannelOpenAck(
 	if err != nil {
 		return err
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "ChannelOpenAck")(
 		chain.IBCHandler.ChannelOpenAck(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelHandshakeMsgChannelOpenAck{
@@ -655,7 +669,7 @@ func (chain *Chain) ChannelOpenConfirm(
 	if err != nil {
 		return err
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "ChannelOpenConfirm")(
 		chain.IBCHandler.ChannelOpenConfirm(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelHandshakeMsgChannelOpenConfirm{
@@ -672,7 +686,7 @@ func (chain *Chain) ChannelCloseInit(
 	ctx context.Context,
 	ch TestChannel,
 ) error {
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "ChannelCloseInit")(
 		chain.IBCHandler.ChannelCloseInit(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelHandshakeMsgChannelCloseInit{
@@ -692,7 +706,7 @@ func (chain *Chain) ChannelCloseConfirm(
 	if err != nil {
 		return err
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "ChannelCloseConfirm")(
 		chain.IBCHandler.ChannelCloseConfirm(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelHandshakeMsgChannelCloseConfirm{
@@ -709,7 +723,7 @@ func (chain *Chain) SendPacket(
 	ctx context.Context,
 	packet channeltypes.Packet,
 ) error {
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "SendPacket")(
 		chain.IBCHandler.SendPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			packet.SourcePort,
@@ -736,7 +750,7 @@ func (chain *Chain) HandlePacketRecv(
 		h := sha256.Sum256(commitPacket(packet))
 		proof.Data = h[:]
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "RecvPacket")(
 		chain.IBCHandler.RecvPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelRecvPacketMsgPacketRecv{
@@ -764,7 +778,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 		h := sha256.Sum256(commitAcknowledgement(acknowledgement))
 		proof.Data = h[:]
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "AcknowledgePacket")(
 		chain.IBCHandler.AcknowledgePacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelAcknowledgePacketMsgPacketAcknowledgement{
@@ -832,7 +846,7 @@ func (chain *Chain) TimeoutPacket(
 	if err != nil {
 		return err
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "TimeoutPacket")(
 		chain.IBCHandler.TimeoutPacket(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelPacketTimeoutMsgTimeoutPacket{
@@ -914,7 +928,7 @@ func (chain *Chain) TimeoutOnClose(
 	if err != nil {
 		return err
 	}
-	return chain.WaitIfNoError(ctx)(
+	return chain.WaitIfNoError(ctx, "TimeoutOnClose")(
 		chain.IBCHandler.TimeoutOnClose(
 			chain.TxOpts(ctx, RelayerKeyIndex),
 			ibchandler.IIBCChannelPacketTimeoutMsgTimeoutOnClose{
@@ -936,7 +950,7 @@ func (chain *Chain) SetExpectedTimePerBlock(
 	callerIndex uint32,
 	duration uint64,
 ) error {
-	err := chain.WaitIfNoError(ctx)(
+	err := chain.WaitIfNoError(ctx, "SetExpectedTimePerBlock")(
 		chain.IBCHandler.SetExpectedTimePerBlock(
 			chain.TxOpts(ctx, callerIndex),
 			duration,
@@ -1110,7 +1124,7 @@ func (chain *Chain) AdvanceBlockNumber(
 			time.Sleep(100 * time.Millisecond)
 		} else {
 			// execute a meaningless transaction to increase the block height
-			err := chain.WaitIfNoError(ctx)(
+			err := chain.WaitIfNoError(ctx, "ERC20::Approve")(
 				chain.ERC20.Approve(chain.TxOpts(ctx, RelayerKeyIndex), chain.ContractConfig.ICS20BankAddress, big.NewInt(0)),
 			)
 			if err != nil {
@@ -1333,27 +1347,25 @@ func (chain *Chain) LastHeader() *gethtypes.Header {
 	return chain.LatestLCInputData.Header()
 }
 
-func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction) error {
+func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Transaction, logMessage string) error {
 	rc, err := chain.Client().WaitForReceiptAndGet(ctx, tx)
 	if err != nil {
 		return err
 	}
 	if rc.Status == 1 {
+		log.Printf("tx(%v): gasUsed=%v", logMessage, rc.GasUsed)
 		return nil
 	} else {
-		return fmt.Errorf("failed to call transaction: err='%v' rc='%v'", err, rc)
+		return fmt.Errorf("failed to call transaction: logMessage='%v' err='%v' rc='%v'", logMessage, err, rc)
 	}
 }
 
-func (chain *Chain) WaitIfNoError(ctx context.Context) func(tx *gethtypes.Transaction, err error) error {
+func (chain *Chain) WaitIfNoError(ctx context.Context, logMessage string) func(tx *gethtypes.Transaction, err error) error {
 	return func(tx *gethtypes.Transaction, err error) error {
 		if err != nil {
 			return err
 		}
-		if err := chain.WaitForReceiptAndGet(ctx, tx); err != nil {
-			return err
-		}
-		return nil
+		return chain.WaitForReceiptAndGet(ctx, tx, logMessage)
 	}
 }
 
