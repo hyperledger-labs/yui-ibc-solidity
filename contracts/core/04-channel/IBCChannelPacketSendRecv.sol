@@ -4,7 +4,7 @@ pragma solidity ^0.8.12;
 import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel} from "../../proto/Channel.sol";
-import {ILightClient, ClientStatus} from "../02-client/ILightClient.sol";
+import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCHeight} from "../02-client/IBCHeight.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
@@ -42,7 +42,9 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
             ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
             ILightClient client = ILightClient(clientImpls[connection.client_id]);
             require(address(client) != address(0), "client not found");
-            require(client.getStatus(connection.client_id) == ClientStatus.Active, "client state is not active");
+            require(
+                client.getStatus(connection.client_id) == ILightClient.ClientStatus.Active, "client state is not active"
+            );
 
             require(!timeoutHeight.isZero() || timeoutTimestamp != 0, "timeout height and timestamp cannot both be 0");
             (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);

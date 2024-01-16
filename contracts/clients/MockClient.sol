@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.12;
 
-import {ILightClient, ConsensusStateUpdate, ClientStatus} from "../core/02-client/ILightClient.sol";
+import {ILightClient} from "../core/02-client/ILightClient.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
 import {Height} from "../proto/Client.sol";
@@ -42,7 +42,7 @@ contract MockClient is ILightClient {
         virtual
         override
         onlyIBC
-        returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok)
+        returns (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update, bool ok)
     {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
@@ -66,7 +66,7 @@ contract MockClient is ILightClient {
         statuses[clientId] = ClientStatus.Active;
         return (
             keccak256(protoClientState),
-            ConsensusStateUpdate({
+            ILightClient.ConsensusStateUpdate({
                 consensusStateCommitment: keccak256(protoConsensusState),
                 height: clientState.latest_height
             }),

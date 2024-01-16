@@ -9,6 +9,25 @@ import {Height} from "../../proto/Client.sol";
  */
 interface ILightClient {
     /**
+     * @dev ConsensusStateUpdate represents a consensus state update.
+     */
+    struct ConsensusStateUpdate {
+        // commitment for updated consensusState
+        bytes32 consensusStateCommitment;
+        // updated height
+        Height.Data height;
+    }
+
+    /**
+     * @dev ClientStatus represents the status of a client.
+     */
+    enum ClientStatus {
+        Active,
+        Expired,
+        Frozen
+    }
+
+    /**
      * @dev createClient creates a new client with the given state.
      * If succeeded, it returns a commitment for the initial state.
      */
@@ -87,23 +106,4 @@ interface ILightClient {
         external
         view
         returns (bytes memory, bool);
-}
-
-/**
- * @dev ConsensusStateUpdate represents a consensus state update.
- */
-struct ConsensusStateUpdate {
-    // commitment for updated consensusState
-    bytes32 consensusStateCommitment;
-    // updated height
-    Height.Data height;
-}
-
-/**
- * @dev ClientStatus represents the status of a client.
- */
-enum ClientStatus {
-    Active,
-    Expired,
-    Frozen
 }

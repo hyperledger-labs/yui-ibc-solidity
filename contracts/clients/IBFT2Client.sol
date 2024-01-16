@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.12;
 
-import {ILightClient, ConsensusStateUpdate, ClientStatus} from "../core/02-client/ILightClient.sol";
+import {ILightClient} from "../core/02-client/ILightClient.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
 import {Height} from "../proto/Client.sol";
@@ -63,7 +63,7 @@ contract IBFT2Client is ILightClient {
         external
         override
         onlyIBC
-        returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok)
+        returns (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update, bool ok)
     {
         ClientState.Data memory clientState;
         ConsensusState.Data memory consensusState;
@@ -82,7 +82,7 @@ contract IBFT2Client is ILightClient {
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
         return (
             keccak256(clientStateBytes),
-            ConsensusStateUpdate({
+            ILightClient.ConsensusStateUpdate({
                 consensusStateCommitment: keccak256(consensusStateBytes),
                 height: clientState.latest_height
             }),
@@ -132,8 +132,8 @@ contract IBFT2Client is ILightClient {
     /**
      * @dev getStatus returns the status of the client corresponding to `clientId`.
      */
-    function getStatus(string calldata) external pure override returns (ClientStatus) {
-        return ClientStatus.Active;
+    function getStatus(string calldata) external pure override returns (ILightClient.ClientStatus) {
+        return ILightClient.ClientStatus.Active;
     }
 
     function updateClient(string calldata clientId, Header.Data calldata header)

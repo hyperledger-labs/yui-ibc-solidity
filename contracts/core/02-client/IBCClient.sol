@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {ILightClient, ConsensusStateUpdate} from "./ILightClient.sol";
+import {ILightClient} from "./ILightClient.sol";
 import {Height} from "../../proto/Client.sol";
 import {IBCHost} from "../24-host/IBCHost.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
@@ -21,7 +21,7 @@ contract IBCClient is IBCHost, IIBCClient {
         clientId = generateClientIdentifier(msg_.clientType);
         clientTypes[clientId] = msg_.clientType;
         clientImpls[clientId] = clientImpl;
-        (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok) =
+        (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update, bool ok) =
             ILightClient(clientImpl).createClient(clientId, msg_.clientStateBytes, msg_.consensusStateBytes);
         require(ok, "failed to create client");
 
