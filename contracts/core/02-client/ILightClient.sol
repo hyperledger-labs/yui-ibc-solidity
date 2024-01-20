@@ -38,6 +38,7 @@ interface ILightClient {
     /**
      * @dev routeUpdateClient returns the calldata to the receiving function of the client message.
      *      Light client contract may encode a client message as other encoding scheme(e.g. ethereum ABI)
+     *      Check ADR-001 for details.
      */
     function routeUpdateClient(string calldata clientId, bytes calldata protoClientMessage)
         external

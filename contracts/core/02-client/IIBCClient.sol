@@ -30,11 +30,13 @@ interface IIBCClient {
     /**
      * @dev routeUpdateClient returns the lc contract address and the calldata to the receiving function of the client message.
      *      Light client contract may encode a client message as other encoding scheme(e.g. ethereum ABI)
+     *      Check ADR-001 for details.
      */
     function routeUpdateClient(MsgUpdateClient calldata msg_) external view returns (address, bytes4, bytes memory);
 
     /**
      * @dev updateClientCommitments updates the commitments of the light client's states corresponding to the given heights.
+     *      Check ADR-001 for details.
      */
     function updateClientCommitments(string calldata clientId, Height.Data[] calldata heights) external;
 }
