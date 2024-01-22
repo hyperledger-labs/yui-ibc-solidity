@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -1365,7 +1364,7 @@ func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tran
 		return err
 	}
 	if rc.Status == 1 {
-		log.Printf("tx=%v gasUsed=%v", txName, rc.GasUsed)
+		chain.t.Logf("tx=%v gasUsed=%v", txName, rc.GasUsed)
 		return nil
 	} else {
 		return fmt.Errorf("failed to call transaction: tx=%v err='%v' rc='%v'", txName, err, rc)
