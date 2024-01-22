@@ -21,9 +21,8 @@ contract IBCClient is IBCHost, IIBCClient {
         clientId = generateClientIdentifier(msg_.clientType);
         clientTypes[clientId] = msg_.clientType;
         clientImpls[clientId] = clientImpl;
-        (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update, bool ok) =
-            ILightClient(clientImpl).createClient(clientId, msg_.clientStateBytes, msg_.consensusStateBytes);
-        require(ok, "failed to create client");
+        (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update) =
+            ILightClient(clientImpl).initializeClient(clientId, msg_.clientStateBytes, msg_.consensusStateBytes);
 
         // update commitments
         commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = clientStateCommitment;

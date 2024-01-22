@@ -256,11 +256,8 @@ abstract contract TestMockClientHelper is TestIBCBase {
         view
         returns (Height.Data memory, uint64)
     {
-        (Height.Data memory latestHeight, bool ok) = client.getLatestHeight(clientId);
-        assert(ok);
-        uint64 timestamp;
-        (timestamp, ok) = client.getTimestampAtHeight(clientId, latestHeight);
-        assert(ok);
+        Height.Data memory latestHeight = client.getLatestHeight(clientId);
+        uint64 timestamp = client.getTimestampAtHeight(clientId, latestHeight);
         return (latestHeight, timestamp);
     }
 }
