@@ -29,14 +29,14 @@ interface ILightClient {
 
     /**
      * @dev initializeClient initializes a new client with the given state.
-     *      If succeeded, it returns a commitment for the initial state.
-     *      This function must be only called by IBCHandler.
+     *      If succeeded, it returns heights at which the consensus state are stored.
+     *      The function must be only called by IBCHandler.
      */
     function initializeClient(
         string calldata clientId,
         bytes calldata protoClientState,
         bytes calldata protoConsensusState
-    ) external returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update);
+    ) external returns (Height.Data memory height);
 
     /**
      * @dev routeUpdateClient returns the calldata to the receiving function of the client message.

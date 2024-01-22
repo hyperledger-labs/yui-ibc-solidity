@@ -21,14 +21,12 @@ contract IBCClient is IBCHost, IIBCClient {
         clientId = generateClientIdentifier(msg_.clientType);
         clientTypes[clientId] = msg_.clientType;
         clientImpls[clientId] = clientImpl;
-        (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update) =
+        Height.Data memory height =
             ILightClient(clientImpl).initializeClient(clientId, msg_.clientStateBytes, msg_.consensusStateBytes);
-
         // update commitments
-        commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = clientStateCommitment;
-        commitments[IBCCommitment.consensusStateCommitmentKey(
-            clientId, update.height.revision_number, update.height.revision_height
-        )] = update.consensusStateCommitment;
+        commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = keccak256(msg_.clientStateBytes);
+        commitments[IBCCommitment.consensusStateCommitmentKey(clientId, height.revision_number, height.revision_height)]
+        = keccak256(msg_.consensusStateBytes);
         emit GeneratedClientIdentifier(clientId);
         return clientId;
     }

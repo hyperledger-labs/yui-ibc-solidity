@@ -41,31 +41,19 @@ contract MockClient is ILightClient {
         string calldata clientId,
         bytes calldata protoClientState,
         bytes calldata protoConsensusState
-    )
-        external
-        virtual
-        override
-        onlyIBC
-        returns (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update)
-    {
+    ) external virtual override onlyIBC returns (Height.Data memory height) {
         ClientState.Data memory clientState = unmarshalClientState(protoClientState);
         ConsensusState.Data memory consensusState = unmarshalConsensusState(protoConsensusState);
         if (
             clientState.latest_height.revision_number != 0 || clientState.latest_height.revision_height == 0
                 || consensusState.timestamp == 0
         ) {
-            return (clientStateCommitment, update);
+            revert("invalid client state");
         }
         clientStates[clientId] = clientState;
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
         statuses[clientId] = ClientStatus.Active;
-        return (
-            keccak256(protoClientState),
-            ILightClient.ConsensusStateUpdate({
-                consensusStateCommitment: keccak256(protoConsensusState),
-                height: clientState.latest_height
-            })
-        );
+        return clientState.latest_height;
     }
 
     /**
@@ -216,17 +204,6 @@ contract MockClient is ILightClient {
     }
 
     /* Internal functions */
-
-    function parseHeader(bytes memory bz) internal pure returns (Height.Data memory, uint64) {
-        Any.Data memory any = Any.decode(bz);
-        require(keccak256(abi.encodePacked(any.type_url)) == HEADER_TYPE_URL_HASH, "invalid header type");
-        Header.Data memory header = Header.decode(any.value);
-        require(
-            header.height.revision_number == 0 && header.height.revision_height != 0 && header.timestamp != 0,
-            "invalid header"
-        );
-        return (header.height, header.timestamp);
-    }
 
     function unmarshalClientState(bytes calldata bz) internal pure returns (ClientState.Data memory clientState) {
         Any.Data memory anyClientState = Any.decode(bz);

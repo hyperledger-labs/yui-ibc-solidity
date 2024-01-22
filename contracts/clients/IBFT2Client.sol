@@ -64,25 +64,14 @@ contract IBFT2Client is ILightClient {
         string calldata clientId,
         bytes calldata protoClientState,
         bytes calldata protoConsensusState
-    )
-        external
-        override
-        onlyIBC
-        returns (bytes32 clientStateCommitment, ILightClient.ConsensusStateUpdate memory update)
-    {
+    ) external override onlyIBC returns (Height.Data memory height) {
         ClientState.Data memory clientState = unmarshalClientState(protoClientState);
         ConsensusState.Data memory consensusState = unmarshalConsensusState(protoConsensusState);
         require(clientState.ibc_store_address.length == 20, "invalid address length");
         require(consensusState.root.length == 32, "invalid root length");
         clientStates[clientId] = clientState;
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
-        return (
-            keccak256(protoClientState),
-            ILightClient.ConsensusStateUpdate({
-                consensusStateCommitment: keccak256(protoConsensusState),
-                height: clientState.latest_height
-            })
-        );
+        return clientState.latest_height;
     }
 
     /**
@@ -233,26 +222,26 @@ contract IBFT2Client is ILightClient {
         return Any.encode(anyConsensusState);
     }
 
-    function unmarshalHeader(bytes memory bz) internal pure returns (Header.Data memory header) {
+    function unmarshalHeader(bytes calldata bz) internal pure returns (Header.Data memory header) {
         Any.Data memory anyHeader = Any.decode(bz);
         require(keccak256(abi.encodePacked(anyHeader.type_url)) == HEADER_TYPE_URL_HASH, "invalid header type url");
         return Header.decode(anyHeader.value);
     }
 
-    function unmarshalClientState(bytes memory bz) internal pure returns (ClientState.Data memory clientState) {
+    function unmarshalClientState(bytes calldata bz) internal pure returns (ClientState.Data memory clientState) {
         Any.Data memory anyClientState = Any.decode(bz);
         require(keccak256(abi.encodePacked(anyClientState.type_url)) == CLIENT_STATE_TYPE_URL_HASH);
         return ClientState.decode(anyClientState.value);
     }
 
-    function unmarshalConsensusState(bytes memory bz)
+    function unmarshalConsensusState(bytes calldata bz)
         internal
         pure
         returns (ConsensusState.Data memory consensusState)
     {
         Any.Data memory anyConsensusState = Any.decode(bz);
         require(keccak256(abi.encodePacked(anyConsensusState.type_url)) == CONSENSUS_STATE_TYPE_URL_HASH);
-        return (ConsensusState.decode(anyConsensusState.value));
+        return ConsensusState.decode(anyConsensusState.value);
     }
 
     /// Validity predicate ///
