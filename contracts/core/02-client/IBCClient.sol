@@ -22,11 +22,11 @@ contract IBCClient is IBCHost, IIBCClient {
         clientTypes[clientId] = msg_.clientType;
         clientImpls[clientId] = clientImpl;
         Height.Data memory height =
-            ILightClient(clientImpl).initializeClient(clientId, msg_.clientStateBytes, msg_.consensusStateBytes);
+            ILightClient(clientImpl).initializeClient(clientId, msg_.protoClientState, msg_.protoConsensusState);
         // update commitments
-        commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = keccak256(msg_.clientStateBytes);
+        commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = keccak256(msg_.protoClientState);
         commitments[IBCCommitment.consensusStateCommitmentKey(clientId, height.revision_number, height.revision_height)]
-        = keccak256(msg_.consensusStateBytes);
+        = keccak256(msg_.protoConsensusState);
         emit GeneratedClientIdentifier(clientId);
         return clientId;
     }
@@ -64,7 +64,7 @@ contract IBCClient is IBCHost, IIBCClient {
         returns (address, bytes4, bytes memory)
     {
         ILightClient lc = checkAndGetClient(msg_.clientId);
-        (bytes4 functionId, bytes memory args) = lc.routeUpdateClient(msg_.clientId, msg_.clientMessage);
+        (bytes4 functionId, bytes memory args) = lc.routeUpdateClient(msg_.clientId, msg_.protoClientMessage);
         return (address(lc), functionId, args);
     }
 

@@ -137,12 +137,12 @@ contract IBCTest is Test {
         handler.createClient(
             IIBCClient.MsgCreateClient({
                 clientType: MOCK_CLIENT_TYPE,
-                clientStateBytes: wrapAnyMockClientState(
+                protoClientState: wrapAnyMockClientState(
                     IbcLightclientsMockV1ClientState.Data({
                         latest_height: Height.Data({revision_number: 0, revision_height: revisionHeight})
                     })
                     ),
-                consensusStateBytes: wrapAnyMockConsensusState(
+                protoConsensusState: wrapAnyMockConsensusState(
                     IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp * 1e9)})
                     )
             })
@@ -153,7 +153,7 @@ contract IBCTest is Test {
         handler.updateClient(
             IIBCClient.MsgUpdateClient({
                 clientId: "mock-client-0",
-                clientMessage: wrapAnyMockHeader(
+                protoClientMessage: wrapAnyMockHeader(
                     IbcLightclientsMockV1Header.Data({
                         height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
                         timestamp: uint64(block.timestamp * 1e9)

@@ -328,8 +328,8 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 	}
 	return ibchandler.IIBCClientMsgCreateClient{
 		ClientType:          ibcclient.MockClient,
-		ClientStateBytes:    clientStateBytes,
-		ConsensusStateBytes: consensusStateBytes,
+		ProtoClientState:    clientStateBytes,
+		ProtoConsensusState: consensusStateBytes,
 	}
 }
 
@@ -354,8 +354,8 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 	}
 	return ibchandler.IIBCClientMsgCreateClient{
 		ClientType:          ibcclient.BesuIBFT2Client,
-		ClientStateBytes:    clientStateBytes,
-		ConsensusStateBytes: consensusStateBytes,
+		ProtoClientState:    clientStateBytes,
+		ProtoConsensusState: consensusStateBytes,
 	}
 }
 
@@ -370,8 +370,8 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 		panic(err)
 	}
 	return ibchandler.IIBCClientMsgUpdateClient{
-		ClientId:      clientID,
-		ClientMessage: bz,
+		ClientId:           clientID,
+		ProtoClientMessage: bz,
 	}
 }
 
@@ -389,8 +389,8 @@ func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID 
 		panic(err)
 	}
 	return ibchandler.IIBCClientMsgUpdateClient{
-		ClientId:      clientID,
-		ClientMessage: bz,
+		ClientId:           clientID,
+		ProtoClientMessage: bz,
 	}
 }
 
