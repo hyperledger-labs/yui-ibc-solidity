@@ -31,11 +31,8 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout {
         ILightClient client = ILightClient(clientImpls[connection.client_id]);
         require(address(client) != address(0), "client not found");
         {
-            uint64 proofTimestamp;
-            (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
-            require(found, "clientState not found");
-            (proofTimestamp, found) = client.getTimestampAtHeight(connection.client_id, latestHeight);
-            require(found, "consensusState not found");
+            Height.Data memory latestHeight = client.getLatestHeight(connection.client_id);
+            uint64 proofTimestamp = client.getTimestampAtHeight(connection.client_id, latestHeight);
             if (
                 (msg_.packet.timeout_height.isZero() || msg_.proofHeight.lt(msg_.packet.timeout_height))
                     && (msg_.packet.timeout_timestamp == 0 || proofTimestamp < msg_.packet.timeout_timestamp)

@@ -85,8 +85,8 @@ abstract contract TestMockClientHelper is TestIBCBase {
     {
         return IIBCClient.MsgCreateClient({
             clientType: MOCK_CLIENT_TYPE,
-            clientStateBytes: mockClientState(revisionNumber, revisionHeight),
-            consensusStateBytes: mockConsensusState(uint64(block.timestamp * 1e9))
+            protoClientState: mockClientState(revisionNumber, revisionHeight),
+            protoConsensusState: mockConsensusState(uint64(block.timestamp * 1e9))
         });
     }
 
@@ -97,7 +97,7 @@ abstract contract TestMockClientHelper is TestIBCBase {
     {
         return IIBCClient.MsgUpdateClient({
             clientId: clientId,
-            clientMessage: wrapAnyMockHeader(
+            protoClientMessage: wrapAnyMockHeader(
                 IbcLightclientsMockV1Header.Data({
                     height: H(0, nextRevisionHeight),
                     timestamp: uint64(block.timestamp * 1e9)
@@ -256,11 +256,8 @@ abstract contract TestMockClientHelper is TestIBCBase {
         view
         returns (Height.Data memory, uint64)
     {
-        (Height.Data memory latestHeight, bool ok) = client.getLatestHeight(clientId);
-        assert(ok);
-        uint64 timestamp;
-        (timestamp, ok) = client.getTimestampAtHeight(clientId, latestHeight);
-        assert(ok);
+        Height.Data memory latestHeight = client.getLatestHeight(clientId);
+        uint64 timestamp = client.getTimestampAtHeight(clientId, latestHeight);
         return (latestHeight, timestamp);
     }
 }
@@ -335,13 +332,13 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
         }
         {
             IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
-            msg_.clientStateBytes = abi.encodePacked(msg_.clientStateBytes, hex"00");
+            msg_.protoClientState = abi.encodePacked(msg_.protoClientState, hex"00");
             vm.expectRevert();
             handler.createClient(msg_);
         }
         {
             IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
-            msg_.consensusStateBytes = abi.encodePacked(msg_.consensusStateBytes, hex"00");
+            msg_.protoConsensusState = abi.encodePacked(msg_.protoConsensusState, hex"00");
             vm.expectRevert();
             handler.createClient(msg_);
         }
@@ -389,7 +386,7 @@ contract TestICS02 is TestIBCBase, TestMockClientHelper {
         }
         {
             IIBCClient.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 2);
-            msg_.clientMessage = abi.encodePacked(msg_.clientMessage, hex"00");
+            msg_.protoClientMessage = abi.encodePacked(msg_.protoClientMessage, hex"00");
             vm.expectRevert();
             handler.updateClient(msg_);
         }

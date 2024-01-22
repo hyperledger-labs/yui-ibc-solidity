@@ -38,7 +38,6 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
         require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
 
         {
-            uint64 latestTimestamp;
             ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
             ILightClient client = ILightClient(clientImpls[connection.client_id]);
             require(address(client) != address(0), "client not found");
@@ -47,14 +46,12 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
             );
 
             require(!timeoutHeight.isZero() || timeoutTimestamp != 0, "timeout height and timestamp cannot both be 0");
-            (Height.Data memory latestHeight, bool found) = client.getLatestHeight(connection.client_id);
-            require(found, "clientState not found");
+            Height.Data memory latestHeight = client.getLatestHeight(connection.client_id);
             require(
                 timeoutHeight.isZero() || latestHeight.lt(timeoutHeight),
                 "receiving chain block height >= packet timeout height"
             );
-            (latestTimestamp, found) = client.getTimestampAtHeight(connection.client_id, latestHeight);
-            require(found, "consensusState not found");
+            uint64 latestTimestamp = client.getTimestampAtHeight(connection.client_id, latestHeight);
             require(
                 timeoutTimestamp == 0 || latestTimestamp < timeoutTimestamp,
                 "receiving chain block timestamp >= packet timeout timestamp"

@@ -7,7 +7,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -328,8 +327,8 @@ func (chain *Chain) ConstructMockMsgCreateClient(counterparty *Chain) ibchandler
 	}
 	return ibchandler.IIBCClientMsgCreateClient{
 		ClientType:          ibcclient.MockClient,
-		ClientStateBytes:    clientStateBytes,
-		ConsensusStateBytes: consensusStateBytes,
+		ProtoClientState:    clientStateBytes,
+		ProtoConsensusState: consensusStateBytes,
 	}
 }
 
@@ -354,8 +353,8 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 	}
 	return ibchandler.IIBCClientMsgCreateClient{
 		ClientType:          ibcclient.BesuIBFT2Client,
-		ClientStateBytes:    clientStateBytes,
-		ConsensusStateBytes: consensusStateBytes,
+		ProtoClientState:    clientStateBytes,
+		ProtoConsensusState: consensusStateBytes,
 	}
 }
 
@@ -370,8 +369,8 @@ func (chain *Chain) ConstructMockMsgUpdateClient(counterparty *Chain, clientID s
 		panic(err)
 	}
 	return ibchandler.IIBCClientMsgUpdateClient{
-		ClientId:      clientID,
-		ClientMessage: bz,
+		ClientId:           clientID,
+		ProtoClientMessage: bz,
 	}
 }
 
@@ -389,8 +388,8 @@ func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID 
 		panic(err)
 	}
 	return ibchandler.IIBCClientMsgUpdateClient{
-		ClientId:      clientID,
-		ClientMessage: bz,
+		ClientId:           clientID,
+		ProtoClientMessage: bz,
 	}
 }
 
@@ -1365,7 +1364,7 @@ func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tran
 		return err
 	}
 	if rc.Status == 1 {
-		log.Printf("tx=%v gasUsed=%v", txName, rc.GasUsed)
+		chain.t.Logf("tx=%v gasUsed=%v", txName, rc.GasUsed)
 		return nil
 	} else {
 		return fmt.Errorf("failed to call transaction: tx=%v err='%v' rc='%v'", txName, err, rc)

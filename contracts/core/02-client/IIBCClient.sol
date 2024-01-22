@@ -6,13 +6,13 @@ import {Height} from "../../proto/Client.sol";
 interface IIBCClient {
     struct MsgCreateClient {
         string clientType;
-        bytes clientStateBytes;
-        bytes consensusStateBytes;
+        bytes protoClientState;
+        bytes protoConsensusState;
     }
 
     struct MsgUpdateClient {
         string clientId;
-        bytes clientMessage;
+        bytes protoClientMessage;
     }
 
     event GeneratedClientIdentifier(string);

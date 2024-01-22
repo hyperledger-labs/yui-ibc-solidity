@@ -28,12 +28,15 @@ interface ILightClient {
     }
 
     /**
-     * @dev createClient creates a new client with the given state.
-     * If succeeded, it returns a commitment for the initial state.
+     * @dev initializeClient initializes a new client with the given state.
+     *      If succeeded, it returns heights at which the consensus state are stored.
+     *      The function must be only called by IBCHandler.
      */
-    function createClient(string calldata clientId, bytes calldata protoClientState, bytes calldata protoConsensusState)
-        external
-        returns (bytes32 clientStateCommitment, ConsensusStateUpdate memory update, bool ok);
+    function initializeClient(
+        string calldata clientId,
+        bytes calldata protoClientState,
+        bytes calldata protoConsensusState
+    ) external returns (Height.Data memory height);
 
     /**
      * @dev routeUpdateClient returns the calldata to the receiving function of the client message.
@@ -52,12 +55,12 @@ interface ILightClient {
     function getTimestampAtHeight(string calldata clientId, Height.Data calldata height)
         external
         view
-        returns (uint64, bool);
+        returns (uint64);
 
     /**
      * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
      */
-    function getLatestHeight(string calldata clientId) external view returns (Height.Data memory, bool);
+    function getLatestHeight(string calldata clientId) external view returns (Height.Data memory);
 
     /**
      * @dev getStatus returns the status of the client corresponding to `clientId`.
