@@ -19,11 +19,11 @@
 
 [IBC](https://github.com/cosmos/ibc) implementations in Solidity.
 
-**IBC compatibility:** [v4](https://github.com/cosmos/ibc-go/releases/tag/v4.0.0)
+**IBC compatibility:** [v7](https://github.com/cosmos/ibc-go/releases/tag/v7.0.0)
 
-This is available not only for Ethereum and Hyperledger Besu, but also for Polygon PoS and other blockchains that supports EVM-compatible.
+This is available not only for Ethereum and Hyperledger Besu, but also for Polygon PoS and other EVM-compatible chains.
 
-NOTE: This is yet pre-beta non-production-quality software.
+DISCLAIMER: This project is still under development and has not been audited.
 
 ## Features
 
@@ -39,7 +39,7 @@ NOTE: This is yet pre-beta non-production-quality software.
 
 ## Supported Light Client
 
-You can deploy a Light Client that implements [the IClient interface](./contracts/core/02-client/ILightClient.sol) to [integrate with IBC-Solidity](./docs/architecture.md#light-client).
+You can deploy a Light Client that implements [the IClient interface](./contracts/core/02-client/ILightClient.sol) to [integrate with ibc-solidity](./docs/architecture.md#light-client).
 
 Here are some such examples:
 - [IBFT 2.0 Light Client](./contracts/clients/IBFT2Client.sol)
@@ -51,6 +51,7 @@ Here are some such examples:
 - [yui-relayer](https://github.com/datachainlab/yui-relayer): An IBC relayer for heterogeneous chains
 - [ethereum-ibc-relay-chain](https://github.com/datachainlab/ethereum-ibc-relay-chain): A relay-chain module for EVM-compatible chains
 - [ethereum-ibc-relay-prover](https://github.com/datachainlab/ethereum-ibc-relay-prover): A relay-prover module for Ethereum sync committee
+- [ibft2-relay-prover](https://github.com/datachainlab/ibft2-relay-prover): A relay-prover module for IBFT 2.0 consensus
 
 ## Related projects
 
@@ -84,8 +85,9 @@ $ make e2e-test
 ### E2E-test with IBC-Relayer
 
 An example of E2E with IBC-Relayer([yui-relayer](https://github.com/hyperledger-labs/yui-relayer)) can be found here:
-- https://github.com/datachainlab/yui-relayer-build/tree/v0.3/tests/cases/eth2eth
-- https://github.com/datachainlab/yui-relayer-build/blob/v0.3/.github/workflows/v0.3-eth2eth.yml
+- https://github.com/datachainlab/ibft2-relay-prover/tree/main/e2e
+- https://github.com/datachainlab/yui-relayer-build/tree/v0.4/tests/cases/eth2eth
+- https://github.com/datachainlab/yui-relayer-build/blob/v0.4/.github/workflows/v0.4-eth2eth.yml
 
 ### solidity-protobuf
 
