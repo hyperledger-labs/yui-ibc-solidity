@@ -39,10 +39,13 @@ contract IBCClient is IBCHost, IIBCClient {
      */
     function updateClient(MsgUpdateClient calldata msg_) external override {
         (address lc, bytes4 selector, bytes memory args) = routeUpdateClient(msg_);
-        (bool ok, bytes memory returndata) = lc.call(abi.encodePacked(selector, args));
-        if (!ok) {
+        (bool success, bytes memory returndata) = lc.call(abi.encodePacked(selector, args));
+        if (!success) {
             if (returndata.length > 0) {
-                revert(string(returndata));
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
             } else {
                 revert("update client failed");
             }

@@ -73,7 +73,16 @@ abstract contract IBCClientConnectionChannelHandler is
         require(msg.sender == address(this), "only this contract can call routeUpdateClient");
         (bool success, bytes memory returndata) =
             address(ibcClient).delegatecall(abi.encodeWithSelector(IIBCClient.routeUpdateClient.selector, msg_));
-        require(success, "failed to routeUpdateClient");
+        if (!success) {
+            if (returndata.length > 0) {
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert("routeUpdateClient failed");
+            }
+        }
         return abi.decode(returndata, (address, bytes4, bytes));
     }
 
