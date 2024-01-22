@@ -93,14 +93,15 @@ func (c Coordinator) UpdateClient(
 	ctx context.Context,
 	source, counterparty *Chain,
 	clientID string,
+	updateCommitment bool,
 ) error {
 	counterparty.UpdateLCInputData()
 	var err error
 	switch counterparty.ClientType() {
 	case clienttypes.BesuIBFT2Client:
-		err = source.UpdateIBFT2Client(ctx, counterparty, clientID)
+		err = source.UpdateIBFT2Client(ctx, counterparty, clientID, updateCommitment)
 	case clienttypes.MockClient:
-		err = source.UpdateMockClient(ctx, counterparty, clientID)
+		err = source.UpdateMockClient(ctx, counterparty, clientID, updateCommitment)
 	default:
 		err = fmt.Errorf("client type %s is not supported", counterparty.ClientType())
 	}
@@ -201,6 +202,7 @@ func (c Coordinator) ConnOpenInit(
 		ctx,
 		counterparty, source,
 		counterpartyClientID,
+		true,
 	); err != nil {
 		return sourceConnection, counterpartyConnection, err
 	}
@@ -226,6 +228,7 @@ func (c *Coordinator) ConnOpenTry(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
+		true,
 	)
 }
 
@@ -246,6 +249,7 @@ func (c *Coordinator) ConnOpenAck(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
+		true,
 	)
 }
 
@@ -265,6 +269,7 @@ func (c *Coordinator) ConnOpenConfirm(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
+		true,
 	)
 }
 
@@ -295,6 +300,7 @@ func (c *Coordinator) ChanOpenInit(
 		ctx,
 		counterparty, source,
 		counterpartyConnection.ClientID,
+		true,
 	)
 	return sourceChannel, counterpartyChannel, err
 }
@@ -320,6 +326,7 @@ func (c *Coordinator) ChanOpenTry(
 		ctx,
 		counterparty, source,
 		connection.CounterpartyClientID,
+		true,
 	)
 }
 
@@ -339,6 +346,7 @@ func (c *Coordinator) ChanOpenAck(
 		ctx,
 		counterparty, source,
 		sourceChannel.CounterpartyClientID,
+		true,
 	)
 }
 
@@ -357,6 +365,7 @@ func (c *Coordinator) ChanOpenConfirm(
 		ctx,
 		counterparty, source,
 		sourceChannel.CounterpartyClientID,
+		true,
 	)
 }
 
@@ -374,6 +383,7 @@ func (c *Coordinator) ChanCloseInit(
 		ctx,
 		counterparty, source,
 		sourceChannel.CounterpartyClientID,
+		true,
 	)
 }
 
@@ -392,6 +402,7 @@ func (c *Coordinator) ChanCloseConfirm(
 		ctx,
 		counterparty, source,
 		sourceChannel.CounterpartyClientID,
+		true,
 	)
 }
 
@@ -412,6 +423,7 @@ func (c *Coordinator) SendPacket(
 		ctx,
 		counterparty, source,
 		counterpartyClientID,
+		false,
 	)
 }
 
@@ -430,6 +442,7 @@ func (c *Coordinator) HandlePacketRecv(
 		ctx,
 		counterparty, source,
 		counterpartyChannel.ClientID,
+		false,
 	)
 }
 
@@ -449,6 +462,7 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 		ctx,
 		counterparty, source,
 		counterpartyChannel.ClientID,
+		false,
 	)
 }
 

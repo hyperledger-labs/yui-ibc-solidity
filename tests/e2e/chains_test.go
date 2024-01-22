@@ -63,7 +63,7 @@ func (suite *ChainTestSuite) TestICS20() {
 	baseDenom := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
 
 	// try to transfer the token to chainB
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::SendTransfer")(
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, aliceA),
 			baseDenom,
@@ -78,7 +78,7 @@ func (suite *ChainTestSuite) TestICS20() {
 	suite.Require().NoError(err)
 	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
-	suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB))
+	suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB, false))
 
 	// relay the packet
 	coordinator.RelayLastSentPacket(ctx, chainA, chainB, chanA, chanB, func(b []byte) {
@@ -106,7 +106,7 @@ func (suite *ChainTestSuite) TestICS20() {
 	suite.Require().Equal(int64(100), balance.Int64())
 
 	// try to transfer the token to chainA
-	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
+	suite.Require().NoError(chainB.WaitIfNoError(ctx, "ICS20::SendTransfer")(
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
@@ -117,7 +117,7 @@ func (suite *ChainTestSuite) TestICS20() {
 			uint64(chainA.LastHeader().Number.Int64())+1000,
 		),
 	))
-	suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+	suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA, false))
 
 	// relay the packet
 	coordinator.RelayLastSentPacket(ctx, chainB, chainA, chanB, chanA, func(b []byte) {
@@ -139,7 +139,7 @@ func (suite *ChainTestSuite) TestICS20() {
 	})
 
 	{
-		suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+		suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::SendTransfer")(
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
 				baseDenom,
@@ -155,7 +155,7 @@ func (suite *ChainTestSuite) TestICS20() {
 		suite.Require().Error(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA, chanB))
 		suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
 		// then, update the client to reach the timeout height
-		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA, false))
 
 		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, transferPacket.SourcePort, transferPacket.SourceChannel, transferPacket.Sequence))
 		suite.Require().NoError(chainA.TimeoutPacket(ctx, *transferPacket, chainB, chanA, chanB))
@@ -165,7 +165,7 @@ func (suite *ChainTestSuite) TestICS20() {
 	}
 
 	// withdraw tokens from the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::Withdraw")(
 		chainA.ICS20Bank.Withdraw(
 			chainA.TxOpts(ctx, aliceA),
 			chainA.ContractConfig.ERC20TokenAddress,
@@ -197,9 +197,9 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 	// Case: timeoutOnClose on ordered channel
 	{
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED, ibctesting.MockAppVersion)
-		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
-		suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB))
-		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA, false))
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB, false))
+		suite.Require().NoError(chainA.WaitIfNoError(ctx, "IBCMockApp::SendPacket")(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, aliceA),
 			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
@@ -216,7 +216,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 	// Case: timeoutOnClose on unordered channel
 	{
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED, ibctesting.MockAppVersion)
-		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+		suite.Require().NoError(chainA.WaitIfNoError(ctx, "IBCMockApp::SendPacket")(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, aliceA),
 			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
@@ -233,7 +233,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 	// Case: timeout packet on ordered channel
 	{
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.ORDERED, ibctesting.MockAppVersion)
-		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+		suite.Require().NoError(chainA.WaitIfNoError(ctx, "IBCMockApp::SendPacket")(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, aliceA),
 			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
@@ -249,7 +249,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 		suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
 
 		// then, update the client to reach the timeout height
-		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA, false))
 
 		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, packet.SourcePort, packet.SourceChannel, packet.Sequence))
 		suite.Require().NoError(chainA.TimeoutPacket(ctx, *packet, chainB, chanA, chanB))
@@ -261,7 +261,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 	// Case: timeout packet on unordered channel
 	{
 		chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.MockPort, ibctesting.MockPort, channeltypes.UNORDERED, ibctesting.MockAppVersion)
-		suite.Require().NoError(chainA.WaitIfNoError(ctx)(chainA.IBCMockApp.SendPacket(
+		suite.Require().NoError(chainA.WaitIfNoError(ctx, "IBCMockApp::SendPacket")(chainA.IBCMockApp.SendPacket(
 			chainA.TxOpts(ctx, aliceA),
 			[]byte(ibctesting.MockPacketData),
 			chanA.PortID, chanA.ID,
@@ -277,7 +277,7 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 		suite.Require().NoError(chainB.AdvanceBlockNumber(ctx, uint64(chainB.LastHeader().Number.Int64())+1))
 
 		// then, update the client to reach the timeout height
-		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+		suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA, false))
 
 		suite.Require().NoError(chainA.EnsurePacketCommitmentExistence(ctx, true, packet.SourcePort, packet.SourceChannel, packet.Sequence))
 		suite.Require().NoError(chainA.TimeoutPacket(ctx, *packet, chainB, chanA, chanB))
@@ -331,7 +331,7 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	suite.Require().NoError(chainB.SetExpectedTimePerBlock(ctx, deployerB, 0))
 
 	// try to transfer the token to chainB
-	suite.Require().NoError(chainA.WaitIfNoError(ctx)(
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::SendTransfer")(
 		chainA.ICS20Transfer.SendTransfer(
 			chainA.TxOpts(ctx, aliceA),
 			baseDenom,
@@ -342,7 +342,7 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 		),
 	))
 	delayStartTimeForRecv := time.Now()
-	suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB))
+	suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB, false))
 
 	// ensure that escrow has correct balance
 	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.ContractConfig.ICS20TransferBankAddress, baseDenom)
@@ -369,7 +369,7 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	)
 
 	// try to transfer the token to chainA
-	suite.Require().NoError(chainB.WaitIfNoError(ctx)(
+	suite.Require().NoError(chainB.WaitIfNoError(ctx, "ICS20::SendTransfer")(
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
@@ -382,7 +382,7 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	))
 	delayStartTimeForRecv = time.Now()
 
-	suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA))
+	suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA, false))
 
 	// relay the packet
 	coordinator.RelayLastSentPacketWithDelay(ctx, chainB, chainA, chanB, chanA, delayPeriodExtensionB, delayPeriodExtensionA, delayStartTimeForRecv)

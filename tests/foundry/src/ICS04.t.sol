@@ -963,17 +963,17 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
 
             {
                 Height.Data memory timeoutHeight = getHeight(client, clientId, 1);
-                client.setStatus(clientId, ClientStatus.Frozen);
+                client.setStatus(clientId, ILightClient.ClientStatus.Frozen);
                 vm.expectRevert();
                 mockApp.sendPacket(
                     IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, timeoutHeight, 0
                 );
-                client.setStatus(clientId, ClientStatus.Expired);
+                client.setStatus(clientId, ILightClient.ClientStatus.Expired);
                 vm.expectRevert();
                 mockApp.sendPacket(
                     IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, timeoutHeight, 0
                 );
-                client.setStatus(clientId, ClientStatus.Active);
+                client.setStatus(clientId, ILightClient.ClientStatus.Active);
             }
         }
     }

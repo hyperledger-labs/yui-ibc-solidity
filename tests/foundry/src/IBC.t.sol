@@ -108,6 +108,10 @@ contract IBCTest is Test {
         updateMockClient(2);
     }
 
+    function testBenchmarkLCUpdateMockClient() public {
+        updateLCMockClient(2);
+    }
+
     function testBenchmarkSendPacket() public {
         handler.setCapability(string.concat(MOCK_PORT_ID, "/channel-0"), address(this));
         Packet.Data memory packet = createPacket(0, 100);
@@ -155,6 +159,16 @@ contract IBCTest is Test {
                         timestamp: uint64(block.timestamp * 1e9)
                     })
                     )
+            })
+        );
+    }
+
+    function updateLCMockClient(uint64 nextRevisionHeight) internal {
+        mockClient.updateClient(
+            "mock-client-0",
+            IbcLightclientsMockV1Header.Data({
+                height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
+                timestamp: uint64(block.timestamp * 1e9)
             })
         );
     }
