@@ -78,6 +78,18 @@ library IBCCommitment {
         return abi.encodePacked("nextSequenceRecv/ports/", portId, "/channels/", channelId);
     }
 
+    function channelUpgradePath(string memory portId, string memory channelId) internal pure returns (bytes memory) {
+        return abi.encodePacked("channelUpgrades/upgrades/ports/", portId, "/channels/", channelId);
+    }
+
+    function channelUpgradeErrorPath(string memory portId, string memory channelId)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked("channelUpgrades/upgradeError/ports/", portId, "/channels/", channelId);
+    }
+
     // Key generators for Commitment mapping
 
     function clientStateCommitmentKey(string memory clientId) internal pure returns (bytes32) {
@@ -138,5 +150,21 @@ library IBCCommitment {
         returns (bytes32)
     {
         return keccak256(nextSequenceRecvCommitmentPathCalldata(portId, channelId));
+    }
+
+    function channelUpgradeCommitmentKey(string memory portId, string memory channelId)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(channelUpgradePath(portId, channelId));
+    }
+
+    function channelUpgradeErrorCommitmentKey(string memory portId, string memory channelId)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(channelUpgradeErrorPath(portId, channelId));
     }
 }

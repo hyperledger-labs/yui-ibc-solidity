@@ -7,6 +7,8 @@ import {IIBCConnection} from "../03-connection/IIBCConnection.sol";
 import {IIBCConnectionErrors} from "../03-connection/IIBCConnectionErrors.sol";
 import {IIBCChannelHandshake, IIBCChannelPacket} from "../04-channel/IIBCChannel.sol";
 import {IIBCChannelErrors} from "../04-channel/IIBCChannelErrors.sol";
+import {IIBCChannelUpgrade} from "../04-channel/IIBCChannelUpgrade.sol";
+import {IIBCChannelUpgradeErrors} from "../04-channel/IIBCChannelUpgradeErrors.sol";
 import {IIBCHostConfigurator} from "../24-host/IIBCHostConfigurator.sol";
 import {IIBCHostErrors} from "../24-host/IIBCHostErrors.sol";
 import {IIBCQuerier} from "./IIBCQuerier.sol";
@@ -22,6 +24,8 @@ interface IIBCHandler is
     IIBCChannelHandshake,
     IIBCChannelPacket,
     IIBCChannelErrors,
+    IIBCChannelUpgrade,
+    IIBCChannelUpgradeErrors,
     IIBCHostConfigurator,
     IIBCHostErrors,
     IIBCQuerier

@@ -7,6 +7,7 @@ import {IIBCConnection} from "../03-connection/IIBCConnection.sol";
 import {
     IIBCChannelHandshake, IIBCChannelPacketSendRecv, IIBCChannelPacketTimeout
 } from "../04-channel/IIBCChannel.sol";
+import {IIBCChannelUpgrade} from "../04-channel/IIBCChannelUpgrade.sol";
 
 interface IBCHandlerViewFunctionWrapper {
     function wrappedRouteUpdateClient(IIBCClient.MsgUpdateClient calldata msg_)
@@ -23,13 +24,15 @@ abstract contract IBCClientConnectionChannelHandler is
     IIBCConnection,
     IIBCChannelHandshake,
     IIBCChannelPacketSendRecv,
-    IIBCChannelPacketTimeout
+    IIBCChannelPacketTimeout,
+    IIBCChannelUpgrade
 {
     address internal immutable ibcClient;
     address internal immutable ibcConnection;
     address internal immutable ibcChannelHandshake;
     address internal immutable ibcChannelPacketSendRecv;
     address internal immutable ibcChannelPacketTimeout;
+    address internal immutable ibcChannelUpgrade;
 
     /**
      * @dev The arguments of constructor must satisfy the followings:
@@ -44,13 +47,15 @@ abstract contract IBCClientConnectionChannelHandler is
         IIBCConnection ibcConnection_,
         IIBCChannelHandshake ibcChannelHandshake_,
         IIBCChannelPacketSendRecv ibcChannelPacketSendRecv_,
-        IIBCChannelPacketTimeout ibcChannelPacketTimeout_
+        IIBCChannelPacketTimeout ibcChannelPacketTimeout_,
+        IIBCChannelUpgrade ibcChannelUpgrade_
     ) {
         ibcClient = address(ibcClient_);
         ibcConnection = address(ibcConnection_);
         ibcChannelHandshake = address(ibcChannelHandshake_);
         ibcChannelPacketSendRecv = address(ibcChannelPacketSendRecv_);
         ibcChannelPacketTimeout = address(ibcChannelPacketTimeout_);
+        ibcChannelUpgrade = address(ibcChannelUpgrade_);
     }
 
     function createClient(MsgCreateClient calldata) external returns (string memory) {
@@ -156,6 +161,34 @@ abstract contract IBCClientConnectionChannelHandler is
 
     function timeoutOnClose(MsgTimeoutOnClose calldata) external {
         doFallback(ibcChannelPacketTimeout);
+    }
+
+    function channelUpgradeInit(MsgChannelUpgradeInit calldata) external returns (uint64) {
+        doFallback(ibcChannelUpgrade);
+    }
+
+    function channelUpgradeTry(MsgChannelUpgradeTry calldata) external returns (bool, uint64) {
+        doFallback(ibcChannelUpgrade);
+    }
+
+    function channelUpgradeAck(MsgChannelUpgradeAck calldata) external returns (bool) {
+        doFallback(ibcChannelUpgrade);
+    }
+
+    function channelUpgradeConfirm(MsgChannelUpgradeConfirm calldata) external returns (bool) {
+        doFallback(ibcChannelUpgrade);
+    }
+
+    function channelUpgradeOpen(MsgChannelUpgradeOpen calldata) external {
+        doFallback(ibcChannelUpgrade);
+    }
+
+    function cancelChannelUpgrade(MsgCancelChannelUpgrade calldata) external {
+        doFallback(ibcChannelUpgrade);
+    }
+
+    function timeoutChannelUpgrade(MsgTimeoutChannelUpgrade calldata) external {
+        doFallback(ibcChannelUpgrade);
     }
 
     function doFallback(address impl) internal virtual {

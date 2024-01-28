@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
-import {Channel} from "../../proto/Channel.sol";
+import {Channel, Upgrade} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
 
 interface IIBCQuerier {
@@ -43,4 +43,9 @@ interface IIBCQuerier {
     function getCommitment(bytes32 hashedPath) external view returns (bytes32);
 
     function getExpectedTimePerBlock() external view returns (uint64);
+
+    function getChannelUpgrade(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (Upgrade.Data memory, bool);
 }

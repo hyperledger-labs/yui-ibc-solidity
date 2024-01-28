@@ -113,7 +113,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             ordering: msg_.channel.ordering,
             counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: ""}),
             connection_hops: getCounterpartyHops(msg_.channel.connection_hops[0]),
-            version: msg_.counterpartyVersion
+            version: msg_.counterpartyVersion,
+            upgrade_sequence: 0
         });
         verifyChannelState(
             connection,
@@ -166,7 +167,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             ordering: channel.ordering,
             counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
-            version: msg_.counterpartyVersion
+            version: msg_.counterpartyVersion,
+            upgrade_sequence: 0
         });
 
         verifyChannelState(
@@ -204,7 +206,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             ordering: channel.ordering,
             counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
-            version: channel.version
+            version: channel.version,
+            upgrade_sequence: 0
         });
         verifyChannelState(
             connection,
@@ -264,7 +267,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             ordering: channel.ordering,
             counterparty: ChannelCounterparty.Data({port_id: msg_.portId, channel_id: msg_.channelId}),
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
-            version: channel.version
+            version: channel.version,
+            upgrade_sequence: 0
         });
         verifyChannelState(
             connection,
@@ -301,6 +305,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             channel.connection_hops.push(connectionHops[i]);
         }
         channel.version = version;
+        channel.upgrade_sequence = 0;
         updateChannelCommitment(portId, channelId);
     }
 
@@ -344,6 +349,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         nextSequenceSends[portId][channelId] = 1;
         nextSequenceRecvs[portId][channelId] = 1;
         nextSequenceAcks[portId][channelId] = 1;
+        recvStartSequences[portId][channelId].sequence = 1;
         commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
             keccak256(abi.encodePacked((bytes8(uint64(1)))));
     }

@@ -38,7 +38,8 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                 ordering: channelInfo.ordering,
                 counterparty: ChannelCounterparty.Data({port_id: counterpartyPortId, channel_id: ""}),
                 connection_hops: newConnectionHops(channelInfo.connectionId),
-                version: channelInfo.version
+                version: channelInfo.version,
+                upgrade_sequence: 0
             })
         });
     }
@@ -58,7 +59,8 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                 ordering: counterpartyChannelInfo.ordering,
                 counterparty: ChannelCounterparty.Data({port_id: channelInfo.portId, channel_id: ""}),
                 connection_hops: newConnectionHops(counterpartyChannelInfo.connectionId),
-                version: counterpartyChannelInfo.version
+                version: counterpartyChannelInfo.version,
+                upgrade_sequence: 0
             })
         );
         return IIBCChannelHandshake.MsgChannelOpenTry({
@@ -71,7 +73,8 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                     channel_id: counterpartyChannelInfo.channelId
                 }),
                 connection_hops: newConnectionHops(channelInfo.connectionId),
-                version: ""
+                version: "",
+                upgrade_sequence: 0
             }),
             counterpartyVersion: counterpartyChannelInfo.version,
             proofInit: proofInit,
@@ -98,7 +101,8 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                     ordering: counterpartyChannelInfo.ordering,
                     counterparty: ChannelCounterparty.Data({port_id: channelInfo.portId, channel_id: channelInfo.channelId}),
                     connection_hops: newConnectionHops(counterpartyChannelInfo.connectionId),
-                    version: counterpartyChannelInfo.version
+                    version: counterpartyChannelInfo.version,
+                    upgrade_sequence: 0
                 })
                 ),
             proofHeight: proofHeight
@@ -122,7 +126,8 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                     ordering: counterpartyChannelInfo.ordering,
                     counterparty: ChannelCounterparty.Data({port_id: channelInfo.portId, channel_id: channelInfo.channelId}),
                     connection_hops: newConnectionHops(counterpartyChannelInfo.connectionId),
-                    version: counterpartyChannelInfo.version
+                    version: counterpartyChannelInfo.version,
+                    upgrade_sequence: 0
                 })
                 ),
             proofHeight: proofHeight
@@ -163,7 +168,8 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                     ordering: counterpartyChannelInfo.ordering,
                     counterparty: ChannelCounterparty.Data({port_id: channelInfo.portId, channel_id: channelInfo.channelId}),
                     connection_hops: newConnectionHops(counterpartyChannelInfo.connectionId),
-                    version: counterpartyChannelInfo.version
+                    version: counterpartyChannelInfo.version,
+                    upgrade_sequence: 0
                 })
                 ),
             proofHeight: proofHeight

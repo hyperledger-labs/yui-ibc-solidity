@@ -7,6 +7,7 @@ import {IIBCConnection} from "../03-connection/IIBCConnection.sol";
 import {
     IIBCChannelHandshake, IIBCChannelPacketSendRecv, IIBCChannelPacketTimeout
 } from "../04-channel/IIBCChannel.sol";
+import {IIBCChannelUpgrade} from "../04-channel/IIBCChannelUpgrade.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IIBCModule} from "../26-router/IIBCModule.sol";
 import {IBCHandler} from "./IBCHandler.sol";
@@ -22,15 +23,24 @@ contract OwnableIBCHandler is IBCHandler, Ownable {
      * @param ibcChannelHandshake_ is the address of a contract that implements `IIBCChannelHandshake`.
      * @param ibcChannelPacketSendRecv_ is the address of a contract that implements `IIBCChannelPacketSendRecv`.
      * @param ibcChannelPacketTimeout_ is the address of a contract that implements `IIBCChannelPacketTimeout`.
+     * @param ibcChannelUpgrade_ is the address of a contract that implements `IIBCChannelUpgrade`.
      */
     constructor(
         IIBCClient ibcClient_,
         IIBCConnection ibcConnection_,
         IIBCChannelHandshake ibcChannelHandshake_,
         IIBCChannelPacketSendRecv ibcChannelPacketSendRecv_,
-        IIBCChannelPacketTimeout ibcChannelPacketTimeout_
+        IIBCChannelPacketTimeout ibcChannelPacketTimeout_,
+        IIBCChannelUpgrade ibcChannelUpgrade_
     )
-        IBCHandler(ibcClient_, ibcConnection_, ibcChannelHandshake_, ibcChannelPacketSendRecv_, ibcChannelPacketTimeout_)
+        IBCHandler(
+            ibcClient_,
+            ibcConnection_,
+            ibcChannelHandshake_,
+            ibcChannelPacketSendRecv_,
+            ibcChannelPacketTimeout_,
+            ibcChannelUpgrade_
+        )
         Ownable(msg.sender)
     {}
 

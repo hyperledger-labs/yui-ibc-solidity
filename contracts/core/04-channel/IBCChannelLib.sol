@@ -26,6 +26,12 @@ library IBCChannelLib {
         }
     }
 
+    function buildConnectionHops(string memory connectionId) internal pure returns (string[] memory hops) {
+        hops = new string[](1);
+        hops[0] = connectionId;
+        return hops;
+    }
+
     function toString(Channel.Order order) internal pure returns (string memory) {
         if (order == Channel.Order.ORDER_UNORDERED) {
             return ORDER_UNORDERED;

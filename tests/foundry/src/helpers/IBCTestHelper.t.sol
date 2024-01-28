@@ -7,6 +7,7 @@ import "../../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidat
 import "../../../../contracts/core/04-channel/IBCChannelHandshake.sol";
 import "../../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
 import "../../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
+import "../../../../contracts/core/04-channel/IBCChannelUpgrade.sol";
 import "../../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../../contracts/proto/MockClient.sol";
 import "../../../../contracts/proto/Connection.sol";
@@ -27,7 +28,8 @@ abstract contract IBCTestHelper is Test {
             new IBCConnectionSelfStateNoValidation(),
             new IBCChannelHandshake(),
             new IBCChannelPacketSendRecv(),
-            new IBCChannelPacketTimeout()
+            new IBCChannelPacketTimeout(),
+            new IBCChannelUpgrade()
         );
     }
 

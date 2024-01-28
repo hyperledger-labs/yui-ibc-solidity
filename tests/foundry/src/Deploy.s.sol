@@ -5,10 +5,10 @@ import "forge-std/Script.sol";
 import {IBCClient} from "../../../contracts/core/02-client/IBCClient.sol";
 import {IBCConnectionSelfStateNoValidation} from
     "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
-import {IBCConnection} from "../../../contracts/core/03-connection/IBCConnection.sol";
 import {IBCChannelHandshake} from "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
 import {IBCChannelPacketSendRecv} from "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
 import {IBCChannelPacketTimeout} from "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
+import {IBCChannelUpgrade} from "../../../contracts/core/04-channel/IBCChannelUpgrade.sol";
 import {IIBCHandler} from "../../../contracts/core/25-handler/IIBCHandler.sol";
 import {OwnableIBCHandler} from "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 import {MockClient} from "../../../contracts/clients/MockClient.sol";
@@ -34,7 +34,8 @@ contract DeployScript is Script {
                 new IBCConnectionSelfStateNoValidation(),
                 new IBCChannelHandshake(),
                 new IBCChannelPacketSendRecv(),
-                new IBCChannelPacketTimeout()
+                new IBCChannelPacketTimeout(),
+                new IBCChannelUpgrade()
             )
         );
 

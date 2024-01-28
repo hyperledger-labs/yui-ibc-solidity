@@ -6,10 +6,7 @@ import {Packet} from "../../core/04-channel/IIBCChannel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {IIBCModuleErrors} from "../../core/26-router/IIBCModuleErrors.sol";
 
-/**
- * @dev Base contract of the IBC App protocol
- */
-abstract contract IBCAppBase is Context, IIBCModule, IIBCModuleErrors {
+abstract contract AppBase is Context, IIBCModuleErrors {
     /**
      * @dev Throws if called by any account other than the IBC contract.
      */
@@ -31,7 +28,12 @@ abstract contract IBCAppBase is Context, IIBCModule, IIBCModuleErrors {
             revert IBCModuleInvalidSender(_msgSender());
         }
     }
+}
 
+/**
+ * @dev Base contract of the IBC App protocol
+ */
+abstract contract IBCAppBase is AppBase, IIBCModule {
     /**
      * @dev See IIBCModule-onChanOpenInit
      *

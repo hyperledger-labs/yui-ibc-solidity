@@ -8,6 +8,7 @@ import "../../../contracts/core/04-channel/IIBCChannel.sol";
 import "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
 import "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
 import "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
+import "../../../contracts/core/04-channel/IBCChannelUpgrade.sol";
 import "../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../contracts/clients/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
@@ -35,7 +36,8 @@ contract IBCTest is Test {
             new IBCConnectionSelfStateNoValidation(),
             new IBCChannelHandshake(),
             new IBCChannelPacketSendRecv(),
-            new IBCChannelPacketTimeout()
+            new IBCChannelPacketTimeout(),
+            new IBCChannelUpgrade()
         );
 
         mockClient = new MockClient(address(handler));
@@ -75,7 +77,8 @@ contract IBCTest is Test {
             ordering: Channel.Order.ORDER_UNORDERED,
             counterparty: ChannelCounterparty.Data({port_id: MOCK_PORT_ID, channel_id: "channel-0"}),
             connection_hops: hops,
-            version: "1"
+            version: "1",
+            upgrade_sequence: 0
         });
         handler.setChannel(MOCK_PORT_ID, "channel-0", channel);
         handler.setNextChannelSequence(1);
