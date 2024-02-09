@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.12;
 
-import "../../../contracts/proto/Connection.sol";
-import "../../../contracts/proto/Channel.sol";
-import "../../../contracts/core/24-host/IBCCommitment.sol";
-import "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
+import "../../../../contracts/proto/Connection.sol";
+import "../../../../contracts/proto/Channel.sol";
+import "../../../../contracts/core/04-channel/IBCChannelLib.sol";
+import "../../../../contracts/core/24-host/IBCCommitment.sol";
+import "../../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 
 contract TestableIBCHandler is OwnableIBCHandler {
     constructor(
@@ -66,7 +67,47 @@ contract TestableIBCHandler is OwnableIBCHandler {
         nextChannelSequence = sequence;
     }
 
+    function setPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence, bytes32 commitment)
+        external
+    {
+        commitments[IBCCommitment.packetCommitmentKey(portId, channelId, sequence)] = commitment;
+    }
+
+    function setPacketCommitment(Packet.Data memory packet) external {
+        commitments[IBCCommitment.packetCommitmentKey(packet.source_port, packet.source_channel, packet.sequence)] =
+        keccak256(
+            abi.encodePacked(
+                sha256(
+                    abi.encodePacked(
+                        packet.timeout_timestamp,
+                        packet.timeout_height.revision_number,
+                        packet.timeout_height.revision_height,
+                        sha256(packet.data)
+                    )
+                )
+            )
+        );
+    }
+
     function setCapability(string calldata name, address addr) external {
         capabilities[name] = addr;
+    }
+
+    function getPacketCommitment(string memory portId, string memory channelId, uint64 sequence)
+        external
+        view
+        returns (bytes32)
+    {
+        return getCommitment(IBCCommitment.packetCommitmentKey(portId, channelId, sequence));
+    }
+
+    function hasPacketReceipt(string memory destinationPortId, string memory destinationChannelId, uint64 sequence)
+        external
+        view
+        returns (bool)
+    {
+        return IBCChannelLib.receiptCommitmentToReceipt(
+            commitments[IBCCommitment.packetReceiptCommitmentKey(destinationPortId, destinationChannelId, sequence)]
+        ) == IBCChannelLib.PacketReceipt.SUCCESSFUL;
     }
 }
