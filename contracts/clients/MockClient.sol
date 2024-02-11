@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.12;
 
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ILightClient} from "../core/02-client/ILightClient.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
@@ -14,7 +15,7 @@ import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 
 // MockClient implements https://github.com/datachainlab/ibc-mock-client
 // WARNING: This client is intended to be used for testing purpose. Therefore, it is not generally available in a production, except in a fully trusted environment.
-contract MockClient is ILightClient {
+contract MockClient is Ownable, ILightClient {
     using IBCHeight for Height.Data;
 
     string private constant HEADER_TYPE_URL = "/ibc.lightclients.mock.v1.Header";
@@ -109,6 +110,16 @@ contract MockClient is ILightClient {
         return statuses[clientId];
     }
 
+    /**
+     * @dev setStatus sets the status of the client corresponding to `clientId`.
+     */
+    function setStatus(string calldata clientId, ClientStatus status) external virtual onlyOwner {
+        statuses[clientId] = status;
+    }
+
+    /**
+     * @dev updateClient updates the client state and returns the updated heights.
+     */
     function updateClient(string calldata clientId, Header.Data calldata header)
         public
         returns (Height.Data[] memory heights)

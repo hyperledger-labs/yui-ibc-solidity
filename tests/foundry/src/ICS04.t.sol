@@ -821,8 +821,8 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
 
     TestableIBCHandler handler;
     TestableIBCHandler counterpartyHandler;
-    ModifiedMockClient client;
-    ModifiedMockClient counterpartyClient;
+    MockClient client;
+    MockClient counterpartyClient;
     IBCMockApp mockApp;
     IBCMockApp counterpartyMockApp;
 
@@ -832,8 +832,8 @@ contract TestICS04Packet is TestIBCBase, TestMockClientHelper, TestICS03Helper, 
     string counterpartyConnectionId;
 
     function setUp() public {
-        (TestableIBCHandler _handler, ModifiedMockClient _client) = ibcHandlerMockClient();
-        (TestableIBCHandler _counterpartyHandler, ModifiedMockClient _counterpartyClient) = ibcHandlerMockClient();
+        (TestableIBCHandler _handler, MockClient _client) = ibcHandlerMockClient();
+        (TestableIBCHandler _counterpartyHandler, MockClient _counterpartyClient) = ibcHandlerMockClient();
         handler = _handler;
         counterpartyHandler = _counterpartyHandler;
         client = _client;
