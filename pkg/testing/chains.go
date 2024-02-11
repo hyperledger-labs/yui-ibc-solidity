@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -490,7 +491,7 @@ func (chain *Chain) ConnectionOpenTry(ctx context.Context, counterparty *Chain, 
 	if err != nil {
 		return "", err
 	}
-	consensusStateBytes, proofConsensus, err := counterparty.QueryConsensusStateProof(chain, connection.ClientID, latestHeight, proofConnection.Height.ToBN())
+	consensusStateBytes, proofConsensus, err := counterparty.QueryConsensusStateProof(chain, connection.ClientID, counterpartyConnection.ClientID, latestHeight, proofConnection.Height.ToBN())
 	if err != nil {
 		return "", err
 	}
@@ -537,7 +538,7 @@ func (chain *Chain) ConnectionOpenAck(
 	if err != nil {
 		return err
 	}
-	consensusStateBytes, proofConsensus, err := counterparty.QueryConsensusStateProof(chain, connection.ClientID, latestHeight, proofConnection.Height.ToBN())
+	consensusStateBytes, proofConsensus, err := counterparty.QueryConsensusStateProof(chain, connection.ClientID, counterpartyConnection.ClientID, latestHeight, proofConnection.Height.ToBN())
 	if err != nil {
 		return err
 	}
@@ -758,8 +759,7 @@ func (chain *Chain) HandlePacketRecv(
 	}
 	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		h := sha256.Sum256(commitPacket(packet))
-		proof.Data = h[:]
+		proof.Data = chain.generateMockClientProof(proof.Height, host.PacketCommitmentPath(packet.SourcePort, packet.SourceChannel, packet.Sequence), commitPacket(packet))
 	}
 	return chain.WaitIfNoError(ctx, "IBCHandler::RecvPacket")(
 		chain.IBCHandler.RecvPacket(
@@ -786,8 +786,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	}
 	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		h := sha256.Sum256(commitAcknowledgement(acknowledgement))
-		proof.Data = h[:]
+		proof.Data = chain.generateMockClientProof(proof.Height, host.PacketAcknowledgementPath(packet.DestinationPort, packet.DestinationChannel, packet.Sequence), commitAcknowledgement(acknowledgement))
 	}
 	return chain.WaitIfNoError(ctx, "IBCHandler::AcknowledgePacket")(
 		chain.IBCHandler.AcknowledgePacket(
@@ -1231,8 +1230,7 @@ func (chain *Chain) QueryClientStateProof(counterparty *Chain, clientID, counter
 	var latestHeight ibcclient.Height
 	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		h := sha256.Sum256(cs)
-		proof.Data = h[:]
+		proof.Data = chain.generateMockClientProof(proof.Height, host.FullClientStatePath(counterpartyClientID), cs)
 		latestHeight = chain.GetMockClientState(clientID).LatestHeight
 	case ibcclient.BesuIBFT2Client:
 		latestHeight = chain.GetIBFT2ClientState(clientID).LatestHeight
@@ -1240,21 +1238,22 @@ func (chain *Chain) QueryClientStateProof(counterparty *Chain, clientID, counter
 	return cs, latestHeight, proof, nil
 }
 
-func (chain *Chain) QueryConsensusStateProof(counterparty *Chain, clientID string, consensusHeight ibcclient.Height, height *big.Int) ([]byte, *Proof, error) {
+func (chain *Chain) QueryConsensusStateProof(counterparty *Chain, clientID, counterpartyClientID string, consensusHeight ibcclient.Height, height *big.Int) ([]byte, *Proof, error) {
 	cons, found, err := chain.IBCHandler.GetConsensusState(chain.CallOpts(context.Background(), RelayerKeyIndex), clientID, ibchandler.HeightData(consensusHeight))
 	if err != nil {
 		return nil, nil, err
 	} else if !found {
 		return nil, nil, fmt.Errorf("consensus state not found: %v", consensusHeight)
 	}
-	proof, err := chain.QueryProof(counterparty, clientID, commitment.ConsensusStateCommitmentSlot(clientID, consensusHeight), height)
+	proof, err := chain.QueryProof(counterparty, counterpartyClientID, commitment.ConsensusStateCommitmentSlot(clientID, consensusHeight), height)
 	if err != nil {
 		return nil, nil, err
 	}
 	switch chain.ClientType() {
 	case ibcclient.MockClient:
-		h := sha256.Sum256(cons)
-		proof.Data = h[:]
+		proof.Data = chain.generateMockClientProof(proof.Height, host.FullConsensusStatePath(counterpartyClientID, clienttypes.NewHeight(
+			consensusHeight.RevisionNumber, consensusHeight.RevisionHeight,
+		)), cons)
 	}
 	return cons, proof, nil
 }
@@ -1279,8 +1278,7 @@ func (chain *Chain) QueryConnectionProof(counterparty *Chain, counterpartyClient
 		if err != nil {
 			return nil, err
 		}
-		h := sha256.Sum256(bz)
-		proof.Data = h[:]
+		proof.Data = chain.generateMockClientProof(proof.Height, host.ConnectionPath(connectionID), bz)
 	}
 	return proof, nil
 }
@@ -1305,8 +1303,7 @@ func (chain *Chain) QueryChannelProof(counterparty *Chain, counterpartyClientID 
 		if err != nil {
 			return nil, err
 		}
-		h := sha256.Sum256(bz)
-		proof.Data = h[:]
+		proof.Data = chain.generateMockClientProof(proof.Height, host.ChannelPath(channel.PortID, channel.ID), bz)
 	}
 	return proof, nil
 }
@@ -1348,10 +1345,24 @@ func (chain *Chain) QueryNextSequenceRecvProof(counterparty *Chain, counterparty
 		}
 		bz := make([]byte, 8)
 		binary.BigEndian.PutUint64(bz, seq)
-		h := sha256.Sum256(bz)
-		proof.Data = h[:]
+		proof.Data = chain.generateMockClientProof(proof.Height, host.NextSequenceRecvPath(channel.PortID, channel.ID), bz)
 	}
 	return proof, nil
+}
+
+func (chain *Chain) generateMockClientProof(height ibcclient.Height, path string, value []byte) []byte {
+	var heightBz [16]byte
+	binary.BigEndian.PutUint64(heightBz[:8], height.RevisionNumber)
+	binary.BigEndian.PutUint64(heightBz[8:], height.RevisionHeight)
+	hashPrefix := sha256.Sum256([]byte("ibc"))
+	hashPath := sha256.Sum256([]byte(path))
+	hashValue := sha256.Sum256(value)
+
+	hash := append(heightBz[:], hashPrefix[:]...)
+	hash = append(hash, hashPath[:]...)
+	hash = append(hash, hashValue[:]...)
+	h := sha256.Sum256(hash)
+	return h[:]
 }
 
 func (chain *Chain) LastHeader() *gethtypes.Header {

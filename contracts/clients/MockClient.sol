@@ -137,13 +137,14 @@ contract MockClient is ILightClient {
         uint64,
         bytes calldata proof,
         bytes calldata prefix,
-        bytes memory,
+        bytes memory path,
         bytes calldata value
     ) external view virtual override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
-        require(proof.length == 32, "invalid proof length");
         require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
-        return sha256(value) == bytes32(proof);
+        require(proof.length == 32, "invalid proof length");
+        return
+            sha256(abi.encodePacked(height.toUint128(), sha256(prefix), sha256(path), sha256(value))) == bytes32(proof);
     }
 
     /**
