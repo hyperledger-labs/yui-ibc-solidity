@@ -29,6 +29,10 @@ build:
 test:
 	@forge snapshot -vvvv --gas-report --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
 
+.PHONY: coverage
+coverage:
+	@forge coverage --use solc:$(SOLC_VERSION)
+
 ######## Protobuf ########
 
 .PHONY: proto-sol

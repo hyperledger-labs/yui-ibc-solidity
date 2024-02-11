@@ -35,11 +35,11 @@ jobs:
     - name: Run tests
       run: make test
 
+    - name: Run coverage
+      run: make coverage
+
     - name: Linting
       run: make lint
-
-    - name: No optimization build
-      run: FOUNDRY_PROFILE=no_optimization make build
 
     - name: Build and Check sizes with minimal solidity version
       run: make SOLC_VERSION=${{ env.MINIMAL_SOLC_VERSION }} build
