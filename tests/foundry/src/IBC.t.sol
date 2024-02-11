@@ -26,7 +26,7 @@ contract IBCTest is Test {
 
     string private constant MOCK_CLIENT_TYPE = "mock-client";
     string private constant MOCK_PORT_ID = "mock";
-    bytes32 private testPacketCommitment;
+    bytes32 private testPacketCommitmentProof;
 
     function setUp() public {
         handler = new TestableIBCHandler(
@@ -82,7 +82,9 @@ contract IBCTest is Test {
         handler.setNextSequenceRecv(MOCK_PORT_ID, "channel-0", 1);
         handler.setNextSequenceAck(MOCK_PORT_ID, "channel-0", 1);
 
-        testPacketCommitment = makePacketCommitment(createPacket(0, 100));
+        testPacketCommitmentProof = makeMockClientPacketCommitmentProof(
+            createPacket(0, 100), Height.Data({revision_number: 0, revision_height: 1})
+        );
     }
 
     function setUpMockApp() internal {
@@ -125,7 +127,7 @@ contract IBCTest is Test {
         handler.recvPacket(
             IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: packet,
-                proof: abi.encodePacked(sha256(abi.encodePacked(testPacketCommitment))),
+                proof: abi.encodePacked(testPacketCommitmentProof),
                 proofHeight: Height.Data({revision_number: 0, revision_height: 1})
             })
         );
@@ -228,13 +230,25 @@ contract IBCTest is Test {
         });
     }
 
-    function makePacketCommitment(Packet.Data memory packet) internal pure returns (bytes32) {
-        return sha256(
+    function makeMockClientPacketCommitmentProof(Packet.Data memory packet, Height.Data memory proofHeight)
+        internal
+        pure
+        returns (bytes32)
+    {
+        bytes32 value = sha256(
             abi.encodePacked(
                 packet.timeout_timestamp,
                 packet.timeout_height.revision_number,
                 packet.timeout_height.revision_height,
                 sha256(packet.data)
+            )
+        );
+        return sha256(
+            abi.encodePacked(
+                proofHeight.toUint128(),
+                sha256("ibc"),
+                sha256(IBCCommitment.packetCommitmentPath(packet.source_port, packet.source_channel, packet.sequence)),
+                sha256(abi.encodePacked(value))
             )
         );
     }

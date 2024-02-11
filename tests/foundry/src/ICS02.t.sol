@@ -12,8 +12,8 @@ import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";
 import "../../../contracts/apps/mock/IBCMockApp.sol";
+import "../../../contracts/clients/MockClient.sol";
 import "./TestableIBCHandler.t.sol";
-import "./helpers/ModifiedMockClient.sol";
 
 abstract contract TestIBCBase is Test {
     bytes internal constant DEFAULT_COMMITMENT_PREFIX = bytes("ibc");
@@ -38,9 +38,9 @@ abstract contract TestIBCBase is Test {
 abstract contract TestMockClientHelper is TestIBCBase {
     using IBCHeight for Height.Data;
 
-    function ibcHandlerMockClient() internal returns (TestableIBCHandler, ModifiedMockClient) {
+    function ibcHandlerMockClient() internal returns (TestableIBCHandler, MockClient) {
         TestableIBCHandler handler = defaultIBCHandler();
-        ModifiedMockClient mockClient = new ModifiedMockClient(address(handler));
+        MockClient mockClient = new MockClient(address(handler));
         handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
         return (handler, mockClient);
     }
