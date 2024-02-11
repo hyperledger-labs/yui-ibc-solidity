@@ -35,6 +35,9 @@ jobs:
     - name: Run tests
       run: make test
 
+    - name: Run coverage
+      run: make coverage
+
     - name: Linting
       run: make lint
 

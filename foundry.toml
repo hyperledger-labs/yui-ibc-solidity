@@ -6,3 +6,6 @@ test = 'tests/foundry/src'
 gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 9_999_999
+
+[profile.no_optimization]
+optimizer = false

@@ -147,7 +147,7 @@ contract MockClient is Ownable, ILightClient {
         uint64,
         uint64,
         bytes calldata proof,
-        bytes calldata prefix,
+        bytes memory prefix,
         bytes memory path,
         bytes calldata value
     ) external view virtual override returns (bool) {
