@@ -100,7 +100,7 @@ type PacketData struct {
 
 // IbcmockappMetaData contains all meta data concerning the Ibcmockapp contract.
 var IbcmockappMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"ibcHandler_\",\"type\":\"address\",\"internalType\":\"contractIIBCHandler\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"MOCKAPP_VERSION\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ibcAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onAcknowledgementPacket\",\"inputs\":[{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structPacket.Data\",\"components\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"source_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"source_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeout_height\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeout_timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"acknowledgement\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanCloseConfirm\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanCloseConfirm\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanCloseInit\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanCloseInit\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenAck\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenAck\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"counterpartyVersion\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenConfirm\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenConfirm\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenInit\",\"inputs\":[{\"name\":\"msg_\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenInit\",\"components\":[{\"name\":\"order\",\"type\":\"uint8\",\"internalType\":\"enumChannel.Order\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"counterparty\",\"type\":\"tuple\",\"internalType\":\"structChannelCounterparty.Data\",\"components\":[{\"name\":\"port_id\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channel_id\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"name\":\"version\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenTry\",\"inputs\":[{\"name\":\"msg_\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenTry\",\"components\":[{\"name\":\"order\",\"type\":\"uint8\",\"internalType\":\"enumChannel.Order\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"counterparty\",\"type\":\"tuple\",\"internalType\":\"structChannelCounterparty.Data\",\"components\":[{\"name\":\"port_id\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channel_id\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"name\":\"counterpartyVersion\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onRecvPacket\",\"inputs\":[{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structPacket.Data\",\"components\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"source_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"source_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeout_height\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeout_timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"acknowledgement\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onTimeoutPacket\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structPacket.Data\",\"components\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"source_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"source_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeout_height\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeout_timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"relayer\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"sendPacket\",\"inputs\":[{\"name\":\"message\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"sourcePort\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"sourceChannel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"timeoutHeight\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeoutTimestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"ibcHandler_\",\"type\":\"address\",\"internalType\":\"contractIIBCHandler\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"MOCKAPP_VERSION\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"allowCloseChannel\",\"inputs\":[{\"name\":\"allow\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"closeChannelAllowed\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"ibcAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onAcknowledgementPacket\",\"inputs\":[{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structPacket.Data\",\"components\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"source_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"source_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeout_height\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeout_timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"acknowledgement\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanCloseConfirm\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanCloseConfirm\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanCloseInit\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanCloseInit\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenAck\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenAck\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"counterpartyVersion\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenConfirm\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenConfirm\",\"components\":[{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenInit\",\"inputs\":[{\"name\":\"msg_\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenInit\",\"components\":[{\"name\":\"order\",\"type\":\"uint8\",\"internalType\":\"enumChannel.Order\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"counterparty\",\"type\":\"tuple\",\"internalType\":\"structChannelCounterparty.Data\",\"components\":[{\"name\":\"port_id\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channel_id\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"name\":\"version\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onChanOpenTry\",\"inputs\":[{\"name\":\"msg_\",\"type\":\"tuple\",\"internalType\":\"structIIBCModule.MsgOnChanOpenTry\",\"components\":[{\"name\":\"order\",\"type\":\"uint8\",\"internalType\":\"enumChannel.Order\"},{\"name\":\"connectionHops\",\"type\":\"string[]\",\"internalType\":\"string[]\"},{\"name\":\"portId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channelId\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"counterparty\",\"type\":\"tuple\",\"internalType\":\"structChannelCounterparty.Data\",\"components\":[{\"name\":\"port_id\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"channel_id\",\"type\":\"string\",\"internalType\":\"string\"}]},{\"name\":\"counterpartyVersion\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onRecvPacket\",\"inputs\":[{\"name\":\"packet\",\"type\":\"tuple\",\"internalType\":\"structPacket.Data\",\"components\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"source_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"source_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeout_height\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeout_timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"acknowledgement\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"onTimeoutPacket\",\"inputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structPacket.Data\",\"components\":[{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"source_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"source_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_port\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destination_channel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"data\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"timeout_height\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeout_timestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"sendPacket\",\"inputs\":[{\"name\":\"message\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"sourcePort\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"sourceChannel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"timeoutHeight\",\"type\":\"tuple\",\"internalType\":\"structHeight.Data\",\"components\":[{\"name\":\"revision_number\",\"type\":\"uint64\",\"internalType\":\"uint64\"},{\"name\":\"revision_height\",\"type\":\"uint64\",\"internalType\":\"uint64\"}]},{\"name\":\"timeoutTimestamp\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"writeAcknowledgement\",\"inputs\":[{\"name\":\"destinationPort\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"destinationChannel\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"sequence\",\"type\":\"uint64\",\"internalType\":\"uint64\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false}]",
 }
 
 // IbcmockappABI is the input ABI used to generate the binding from.
@@ -280,6 +280,37 @@ func (_Ibcmockapp *IbcmockappCallerSession) MOCKAPPVERSION() (string, error) {
 	return _Ibcmockapp.Contract.MOCKAPPVERSION(&_Ibcmockapp.CallOpts)
 }
 
+// CloseChannelAllowed is a free data retrieval call binding the contract method 0x5a42d326.
+//
+// Solidity: function closeChannelAllowed() view returns(bool)
+func (_Ibcmockapp *IbcmockappCaller) CloseChannelAllowed(opts *bind.CallOpts) (bool, error) {
+	var out []interface{}
+	err := _Ibcmockapp.contract.Call(opts, &out, "closeChannelAllowed")
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// CloseChannelAllowed is a free data retrieval call binding the contract method 0x5a42d326.
+//
+// Solidity: function closeChannelAllowed() view returns(bool)
+func (_Ibcmockapp *IbcmockappSession) CloseChannelAllowed() (bool, error) {
+	return _Ibcmockapp.Contract.CloseChannelAllowed(&_Ibcmockapp.CallOpts)
+}
+
+// CloseChannelAllowed is a free data retrieval call binding the contract method 0x5a42d326.
+//
+// Solidity: function closeChannelAllowed() view returns(bool)
+func (_Ibcmockapp *IbcmockappCallerSession) CloseChannelAllowed() (bool, error) {
+	return _Ibcmockapp.Contract.CloseChannelAllowed(&_Ibcmockapp.CallOpts)
+}
+
 // IbcAddress is a free data retrieval call binding the contract method 0x696a9bf4.
 //
 // Solidity: function ibcAddress() view returns(address)
@@ -309,6 +340,118 @@ func (_Ibcmockapp *IbcmockappSession) IbcAddress() (common.Address, error) {
 // Solidity: function ibcAddress() view returns(address)
 func (_Ibcmockapp *IbcmockappCallerSession) IbcAddress() (common.Address, error) {
 	return _Ibcmockapp.Contract.IbcAddress(&_Ibcmockapp.CallOpts)
+}
+
+// OnRecvPacket is a free data retrieval call binding the contract method 0x2301c6f5.
+//
+// Solidity: function onRecvPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet, address ) view returns(bytes acknowledgement)
+func (_Ibcmockapp *IbcmockappCaller) OnRecvPacket(opts *bind.CallOpts, packet PacketData, arg1 common.Address) ([]byte, error) {
+	var out []interface{}
+	err := _Ibcmockapp.contract.Call(opts, &out, "onRecvPacket", packet, arg1)
+
+	if err != nil {
+		return *new([]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([]byte)).(*[]byte)
+
+	return out0, err
+
+}
+
+// OnRecvPacket is a free data retrieval call binding the contract method 0x2301c6f5.
+//
+// Solidity: function onRecvPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet, address ) view returns(bytes acknowledgement)
+func (_Ibcmockapp *IbcmockappSession) OnRecvPacket(packet PacketData, arg1 common.Address) ([]byte, error) {
+	return _Ibcmockapp.Contract.OnRecvPacket(&_Ibcmockapp.CallOpts, packet, arg1)
+}
+
+// OnRecvPacket is a free data retrieval call binding the contract method 0x2301c6f5.
+//
+// Solidity: function onRecvPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet, address ) view returns(bytes acknowledgement)
+func (_Ibcmockapp *IbcmockappCallerSession) OnRecvPacket(packet PacketData, arg1 common.Address) ([]byte, error) {
+	return _Ibcmockapp.Contract.OnRecvPacket(&_Ibcmockapp.CallOpts, packet, arg1)
+}
+
+// OnTimeoutPacket is a free data retrieval call binding the contract method 0x52c7157d.
+//
+// Solidity: function onTimeoutPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) , address ) view returns()
+func (_Ibcmockapp *IbcmockappCaller) OnTimeoutPacket(opts *bind.CallOpts, arg0 PacketData, arg1 common.Address) error {
+	var out []interface{}
+	err := _Ibcmockapp.contract.Call(opts, &out, "onTimeoutPacket", arg0, arg1)
+
+	if err != nil {
+		return err
+	}
+
+	return err
+
+}
+
+// OnTimeoutPacket is a free data retrieval call binding the contract method 0x52c7157d.
+//
+// Solidity: function onTimeoutPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) , address ) view returns()
+func (_Ibcmockapp *IbcmockappSession) OnTimeoutPacket(arg0 PacketData, arg1 common.Address) error {
+	return _Ibcmockapp.Contract.OnTimeoutPacket(&_Ibcmockapp.CallOpts, arg0, arg1)
+}
+
+// OnTimeoutPacket is a free data retrieval call binding the contract method 0x52c7157d.
+//
+// Solidity: function onTimeoutPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) , address ) view returns()
+func (_Ibcmockapp *IbcmockappCallerSession) OnTimeoutPacket(arg0 PacketData, arg1 common.Address) error {
+	return _Ibcmockapp.Contract.OnTimeoutPacket(&_Ibcmockapp.CallOpts, arg0, arg1)
+}
+
+// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+//
+// Solidity: function owner() view returns(address)
+func (_Ibcmockapp *IbcmockappCaller) Owner(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _Ibcmockapp.contract.Call(opts, &out, "owner")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+//
+// Solidity: function owner() view returns(address)
+func (_Ibcmockapp *IbcmockappSession) Owner() (common.Address, error) {
+	return _Ibcmockapp.Contract.Owner(&_Ibcmockapp.CallOpts)
+}
+
+// Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
+//
+// Solidity: function owner() view returns(address)
+func (_Ibcmockapp *IbcmockappCallerSession) Owner() (common.Address, error) {
+	return _Ibcmockapp.Contract.Owner(&_Ibcmockapp.CallOpts)
+}
+
+// AllowCloseChannel is a paid mutator transaction binding the contract method 0x9cc3ca73.
+//
+// Solidity: function allowCloseChannel(bool allow) returns()
+func (_Ibcmockapp *IbcmockappTransactor) AllowCloseChannel(opts *bind.TransactOpts, allow bool) (*types.Transaction, error) {
+	return _Ibcmockapp.contract.Transact(opts, "allowCloseChannel", allow)
+}
+
+// AllowCloseChannel is a paid mutator transaction binding the contract method 0x9cc3ca73.
+//
+// Solidity: function allowCloseChannel(bool allow) returns()
+func (_Ibcmockapp *IbcmockappSession) AllowCloseChannel(allow bool) (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.AllowCloseChannel(&_Ibcmockapp.TransactOpts, allow)
+}
+
+// AllowCloseChannel is a paid mutator transaction binding the contract method 0x9cc3ca73.
+//
+// Solidity: function allowCloseChannel(bool allow) returns()
+func (_Ibcmockapp *IbcmockappTransactorSession) AllowCloseChannel(allow bool) (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.AllowCloseChannel(&_Ibcmockapp.TransactOpts, allow)
 }
 
 // OnAcknowledgementPacket is a paid mutator transaction binding the contract method 0xfb8b532e.
@@ -458,46 +601,25 @@ func (_Ibcmockapp *IbcmockappTransactorSession) OnChanOpenTry(msg_ IIBCModuleMsg
 	return _Ibcmockapp.Contract.OnChanOpenTry(&_Ibcmockapp.TransactOpts, msg_)
 }
 
-// OnRecvPacket is a paid mutator transaction binding the contract method 0x2301c6f5.
+// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
 //
-// Solidity: function onRecvPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet, address ) returns(bytes acknowledgement)
-func (_Ibcmockapp *IbcmockappTransactor) OnRecvPacket(opts *bind.TransactOpts, packet PacketData, arg1 common.Address) (*types.Transaction, error) {
-	return _Ibcmockapp.contract.Transact(opts, "onRecvPacket", packet, arg1)
+// Solidity: function renounceOwnership() returns()
+func (_Ibcmockapp *IbcmockappTransactor) RenounceOwnership(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Ibcmockapp.contract.Transact(opts, "renounceOwnership")
 }
 
-// OnRecvPacket is a paid mutator transaction binding the contract method 0x2301c6f5.
+// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
 //
-// Solidity: function onRecvPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet, address ) returns(bytes acknowledgement)
-func (_Ibcmockapp *IbcmockappSession) OnRecvPacket(packet PacketData, arg1 common.Address) (*types.Transaction, error) {
-	return _Ibcmockapp.Contract.OnRecvPacket(&_Ibcmockapp.TransactOpts, packet, arg1)
+// Solidity: function renounceOwnership() returns()
+func (_Ibcmockapp *IbcmockappSession) RenounceOwnership() (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.RenounceOwnership(&_Ibcmockapp.TransactOpts)
 }
 
-// OnRecvPacket is a paid mutator transaction binding the contract method 0x2301c6f5.
+// RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.
 //
-// Solidity: function onRecvPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) packet, address ) returns(bytes acknowledgement)
-func (_Ibcmockapp *IbcmockappTransactorSession) OnRecvPacket(packet PacketData, arg1 common.Address) (*types.Transaction, error) {
-	return _Ibcmockapp.Contract.OnRecvPacket(&_Ibcmockapp.TransactOpts, packet, arg1)
-}
-
-// OnTimeoutPacket is a paid mutator transaction binding the contract method 0x52c7157d.
-//
-// Solidity: function onTimeoutPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) , address relayer) returns()
-func (_Ibcmockapp *IbcmockappTransactor) OnTimeoutPacket(opts *bind.TransactOpts, arg0 PacketData, relayer common.Address) (*types.Transaction, error) {
-	return _Ibcmockapp.contract.Transact(opts, "onTimeoutPacket", arg0, relayer)
-}
-
-// OnTimeoutPacket is a paid mutator transaction binding the contract method 0x52c7157d.
-//
-// Solidity: function onTimeoutPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) , address relayer) returns()
-func (_Ibcmockapp *IbcmockappSession) OnTimeoutPacket(arg0 PacketData, relayer common.Address) (*types.Transaction, error) {
-	return _Ibcmockapp.Contract.OnTimeoutPacket(&_Ibcmockapp.TransactOpts, arg0, relayer)
-}
-
-// OnTimeoutPacket is a paid mutator transaction binding the contract method 0x52c7157d.
-//
-// Solidity: function onTimeoutPacket((uint64,string,string,string,string,bytes,(uint64,uint64),uint64) , address relayer) returns()
-func (_Ibcmockapp *IbcmockappTransactorSession) OnTimeoutPacket(arg0 PacketData, relayer common.Address) (*types.Transaction, error) {
-	return _Ibcmockapp.Contract.OnTimeoutPacket(&_Ibcmockapp.TransactOpts, arg0, relayer)
+// Solidity: function renounceOwnership() returns()
+func (_Ibcmockapp *IbcmockappTransactorSession) RenounceOwnership() (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.RenounceOwnership(&_Ibcmockapp.TransactOpts)
 }
 
 // SendPacket is a paid mutator transaction binding the contract method 0xd9df74fd.
@@ -519,4 +641,199 @@ func (_Ibcmockapp *IbcmockappSession) SendPacket(message []byte, sourcePort stri
 // Solidity: function sendPacket(bytes message, string sourcePort, string sourceChannel, (uint64,uint64) timeoutHeight, uint64 timeoutTimestamp) returns(uint64)
 func (_Ibcmockapp *IbcmockappTransactorSession) SendPacket(message []byte, sourcePort string, sourceChannel string, timeoutHeight HeightData, timeoutTimestamp uint64) (*types.Transaction, error) {
 	return _Ibcmockapp.Contract.SendPacket(&_Ibcmockapp.TransactOpts, message, sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp)
+}
+
+// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+//
+// Solidity: function transferOwnership(address newOwner) returns()
+func (_Ibcmockapp *IbcmockappTransactor) TransferOwnership(opts *bind.TransactOpts, newOwner common.Address) (*types.Transaction, error) {
+	return _Ibcmockapp.contract.Transact(opts, "transferOwnership", newOwner)
+}
+
+// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+//
+// Solidity: function transferOwnership(address newOwner) returns()
+func (_Ibcmockapp *IbcmockappSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.TransferOwnership(&_Ibcmockapp.TransactOpts, newOwner)
+}
+
+// TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
+//
+// Solidity: function transferOwnership(address newOwner) returns()
+func (_Ibcmockapp *IbcmockappTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.TransferOwnership(&_Ibcmockapp.TransactOpts, newOwner)
+}
+
+// WriteAcknowledgement is a paid mutator transaction binding the contract method 0x62892d7a.
+//
+// Solidity: function writeAcknowledgement(string destinationPort, string destinationChannel, uint64 sequence) returns()
+func (_Ibcmockapp *IbcmockappTransactor) WriteAcknowledgement(opts *bind.TransactOpts, destinationPort string, destinationChannel string, sequence uint64) (*types.Transaction, error) {
+	return _Ibcmockapp.contract.Transact(opts, "writeAcknowledgement", destinationPort, destinationChannel, sequence)
+}
+
+// WriteAcknowledgement is a paid mutator transaction binding the contract method 0x62892d7a.
+//
+// Solidity: function writeAcknowledgement(string destinationPort, string destinationChannel, uint64 sequence) returns()
+func (_Ibcmockapp *IbcmockappSession) WriteAcknowledgement(destinationPort string, destinationChannel string, sequence uint64) (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.WriteAcknowledgement(&_Ibcmockapp.TransactOpts, destinationPort, destinationChannel, sequence)
+}
+
+// WriteAcknowledgement is a paid mutator transaction binding the contract method 0x62892d7a.
+//
+// Solidity: function writeAcknowledgement(string destinationPort, string destinationChannel, uint64 sequence) returns()
+func (_Ibcmockapp *IbcmockappTransactorSession) WriteAcknowledgement(destinationPort string, destinationChannel string, sequence uint64) (*types.Transaction, error) {
+	return _Ibcmockapp.Contract.WriteAcknowledgement(&_Ibcmockapp.TransactOpts, destinationPort, destinationChannel, sequence)
+}
+
+// IbcmockappOwnershipTransferredIterator is returned from FilterOwnershipTransferred and is used to iterate over the raw logs and unpacked data for OwnershipTransferred events raised by the Ibcmockapp contract.
+type IbcmockappOwnershipTransferredIterator struct {
+	Event *IbcmockappOwnershipTransferred // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *IbcmockappOwnershipTransferredIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(IbcmockappOwnershipTransferred)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(IbcmockappOwnershipTransferred)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *IbcmockappOwnershipTransferredIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *IbcmockappOwnershipTransferredIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// IbcmockappOwnershipTransferred represents a OwnershipTransferred event raised by the Ibcmockapp contract.
+type IbcmockappOwnershipTransferred struct {
+	PreviousOwner common.Address
+	NewOwner      common.Address
+	Raw           types.Log // Blockchain specific contextual infos
+}
+
+// FilterOwnershipTransferred is a free log retrieval operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+//
+// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
+func (_Ibcmockapp *IbcmockappFilterer) FilterOwnershipTransferred(opts *bind.FilterOpts, previousOwner []common.Address, newOwner []common.Address) (*IbcmockappOwnershipTransferredIterator, error) {
+
+	var previousOwnerRule []interface{}
+	for _, previousOwnerItem := range previousOwner {
+		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	}
+	var newOwnerRule []interface{}
+	for _, newOwnerItem := range newOwner {
+		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	}
+
+	logs, sub, err := _Ibcmockapp.contract.FilterLogs(opts, "OwnershipTransferred", previousOwnerRule, newOwnerRule)
+	if err != nil {
+		return nil, err
+	}
+	return &IbcmockappOwnershipTransferredIterator{contract: _Ibcmockapp.contract, event: "OwnershipTransferred", logs: logs, sub: sub}, nil
+}
+
+// WatchOwnershipTransferred is a free log subscription operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+//
+// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
+func (_Ibcmockapp *IbcmockappFilterer) WatchOwnershipTransferred(opts *bind.WatchOpts, sink chan<- *IbcmockappOwnershipTransferred, previousOwner []common.Address, newOwner []common.Address) (event.Subscription, error) {
+
+	var previousOwnerRule []interface{}
+	for _, previousOwnerItem := range previousOwner {
+		previousOwnerRule = append(previousOwnerRule, previousOwnerItem)
+	}
+	var newOwnerRule []interface{}
+	for _, newOwnerItem := range newOwner {
+		newOwnerRule = append(newOwnerRule, newOwnerItem)
+	}
+
+	logs, sub, err := _Ibcmockapp.contract.WatchLogs(opts, "OwnershipTransferred", previousOwnerRule, newOwnerRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(IbcmockappOwnershipTransferred)
+				if err := _Ibcmockapp.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseOwnershipTransferred is a log parse operation binding the contract event 0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0.
+//
+// Solidity: event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
+func (_Ibcmockapp *IbcmockappFilterer) ParseOwnershipTransferred(log types.Log) (*IbcmockappOwnershipTransferred, error) {
+	event := new(IbcmockappOwnershipTransferred)
+	if err := _Ibcmockapp.contract.UnpackLog(event, "OwnershipTransferred", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
 }
