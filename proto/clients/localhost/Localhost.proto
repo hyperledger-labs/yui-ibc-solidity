@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ibc.lightclients.localhost.v2;
+
+import "gogoproto/gogo.proto";
+import "solidity-protobuf-extensions.proto";
+import "core/02-client/Client.proto";
+
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/localhost";
+option (gogoproto.goproto_getters_all)  = false;
+option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
+
+message ClientState {
+  // the latest block height
+  Height latest_height = 1 [(gogoproto.nullable) = false];
+}
