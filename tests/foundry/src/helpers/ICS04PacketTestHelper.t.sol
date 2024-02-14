@@ -251,6 +251,21 @@ abstract contract ICS04PacketEventTestHelper {
         bytes acknowledgement;
     }
 
+    event SendPacket(
+        uint64 sequence,
+        string sourcePort,
+        string sourceChannel,
+        Height.Data timeoutHeight,
+        uint64 timeoutTimestamp,
+        bytes data
+    );
+
+    event WriteAcknowledgement(
+        string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement
+    );
+
+    event RecvPacket(Packet.Data packet);
+
     function getLastSentPacket(IIBCHandler handler, Vm.Log[] memory logs) internal view returns (Packet.Data memory) {
         for (uint256 i = logs.length; i > 0; i--) {
             if (logs[i - 1].emitter == address(handler)) {
@@ -319,7 +334,7 @@ abstract contract ICS04PacketEventTestHelper {
     }
 
     function tryDecodeSendPacketEvent(Vm.Log memory log) internal pure returns (Packet.Data memory p, bool) {
-        if (log.topics[0] != IICS04SendPacket.SendPacket.selector) {
+        if (log.topics[0] != SendPacket.selector) {
             return (p, false);
         }
         return (decodeSendPacketEvent(log.data), true);
@@ -351,7 +366,7 @@ abstract contract ICS04PacketEventTestHelper {
         pure
         returns (WriteAcknolwedgement memory wa, bool)
     {
-        if (log.topics[0] != IICS04WriteAcknowledgement.WriteAcknowledgement.selector) {
+        if (log.topics[0] != WriteAcknowledgement.selector) {
             return (wa, false);
         }
         return (decodeWriteAcknowledgementEvent(log.data), true);
@@ -368,7 +383,7 @@ abstract contract ICS04PacketEventTestHelper {
     }
 
     function tryDecodeRecvPacketEvent(Vm.Log memory log) internal pure returns (Packet.Data memory p, bool) {
-        if (log.topics[0] != IIBCChannelRecvPacket.RecvPacket.selector) {
+        if (log.topics[0] != RecvPacket.selector) {
             return (p, false);
         }
         return (decodeRecvPacketEvent(log.data), true);
