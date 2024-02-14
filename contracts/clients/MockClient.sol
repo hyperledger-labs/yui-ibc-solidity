@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ILightClient} from "../core/02-client/ILightClient.sol";
@@ -168,12 +168,12 @@ contract MockClient is Ownable, ILightClient {
         uint64,
         uint64,
         bytes calldata proof,
-        bytes calldata prefix,
-        bytes memory
+        bytes memory prefix,
+        bytes memory path
     ) external view virtual override returns (bool) {
         require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
         require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
-        return proof.length == 0;
+        return sha256(abi.encodePacked(height.toUint128(), sha256(prefix), sha256(path), sha256(""))) == bytes32(proof);
     }
 
     /* State accessors */

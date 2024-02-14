@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
 import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";

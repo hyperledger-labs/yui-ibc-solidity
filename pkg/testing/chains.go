@@ -910,25 +910,21 @@ func (chain *Chain) TimeoutOnClose(
 		}
 		proofUnreceived = proof.Data
 	} else {
-		if chain.ClientType() == ibcclient.MockClient {
-			proofUnreceived = []byte{}
-		} else {
-			rc, err := counterparty.IBCHandler.GetPacketReceipt(
-				counterparty.CallOpts(ctx, RelayerKeyIndex),
-				packet.DestinationPort, packet.DestinationChannel, packet.Sequence,
-			)
-			if err != nil {
-				return err
-			}
-			if rc == 1 {
-				return fmt.Errorf("packet receipt exists: port=%v channel=%v sequence=%v", packet.DestinationPort, packet.DestinationChannel, packet.Sequence)
-			}
-			p, err := counterparty.QueryPacketReceiptProof(chain, channel.ClientID, packet, proofHeight)
-			if err != nil {
-				return err
-			}
-			proofUnreceived = p.Data
+		rc, err := counterparty.IBCHandler.GetPacketReceipt(
+			counterparty.CallOpts(ctx, RelayerKeyIndex),
+			packet.DestinationPort, packet.DestinationChannel, packet.Sequence,
+		)
+		if err != nil {
+			return err
 		}
+		if rc == 1 {
+			return fmt.Errorf("packet receipt exists: port=%v channel=%v sequence=%v", packet.DestinationPort, packet.DestinationChannel, packet.Sequence)
+		}
+		p, err := counterparty.QueryPacketReceiptProof(chain, channel.ClientID, packet, proofHeight)
+		if err != nil {
+			return err
+		}
+		proofUnreceived = p.Data
 	}
 
 	nextSequenceRecv, err := counterparty.IBCHandler.GetNextSequenceRecv(
@@ -1326,7 +1322,7 @@ func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyCli
 		if rc == 1 {
 			return nil, errors.New("an existence proof of packet receipt not supported")
 		} else {
-			proof.Data = []byte{}
+			proof.Data = chain.generateMockClientProof(proof.Height, host.PacketReceiptPath(packetFromCounterparty.DestinationPort, packetFromCounterparty.DestinationChannel, packetFromCounterparty.Sequence), []byte{})
 		}
 	}
 	return proof, nil

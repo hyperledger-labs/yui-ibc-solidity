@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.20;
 
 import {IIBCClient} from "../02-client/IIBCClient.sol";
 import {IIBCConnection} from "../03-connection/IIBCConnection.sol";
