@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";

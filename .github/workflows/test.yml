@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  MINIMAL_SOLC_VERSION: 0.8.12
+  MINIMAL_SOLC_VERSION: 0.8.20
 
 jobs:
   contract-test:

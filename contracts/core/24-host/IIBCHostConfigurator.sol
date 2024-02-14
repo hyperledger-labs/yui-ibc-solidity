@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.20;
 
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IIBCModule} from "../26-router/IIBCModule.sol";

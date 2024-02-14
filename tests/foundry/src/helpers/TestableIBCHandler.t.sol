@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.20;
 
 import "../../../../contracts/proto/Connection.sol";
 import "../../../../contracts/proto/Channel.sol";

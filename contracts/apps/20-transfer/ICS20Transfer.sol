@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.20;
 
 import {IBCAppBase} from "../commons/IBCAppBase.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
