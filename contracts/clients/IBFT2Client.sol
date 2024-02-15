@@ -15,23 +15,58 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
 import {MPTProof} from "solidity-mpt/src/MPTProof.sol";
 
-// please see docs/ibft2-light-client.md for client spec
+/// @notice please see docs/ibft2-light-client.md for client spec
 contract IBFT2Client is ILightClient {
     using MPTProof for bytes;
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
     using IBCHeight for Height.Data;
 
-    string private constant HEADER_TYPE_URL = "/ibc.lightclients.ibft2.v1.Header";
-    string private constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ClientState";
-    string private constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ConsensusState";
+    /// @param caller the caller of the function
+    error InvalidCaller(address caller);
 
-    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked(HEADER_TYPE_URL));
-    bytes32 private constant CLIENT_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
-    bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
+    error InvalidIBCAddressLength();
+    error InvalidConsensusStateRootLength();
+    /// @param clientId client identifier
+    error ClientStateNotFound(string clientId);
+    /// @param clientId client identifier
+    /// @param height consensus height
+    error ConsensusStateNotFound(string clientId, Height.Data height);
 
-    uint256 private constant COMMITMENT_SLOT = 0;
-    uint8 private constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
+    error EmptyValidators();
+
+    error InvalidValidatorAddressLength();
+
+    /// @param itemsLength length of items in the header
+    error UnexpectedEthereumHeaderFormat(uint256 itemsLength);
+
+    /// @param itemsLength length of items in the extra data
+    error UnexpectedExtraDataFormat(uint256 itemsLength);
+
+    /// @param actual actual number of valid seals
+    /// @param threshold threshold of seals
+    error InsufficientTrustedValidatorsSeals(uint256 actual, uint256 threshold);
+
+    /// @param actual actual number of valid seals
+    /// @param threshold threshold of seals
+    error InsuffientUntrustedValidatorsSeals(uint256 actual, uint256 threshold);
+
+    /// @param url type url of the any
+    error UnexpectedProtoAnyTypeURL(string url);
+
+    /// @param length length of the signature
+    error InvalidECDSASignatureLength(uint256 length);
+
+    string internal constant HEADER_TYPE_URL = "/ibc.lightclients.ibft2.v1.Header";
+    string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ClientState";
+    string internal constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ConsensusState";
+
+    bytes32 internal constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked(HEADER_TYPE_URL));
+    bytes32 internal constant CLIENT_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
+    bytes32 internal constant CONSENSUS_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
+
+    uint256 internal constant COMMITMENT_SLOT = 0;
+    uint8 internal constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
     address internal immutable ibcHandler;
 
@@ -48,11 +83,6 @@ contract IBFT2Client is ILightClient {
         RLPReader.RLPItem[] validators;
     }
 
-    struct Fraction {
-        uint64 numerator;
-        uint64 denominator;
-    }
-
     constructor(address ibcHandler_) {
         ibcHandler = ibcHandler_;
     }
@@ -67,8 +97,15 @@ contract IBFT2Client is ILightClient {
     ) external override onlyIBC returns (Height.Data memory height) {
         ClientState.Data memory clientState = unmarshalClientState(protoClientState);
         ConsensusState.Data memory consensusState = unmarshalConsensusState(protoConsensusState);
-        require(clientState.ibc_store_address.length == 20, "invalid address length");
-        require(consensusState.root.length == 32, "invalid root length");
+        if (clientState.ibc_store_address.length != 20) {
+            revert InvalidIBCAddressLength();
+        }
+        if (consensusState.root.length != 32) {
+            revert InvalidConsensusStateRootLength();
+        }
+        if (consensusState.validators.length == 0) {
+            revert EmptyValidators();
+        }
         clientStates[clientId] = clientState;
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
         return clientState.latest_height;
@@ -100,7 +137,9 @@ contract IBFT2Client is ILightClient {
         returns (uint64)
     {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        require(consensusState.timestamp != 0, "consensus state not found");
+        if (consensusState.timestamp == 0) {
+            revert ConsensusStateNotFound(clientId, height);
+        }
         // ConsensState.timestamp is seconds since unix epoch, so need to convert it to nanoseconds
         return consensusState.timestamp * 1e9;
     }
@@ -110,7 +149,9 @@ contract IBFT2Client is ILightClient {
      */
     function getLatestHeight(string calldata clientId) external view override returns (Height.Data memory) {
         ClientState.Data storage clientState = clientStates[clientId];
-        require(clientState.latest_height.revision_height != 0, "client not found");
+        if (clientState.latest_height.revision_height == 0) {
+            revert ClientStateNotFound(clientId);
+        }
         return clientState.latest_height;
     }
 
@@ -129,15 +170,17 @@ contract IBFT2Client is ILightClient {
         assert(clientState.ibc_store_address.length != 0);
 
         ParsedBesuHeader memory parsedHeader = parseBesuHeader(header);
-        require(parsedHeader.height.gt(clientState.latest_height), "header height <= consensus state height");
         uint128 newHeight = parsedHeader.height.toUint128();
 
         ConsensusState.Data storage trustedConsensusState = consensusStates[clientId][header.trusted_height.toUint128()];
-        require(trustedConsensusState.timestamp != 0);
+        if (trustedConsensusState.timestamp == 0) {
+            revert ConsensusStateNotFound(clientId, header.trusted_height);
+        }
 
-        (bytes[] memory validators, bool ok) = verify(trustedConsensusState.validators, parsedHeader);
-        require(ok, "failed to verify the header");
-
+        bytes[] memory validators = verify(trustedConsensusState.validators, parsedHeader);
+        if (validators.length == 0) {
+            revert EmptyValidators();
+        }
         if (parsedHeader.height.gt(clientState.latest_height)) {
             clientState.latest_height = parsedHeader.height;
         }
@@ -176,7 +219,9 @@ contract IBFT2Client is ILightClient {
             return false;
         }
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        require(consensusState.timestamp != 0);
+        if (consensusState.timestamp == 0) {
+            revert ConsensusStateNotFound(clientId, height);
+        }
         return verifyMembership(
             proof,
             bytes32(consensusState.root),
@@ -202,7 +247,9 @@ contract IBFT2Client is ILightClient {
             return false;
         }
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        require(consensusState.timestamp != 0);
+        if (consensusState.timestamp == 0) {
+            revert ConsensusStateNotFound(clientId, height);
+        }
         return verifyNonMembership(
             proof, bytes32(consensusState.root), keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT))
         );
@@ -224,13 +271,17 @@ contract IBFT2Client is ILightClient {
 
     function unmarshalHeader(bytes calldata bz) internal pure returns (Header.Data memory header) {
         Any.Data memory anyHeader = Any.decode(bz);
-        require(keccak256(abi.encodePacked(anyHeader.type_url)) == HEADER_TYPE_URL_HASH, "invalid header type url");
+        if (keccak256(abi.encodePacked(anyHeader.type_url)) != HEADER_TYPE_URL_HASH) {
+            revert UnexpectedProtoAnyTypeURL(anyHeader.type_url);
+        }
         return Header.decode(anyHeader.value);
     }
 
     function unmarshalClientState(bytes calldata bz) internal pure returns (ClientState.Data memory clientState) {
         Any.Data memory anyClientState = Any.decode(bz);
-        require(keccak256(abi.encodePacked(anyClientState.type_url)) == CLIENT_STATE_TYPE_URL_HASH);
+        if (keccak256(abi.encodePacked(anyClientState.type_url)) != CLIENT_STATE_TYPE_URL_HASH) {
+            revert UnexpectedProtoAnyTypeURL(anyClientState.type_url);
+        }
         return ClientState.decode(anyClientState.value);
     }
 
@@ -240,7 +291,9 @@ contract IBFT2Client is ILightClient {
         returns (ConsensusState.Data memory consensusState)
     {
         Any.Data memory anyConsensusState = Any.decode(bz);
-        require(keccak256(abi.encodePacked(anyConsensusState.type_url)) == CONSENSUS_STATE_TYPE_URL_HASH);
+        if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != CONSENSUS_STATE_TYPE_URL_HASH) {
+            revert UnexpectedProtoAnyTypeURL(anyConsensusState.type_url);
+        }
         return ConsensusState.decode(anyConsensusState.value);
     }
 
@@ -254,18 +307,10 @@ contract IBFT2Client is ILightClient {
     function verify(bytes[] memory trustedVals, ParsedBesuHeader memory untrustedHeader)
         internal
         pure
-        returns (bytes[] memory validators, bool ok)
+        returns (bytes[] memory)
     {
         bytes32 blkHash = keccak256(untrustedHeader.base.besu_header_rlp);
-
-        if (
-            !verifyCommitSealsTrusting(
-                trustedVals, untrustedHeader.base.seals, blkHash, Fraction({numerator: 1, denominator: 3})
-            )
-        ) {
-            return (validators, false);
-        }
-
+        verifyCommitSealsTrusting(trustedVals, untrustedHeader.base.seals, blkHash);
         return verifyCommitSeals(untrustedHeader.validators, untrustedHeader.base.seals, blkHash);
     }
 
@@ -274,14 +319,11 @@ contract IBFT2Client is ILightClient {
      * @param trustedVals trusted validators
      * @param seals commit seals for untrusted block header
      * @param blkHash the hash of untrusted block
-     * @param trustLevel new header can be trusted if at least one correct validator signed it
      */
-    function verifyCommitSealsTrusting(
-        bytes[] memory trustedVals,
-        bytes[] memory seals,
-        bytes32 blkHash,
-        Fraction memory trustLevel
-    ) internal pure returns (bool) {
+    function verifyCommitSealsTrusting(bytes[] memory trustedVals, bytes[] memory seals, bytes32 blkHash)
+        internal
+        pure
+    {
         uint8 success = 0;
         bool[] memory marked = new bool[](trustedVals.length);
         for (uint256 i = 0; i < seals.length; i++) {
@@ -290,14 +332,18 @@ contract IBFT2Client is ILightClient {
             }
             address signer = ecdsaRecover(blkHash, seals[i]);
             for (uint256 j = 0; j < trustedVals.length; j++) {
-                require(trustedVals[j].length == 20, "invalid address length");
+                if (trustedVals[j].length != 20) {
+                    revert InvalidValidatorAddressLength();
+                }
                 if (!marked[j] && address(bytes20(trustedVals[j])) == signer) {
                     success++;
                     marked[j] = true;
                 }
             }
         }
-        return success >= trustedVals.length * trustLevel.numerator / trustLevel.denominator;
+        if (success < trustedVals.length / 3) {
+            revert InsufficientTrustedValidatorsSeals(success, trustedVals.length / 3);
+        }
     }
 
     /**
@@ -309,20 +355,25 @@ contract IBFT2Client is ILightClient {
     function verifyCommitSeals(RLPReader.RLPItem[] memory untrustedVals, bytes[] memory seals, bytes32 blkHash)
         internal
         pure
-        returns (bytes[] memory, bool)
+        returns (bytes[] memory)
     {
         bytes[] memory validators = new bytes[](untrustedVals.length);
         uint8 success = 0;
         for (uint256 i = 0; i < seals.length; i++) {
             validators[i] = untrustedVals[i].toBytes();
-            require(validators[i].length == 20, "invalid address length");
+            if (validators[i].length != 20) {
+                revert InvalidValidatorAddressLength();
+            }
             if (seals[i].length == 0) {
                 continue;
             } else if (address(bytes20(validators[i])) == ecdsaRecover(blkHash, seals[i])) {
                 success++;
             }
         }
-        return (validators, success > untrustedVals.length * 2 / 3);
+        if (success < untrustedVals.length * 2 / 3) {
+            revert InsuffientUntrustedValidatorsSeals(success, untrustedVals.length * 2 / 3);
+        }
+        return validators;
     }
 
     /// helper functions ///
@@ -411,11 +462,14 @@ contract IBFT2Client is ILightClient {
         parsedHeader.stateRoot = bytes32(items[3].toUint());
         parsedHeader.height = Height.Data({revision_number: 0, revision_height: uint64(items[8].toUint())});
 
-        require(items.length == 15, "items length must be 15");
+        if (items.length != 15) {
+            revert UnexpectedEthereumHeaderFormat(items.length);
+        }
         parsedHeader.time = uint64(items[11].toUint());
         items = items[12].toBytes().toRlpItem().toList();
-        require(items.length == 4, "extra length must be 4");
-
+        if (items.length != 4) {
+            revert UnexpectedExtraDataFormat(items.length);
+        }
         parsedHeader.validators = items[1].toList();
         return parsedHeader;
     }
@@ -431,8 +485,9 @@ contract IBFT2Client is ILightClient {
     }
 
     function ecdsaRecover(bytes32 hash, bytes memory sig) private pure returns (address) {
-        require(sig.length == 65, "sig length must be 65");
-        if (uint8(sig[64]) < 27) {
+        if (sig.length != 65) {
+            revert InvalidECDSASignatureLength(sig.length);
+        } else if (uint8(sig[64]) < 27) {
             sig[64] = bytes1(uint8(sig[64]) + 27);
         }
         (address signer, ECDSA.RecoverError error) = ECDSA.tryRecover(hash, sig);
@@ -476,7 +531,9 @@ contract IBFT2Client is ILightClient {
     }
 
     modifier onlyIBC() {
-        require(msg.sender == ibcHandler);
+        if (msg.sender != ibcHandler) {
+            revert InvalidCaller(msg.sender);
+        }
         _;
     }
 }

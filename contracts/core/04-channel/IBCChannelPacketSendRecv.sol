@@ -5,20 +5,24 @@ import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel} from "../../proto/Channel.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
+import {IIBCClientErrors} from "../02-client/IIBCClientErrors.sol";
 import {IBCHeight} from "../02-client/IBCHeight.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 import {IBCChannelLib} from "./IBCChannelLib.sol";
 import {IIBCChannelPacketSendRecv} from "./IIBCChannel.sol";
+import {IIBCChannelErrors} from "./IIBCChannelErrors.sol";
 
 /**
  * @dev IBCChannelPacketSendRecv is a contract that implements [ICS-4](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics).
  */
-contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv {
+contract IBCChannelPacketSendRecv is
+    IBCModuleManager,
+    IIBCChannelPacketSendRecv,
+    IIBCChannelErrors,
+    IIBCClientErrors
+{
     using IBCHeight for Height.Data;
-
-    bytes32 internal constant SUCCESSFUL_RECEIPT_COMMITMENT =
-        keccak256(abi.encodePacked(IBCChannelLib.PacketReceipt.SUCCESSFUL));
 
     /**
      * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
@@ -32,30 +36,35 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
         uint64 timeoutTimestamp,
         bytes calldata data
     ) external returns (uint64) {
-        require(authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel)), "unauthorized");
+        authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel));
 
         Channel.Data storage channel = channels[sourcePort][sourceChannel];
-        require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
+        if (channel.state != Channel.State.STATE_OPEN) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
+        if (timeoutHeight.isZero() && timeoutTimestamp == 0) {
+            revert IBCChannelZeroPacketTimeout();
+        }
 
         {
+            // NOTE: We can assume here that the connection state is OPEN because the channel state is OPEN
             ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
             ILightClient client = ILightClient(clientImpls[connection.client_id]);
-            require(address(client) != address(0), "client not found");
-            require(
-                client.getStatus(connection.client_id) == ILightClient.ClientStatus.Active, "client state is not active"
-            );
+            if (address(client) == address(0)) {
+                revert IBCHostClientNotFound(connection.client_id);
+            }
+            if (client.getStatus(connection.client_id) != ILightClient.ClientStatus.Active) {
+                revert IBCClientNotActiveClient(connection.client_id);
+            }
 
-            require(!timeoutHeight.isZero() || timeoutTimestamp != 0, "timeout height and timestamp cannot both be 0");
             Height.Data memory latestHeight = client.getLatestHeight(connection.client_id);
-            require(
-                timeoutHeight.isZero() || latestHeight.lt(timeoutHeight),
-                "receiving chain block height >= packet timeout height"
-            );
+            if (!timeoutHeight.isZero() && latestHeight.gte(timeoutHeight)) {
+                revert IBCChannelPastPacketTimeoutHeight(timeoutHeight, latestHeight);
+            }
             uint64 latestTimestamp = client.getTimestampAtHeight(connection.client_id, latestHeight);
-            require(
-                timeoutTimestamp == 0 || latestTimestamp < timeoutTimestamp,
-                "receiving chain block timestamp >= packet timeout timestamp"
-            );
+            if (timeoutTimestamp != 0 && latestTimestamp >= timeoutTimestamp) {
+                revert IBCChannelPastPacketTimeoutTimestamp(timeoutTimestamp, latestTimestamp);
+            }
         }
 
         uint64 packetSequence = nextSequenceSends[sourcePort][sourceChannel];
@@ -81,9 +90,16 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
         string calldata destinationPortId,
         string calldata destinationChannel,
         uint64 sequence,
-        bytes memory acknowledgement
+        bytes calldata acknowledgement
     ) public {
-        require(authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel)), "unauthorized");
+        authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel));
+        Channel.Data storage channel = channels[destinationPortId][destinationChannel];
+        if (channel.state != Channel.State.STATE_OPEN) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
+        if (acknowledgement.length == 0) {
+            revert IBCChannelEmptyAcknowledgement();
+        }
         _writeAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
@@ -93,15 +109,11 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
         uint64 sequence,
         bytes memory acknowledgement
     ) internal {
-        require(acknowledgement.length > 0, "acknowledgement cannot be empty");
-
-        Channel.Data storage channel = channels[destinationPortId][destinationChannel];
-        require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
-
         bytes32 ackCommitmentKey =
             IBCCommitment.packetAcknowledgementCommitmentKey(destinationPortId, destinationChannel, sequence);
-        bytes32 ackCommitment = commitments[ackCommitmentKey];
-        require(ackCommitment == bytes32(0), "acknowledgement for packet already exists");
+        if (commitments[ackCommitmentKey] != bytes32(0)) {
+            revert IBCChannelAcknowledgementAlreadyWritten(destinationPortId, destinationChannel, sequence);
+        }
         commitments[ackCommitmentKey] = keccak256(abi.encodePacked(sha256(acknowledgement)));
         emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
@@ -112,60 +124,61 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
      */
     function recvPacket(MsgPacketRecv calldata msg_) external {
         Channel.Data storage channel = channels[msg_.packet.destination_port][msg_.packet.destination_channel];
-        require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
+        if (channel.state != Channel.State.STATE_OPEN) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
 
-        require(
-            keccak256(bytes(msg_.packet.source_port)) == keccak256(bytes(channel.counterparty.port_id)),
-            "packet source port doesn't match the counterparty's port"
-        );
-        require(
-            keccak256(bytes(msg_.packet.source_channel)) == keccak256(bytes(channel.counterparty.channel_id)),
-            "packet source channel doesn't match the counterparty's channel"
-        );
+        if (keccak256(bytes(msg_.packet.source_port)) != keccak256(bytes(channel.counterparty.port_id))) {
+            revert IBCChannelUnexpectedPacketSource(msg_.packet.source_port, msg_.packet.source_channel);
+        } else if (keccak256(bytes(msg_.packet.source_channel)) != keccak256(bytes(channel.counterparty.channel_id))) {
+            revert IBCChannelUnexpectedPacketSource(msg_.packet.source_port, msg_.packet.source_channel);
+        }
 
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
+        if (
+            msg_.packet.timeout_height.revision_height != 0
+                && block.number >= msg_.packet.timeout_height.revision_height
+        ) {
+            revert IBCChannelTimeoutPacketHeight(block.number, msg_.packet.timeout_height.revision_height);
+        }
+        if (msg_.packet.timeout_timestamp != 0 && block.timestamp * 1e9 >= msg_.packet.timeout_timestamp) {
+            revert IBCChannelTimeoutPacketTimestamp(block.timestamp * 1e9, msg_.packet.timeout_timestamp);
+        }
 
-        require(
-            msg_.packet.timeout_height.revision_height == 0 || block.number < msg_.packet.timeout_height.revision_height,
-            "block height >= packet timeout height"
-        );
-        require(
-            msg_.packet.timeout_timestamp == 0 || block.timestamp * 1e9 < msg_.packet.timeout_timestamp,
-            "block timestamp >= packet timeout timestamp"
-        );
-
-        require(
-            verifyPacketCommitment(
-                connection,
-                msg_.proofHeight,
-                msg_.proof,
-                IBCCommitment.packetCommitmentPath(
-                    msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
-                ),
-                sha256(
-                    abi.encodePacked(
-                        msg_.packet.timeout_timestamp,
-                        msg_.packet.timeout_height.revision_number,
-                        msg_.packet.timeout_height.revision_height,
-                        sha256(msg_.packet.data)
-                    )
-                )
+        verifyPacketCommitment(
+            connections[channel.connection_hops[0]],
+            msg_.proofHeight,
+            msg_.proof,
+            IBCCommitment.packetCommitmentPath(
+                msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
             ),
-            "failed to verify packet commitment"
+            sha256(
+                abi.encodePacked(
+                    msg_.packet.timeout_timestamp,
+                    msg_.packet.timeout_height.revision_number,
+                    msg_.packet.timeout_height.revision_height,
+                    sha256(msg_.packet.data)
+                )
+            )
         );
 
         if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
             bytes32 commitmentKey = IBCCommitment.packetReceiptCommitmentKey(
                 msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
             );
-            require(commitments[commitmentKey] == bytes32(0), "packet receipt already exists");
-            commitments[commitmentKey] = SUCCESSFUL_RECEIPT_COMMITMENT;
+            if (commitments[commitmentKey] != bytes32(0)) {
+                revert IBCChannelPacketReceiptAlreadyExists(
+                    msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
+                );
+            }
+            commitments[commitmentKey] = IBCChannelLib.PACKET_RECEIPT_SUCCESSFUL_KECCAK256;
         } else if (channel.ordering == Channel.Order.ORDER_ORDERED) {
-            require(
-                nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel] == msg_.packet.sequence,
-                "packet sequence != next receive sequence"
-            );
+            if (
+                nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel] != msg_.packet.sequence
+            ) {
+                revert IBCChannelUnexpectedNextSequenceRecv(
+                    nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel]
+                );
+            }
             nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel]++;
             commitments[IBCCommitment.nextSequenceRecvCommitmentKey(
                 msg_.packet.destination_port, msg_.packet.destination_channel
@@ -173,7 +186,7 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
                 uint64ToBigEndianBytes(nextSequenceRecvs[msg_.packet.destination_port][msg_.packet.destination_channel])
             );
         } else {
-            revert("unknown ordering type");
+            revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
         bytes memory acknowledgement = lookupModuleByChannel(
             msg_.packet.destination_port, msg_.packet.destination_channel
@@ -196,59 +209,61 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
      */
     function acknowledgePacket(MsgPacketAcknowledgement calldata msg_) external {
         Channel.Data storage channel = channels[msg_.packet.source_port][msg_.packet.source_channel];
-        require(channel.state == Channel.State.STATE_OPEN, "channel state must be OPEN");
+        if (channel.state != Channel.State.STATE_OPEN) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
 
-        require(
-            keccak256(bytes(msg_.packet.destination_port)) == keccak256(bytes(channel.counterparty.port_id)),
-            "packet destination port doesn't match the counterparty's port"
-        );
-        require(
-            keccak256(bytes(msg_.packet.destination_channel)) == keccak256(bytes(channel.counterparty.channel_id)),
-            "packet destination channel doesn't match the counterparty's channel"
-        );
+        if (keccak256(bytes(msg_.packet.destination_port)) != keccak256(bytes(channel.counterparty.port_id))) {
+            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destination_port, msg_.packet.destination_channel);
+        } else if (
+            keccak256(bytes(msg_.packet.destination_channel)) != keccak256(bytes(channel.counterparty.channel_id))
+        ) {
+            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destination_port, msg_.packet.destination_channel);
+        }
 
+        // NOTE: We can assume here that the connection state is OPEN because the channel state is OPEN
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
 
         bytes32 packetCommitmentKey =
             IBCCommitment.packetCommitmentKey(msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence);
         bytes32 packetCommitment = commitments[packetCommitmentKey];
-        require(packetCommitment != bytes32(0), "packet commitment not found");
-        require(
-            packetCommitment
-                == keccak256(
+        if (packetCommitment == bytes32(0)) {
+            revert IBCChannelPacketCommitmentNotFound(
+                msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
+            );
+        }
+        bytes32 commitment = keccak256(
+            abi.encodePacked(
+                sha256(
                     abi.encodePacked(
-                        sha256(
-                            abi.encodePacked(
-                                msg_.packet.timeout_timestamp,
-                                msg_.packet.timeout_height.revision_number,
-                                msg_.packet.timeout_height.revision_height,
-                                sha256(msg_.packet.data)
-                            )
-                        )
+                        msg_.packet.timeout_timestamp,
+                        msg_.packet.timeout_height.revision_number,
+                        msg_.packet.timeout_height.revision_height,
+                        sha256(msg_.packet.data)
                     )
-                ),
-            "commitment bytes are not equal"
+                )
+            )
         );
+        if (packetCommitment != commitment) {
+            revert IBCChannelPacketCommitmentMismatch(packetCommitment, commitment);
+        }
 
-        require(
-            verifyPacketAcknowledgement(
-                connection,
-                msg_.proofHeight,
-                msg_.proof,
-                IBCCommitment.packetAcknowledgementCommitmentPath(
-                    msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
-                ),
-                sha256(msg_.acknowledgement)
+        verifyPacketAcknowledgement(
+            connection,
+            msg_.proofHeight,
+            msg_.proof,
+            IBCCommitment.packetAcknowledgementCommitmentPath(
+                msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
             ),
-            "failed to verify packet acknowledgement commitment"
+            sha256(msg_.acknowledgement)
         );
 
         if (channel.ordering == Channel.Order.ORDER_ORDERED) {
-            require(
-                msg_.packet.sequence == nextSequenceAcks[msg_.packet.source_port][msg_.packet.source_channel],
-                "packet sequence != next ack sequence"
-            );
+            if (msg_.packet.sequence != nextSequenceAcks[msg_.packet.source_port][msg_.packet.source_channel]) {
+                revert IBCChannelUnexpectedNextSequenceAck(
+                    nextSequenceAcks[msg_.packet.source_port][msg_.packet.source_channel]
+                );
+            }
             nextSequenceAcks[msg_.packet.source_port][msg_.packet.source_channel]++;
         }
 
@@ -266,18 +281,23 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
         Height.Data calldata height,
         bytes calldata proof,
         bytes memory path,
-        bytes32 commitmentBytes
-    ) private returns (bool) {
-        return checkAndGetClient(connection.client_id).verifyMembership(
-            connection.client_id,
-            height,
-            connection.delay_period,
-            calcBlockDelay(connection.delay_period),
-            proof,
-            connection.counterparty.prefix.key_prefix,
-            path,
-            abi.encodePacked(commitmentBytes)
-        );
+        bytes32 commitment
+    ) private {
+        if (
+            checkAndGetClient(connection.client_id).verifyMembership(
+                connection.client_id,
+                height,
+                connection.delay_period,
+                calcBlockDelay(connection.delay_period),
+                proof,
+                connection.counterparty.prefix.key_prefix,
+                path,
+                abi.encodePacked(commitment)
+            )
+        ) {
+            return;
+        }
+        revert IBCChannelFailedVerifyPacketCommitment(connection.client_id, path, commitment, proof, height);
     }
 
     function verifyPacketAcknowledgement(
@@ -285,17 +305,24 @@ contract IBCChannelPacketSendRecv is IBCModuleManager, IIBCChannelPacketSendRecv
         Height.Data calldata height,
         bytes calldata proof,
         bytes memory path,
-        bytes32 acknowledgementCommitmentBytes
-    ) private returns (bool) {
-        return checkAndGetClient(connection.client_id).verifyMembership(
-            connection.client_id,
-            height,
-            connection.delay_period,
-            calcBlockDelay(connection.delay_period),
-            proof,
-            connection.counterparty.prefix.key_prefix,
-            path,
-            abi.encodePacked(acknowledgementCommitmentBytes)
+        bytes32 acknowledgementCommitment
+    ) private {
+        if (
+            checkAndGetClient(connection.client_id).verifyMembership(
+                connection.client_id,
+                height,
+                connection.delay_period,
+                calcBlockDelay(connection.delay_period),
+                proof,
+                connection.counterparty.prefix.key_prefix,
+                path,
+                abi.encodePacked(acknowledgementCommitment)
+            )
+        ) {
+            return;
+        }
+        revert IBCChannelFailedVerifyPacketAcknowledgement(
+            connection.client_id, path, acknowledgementCommitment, proof, height
         );
     }
 

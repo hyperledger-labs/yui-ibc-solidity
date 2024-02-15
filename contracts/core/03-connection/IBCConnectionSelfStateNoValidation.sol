@@ -26,7 +26,9 @@ contract IBCConnectionSelfStateNoValidation is IBCConnection {
         override
         returns (bytes memory)
     {
-        require(hostConsensusStateProof.length != 0, "hostConsensusStateProof cannot be empty");
+        if (hostConsensusStateProof.length == 0) {
+            revert IBCConnectionInvalidHostConsensusStateProof();
+        }
         return hostConsensusStateProof;
     }
 }

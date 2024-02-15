@@ -14,7 +14,9 @@ contract IBCModuleManager is IBCHost, Context {
      */
     function lookupModuleByPort(string memory portId) internal view virtual returns (IIBCModule) {
         address module = lookupModule(portCapabilityPath(portId));
-        require(module != address(0), "module not found");
+        if (module == address(0)) {
+            revert IBCHostModuleNotFound(portCapabilityPath(portId));
+        }
         return IIBCModule(module);
     }
 
@@ -28,7 +30,9 @@ contract IBCModuleManager is IBCHost, Context {
         returns (IIBCModule)
     {
         address module = lookupModule(channelCapabilityPath(portId, channelId));
-        require(module != address(0), "module not found");
+        if (module == address(0)) {
+            revert IBCHostModuleNotFound(channelCapabilityPath(portId, channelId));
+        }
         return IIBCModule(module);
     }
 
@@ -36,7 +40,9 @@ contract IBCModuleManager is IBCHost, Context {
      * @dev claimCapability allows the IBC app module to claim a capability that core IBC passes to it
      */
     function claimCapability(string memory name, address addr) internal {
-        require(capabilities[name] == address(0), "capability already claimed");
+        if (capabilities[name] != address(0)) {
+            revert IBCHostCapabilityAlreadyClaimed(name);
+        }
         capabilities[name] = addr;
     }
 
@@ -44,8 +50,10 @@ contract IBCModuleManager is IBCHost, Context {
      * @dev authenticateCapability attempts to authenticate a given name from a caller.
      * It allows for a caller to check that a capability does in fact correspond to a particular name.
      */
-    function authenticateCapability(string memory name) internal view returns (bool) {
-        return _msgSender() == capabilities[name];
+    function authenticateCapability(string memory name) internal view {
+        if (capabilities[name] != _msgSender()) {
+            revert IBCHostFailedAuthenticateCapability(name, _msgSender());
+        }
     }
 
     /**

@@ -9,21 +9,13 @@ import (
 )
 
 func TestRevertReasonParser(t *testing.T) {
-	// 1. Valid format
-	s, err := parseRevertReason(
+	erepo := NewErrorsRepository()
+	s, args, err := erepo.ParseError(
 		hexToBytes("0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001a4e6f7420656e6f7567682045746865722070726f76696465642e000000000000"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, "Not enough Ether provided.", s)
-
-	// 2. Empty bytes
-	s, err = parseRevertReason(nil)
-	require.NoError(t, err)
-	require.Equal(t, "", s)
-
-	// 3. Invalid format
-	_, err = parseRevertReason([]byte{0})
-	require.Error(t, err)
+	require.Equal(t, "Error(string)", s)
+	require.Equal(t, []interface{}{"Not enough Ether provided."}, args)
 }
 
 func hexToBytes(s string) []byte {

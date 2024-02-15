@@ -31,6 +31,7 @@ import (
 	ibccommitment "github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitmenttesthelper"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
 	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2"
@@ -66,6 +67,9 @@ var (
 	abiGeneratedChannelIdentifier abi.Event
 )
 
+// IBCErrorsRepository is a repository of custom errors defined in the ibc-solidity contracts.
+var IBCErrorsRepository client.ErrorsRepository
+
 func init() {
 	var err error
 	abiIBCHandler, err = abi.JSON(strings.NewReader(ibchandler.IbchandlerABI))
@@ -77,6 +81,24 @@ func init() {
 	abiGeneratedClientIdentifier = abiIBCHandler.Events["GeneratedClientIdentifier"]
 	abiGeneratedConnectionIdentifier = abiIBCHandler.Events["GeneratedConnectionIdentifier"]
 	abiGeneratedChannelIdentifier = abiIBCHandler.Events["GeneratedChannelIdentifier"]
+
+	abiICS20Bank, err := abi.JSON(strings.NewReader(ics20bank.Ics20bankABI))
+	if err != nil {
+		panic(err)
+	}
+	abiICS20TransferBank, err := abi.JSON(strings.NewReader(ics20transferbank.Ics20transferbankABI))
+	if err != nil {
+		panic(err)
+	}
+	abiIBFT2Client, err := abi.JSON(strings.NewReader(ibft2client.Ibft2clientABI))
+	if err != nil {
+		panic(err)
+	}
+	IBCErrorsRepository = client.NewErrorsRepository()
+	addErrorsToRepository(abiIBCHandler.Errors, IBCErrorsRepository)
+	addErrorsToRepository(abiICS20Bank.Errors, IBCErrorsRepository)
+	addErrorsToRepository(abiICS20TransferBank.Errors, IBCErrorsRepository)
+	addErrorsToRepository(abiIBFT2Client.Errors, IBCErrorsRepository)
 }
 
 type Chain struct {
@@ -1449,6 +1471,14 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 				}
 				return tx.WithSignature(signer, signature)
 			},
+		}
+	}
+}
+
+func addErrorsToRepository(errors map[string]abi.Error, repository client.ErrorsRepository) {
+	for _, e := range errors {
+		if err := repository.Add(e); err != nil {
+			panic(err)
 		}
 	}
 }

@@ -21,10 +21,11 @@ function gen_code() {
 
 function main() {
   local srcs=(
-    "IIBCHandler ibchandler"
+    "IBCHandler"
     "ERC20"
     "ICS20TransferBank"
     "ICS20Bank"
+    "IBFT2Client"
     "IBCMockApp"
     "IBCCommitmentTestHelper"
   )

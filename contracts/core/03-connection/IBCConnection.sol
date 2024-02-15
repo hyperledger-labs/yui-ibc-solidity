@@ -6,6 +6,7 @@ import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd, Version, Counterparty} from "../../proto/Connection.sol";
 import {MerklePrefix} from "../../proto/Commitment.sol";
 import {IIBCConnection} from "../03-connection/IIBCConnection.sol";
+import {IIBCConnectionErrors} from "../03-connection/IIBCConnectionErrors.sol";
 import {IBCHost} from "../24-host/IBCHost.sol";
 import {IBCSelfStateValidator} from "../24-host/IBCSelfStateValidator.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
@@ -14,7 +15,7 @@ import {IBCConnectionLib} from "./IBCConnectionLib.sol";
 /**
  * @dev IBCConnection is a contract that implements [ICS-3](https://github.com/cosmos/ibc/tree/main/spec/core/ics-003-connection-semantics).
  */
-abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnection {
+abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnection, IIBCConnectionErrors {
     /**
      * @dev connectionOpenInit initialises a connection attempt on chain A. The generated connection identifier
      * is returned.
@@ -26,17 +27,20 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
     {
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
-        require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
+        if (connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCConnectionAlreadyConnectionExists();
+        }
         // ensure the client exists
         checkAndGetClient(msg_.clientId);
-        require(bytes(msg_.counterparty.connection_id).length == 0, "counterparty connectionId must be empty");
+        if (bytes(msg_.counterparty.connection_id).length > 0) {
+            revert IBCConnectionInvalidCounterpartyConnectionIdentifier(msg_.counterparty.connection_id);
+        }
         connection.client_id = msg_.clientId;
 
         if (msg_.version.features.length > 0) {
-            require(
-                IBCConnectionLib.isSupportedVersion(getCompatibleVersions(), msg_.version),
-                "the selected version is not supported"
-            );
+            if (!IBCConnectionLib.isSupportedVersion(getCompatibleVersions(), msg_.version)) {
+                revert IBCConnectionIBCVersionNotSupported();
+            }
             connection.versions.push(msg_.version);
         } else {
             IBCConnectionLib.setSupportedVersions(getCompatibleVersions(), connection.versions);
@@ -59,13 +63,18 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         override
         returns (string memory)
     {
-        require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
-        require(msg_.counterpartyVersions.length > 0, "counterpartyVersions length must be greater than 0");
+        if (msg_.counterpartyVersions.length == 0) {
+            revert IBCConnectionEmptyConnectionCounterpartyVersions();
+        } else if (!validateSelfClient(msg_.clientStateBytes)) {
+            revert IBCConnectionInvalidSelfClientState();
+        }
         bytes memory selfConsensusState = getSelfConsensusState(msg_.consensusHeight, msg_.hostConsensusStateProof);
 
         string memory connectionId = generateConnectionIdentifier();
         ConnectionEnd.Data storage connection = connections[connectionId];
-        require(connection.state == ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED, "connectionId already exists");
+        if (connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCConnectionAlreadyConnectionExists();
+        }
         // ensure the client exists
         checkAndGetClient(msg_.clientId);
 
@@ -87,27 +96,18 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             })
         });
 
-        require(
-            verifyConnectionState(
-                connection, msg_.proofHeight, msg_.proofInit, msg_.counterparty.connection_id, expectedConnection
-            ),
-            "failed to verify connection state"
+        verifyConnectionState(
+            connection, msg_.proofHeight, msg_.proofInit, msg_.counterparty.connection_id, expectedConnection
         );
-        require(
-            verifyClientState(
-                connection,
-                msg_.proofHeight,
-                IBCCommitment.clientStatePath(connection.counterparty.client_id),
-                msg_.proofClient,
-                msg_.clientStateBytes
-            ),
-            "failed to verify clientState"
+        verifyClientState(
+            connection,
+            msg_.proofHeight,
+            IBCCommitment.clientStatePath(connection.counterparty.client_id),
+            msg_.proofClient,
+            msg_.clientStateBytes
         );
-        require(
-            verifyClientConsensusState(
-                connection, msg_.proofHeight, msg_.consensusHeight, msg_.proofConsensus, selfConsensusState
-            ),
-            "failed to verify clientConsensusState"
+        verifyClientConsensusState(
+            connection, msg_.proofHeight, msg_.consensusHeight, msg_.proofConsensus, selfConsensusState
         );
 
         updateConnectionCommitment(connectionId);
@@ -121,12 +121,15 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
      */
     function connectionOpenAck(IIBCConnection.MsgConnectionOpenAck calldata msg_) external override {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
-        require(connection.state == ConnectionEnd.State.STATE_INIT, "connection state is not INIT");
-        require(
-            IBCConnectionLib.isSupportedVersion(connection.versions, msg_.version),
-            "the counterparty selected version is not supported by versions selected on INIT"
-        );
-        require(validateSelfClient(msg_.clientStateBytes), "failed to validate self client state");
+        if (connection.state != ConnectionEnd.State.STATE_INIT) {
+            revert IBCConnectionUnexpectedConnectionState(connection.state);
+        }
+        if (!IBCConnectionLib.isSupportedVersion(connection.versions, msg_.version)) {
+            revert IBCConnectionIBCVersionNotSupported();
+        }
+        if (!validateSelfClient(msg_.clientStateBytes)) {
+            revert IBCConnectionInvalidSelfClientState();
+        }
         bytes memory selfConsensusState = getSelfConsensusState(msg_.consensusHeight, msg_.hostConsensusStateProof);
 
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
@@ -141,27 +144,18 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             })
         });
 
-        require(
-            verifyConnectionState(
-                connection, msg_.proofHeight, msg_.proofTry, msg_.counterpartyConnectionId, expectedConnection
-            ),
-            "failed to verify connection state"
+        verifyConnectionState(
+            connection, msg_.proofHeight, msg_.proofTry, msg_.counterpartyConnectionId, expectedConnection
         );
-        require(
-            verifyClientState(
-                connection,
-                msg_.proofHeight,
-                IBCCommitment.clientStatePath(connection.counterparty.client_id),
-                msg_.proofClient,
-                msg_.clientStateBytes
-            ),
-            "failed to verify clientState"
+        verifyClientState(
+            connection,
+            msg_.proofHeight,
+            IBCCommitment.clientStatePath(connection.counterparty.client_id),
+            msg_.proofClient,
+            msg_.clientStateBytes
         );
-        require(
-            verifyClientConsensusState(
-                connection, msg_.proofHeight, msg_.consensusHeight, msg_.proofConsensus, selfConsensusState
-            ),
-            "failed to verify clientConsensusState"
+        verifyClientConsensusState(
+            connection, msg_.proofHeight, msg_.consensusHeight, msg_.proofConsensus, selfConsensusState
         );
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
@@ -176,7 +170,9 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
      */
     function connectionOpenConfirm(IIBCConnection.MsgConnectionOpenConfirm calldata msg_) external override {
         ConnectionEnd.Data storage connection = connections[msg_.connectionId];
-        require(connection.state == ConnectionEnd.State.STATE_TRYOPEN, "connection state is not TRYOPEN");
+        if (connection.state != ConnectionEnd.State.STATE_TRYOPEN) {
+            revert IBCConnectionUnexpectedConnectionState(connection.state);
+        }
 
         ConnectionEnd.Data memory expectedConnection = ConnectionEnd.Data({
             client_id: connection.counterparty.client_id,
@@ -190,11 +186,8 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             })
         });
 
-        require(
-            verifyConnectionState(
-                connection, msg_.proofHeight, msg_.proofAck, connection.counterparty.connection_id, expectedConnection
-            ),
-            "failed to verify connection state"
+        verifyConnectionState(
+            connection, msg_.proofHeight, msg_.proofAck, connection.counterparty.connection_id, expectedConnection
         );
 
         connection.state = ConnectionEnd.State.STATE_OPEN;
@@ -214,10 +207,22 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         bytes memory path,
         bytes memory proof,
         bytes memory clientStateBytes
-    ) private returns (bool) {
-        return checkAndGetClient(connection.client_id).verifyMembership(
-            connection.client_id, height, 0, 0, proof, connection.counterparty.prefix.key_prefix, path, clientStateBytes
-        );
+    ) private {
+        if (
+            checkAndGetClient(connection.client_id).verifyMembership(
+                connection.client_id,
+                height,
+                0,
+                0,
+                proof,
+                connection.counterparty.prefix.key_prefix,
+                path,
+                clientStateBytes
+            )
+        ) {
+            return;
+        }
+        revert IBCConnectionFailedVerifyClientState(connection.client_id, path, clientStateBytes, proof, height);
     }
 
     function verifyClientConsensusState(
@@ -226,18 +231,31 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         Height.Data memory consensusHeight,
         bytes memory proof,
         bytes memory consensusStateBytes
-    ) private returns (bool) {
-        return checkAndGetClient(connection.client_id).verifyMembership(
+    ) private {
+        if (
+            checkAndGetClient(connection.client_id).verifyMembership(
+                connection.client_id,
+                height,
+                0,
+                0,
+                proof,
+                connection.counterparty.prefix.key_prefix,
+                IBCCommitment.consensusStatePath(
+                    connection.counterparty.client_id, consensusHeight.revision_number, consensusHeight.revision_height
+                ),
+                consensusStateBytes
+            )
+        ) {
+            return;
+        }
+        revert IBCConnectionFailedVerifyClientConsensusState(
             connection.client_id,
-            height,
-            0,
-            0,
-            proof,
-            connection.counterparty.prefix.key_prefix,
             IBCCommitment.consensusStatePath(
                 connection.counterparty.client_id, consensusHeight.revision_number, consensusHeight.revision_height
             ),
-            consensusStateBytes
+            consensusStateBytes,
+            proof,
+            height
         );
     }
 
@@ -245,18 +263,29 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         ConnectionEnd.Data storage connection,
         Height.Data memory height,
         bytes memory proof,
-        string memory connectionId,
+        string memory counterpartyConnectionId,
         ConnectionEnd.Data memory counterpartyConnection
-    ) private returns (bool) {
-        return checkAndGetClient(connection.client_id).verifyMembership(
+    ) private {
+        if (
+            checkAndGetClient(connection.client_id).verifyMembership(
+                connection.client_id,
+                height,
+                0,
+                0,
+                proof,
+                connection.counterparty.prefix.key_prefix,
+                IBCCommitment.connectionPath(counterpartyConnectionId),
+                ConnectionEnd.encode(counterpartyConnection)
+            )
+        ) {
+            return;
+        }
+        revert IBCConnectionFailedVerifyConnectionState(
             connection.client_id,
-            height,
-            0,
-            0,
+            IBCCommitment.connectionPath(counterpartyConnectionId),
+            ConnectionEnd.encode(counterpartyConnection),
             proof,
-            connection.counterparty.prefix.key_prefix,
-            IBCCommitment.connectionPath(connectionId),
-            ConnectionEnd.encode(counterpartyConnection)
+            height
         );
     }
 

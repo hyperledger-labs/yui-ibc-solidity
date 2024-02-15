@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {IICS20Errors} from "./IICS20Errors.sol";
 
 library ICS20Lib {
     /**
@@ -15,9 +16,9 @@ library ICS20Lib {
         string memo;
     }
 
-    bytes public constant SUCCESSFUL_ACKNOWLEDGEMENT_JSON = bytes('{"result":"AQ=="}');
-    bytes public constant FAILED_ACKNOWLEDGEMENT_JSON = bytes('{"error":"failed"}');
-    bytes32 public constant KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON = keccak256(SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
+    bytes internal constant SUCCESSFUL_ACKNOWLEDGEMENT_JSON = bytes('{"result":"AQ=="}');
+    bytes internal constant FAILED_ACKNOWLEDGEMENT_JSON = bytes('{"error":"failed"}');
+    bytes32 internal constant KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON = keccak256(SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
 
     uint256 private constant CHAR_DOUBLE_QUOTE = 0x22;
     uint256 private constant CHAR_SLASH = 0x2f;
@@ -99,24 +100,35 @@ library ICS20Lib {
         uint256 pos = 0;
 
         unchecked {
-            require(bytes32(bz[pos:pos + 11]) == bytes32('{"amount":"'), "amount");
+            if (bytes32(bz[pos:pos + 11]) != bytes32('{"amount":"')) {
+                revert IICS20Errors.ICS20JSONUnexpectedBytes(pos, bytes32('{"amount":"'), bytes32(bz[pos:pos + 11]));
+            }
             (pd.amount, pos) = parseUint256String(bz, pos + 11);
-
-            require(bytes32(bz[pos:pos + 10]) == bytes32(',"denom":"'), "denom");
+            if (bytes32(bz[pos:pos + 10]) != bytes32(',"denom":"')) {
+                revert IICS20Errors.ICS20JSONUnexpectedBytes(pos, bytes32(',"denom":"'), bytes32(bz[pos:pos + 10]));
+            }
             (pd.denom, pos) = parseString(bz, pos + 10);
 
             if (uint256(uint8(bz[pos + 2])) == CHAR_M) {
-                require(bytes32(bz[pos:pos + 9]) == bytes32(',"memo":"'), "memo");
+                if (bytes32(bz[pos:pos + 9]) != bytes32(',"memo":"')) {
+                    revert IICS20Errors.ICS20JSONUnexpectedBytes(pos, bytes32(',"memo":"'), bytes32(bz[pos:pos + 9]));
+                }
                 (pd.memo, pos) = parseString(bz, pos + 9);
             }
 
-            require(bytes32(bz[pos:pos + 13]) == bytes32(',"receiver":"'), "receiver");
+            if (bytes32(bz[pos:pos + 13]) != bytes32(',"receiver":"')) {
+                revert IICS20Errors.ICS20JSONUnexpectedBytes(pos, bytes32(',"receiver":"'), bytes32(bz[pos:pos + 13]));
+            }
             (pd.receiver, pos) = parseString(bz, pos + 13);
 
-            require(bytes32(bz[pos:pos + 11]) == bytes32(',"sender":"'), "sender");
+            if (bytes32(bz[pos:pos + 11]) != bytes32(',"sender":"')) {
+                revert IICS20Errors.ICS20JSONUnexpectedBytes(pos, bytes32(',"sender":"'), bytes32(bz[pos:pos + 11]));
+            }
             (pd.sender, pos) = parseString(bz, pos + 11);
 
-            require(pos == bz.length - 1 && uint256(uint8(bz[pos])) == CHAR_CLOSING_BRACE, "closing brace");
+            if (pos != bz.length - 1 || uint256(uint8(bz[pos])) != CHAR_CLOSING_BRACE) {
+                revert IICS20Errors.ICS20JSONClosingBraceNotFound(pos, bz[pos]);
+            }
         }
 
         return pd;
@@ -135,7 +147,9 @@ library ICS20Lib {
                 }
                 ret = ret * 10 + (c - 48);
             }
-            require(pos < bz.length && uint256(uint8(bz[pos])) == CHAR_DOUBLE_QUOTE, "unterminated string");
+            if (pos >= bz.length || uint256(uint8(bz[pos])) != CHAR_DOUBLE_QUOTE) {
+                revert IICS20Errors.ICS20JSONStringClosingDoubleQuoteNotFound(pos, bz[pos]);
+            }
             return (ret, pos + 1);
         }
     }
@@ -152,15 +166,16 @@ library ICS20Lib {
                 } else if (c == CHAR_BACKSLASH && i + 1 < bz.length) {
                     i++;
                     c = uint256(uint8(bz[i]));
-                    require(
-                        c == CHAR_DOUBLE_QUOTE || c == CHAR_SLASH || c == CHAR_BACKSLASH || c == CHAR_F || c == CHAR_R
-                            || c == CHAR_N || c == CHAR_B || c == CHAR_T,
-                        "invalid escape"
-                    );
+                    if (
+                        c != CHAR_DOUBLE_QUOTE && c != CHAR_SLASH && c != CHAR_BACKSLASH && c != CHAR_F && c != CHAR_R
+                            && c != CHAR_N && c != CHAR_B && c != CHAR_T
+                    ) {
+                        revert IICS20Errors.ICS20JSONInvalidEscape(i, bz[i]);
+                    }
                 }
             }
         }
-        revert("unterminated string");
+        revert IICS20Errors.ICS20JSONStringUnclosed(bz, pos);
     }
 
     function isEscapedJSONString(string calldata s) internal pure returns (bool) {
@@ -211,9 +226,6 @@ library ICS20Lib {
                 localValue >>= 4;
             }
         }
-        if (localValue != 0) {
-            revert("insufficient hex length");
-        }
         return string(buffer);
     }
 
@@ -250,8 +262,11 @@ library ICS20Lib {
      *      This is a copy from https://github.com/GNSPS/solidity-bytes-utils/blob/v0.8.0/contracts/BytesLib.sol
      */
     function slice(bytes memory _bytes, uint256 _start, uint256 _length) internal pure returns (bytes memory) {
-        require(_length + 31 >= _length, "slice_overflow");
-        require(_bytes.length >= _start + _length, "slice_outOfBounds");
+        if (_length + 31 < _length) {
+            revert IICS20Errors.ICS20BytesSliceOverflow(_length);
+        } else if (_start + _length > _bytes.length) {
+            revert IICS20Errors.ICS20BytesSliceOutOfBounds(_bytes.length, _start, _start + _length);
+        }
 
         bytes memory tempBytes;
 

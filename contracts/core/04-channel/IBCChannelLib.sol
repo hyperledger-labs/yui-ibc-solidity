@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Channel} from "../../proto/Channel.sol";
+import {IIBCChannelErrors} from "./IIBCChannelErrors.sol";
 
 library IBCChannelLib {
     enum PacketReceipt {
@@ -9,8 +10,8 @@ library IBCChannelLib {
         SUCCESSFUL
     }
 
-    string public constant ORDER_UNORDERED = "ORDER_UNORDERED";
-    string public constant ORDER_ORDERED = "ORDER_ORDERED";
+    string internal constant ORDER_UNORDERED = "ORDER_UNORDERED";
+    string internal constant ORDER_ORDERED = "ORDER_ORDERED";
 
     bytes32 internal constant PACKET_RECEIPT_SUCCESSFUL_KECCAK256 =
         keccak256(abi.encodePacked(PacketReceipt.SUCCESSFUL));
@@ -21,7 +22,7 @@ library IBCChannelLib {
         } else if (commitment == PACKET_RECEIPT_SUCCESSFUL_KECCAK256) {
             return PacketReceipt.SUCCESSFUL;
         } else {
-            revert("unknown receipt");
+            revert IIBCChannelErrors.IBCChannelUnknownPacketReceiptCommitment(commitment);
         }
     }
 
@@ -31,7 +32,7 @@ library IBCChannelLib {
         } else if (order == Channel.Order.ORDER_ORDERED) {
             return ORDER_ORDERED;
         } else {
-            revert("unknown order");
+            revert IIBCChannelErrors.IBCChannelUnknownChannelOrder(order);
         }
     }
 }

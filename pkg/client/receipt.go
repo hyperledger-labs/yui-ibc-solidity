@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -130,25 +129,4 @@ func (rc Receipt) GetGethReceipt() *gethtypes.Receipt {
 
 func (rc Receipt) HasRevertReason() bool {
 	return len(rc.RevertReason) > 0
-}
-
-func (rc Receipt) GetRevertReason() (string, error) {
-	return parseRevertReason(rc.RevertReason)
-}
-
-// A format of revertReason is:
-// 4byte: Function selector for Error(string)
-// 32byte: Data offset
-// 32byte: String length
-// Remains: String Data
-func parseRevertReason(bz []byte) (string, error) {
-	if l := len(bz); l == 0 {
-		return "", nil
-	} else if l < 68 {
-		return "", fmt.Errorf("invalid length")
-	}
-
-	size := &big.Int{}
-	size.SetBytes(bz[36:68])
-	return string(bz[68 : 68+size.Int64()]), nil
 }

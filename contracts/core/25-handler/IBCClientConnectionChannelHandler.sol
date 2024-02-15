@@ -70,7 +70,6 @@ abstract contract IBCClientConnectionChannelHandler is
     }
 
     function wrappedRouteUpdateClient(MsgUpdateClient calldata msg_) public returns (address, bytes4, bytes memory) {
-        require(msg.sender == address(this), "only this contract can call routeUpdateClient");
         (bool success, bytes memory returndata) =
             address(ibcClient).delegatecall(abi.encodeWithSelector(IIBCClient.routeUpdateClient.selector, msg_));
         if (!success) {
