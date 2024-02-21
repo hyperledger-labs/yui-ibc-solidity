@@ -17,7 +17,7 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
 
     bool public closeChannelAllowed = true;
 
-    constructor(IIBCHandler ibcHandler_) {
+    constructor(IIBCHandler ibcHandler_) Ownable(msg.sender) {
         ibcHandler = ibcHandler_;
     }
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "IBC in Solidity",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.8.3",
+    "@openzeppelin/contracts": "^5.0.1",
     "solidity-rlp": "^2.0.8",
     "solidity-mpt": "^0.1.0"
   },

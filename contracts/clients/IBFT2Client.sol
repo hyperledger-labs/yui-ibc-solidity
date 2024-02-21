@@ -490,8 +490,8 @@ contract IBFT2Client is ILightClient {
         } else if (uint8(sig[64]) < 27) {
             sig[64] = bytes1(uint8(sig[64]) + 27);
         }
-        (address signer, ECDSA.RecoverError error) = ECDSA.tryRecover(hash, sig);
-        if (error != ECDSA.RecoverError.NoError) {
+        (address signer, ECDSA.RecoverError e,) = ECDSA.tryRecover(hash, sig);
+        if (e != ECDSA.RecoverError.NoError) {
             return address(0);
         }
         return signer;

@@ -19,14 +19,14 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank, IICS20Errors {
     mapping(string => mapping(address => uint256)) internal _balances;
 
     constructor() {
-        _setupRole(ADMIN_ROLE, _msgSender());
+        _grantRole(ADMIN_ROLE, _msgSender());
     }
 
     function setOperator(address operator) public virtual {
         if (!hasRole(ADMIN_ROLE, _msgSender())) {
             revert ICS20BankNotAdminRole(_msgSender());
         }
-        _setupRole(OPERATOR_ROLE, operator);
+        _grantRole(OPERATOR_ROLE, operator);
     }
 
     function balanceOf(address account, string calldata denom) public view virtual returns (uint256) {
@@ -64,7 +64,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank, IICS20Errors {
     }
 
     function deposit(address tokenContract, uint256 amount, address receiver) public virtual override {
-        if (!tokenContract.isContract()) {
+        if (tokenContract == address(0)) {
             revert ICS20InvalidTokenContract(tokenContract);
         }
         if (!IERC20(tokenContract).transferFrom(_msgSender(), address(this), amount)) {
@@ -74,7 +74,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank, IICS20Errors {
     }
 
     function withdraw(address tokenContract, uint256 amount, address receiver) public virtual override {
-        if (!tokenContract.isContract()) {
+        if (tokenContract == address(0)) {
             revert ICS20InvalidTokenContract(tokenContract);
         }
         _burn(_msgSender(), addressToDenom(tokenContract), amount);

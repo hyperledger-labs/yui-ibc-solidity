@@ -31,6 +31,7 @@ contract OwnableIBCHandler is IBCHandler, Ownable {
         IIBCChannelPacketTimeout ibcChannelPacketTimeout_
     )
         IBCHandler(ibcClient_, ibcConnection_, ibcChannelHandshake_, ibcChannelPacketSendRecv_, ibcChannelPacketTimeout_)
+        Ownable(msg.sender)
     {}
 
     function registerClient(string calldata clientType, ILightClient client) public onlyOwner {

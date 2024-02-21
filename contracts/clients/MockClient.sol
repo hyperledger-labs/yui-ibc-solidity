@@ -48,7 +48,7 @@ contract MockClient is Ownable, ILightClient {
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
     mapping(string => ClientStatus) internal statuses;
 
-    constructor(address ibcHandler_) {
+    constructor(address ibcHandler_) Ownable(msg.sender) {
         ibcHandler = ibcHandler_;
     }
 

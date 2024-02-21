@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IBCClientLib} from "../02-client/IBCClientLib.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
@@ -22,7 +21,7 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
         } else if (address(clientRegistry[clientType]) != address(0)) {
             revert IBCHostClientTypeAlreadyExists(clientType);
         }
-        if (address(client) == address(this) || !Address.isContract(address(client))) {
+        if (address(client) == address(0) || address(client) == address(this)) {
             revert IBCHostInvalidLightClientAddress(address(client));
         }
         clientRegistry[clientType] = address(client);
@@ -32,7 +31,7 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
         if (!validatePortIdentifier(bytes(portId))) {
             revert IBCHostInvalidPortIdentifier(portId);
         }
-        if (address(moduleAddress) == address(this) || !Address.isContract(address(moduleAddress))) {
+        if (address(moduleAddress) == address(0) || address(moduleAddress) == address(this)) {
             revert IBCHostInvalidModuleAddress(address(moduleAddress));
         }
         claimCapability(portCapabilityPath(portId), address(moduleAddress));
