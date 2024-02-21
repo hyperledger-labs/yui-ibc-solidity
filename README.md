@@ -39,12 +39,12 @@ DISCLAIMER: This project is still under development and has not been audited.
 
 ## Supported Light Client
 
-You can deploy a Light Client that implements [the IClient interface](./contracts/core/02-client/ILightClient.sol) to [integrate with ibc-solidity](./docs/architecture.md#light-client).
+You can deploy a Light Client that implements [the ILightClient interface](./contracts/core/02-client/ILightClient.sol) to [integrate with ibc-solidity](./docs/architecture.md#light-client).
 
 Here are some such examples:
 - [IBFT 2.0 Light Client](./contracts/clients/IBFT2Client.sol)
-- [Tendermint Light Client](https://github.com/datachainlab/tendermint-sol/tree/use-ibc-sol-hmy)
-- [Mock Client](./contracts/clients/MockClient.sol)
+- [LCP(TEE) Client](https://github.com/datachainlab/lcp-solidity)
+- [Localhost Client](./contracts/clients/LocalhostClient.sol)
 
 ## IBC relayer support
 
