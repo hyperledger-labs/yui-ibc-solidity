@@ -8,15 +8,16 @@ import {IBCAppBase} from "../commons/IBCAppBase.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
 import {IBCMockLib} from "./IBCMockLib.sol";
+import {IIBCMockErrors} from "./IIBCMockErrors.sol";
 
-contract IBCMockApp is IBCAppBase, Ownable {
+contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
     string public constant MOCKAPP_VERSION = "mockapp-1";
 
     IIBCHandler immutable ibcHandler;
 
     bool public closeChannelAllowed = true;
 
-    constructor(IIBCHandler ibcHandler_) {
+    constructor(IIBCHandler ibcHandler_) Ownable(msg.sender) {
         ibcHandler = ibcHandler_;
     }
 
@@ -69,13 +70,21 @@ contract IBCMockApp is IBCAppBase, Ownable {
         onlyIBC
     {
         if (equals(packet.data, IBCMockLib.MOCK_PACKET_DATA)) {
-            require(equals(acknowledgement, IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON), "invalid ack");
+            if (!equals(acknowledgement, IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON)) {
+                revert IBCMockUnexpectedAcknowledgement(acknowledgement, IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
+            }
         } else if (equals(packet.data, IBCMockLib.MOCK_ASYNC_PACKET_DATA)) {
-            require(equals(acknowledgement, IBCMockLib.SUCCESSFUL_ASYNC_ACKNOWLEDGEMENT_JSON), "invalid async ack");
+            if (!equals(acknowledgement, IBCMockLib.SUCCESSFUL_ASYNC_ACKNOWLEDGEMENT_JSON)) {
+                revert IBCMockUnexpectedAcknowledgement(
+                    acknowledgement, IBCMockLib.SUCCESSFUL_ASYNC_ACKNOWLEDGEMENT_JSON
+                );
+            }
         } else if (equals(packet.data, IBCMockLib.MOCK_FAIL_PACKET_DATA)) {
-            require(equals(acknowledgement, IBCMockLib.FAILED_ACKNOWLEDGEMENT_JSON), "invalid failed ack");
+            if (!equals(acknowledgement, IBCMockLib.FAILED_ACKNOWLEDGEMENT_JSON)) {
+                revert IBCMockUnexpectedAcknowledgement(acknowledgement, IBCMockLib.FAILED_ACKNOWLEDGEMENT_JSON);
+            }
         } else {
-            revert("invalid packet data");
+            revert IBCMockUnexpectedPacket(packet.data);
         }
     }
 
@@ -86,10 +95,9 @@ contract IBCMockApp is IBCAppBase, Ownable {
         onlyIBC
         returns (string memory)
     {
-        require(
-            bytes(msg_.version).length == 0 || keccak256(bytes(msg_.version)) == keccak256(bytes(MOCKAPP_VERSION)),
-            "version mismatch"
-        );
+        if (bytes(msg_.version).length != 0 && keccak256(bytes(msg_.version)) != keccak256(bytes(MOCKAPP_VERSION))) {
+            revert IBCMockUnexpectedVersion(msg_.version, MOCKAPP_VERSION);
+        }
         return MOCKAPP_VERSION;
     }
 
@@ -100,20 +108,28 @@ contract IBCMockApp is IBCAppBase, Ownable {
         onlyIBC
         returns (string memory)
     {
-        require(keccak256(bytes(msg_.counterpartyVersion)) == keccak256(bytes(MOCKAPP_VERSION)), "version mismatch");
+        if (keccak256(bytes(msg_.counterpartyVersion)) != keccak256(bytes(MOCKAPP_VERSION))) {
+            revert IBCMockUnexpectedVersion(msg_.counterpartyVersion, MOCKAPP_VERSION);
+        }
         return MOCKAPP_VERSION;
     }
 
-    function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata) external virtual override onlyIBC {
-        require(closeChannelAllowed, "close not allowed");
+    function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata msg_) external virtual override onlyIBC {
+        if (!closeChannelAllowed) {
+            revert IBCModuleChannelCloseNotAllowed(msg_.portId, msg_.channelId);
+        }
     }
 
-    function onChanCloseConfirm(IIBCModule.MsgOnChanCloseConfirm calldata) external virtual override onlyIBC {
-        require(closeChannelAllowed, "close not allowed");
+    function onChanCloseConfirm(IIBCModule.MsgOnChanCloseConfirm calldata msg_) external virtual override onlyIBC {
+        if (!closeChannelAllowed) {
+            revert IBCModuleChannelCloseNotAllowed(msg_.portId, msg_.channelId);
+        }
     }
 
-    function onTimeoutPacket(Packet.Data calldata, address) external view override onlyIBC {
-        require(closeChannelAllowed, "timeout not allowed");
+    function onTimeoutPacket(Packet.Data calldata packet, address) external view override onlyIBC {
+        if (!closeChannelAllowed) {
+            revert IBCModuleChannelCloseNotAllowed(packet.source_port, packet.source_channel);
+        }
     }
 
     function equals(bytes calldata a, bytes memory b) private pure returns (bool) {

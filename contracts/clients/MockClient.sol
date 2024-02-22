@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ILightClient} from "../core/02-client/ILightClient.sol";
+import {ILightClientErrors} from "../core/02-client/ILightClientErrors.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
 import {Height} from "../proto/Client.sol";
@@ -13,25 +14,32 @@ import {
 } from "../proto/MockClient.sol";
 import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 
-// MockClient implements https://github.com/datachainlab/ibc-mock-client
-// WARNING: This client is intended to be used for testing purpose. Therefore, it is not generally available in a production, except in a fully trusted environment.
-contract MockClient is Ownable, ILightClient {
+/// @notice MockClient implements https://github.com/datachainlab/ibc-mock-client
+/// WARNING: This client is intended to be used for testing purpose.
+contract MockClient is Ownable, ILightClient, ILightClientErrors {
     using IBCHeight for Height.Data;
 
-    string private constant HEADER_TYPE_URL = "/ibc.lightclients.mock.v1.Header";
-    string private constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.mock.v1.ClientState";
-    string private constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.mock.v1.ConsensusState";
+    error InvalidClientState();
+    error InvalidConsensusState();
+    error InvalidHeader();
+    error InvalidProof();
+    error InvalidPrefix();
 
-    bytes32 private constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked(HEADER_TYPE_URL));
-    bytes32 private constant CLIENT_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
-    bytes32 private constant CONSENSUS_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
+    string internal constant HEADER_TYPE_URL = "/ibc.lightclients.mock.v1.Header";
+    string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.mock.v1.ClientState";
+    string internal constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.mock.v1.ConsensusState";
+
+    bytes32 internal constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked(HEADER_TYPE_URL));
+    bytes32 internal constant CLIENT_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
+    bytes32 internal constant CONSENSUS_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
 
     address internal immutable ibcHandler;
+
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
     mapping(string => ClientStatus) internal statuses;
 
-    constructor(address ibcHandler_) {
+    constructor(address ibcHandler_) Ownable(msg.sender) {
         ibcHandler = ibcHandler_;
     }
 
@@ -45,11 +53,11 @@ contract MockClient is Ownable, ILightClient {
     ) external virtual override onlyIBC returns (Height.Data memory height) {
         ClientState.Data memory clientState = unmarshalClientState(protoClientState);
         ConsensusState.Data memory consensusState = unmarshalConsensusState(protoConsensusState);
-        if (
-            clientState.latest_height.revision_number != 0 || clientState.latest_height.revision_height == 0
-                || consensusState.timestamp == 0
-        ) {
-            revert("invalid client state");
+        if (clientState.latest_height.revision_number != 0 || clientState.latest_height.revision_height == 0) {
+            revert InvalidClientState();
+        }
+        if (consensusState.timestamp == 0) {
+            revert InvalidConsensusState();
         }
         clientStates[clientId] = clientState;
         consensusStates[clientId][clientState.latest_height.toUint128()] = consensusState;
@@ -69,12 +77,13 @@ contract MockClient is Ownable, ILightClient {
         returns (bytes4, bytes memory)
     {
         Any.Data memory any = Any.decode(protoClientMessage);
-        require(keccak256(abi.encodePacked(any.type_url)) == HEADER_TYPE_URL_HASH, "invalid header type");
+        if (keccak256(abi.encodePacked(any.type_url)) != HEADER_TYPE_URL_HASH) {
+            revert UnexpectedProtoAnyTypeURL(any.type_url);
+        }
         Header.Data memory header = Header.decode(any.value);
-        require(
-            header.height.revision_number == 0 && header.height.revision_height != 0 && header.timestamp != 0,
-            "invalid header"
-        );
+        if (header.height.revision_number != 0 || header.height.revision_height == 0 || header.timestamp == 0) {
+            revert InvalidHeader();
+        }
         return (this.updateClient.selector, abi.encode(clientId, header));
     }
 
@@ -90,7 +99,9 @@ contract MockClient is Ownable, ILightClient {
         returns (uint64)
     {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        require(consensusState.timestamp != 0, "consensus state not found");
+        if (consensusState.timestamp == 0) {
+            revert ConsensusStateNotFound(clientId, height);
+        }
         return consensusState.timestamp;
     }
 
@@ -99,7 +110,9 @@ contract MockClient is Ownable, ILightClient {
      */
     function getLatestHeight(string calldata clientId) external view virtual override returns (Height.Data memory) {
         ClientState.Data storage clientState = clientStates[clientId];
-        require(clientState.latest_height.revision_height != 0, "client not found");
+        if (clientState.latest_height.revision_height == 0) {
+            revert ClientStateNotFound(clientId);
+        }
         return clientState.latest_height;
     }
 
@@ -124,10 +137,12 @@ contract MockClient is Ownable, ILightClient {
         public
         returns (Height.Data[] memory heights)
     {
-        require(statuses[clientId] == ClientStatus.Active, "client not active");
-        require(header.height.revision_number == 0, "invalid revision number");
-        require(header.height.revision_height != 0, "invalid revision height");
-        require(header.timestamp != 0, "invalid timestamp");
+        if (statuses[clientId] != ClientStatus.Active) {
+            revert NotActiveClient(clientId);
+        }
+        if (header.height.revision_number != 0 || header.height.revision_height == 0 || header.timestamp == 0) {
+            revert InvalidHeader();
+        }
         if (header.height.gt(clientStates[clientId].latest_height)) {
             clientStates[clientId].latest_height = header.height;
         }
@@ -151,9 +166,15 @@ contract MockClient is Ownable, ILightClient {
         bytes memory path,
         bytes calldata value
     ) external view virtual override returns (bool) {
-        require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
-        require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
-        require(proof.length == 32, "invalid proof length");
+        if (consensusStates[clientId][height.toUint128()].timestamp == 0) {
+            revert ConsensusStateNotFound(clientId, height);
+        }
+        if (keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) != keccak256(prefix)) {
+            revert InvalidPrefix();
+        }
+        if (proof.length != 32) {
+            revert InvalidProof();
+        }
         return
             sha256(abi.encodePacked(height.toUint128(), sha256(prefix), sha256(path), sha256(value))) == bytes32(proof);
     }
@@ -171,8 +192,12 @@ contract MockClient is Ownable, ILightClient {
         bytes memory prefix,
         bytes memory path
     ) external view virtual override returns (bool) {
-        require(consensusStates[clientId][height.toUint128()].timestamp != 0, "consensus state not found");
-        require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
+        if (consensusStates[clientId][height.toUint128()].timestamp == 0) {
+            revert ConsensusStateNotFound(clientId, height);
+        }
+        if (keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) != keccak256(prefix)) {
+            revert InvalidPrefix();
+        }
         return sha256(abi.encodePacked(height.toUint128(), sha256(prefix), sha256(path), sha256(""))) == bytes32(proof);
     }
 
@@ -219,9 +244,9 @@ contract MockClient is Ownable, ILightClient {
 
     function unmarshalClientState(bytes calldata bz) internal pure returns (ClientState.Data memory clientState) {
         Any.Data memory anyClientState = Any.decode(bz);
-        require(
-            keccak256(abi.encodePacked(anyClientState.type_url)) == CLIENT_STATE_TYPE_URL_HASH, "invalid client state"
-        );
+        if (keccak256(abi.encodePacked(anyClientState.type_url)) != CLIENT_STATE_TYPE_URL_HASH) {
+            revert UnexpectedProtoAnyTypeURL(anyClientState.type_url);
+        }
         return ClientState.decode(anyClientState.value);
     }
 
@@ -231,15 +256,16 @@ contract MockClient is Ownable, ILightClient {
         returns (ConsensusState.Data memory consensusState)
     {
         Any.Data memory anyConsensusState = Any.decode(bz);
-        require(
-            keccak256(abi.encodePacked(anyConsensusState.type_url)) == CONSENSUS_STATE_TYPE_URL_HASH,
-            "invalid consensus state"
-        );
+        if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != CONSENSUS_STATE_TYPE_URL_HASH) {
+            revert UnexpectedProtoAnyTypeURL(anyConsensusState.type_url);
+        }
         return ConsensusState.decode(anyConsensusState.value);
     }
 
     modifier onlyIBC() {
-        require(msg.sender == ibcHandler);
+        if (msg.sender != ibcHandler) {
+            revert InvalidCaller(msg.sender);
+        }
         _;
     }
 }

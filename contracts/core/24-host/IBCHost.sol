@@ -3,8 +3,9 @@ pragma solidity ^0.8.20;
 
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCStore} from "../24-host/IBCStore.sol";
+import {IIBCHostErrors} from "./IIBCHostErrors.sol";
 
-contract IBCHost is IBCStore {
+contract IBCHost is IIBCHostErrors, IBCStore {
     // It represents the prefix of the commitment proof(https://github.com/cosmos/ibc/tree/main/spec/core/ics-023-vector-commitments#prefix).
     // In ibc-solidity, the prefix is not required, but for compatibility with ibc-go this must be a non-empty value.
     bytes internal constant DEFAULT_COMMITMENT_PREFIX = bytes("ibc");
@@ -21,7 +22,9 @@ contract IBCHost is IBCStore {
      */
     function checkAndGetClient(string memory clientId) internal view returns (ILightClient) {
         address clientImpl = clientImpls[clientId];
-        require(clientImpl != address(0));
+        if (clientImpl == address(0)) {
+            revert IBCHostClientNotFound(clientId);
+        }
         return ILightClient(clientImpl);
     }
 }

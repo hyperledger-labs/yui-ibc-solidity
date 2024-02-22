@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
 import "../../../contracts/core/02-client/IBCClient.sol";
+import "../../../contracts/core/02-client/IIBCClientErrors.sol";
 import "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
 import "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
 import "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
@@ -16,6 +17,7 @@ import "../../../contracts/clients/MockClient.sol";
 import "./helpers/TestableIBCHandler.t.sol";
 import "./helpers/IBCTestHelper.t.sol";
 import "./helpers/MockClientTestHelper.t.sol";
+import {IIBCHostErrors} from "../../../contracts/core/24-host/IIBCHostErrors.sol";
 
 contract TestICS02 is Test, MockClientTestHelper {
     function testRegisterClient() public {
@@ -29,23 +31,25 @@ contract TestICS02 is Test, MockClientTestHelper {
         TestableIBCHandler handler = defaultIBCHandler();
         MockClient mockClient = new MockClient(address(handler));
         handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
-        vm.expectRevert("clientType already exists");
+        vm.expectRevert(
+            abi.encodeWithSelector(IIBCHostErrors.IBCHostClientTypeAlreadyExists.selector, MOCK_CLIENT_TYPE)
+        );
         handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
     }
 
     function testRegisterClientInvalidClientType() public {
         TestableIBCHandler handler = defaultIBCHandler();
-        vm.expectRevert("invalid client address");
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidLightClientAddress.selector, address(0)));
         handler.registerClient(MOCK_CLIENT_TYPE, ILightClient(address(0)));
 
         MockClient mockClient = new MockClient(address(handler));
-        vm.expectRevert("invalid clientType");
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, ""));
         handler.registerClient("", mockClient);
 
-        vm.expectRevert("invalid clientType");
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "-mock"));
         handler.registerClient("-mock", mockClient);
 
-        vm.expectRevert("invalid clientType");
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "mock-"));
         handler.registerClient("mock-", mockClient);
     }
 
@@ -76,13 +80,15 @@ contract TestICS02 is Test, MockClientTestHelper {
         {
             IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
             msg_.clientType = "";
-            vm.expectRevert("unregistered client type");
+            vm.expectRevert(abi.encodeWithSelector(IIBCClientErrors.IBCClientUnregisteredClientType.selector, ""));
             handler.createClient(msg_);
         }
         {
             IIBCClient.MsgCreateClient memory msg_ = msgCreateMockClient(1);
             msg_.clientType = "06-solomachine";
-            vm.expectRevert("unregistered client type");
+            vm.expectRevert(
+                abi.encodeWithSelector(IIBCClientErrors.IBCClientUnregisteredClientType.selector, "06-solomachine")
+            );
             handler.createClient(msg_);
         }
         {

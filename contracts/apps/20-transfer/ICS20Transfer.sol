@@ -5,8 +5,9 @@ import {IBCAppBase} from "../commons/IBCAppBase.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {Channel, Packet} from "../../proto/Channel.sol";
 import {ICS20Lib} from "./ICS20Lib.sol";
+import {IICS20Errors} from "./IICS20Errors.sol";
 
-abstract contract ICS20Transfer is IBCAppBase {
+abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
     string public constant ICS20_VERSION = "ics20-1";
 
     mapping(string => address) channelEscrowAddresses;
@@ -34,7 +35,7 @@ abstract contract ICS20Transfer is IBCAppBase {
         ) {
             // sender chain is not the source, unescrow tokens
             bytes memory unprefixedDenom = ICS20Lib.slice(denom, denomPrefix.length, denom.length - denomPrefix.length);
-            success = _transferFrom(
+            success = _tryTransferFrom(
                 _getEscrowAddress(packet.destination_channel), receiver, string(unprefixedDenom), data.amount
             );
         } else {
@@ -44,7 +45,7 @@ abstract contract ICS20Transfer is IBCAppBase {
             if (ICS20Lib.isEscapeNeededString(denom)) {
                 success = false;
             } else {
-                success = _mint(
+                success = _tryMint(
                     receiver,
                     string(
                         abi.encodePacked(_getDenomPrefix(packet.destination_port, packet.destination_channel), denom)
@@ -78,9 +79,13 @@ abstract contract ICS20Transfer is IBCAppBase {
         onlyIBC
         returns (string memory)
     {
-        require(msg_.order == Channel.Order.ORDER_UNORDERED, "must be unordered");
+        if (msg_.order != Channel.Order.ORDER_UNORDERED) {
+            revert IBCModuleChannelOrderNotAllowed(msg_.portId, msg_.channelId, msg_.order);
+        }
         bytes memory versionBytes = bytes(msg_.version);
-        require(versionBytes.length == 0 || keccak256(versionBytes) == keccak256(bytes(ICS20_VERSION)));
+        if (versionBytes.length != 0 && keccak256(versionBytes) != keccak256(bytes(ICS20_VERSION))) {
+            revert ICS20UnexpectedVersion(msg_.version);
+        }
         channelEscrowAddresses[msg_.channelId] = address(this);
         return ICS20_VERSION;
     }
@@ -92,18 +97,24 @@ abstract contract ICS20Transfer is IBCAppBase {
         onlyIBC
         returns (string memory)
     {
-        require(msg_.order == Channel.Order.ORDER_UNORDERED, "must be unordered");
-        require(keccak256(bytes(msg_.counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
+        if (msg_.order != Channel.Order.ORDER_UNORDERED) {
+            revert IBCModuleChannelOrderNotAllowed(msg_.portId, msg_.channelId, msg_.order);
+        }
+        if (keccak256(bytes(msg_.counterpartyVersion)) != keccak256(bytes(ICS20_VERSION))) {
+            revert ICS20UnexpectedVersion(msg_.counterpartyVersion);
+        }
         channelEscrowAddresses[msg_.channelId] = address(this);
         return ICS20_VERSION;
     }
 
     function onChanOpenAck(IIBCModule.MsgOnChanOpenAck calldata msg_) external virtual override onlyIBC {
-        require(keccak256(bytes(msg_.counterpartyVersion)) == keccak256(bytes(ICS20_VERSION)));
+        if (keccak256(bytes(msg_.counterpartyVersion)) != keccak256(bytes(ICS20_VERSION))) {
+            revert ICS20UnexpectedVersion(msg_.counterpartyVersion);
+        }
     }
 
-    function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata) external virtual override onlyIBC {
-        revert("not allowed");
+    function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata msg_) external virtual override onlyIBC {
+        revert IBCModuleChannelCloseNotAllowed(msg_.portId, msg_.channelId);
     }
 
     function onTimeoutPacket(Packet.Data calldata packet, address) external virtual override onlyIBC {
@@ -112,7 +123,9 @@ abstract contract ICS20Transfer is IBCAppBase {
 
     function _getEscrowAddress(string memory sourceChannel) internal view virtual returns (address) {
         address escrow = channelEscrowAddresses[sourceChannel];
-        require(escrow != address(0));
+        if (escrow == address(0)) {
+            revert ICS20EscrowAddressNotFound(sourceChannel);
+        }
         return escrow;
     }
 
@@ -126,12 +139,10 @@ abstract contract ICS20Transfer is IBCAppBase {
             denom.length >= denomPrefix.length
                 && ICS20Lib.equal(ICS20Lib.slice(denom, 0, denomPrefix.length), denomPrefix)
         ) {
-            require(_mint(_decodeSender(data.sender), data.denom, data.amount));
+            _mint(_decodeSender(data.sender), data.denom, data.amount);
         } else {
             // sender was source chain
-            require(
-                _transferFrom(_getEscrowAddress(sourceChannel), _decodeSender(data.sender), data.denom, data.amount)
-            );
+            _transferFrom(_getEscrowAddress(sourceChannel), _decodeSender(data.sender), data.denom, data.amount);
         }
     }
 
@@ -142,20 +153,38 @@ abstract contract ICS20Transfer is IBCAppBase {
     /**
      * @dev _transferFrom transfers tokens from `sender` to `receiver` in the bank.
      */
-    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
+    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount) internal virtual;
+
+    /**
+     * @dev _burn burns tokens from `account` in the bank.
+     */
+    function _burn(address account, string memory denom, uint256 amount) internal virtual;
+
+    /**
+     * @dev _mint mints tokens to `account` in the bank.
+     */
+    function _mint(address account, string memory denom, uint256 amount) internal virtual;
+
+    /**
+     * @dev _tryTransferFrom transfers tokens from `sender` to `receiver` in the bank.
+     *      If the transfer fails, it returns false and does not revert.
+     */
+    function _tryTransferFrom(address sender, address receiver, string memory denom, uint256 amount)
         internal
         virtual
         returns (bool);
 
     /**
-     * @dev _mint mints tokens to `account` in the bank.
+     * @dev _tryMint mints tokens to `account` in the bank.
+     *      If the mint fails, it returns false and does not revert.
      */
-    function _mint(address account, string memory denom, uint256 amount) internal virtual returns (bool);
+    function _tryMint(address account, string memory denom, uint256 amount) internal virtual returns (bool);
 
     /**
-     * @dev _burn burns tokens from `account` in the bank.
+     * @dev _tryBurn burns tokens from `account` in the bank.
+     *      If the burn fails, it returns false and does not revert.
      */
-    function _burn(address account, string memory denom, uint256 amount) internal virtual returns (bool);
+    function _tryBurn(address account, string memory denom, uint256 amount) internal virtual returns (bool);
 
     /**
      * @dev _encodeSender encodes an address to a hex string.
@@ -171,7 +200,9 @@ abstract contract ICS20Transfer is IBCAppBase {
      */
     function _decodeSender(string memory sender) internal pure virtual returns (address) {
         (address addr, bool ok) = ICS20Lib.hexStringToAddress(sender);
-        require(ok, "invalid address");
+        if (!ok) {
+            revert ICS20InvalidSenderAddress(sender);
+        }
         return addr;
     }
 

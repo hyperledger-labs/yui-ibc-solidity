@@ -4,11 +4,12 @@ pragma solidity ^0.8.20;
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Packet} from "../../proto/Channel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
+import {IIBCModuleErrors} from "../../core/26-router/IIBCModuleErrors.sol";
 
 /**
  * @dev Base contract of the IBC App protocol
  */
-abstract contract IBCAppBase is Context, IIBCModule {
+abstract contract IBCAppBase is Context, IIBCModule, IIBCModuleErrors {
     /**
      * @dev Throws if called by any account other than the IBC contract.
      */
@@ -26,7 +27,9 @@ abstract contract IBCAppBase is Context, IIBCModule {
      * @dev Throws if the sender is not the IBC contract.
      */
     function _checkIBC() internal view virtual {
-        require(ibcAddress() == _msgSender(), "IBCAppBase: caller is not the IBC contract");
+        if (ibcAddress() != _msgSender()) {
+            revert IBCModuleInvalidSender(_msgSender());
+        }
     }
 
     /**

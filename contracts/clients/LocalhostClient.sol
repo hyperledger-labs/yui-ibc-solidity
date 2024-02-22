@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ILightClient} from "../core/02-client/ILightClient.sol";
+import {ILightClientErrors} from "../core/02-client/ILightClientErrors.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
 import {Height} from "../proto/Client.sol";
@@ -16,8 +17,15 @@ import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
  * - `getLatestHeight` always returns the current block number
  * - `verifyMembership` checks the proof height is not greater than the current block height
  */
-contract LocalhostClient is ILightClient {
+contract LocalhostClient is ILightClient, ILightClientErrors {
     using IBCHeight for Height.Data;
+
+    error InvalidClientID();
+    error InvalidConsensusState();
+    error InvalidHeightRevisionNumber();
+    error InvalidHeightRevisionHeight();
+    error InvalidProof();
+    error InvalidPrefix();
 
     address public immutable ibcHandler;
 
@@ -36,17 +44,18 @@ contract LocalhostClient is ILightClient {
         bytes calldata protoClientState,
         bytes calldata protoConsensusState
     ) public virtual override onlyIBC returns (Height.Data memory height) {
-        require(
-            keccak256(abi.encodePacked(clientId)) == keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID)),
-            "invalid client id"
-        );
-        require(
-            keccak256(protoConsensusState) == keccak256(LocalhostClientLib.sentinelConsensusState()),
-            "invalid consensus state"
-        );
+        if (keccak256(abi.encodePacked(clientId)) != keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID))) {
+            revert InvalidClientID();
+        }
+        if (keccak256(protoConsensusState) != keccak256(LocalhostClientLib.sentinelConsensusState())) {
+            revert InvalidConsensusState();
+        }
         ClientState.Data memory clientState = LocalhostClientLib.unmarshalClientState(protoClientState);
-        require(clientState.latest_height.revision_number == 0, "invalid revision number");
-        require(clientState.latest_height.revision_height == uint64(block.number), "invalid revision height");
+        if (clientState.latest_height.revision_number != 0) {
+            revert InvalidHeightRevisionNumber();
+        } else if (clientState.latest_height.revision_height != uint64(block.number)) {
+            revert InvalidHeightRevisionHeight();
+        }
         return Height.Data({revision_number: 0, revision_height: uint64(block.number)});
     }
 
@@ -69,10 +78,9 @@ contract LocalhostClient is ILightClient {
      * @param clientId the client identifier must be match with `LocalhostClientLib.CLIENT_ID`
      */
     function updateClient(string calldata clientId) public returns (Height.Data[] memory heights) {
-        require(
-            keccak256(abi.encodePacked(clientId)) == keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID)),
-            "invalid client id"
-        );
+        if (keccak256(abi.encodePacked(clientId)) != keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID))) {
+            revert InvalidClientID();
+        }
         IIBCHandler(ibcHandler).updateClientCommitments(clientId, new Height.Data[](0));
         return heights;
     }
@@ -81,8 +89,11 @@ contract LocalhostClient is ILightClient {
      * @dev getTimestampAtHeight always returns the current block timestamp.
      */
     function getTimestampAtHeight(string calldata, Height.Data calldata height) public view returns (uint64) {
-        require(height.revision_number == 0, "invalid revision number");
-        require(height.revision_height <= block.number, "invalid revision height");
+        if (height.revision_number != 0) {
+            revert InvalidHeightRevisionNumber();
+        } else if (height.revision_height > block.number) {
+            revert InvalidHeightRevisionHeight();
+        }
         return uint64(block.timestamp);
     }
 
@@ -97,10 +108,9 @@ contract LocalhostClient is ILightClient {
      * @dev getStatus returns the status of the client corresponding to `clientId`.
      */
     function getStatus(string calldata clientId) public view virtual override returns (ClientStatus) {
-        require(
-            keccak256(abi.encodePacked(clientId)) == keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID)),
-            "invalid client id"
-        );
+        if (keccak256(abi.encodePacked(clientId)) != keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID))) {
+            revert InvalidClientID();
+        }
         return ClientStatus.Active;
     }
 
@@ -118,14 +128,21 @@ contract LocalhostClient is ILightClient {
         bytes memory path,
         bytes memory value
     ) public view virtual override returns (bool) {
-        require(
-            keccak256(abi.encodePacked(clientId)) == keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID)),
-            "invalid client id"
-        );
-        require(proofHeight.revision_number == 0, "invalid revision number");
-        require(proofHeight.revision_height <= block.number, "invalid revision height");
-        require(keccak256(proof) == keccak256(LocalhostClientLib.sentinelProof()), "invalid proof");
-        require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
+        if (keccak256(abi.encodePacked(clientId)) != keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID))) {
+            revert InvalidClientID();
+        }
+        if (proofHeight.revision_number != 0) {
+            revert InvalidHeightRevisionNumber();
+        }
+        if (proofHeight.revision_height > block.number) {
+            revert InvalidHeightRevisionHeight();
+        }
+        if (keccak256(proof) != keccak256(LocalhostClientLib.sentinelProof())) {
+            revert InvalidProof();
+        }
+        if (keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) != keccak256(prefix)) {
+            revert InvalidPrefix();
+        }
         return IIBCHandler(ibcHandler).getCommitment(keccak256(path)) == keccak256(value);
     }
 
@@ -142,14 +159,21 @@ contract LocalhostClient is ILightClient {
         bytes memory prefix,
         bytes memory path
     ) public view returns (bool) {
-        require(
-            keccak256(abi.encodePacked(clientId)) == keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID)),
-            "invalid client id"
-        );
-        require(proofHeight.revision_number == 0, "invalid revision number");
-        require(proofHeight.revision_height <= block.number, "invalid revision height");
-        require(keccak256(proof) == keccak256(LocalhostClientLib.sentinelProof()), "invalid proof");
-        require(keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) == keccak256(prefix), "invalid prefix");
+        if (keccak256(abi.encodePacked(clientId)) != keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID))) {
+            revert InvalidClientID();
+        }
+        if (proofHeight.revision_number != 0) {
+            revert InvalidHeightRevisionNumber();
+        }
+        if (proofHeight.revision_height > block.number) {
+            revert InvalidHeightRevisionHeight();
+        }
+        if (keccak256(proof) != keccak256(LocalhostClientLib.sentinelProof())) {
+            revert InvalidProof();
+        }
+        if (keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) != keccak256(prefix)) {
+            revert InvalidPrefix();
+        }
         return IIBCHandler(ibcHandler).getCommitment(keccak256(path)) == bytes32(0);
     }
 
@@ -180,15 +204,16 @@ contract LocalhostClient is ILightClient {
         pure
         returns (bytes memory, bool)
     {
-        require(
-            keccak256(abi.encodePacked(clientId)) == keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID)),
-            "invalid client id"
-        );
+        if (keccak256(abi.encodePacked(clientId)) != keccak256(abi.encodePacked(LocalhostClientLib.CLIENT_ID))) {
+            revert InvalidClientID();
+        }
         return (LocalhostClientLib.sentinelConsensusState(), true);
     }
 
     modifier onlyIBC() {
-        require(msg.sender == ibcHandler);
+        if (msg.sender != ibcHandler) {
+            revert InvalidCaller(msg.sender);
+        }
         _;
     }
 }
@@ -198,6 +223,9 @@ contract LocalhostClient is ILightClient {
  * @notice LocalhostClientLib is a library that provides the client type, client identifier, client state type URL, consensus state type URL, and helper functions for the localhost client.
  */
 library LocalhostClientLib {
+    /// @param url the unexpected type URL
+    error UnexpectedProtoAnyTypeURL(string url);
+
     string internal constant CLIENT_TYPE = "09-localhost";
     string internal constant CLIENT_ID = string(abi.encodePacked(CLIENT_TYPE, "-0"));
     string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.localhost.v2.ClientState";
@@ -210,7 +238,9 @@ library LocalhostClientLib {
 
     function unmarshalClientState(bytes calldata protoClientState) internal pure returns (ClientState.Data memory) {
         Any.Data memory any = Any.decode(protoClientState);
-        require(keccak256(abi.encodePacked(any.type_url)) == CLIENT_STATE_TYPE_URL_HASH, "invalid client state type");
+        if (keccak256(abi.encodePacked(any.type_url)) != CLIENT_STATE_TYPE_URL_HASH) {
+            revert UnexpectedProtoAnyTypeURL(any.type_url);
+        }
         return ClientState.decode(any.value);
     }
 

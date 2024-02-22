@@ -40,7 +40,7 @@ type ContractTestSuite struct {
 }
 
 func (suite *ContractTestSuite) SetupTest() {
-	ethClient, err := client.NewETHClient("http://127.0.0.1:8545")
+	ethClient, err := client.NewETHClient("http://127.0.0.1:8545", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
 
 	suite.chainA = ibctesting.NewChain(suite.T(), ethClient, ibctesting.NewLightClient(ethClient, clienttypes.MockClient), false)

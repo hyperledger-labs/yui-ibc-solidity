@@ -39,9 +39,9 @@ func (suite *ChainTestSuite) SetupTest() {}
 func (suite *ChainTestSuite) TestICS20() {
 	ctx := context.Background()
 
-	ethClA, err := client.NewETHClient("http://127.0.0.1:8645")
+	ethClA, err := client.NewETHClient("http://127.0.0.1:8645", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
-	ethClB, err := client.NewETHClient("http://127.0.0.1:8745")
+	ethClB, err := client.NewETHClient("http://127.0.0.1:8745", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
 
 	chainA := ibctesting.NewChain(suite.T(), ethClA, ibctesting.NewLightClient(ethClA, clienttypes.BesuIBFT2Client), true)
@@ -182,9 +182,9 @@ func (suite *ChainTestSuite) TestICS20() {
 func (suite *ChainTestSuite) TestTimeoutAndClose() {
 	ctx := context.Background()
 
-	ethClA, err := client.NewETHClient("http://127.0.0.1:8645")
+	ethClA, err := client.NewETHClient("http://127.0.0.1:8645", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
-	ethClB, err := client.NewETHClient("http://127.0.0.1:8745")
+	ethClB, err := client.NewETHClient("http://127.0.0.1:8745", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
 
 	chainA := ibctesting.NewChain(suite.T(), ethClA, ibctesting.NewLightClient(ethClA, clienttypes.BesuIBFT2Client), true)
@@ -302,9 +302,9 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	ctx := context.Background()
 
-	ethClA, err := client.NewETHClient("http://127.0.0.1:8645")
+	ethClA, err := client.NewETHClient("http://127.0.0.1:8645", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
-	ethClB, err := client.NewETHClient("http://127.0.0.1:8745")
+	ethClB, err := client.NewETHClient("http://127.0.0.1:8745", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
 
 	chainA := ibctesting.NewChain(suite.T(), ethClA, ibctesting.NewLightClient(ethClA, clienttypes.BesuIBFT2Client), true)

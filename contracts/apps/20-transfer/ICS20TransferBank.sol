@@ -33,7 +33,9 @@ contract ICS20TransferBank is ICS20Transfer {
         string calldata sourceChannel,
         uint64 timeoutHeight
     ) external {
-        require(ICS20Lib.isEscapedJSONString(receiver), "unescaped receiver");
+        if (!ICS20Lib.isEscapedJSONString(receiver)) {
+            revert ICS20InvalidReceiverAddress(receiver);
+        }
         bytes memory denomPrefix = _getDenomPrefix(sourcePort, sourceChannel);
         bytes memory denomBytes = bytes(denom);
         if (
@@ -41,9 +43,9 @@ contract ICS20TransferBank is ICS20Transfer {
                 || !ICS20Lib.equal(ICS20Lib.slice(denomBytes, 0, denomPrefix.length), denomPrefix)
         ) {
             // sender is source chain
-            require(_transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount));
+            _transferFrom(_msgSender(), _getEscrowAddress(sourceChannel), denom, amount);
         } else {
-            require(_burn(_msgSender(), denom, amount));
+            _burn(_msgSender(), denom, amount);
         }
         bytes memory packetData = ICS20Lib.marshalJSON(denom, amount, _encodeSender(_msgSender()), receiver);
         IIBCHandler(ibcAddress()).sendPacket(
@@ -51,7 +53,11 @@ contract ICS20TransferBank is ICS20Transfer {
         );
     }
 
-    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount)
+    function _transferFrom(address sender, address receiver, string memory denom, uint256 amount) internal override {
+        bank.transferFrom(sender, receiver, denom, amount);
+    }
+
+    function _tryTransferFrom(address sender, address receiver, string memory denom, uint256 amount)
         internal
         override
         returns (bool)
@@ -63,7 +69,11 @@ contract ICS20TransferBank is ICS20Transfer {
         }
     }
 
-    function _mint(address account, string memory denom, uint256 amount) internal override returns (bool) {
+    function _mint(address account, string memory denom, uint256 amount) internal override {
+        bank.mint(account, denom, amount);
+    }
+
+    function _tryMint(address account, string memory denom, uint256 amount) internal override returns (bool) {
         try bank.mint(account, denom, amount) {
             return true;
         } catch (bytes memory) {
@@ -71,7 +81,11 @@ contract ICS20TransferBank is ICS20Transfer {
         }
     }
 
-    function _burn(address account, string memory denom, uint256 amount) internal override returns (bool) {
+    function _burn(address account, string memory denom, uint256 amount) internal override {
+        bank.burn(account, denom, amount);
+    }
+
+    function _tryBurn(address account, string memory denom, uint256 amount) internal override returns (bool) {
         try bank.burn(account, denom, amount) {
             return true;
         } catch (bytes memory) {

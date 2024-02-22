@@ -2,11 +2,12 @@
 pragma solidity ^0.8.20;
 
 import {Version} from "../../proto/Connection.sol";
+import {IIBCConnectionErrors} from "./IIBCConnectionErrors.sol";
 
 library IBCConnectionLib {
-    string public constant IBC_VERSION_IDENTIFIER = "1";
-    string public constant ORDER_ORDERED = "ORDER_ORDERED";
-    string public constant ORDER_UNORDERED = "ORDER_UNORDERED";
+    string internal constant IBC_VERSION_IDENTIFIER = "1";
+    string internal constant ORDER_ORDERED = "ORDER_ORDERED";
+    string internal constant ORDER_UNORDERED = "ORDER_UNORDERED";
 
     /**
      * @dev defaultIBCVersion returns the latest supported version of IBC used in connection version negotiation
@@ -21,10 +22,12 @@ library IBCConnectionLib {
     /**
      * @dev setSupportedVersions sets the supported versions to a given array.
      *
-     * NOTE: `versions` must be an empty array
+     * NOTE: `dst` must be an empty array
      */
     function setSupportedVersions(Version.Data[] memory supportedVersions, Version.Data[] storage dst) internal {
-        require(dst.length == 0, "versions must be empty");
+        if (dst.length != 0) {
+            revert IIBCConnectionErrors.IBCConnectionVersionsAlreadySet();
+        }
         for (uint256 i = 0; i < supportedVersions.length; i++) {
             dst.push(supportedVersions[i]);
         }
@@ -128,7 +131,7 @@ library IBCConnectionLib {
                 return Version.Data({identifier: supportedVersion.identifier, features: featureSet});
             }
         }
-        revert("matching counterparty version not found");
+        revert IIBCConnectionErrors.IBCConnectionNoMatchingVersionFound();
     }
 
     /**

@@ -5,6 +5,8 @@ import {Height} from "../../proto/Client.sol";
 import {Version, Counterparty} from "../../proto/Connection.sol";
 
 interface IIBCConnection {
+    // --------------------- Data Structure --------------------- //
+
     struct MsgConnectionOpenInit {
         string clientId;
         Counterparty.Data counterparty;
@@ -45,7 +47,11 @@ interface IIBCConnection {
         Height.Data proofHeight;
     }
 
-    event GeneratedConnectionIdentifier(string);
+    // --------------------- Events --------------------- //
+
+    /// @notice Emitted when a connection identifier is generated
+    /// @param connectionId connection identifier
+    event GeneratedConnectionIdentifier(string connectionId);
 
     /**
      * @dev connectionOpenInit initialises a connection attempt on chain A. The generated connection identifier

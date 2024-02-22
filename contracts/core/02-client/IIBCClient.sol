@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import {Height} from "../../proto/Client.sol";
 
 interface IIBCClient {
+    // --------------------- Data Structure --------------------- //
+
     struct MsgCreateClient {
         string clientType;
         bytes protoClientState;
@@ -15,7 +17,11 @@ interface IIBCClient {
         bytes protoClientMessage;
     }
 
-    event GeneratedClientIdentifier(string);
+    // --------------------- Events --------------------- //
+
+    /// @notice Emitted when a client identifier is generated
+    /// @param clientId client identifier
+    event GeneratedClientIdentifier(string clientId);
 
     /**
      * @dev createClient creates a new client state and populates it with a given consensus state

@@ -6,6 +6,7 @@ import {LocalhostClient, LocalhostClientLib} from "../clients/LocalhostClient.so
 import {Version, Counterparty, MerklePrefix} from "../proto/Connection.sol";
 import {IBCConnectionLib} from "../core/03-connection/IBCConnectionLib.sol";
 import {IIBCClient} from "../core/02-client/IIBCClient.sol";
+import {IIBCClientErrors} from "../core/02-client/IIBCClientErrors.sol";
 import {IIBCConnection} from "../core/03-connection/IIBCConnection.sol";
 import {Height} from "../proto/Client.sol";
 import {Channel, ChannelCounterparty} from "../proto/Channel.sol";
@@ -39,7 +40,9 @@ library LocalhostHelper {
      */
     function getLocalhostClient(IIBCHandler ibcHandler) internal view returns (LocalhostClient) {
         address localhost = ibcHandler.getClientByType(LocalhostClientLib.CLIENT_TYPE);
-        require(localhost != address(0), "client not found");
+        if (localhost == address(0)) {
+            revert IIBCClientErrors.IBCClientUnregisteredClientType(LocalhostClientLib.CLIENT_TYPE);
+        }
         return LocalhostClient(localhost);
     }
 

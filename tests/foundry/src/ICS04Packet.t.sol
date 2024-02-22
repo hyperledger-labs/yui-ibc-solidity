@@ -428,7 +428,13 @@ contract TestICS04Packet is
 
             IIBCChannelPacketSendRecv.MsgPacketRecv memory msg_ = msgPacketRecv(p0, H(block.number));
             vm.roll(block.number + 1);
-            vm.expectRevert("block height >= packet timeout height");
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IIBCChannelErrors.IBCChannelTimeoutPacketHeight.selector,
+                    block.number,
+                    p0.timeout_height.revision_height
+                )
+            );
             counterpartyHandler.recvPacket(msg_);
             client.updateClient(clientId, mockClientHeader(uint64(block.number)));
             // timeout on source chain
@@ -473,7 +479,13 @@ contract TestICS04Packet is
             IIBCChannelPacketSendRecv.MsgPacketRecv memory msg_ = msgPacketRecv(p0, H(block.number));
             vm.warp(block.timestamp + 1);
             vm.roll(block.number + 1);
-            vm.expectRevert("block timestamp >= packet timeout timestamp");
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    IIBCChannelErrors.IBCChannelTimeoutPacketTimestamp.selector,
+                    block.timestamp * 1e9,
+                    p0.timeout_timestamp
+                )
+            );
             counterpartyHandler.recvPacket(msg_);
             client.updateClient(clientId, mockClientHeader(uint64(block.number)));
             // timeout on source chain

@@ -5,6 +5,8 @@ import {Height} from "../../proto/Client.sol";
 import {Channel, Packet} from "../../proto/Channel.sol";
 
 interface IIBCChannelHandshake {
+    // --------------------- Data Structure --------------------- //
+
     struct MsgChannelOpenInit {
         string portId;
         Channel.Data channel;
@@ -46,7 +48,12 @@ interface IIBCChannelHandshake {
         Height.Data proofHeight;
     }
 
-    event GeneratedChannelIdentifier(string);
+    // --------------------- Events --------------------- //
+
+    /// @param channelId channel identifier
+    event GeneratedChannelIdentifier(string channelId);
+
+    // --------------------- Functions --------------------- //
 
     /**
      * @dev channelOpenInit is called by a module to initiate a channel opening handshake with a module on another chain.
@@ -85,6 +92,9 @@ interface IIBCChannelHandshake {
 }
 
 interface IICS04SendPacket {
+    // --------------------- Events --------------------- //
+
+    /// @notice event emitted upon sending a packet
     event SendPacket(
         uint64 sequence,
         string sourcePort,
@@ -93,6 +103,8 @@ interface IICS04SendPacket {
         uint64 timeoutTimestamp,
         bytes data
     );
+
+    // --------------------- Functions --------------------- //
 
     /**
      * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
@@ -109,9 +121,18 @@ interface IICS04SendPacket {
 }
 
 interface IICS04WriteAcknowledgement {
+    // --------------------- Events --------------------- //
+
+    /// @notice event emitted upon writing an acknowledgement
+    /// @param destinationPortId destination port
+    /// @param destinationChannel destination channel
+    /// @param sequence packet sequence
+    /// @param acknowledgement acknowledgement
     event WriteAcknowledgement(
         string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement
     );
+
+    // --------------------- Functions --------------------- //
 
     /**
      * @dev writeAcknowledgement writes the packet execution acknowledgement to the state,
@@ -126,13 +147,20 @@ interface IICS04WriteAcknowledgement {
 }
 
 interface IIBCChannelRecvPacket {
+    // --------------------- Data Structure --------------------- //
+
     struct MsgPacketRecv {
         Packet.Data packet;
         bytes proof;
         Height.Data proofHeight;
     }
 
+    // --------------------- Events --------------------- //
+
+    /// @notice event emitted upon receiving a packet
     event RecvPacket(Packet.Data packet);
+
+    // --------------------- Functions --------------------- //
 
     /**
      * @dev recvPacket is called by a module in order to receive & process an IBC packet
@@ -142,6 +170,8 @@ interface IIBCChannelRecvPacket {
 }
 
 interface IIBCChannelAcknowledgePacket {
+    // --------------------- Data Structure --------------------- //
+
     struct MsgPacketAcknowledgement {
         Packet.Data packet;
         bytes acknowledgement;
@@ -149,7 +179,12 @@ interface IIBCChannelAcknowledgePacket {
         Height.Data proofHeight;
     }
 
+    // --------------------- Events --------------------- //
+
+    /// @notice event emitted upon acknowledging a packet
     event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
+
+    // --------------------- Functions --------------------- //
 
     /**
      * @dev AcknowledgePacket is called by a module to process the acknowledgement of a
@@ -163,6 +198,8 @@ interface IIBCChannelAcknowledgePacket {
 }
 
 interface IIBCChannelPacketTimeout {
+    // --------------------- Data Structure --------------------- //
+
     struct MsgTimeoutPacket {
         Packet.Data packet;
         bytes proof;
@@ -178,7 +215,12 @@ interface IIBCChannelPacketTimeout {
         uint64 nextSequenceRecv;
     }
 
+    // --------------------- Events --------------------- //
+
+    /// @notice event emitted upon timeout of a packet
     event TimeoutPacket(Packet.Data packet);
+
+    // --------------------- Functions --------------------- //
 
     /**
      * @dev TimeoutPacket is called by a module which originally attempted to send a

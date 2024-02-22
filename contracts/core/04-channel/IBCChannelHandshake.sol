@@ -8,6 +8,7 @@ import {Channel, ChannelCounterparty} from "../../proto/Channel.sol";
 import {IBCHeight} from "../02-client/IBCHeight.sol";
 import {IBCConnectionLib} from "../03-connection/IBCConnectionLib.sol";
 import {IIBCChannelHandshake} from "../04-channel/IIBCChannel.sol";
+import {IIBCChannelErrors} from "../04-channel/IIBCChannelErrors.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IIBCModule} from "../26-router/IIBCModule.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
@@ -16,7 +17,7 @@ import {IBCChannelLib} from "./IBCChannelLib.sol";
 /**
  * @dev IBCChannelHandshake is a contract that implements [ICS-4](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics).
  */
-contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
+contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChannelErrors {
     using IBCHeight for Height.Data;
 
     /**
@@ -26,19 +27,28 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
         external
         returns (string memory, string memory)
     {
-        require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
+        if (msg_.channel.connection_hops.length != 1) {
+            revert IBCChannelInvalidConnectionHopsLength(msg_.channel.connection_hops.length);
+        }
         ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
-        require(
-            connection.versions.length == 1, "single version must be negotiated on connection before opening channel"
-        );
-        require(
-            IBCConnectionLib.verifySupportedFeature(
+        if (connection.versions.length != 1) {
+            revert IBCChannelConnectionMultipleVersionsFound(
+                msg_.channel.connection_hops[0], connection.versions.length
+            );
+        }
+        if (
+            !IBCConnectionLib.verifySupportedFeature(
                 connection.versions[0], IBCChannelLib.toString(msg_.channel.ordering)
-            ),
-            "feature not supported"
-        );
-        require(msg_.channel.state == Channel.State.STATE_INIT, "channel state must STATE_INIT");
-        require(bytes(msg_.channel.counterparty.channel_id).length == 0, "counterparty channel_id must be empty");
+            )
+        ) {
+            revert IBCChannelConnectionFeatureNotSupported(msg_.channel.ordering);
+        }
+        if (msg_.channel.state != Channel.State.STATE_INIT) {
+            revert IBCChannelUnexpectedChannelState(msg_.channel.state);
+        }
+        if (bytes(msg_.channel.counterparty.channel_id).length != 0) {
+            revert IBCChannelCounterpartyChannelIdNotEmpty(msg_.channel.counterparty.channel_id);
+        }
 
         string memory channelId = generateChannelIdentifier();
         initializeSequences(msg_.portId, channelId);
@@ -75,19 +85,28 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
         external
         returns (string memory, string memory)
     {
-        require(msg_.channel.connection_hops.length == 1, "connection_hops length must be 1");
+        if (msg_.channel.connection_hops.length != 1) {
+            revert IBCChannelInvalidConnectionHopsLength(msg_.channel.connection_hops.length);
+        }
         ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
-        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state must be STATE_OPEN");
-        require(
-            connection.versions.length == 1, "single version must be negotiated on connection before opening channel"
-        );
-        require(
-            IBCConnectionLib.verifySupportedFeature(
+        if (connection.state != ConnectionEnd.State.STATE_OPEN) {
+            revert IBCChannelConnectionNotOpened(msg_.channel.connection_hops[0]);
+        }
+        if (connection.versions.length != 1) {
+            revert IBCChannelConnectionMultipleVersionsFound(
+                msg_.channel.connection_hops[0], connection.versions.length
+            );
+        }
+        if (
+            !IBCConnectionLib.verifySupportedFeature(
                 connection.versions[0], IBCChannelLib.toString(msg_.channel.ordering)
-            ),
-            "feature not supported"
-        );
-        require(msg_.channel.state == Channel.State.STATE_TRYOPEN, "channel state must be STATE_TRYOPEN");
+            )
+        ) {
+            revert IBCChannelConnectionFeatureNotSupported(msg_.channel.ordering);
+        }
+        if (msg_.channel.state != Channel.State.STATE_TRYOPEN) {
+            revert IBCChannelUnexpectedChannelState(msg_.channel.state);
+        }
 
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_INIT,
@@ -96,16 +115,13 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
             connection_hops: getCounterpartyHops(msg_.channel.connection_hops[0]),
             version: msg_.counterpartyVersion
         });
-        require(
-            verifyChannelState(
-                connection,
-                msg_.proofHeight,
-                msg_.proofInit,
-                msg_.channel.counterparty.port_id,
-                msg_.channel.counterparty.channel_id,
-                Channel.encode(expectedChannel)
-            ),
-            "failed to verify channel state"
+        verifyChannelState(
+            connection,
+            msg_.proofHeight,
+            msg_.proofInit,
+            msg_.channel.counterparty.port_id,
+            msg_.channel.counterparty.channel_id,
+            Channel.encode(expectedChannel)
         );
 
         string memory channelId = generateChannelIdentifier();
@@ -141,12 +157,10 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
      */
     function channelOpenAck(IIBCChannelHandshake.MsgChannelOpenAck calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
-        require(channel.state == Channel.State.STATE_INIT, "channel state should be INIT");
-
+        if (channel.state != Channel.State.STATE_INIT) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
-        require(channel.connection_hops.length == 1);
-
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_TRYOPEN,
             ordering: channel.ordering,
@@ -154,16 +168,14 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: msg_.counterpartyVersion
         });
-        require(
-            verifyChannelState(
-                connection,
-                msg_.proofHeight,
-                msg_.proofTry,
-                channel.counterparty.port_id,
-                msg_.counterpartyChannelId,
-                Channel.encode(expectedChannel)
-            ),
-            "failed to verify channel state"
+
+        verifyChannelState(
+            connection,
+            msg_.proofHeight,
+            msg_.proofTry,
+            channel.counterparty.port_id,
+            msg_.counterpartyChannelId,
+            Channel.encode(expectedChannel)
         );
         channel.state = Channel.State.STATE_OPEN;
         channel.version = msg_.counterpartyVersion;
@@ -183,12 +195,10 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
      */
     function channelOpenConfirm(IIBCChannelHandshake.MsgChannelOpenConfirm calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
-        require(channel.state == Channel.State.STATE_TRYOPEN, "channel state is not TRYOPEN");
-
+        if (channel.state != Channel.State.STATE_TRYOPEN) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
-        require(channel.connection_hops.length == 1);
-
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_OPEN,
             ordering: channel.ordering,
@@ -196,16 +206,13 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: channel.version
         });
-        require(
-            verifyChannelState(
-                connection,
-                msg_.proofHeight,
-                msg_.proofAck,
-                channel.counterparty.port_id,
-                channel.counterparty.channel_id,
-                Channel.encode(expectedChannel)
-            ),
-            "failed to verify channel state"
+        verifyChannelState(
+            connection,
+            msg_.proofHeight,
+            msg_.proofAck,
+            channel.counterparty.port_id,
+            channel.counterparty.channel_id,
+            Channel.encode(expectedChannel)
         );
         channel.state = Channel.State.STATE_OPEN;
         updateChannelCommitment(msg_.portId, msg_.channelId);
@@ -219,11 +226,15 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
      */
     function channelCloseInit(IIBCChannelHandshake.MsgChannelCloseInit calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
-        require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
-
+        if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCChannelChannelNotFound(msg_.portId, msg_.channelId);
+        } else if (channel.state == Channel.State.STATE_CLOSED) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
-
+        if (connection.state != ConnectionEnd.State.STATE_OPEN) {
+            revert IBCChannelConnectionNotOpened(channel.connection_hops[0]);
+        }
         channel.state = Channel.State.STATE_CLOSED;
         updateChannelCommitment(msg_.portId, msg_.channelId);
         lookupModuleByPort(msg_.portId).onChanCloseInit(
@@ -237,11 +248,16 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
      */
     function channelCloseConfirm(IIBCChannelHandshake.MsgChannelCloseConfirm calldata msg_) external {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
-        require(channel.state != Channel.State.STATE_CLOSED, "channel state is already CLOSED");
+        if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCChannelChannelNotFound(msg_.portId, msg_.channelId);
+        } else if (channel.state == Channel.State.STATE_CLOSED) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
 
-        require(channel.connection_hops.length == 1);
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        require(connection.state == ConnectionEnd.State.STATE_OPEN, "connection state is not OPEN");
+        if (connection.state != ConnectionEnd.State.STATE_OPEN) {
+            revert IBCChannelConnectionNotOpened(channel.connection_hops[0]);
+        }
 
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_CLOSED,
@@ -250,16 +266,13 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
             connection_hops: getCounterpartyHops(channel.connection_hops[0]),
             version: channel.version
         });
-        require(
-            verifyChannelState(
-                connection,
-                msg_.proofHeight,
-                msg_.proofInit,
-                channel.counterparty.port_id,
-                channel.counterparty.channel_id,
-                Channel.encode(expectedChannel)
-            ),
-            "failed to verify channel state"
+        verifyChannelState(
+            connection,
+            msg_.proofHeight,
+            msg_.proofInit,
+            channel.counterparty.port_id,
+            channel.counterparty.channel_id,
+            Channel.encode(expectedChannel)
         );
         channel.state = Channel.State.STATE_CLOSED;
         updateChannelCommitment(msg_.portId, msg_.channelId);
@@ -305,16 +318,23 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake {
         string memory portId,
         string memory channelId,
         bytes memory channelBytes
-    ) private returns (bool) {
-        return checkAndGetClient(connection.client_id).verifyMembership(
-            connection.client_id,
-            height,
-            0,
-            0,
-            proof,
-            connection.counterparty.prefix.key_prefix,
-            IBCCommitment.channelPath(portId, channelId),
-            channelBytes
+    ) private {
+        if (
+            checkAndGetClient(connection.client_id).verifyMembership(
+                connection.client_id,
+                height,
+                0,
+                0,
+                proof,
+                connection.counterparty.prefix.key_prefix,
+                IBCCommitment.channelPath(portId, channelId),
+                channelBytes
+            )
+        ) {
+            return;
+        }
+        revert IBCChannelFailedVerifyChannelState(
+            connection.client_id, IBCCommitment.channelPath(portId, channelId), channelBytes, proof, height
         );
     }
 
