@@ -34,6 +34,7 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/mockclient"
 	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2"
 	mockclienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/mock"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
@@ -90,6 +91,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	abiMockClient, err := abi.JSON(strings.NewReader(mockclient.MockclientABI))
 	abiIBFT2Client, err := abi.JSON(strings.NewReader(ibft2client.Ibft2clientABI))
 	if err != nil {
 		panic(err)
@@ -99,6 +101,7 @@ func init() {
 	addErrorsToRepository(abiICS20Bank.Errors, IBCErrorsRepository)
 	addErrorsToRepository(abiICS20TransferBank.Errors, IBCErrorsRepository)
 	addErrorsToRepository(abiIBFT2Client.Errors, IBCErrorsRepository)
+	addErrorsToRepository(abiMockClient.Errors, IBCErrorsRepository)
 }
 
 type Chain struct {

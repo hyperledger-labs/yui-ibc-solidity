@@ -26,6 +26,7 @@ function main() {
     "ICS20TransferBank"
     "ICS20Bank"
     "IBFT2Client"
+    "MockClient"
     "IBCMockApp"
     "IBCCommitmentTestHelper"
   )
