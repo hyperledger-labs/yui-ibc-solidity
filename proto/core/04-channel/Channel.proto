@@ -6,7 +6,6 @@ import "solidity-protobuf-extensions.proto";
 option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
 
 import "gogoproto/gogo.proto";
-import "core/02-client/Client.proto";
 
 // Channel defines pipeline for exactly-once packet delivery between specific
 // modules on separate blockchains, which has at least one end capable of
@@ -56,28 +55,6 @@ message Channel {
     string channel_id = 2 [(gogoproto.moretags) = "yaml:\"channel_id\""];
   }
 
-  // IdentifiedChannel defines a channel with additional port and channel
-  // identifier fields.
-  message IdentifiedChannel {
-    option (gogoproto.goproto_getters) = false;
-  
-    // current state of the channel end
-    State state = 1;
-    // whether the channel is ordered or unordered
-    Order ordering = 2;
-    // counterparty channel end
-    Counterparty counterparty = 3 [(gogoproto.nullable) = false];
-    // list of connection identifiers, in order, along which packets sent on
-    // this channel will travel
-    repeated string connection_hops = 4 [(gogoproto.moretags) = "yaml:\"connection_hops\""];
-    // opaque channel version, which is agreed upon during the handshake
-    string version = 5;
-    // port identifier
-    string port_id = 6;
-    // channel identifier
-    string channel_id = 7;
-  }
-
   // current state of the channel end
   State state = 1;
   // whether the channel is ordered or unordered
@@ -90,46 +67,4 @@ message Channel {
   // opaque channel version, which is agreed upon during the handshake
   string version = 5;
 
-}
-
-// Packet defines a type that carries data across different chains through IBC
-message Packet {
-  option (gogoproto.goproto_getters) = false;
-
-  // number corresponds to the order of sends and receives, where a Packet
-  // with an earlier sequence number must be sent and received before a Packet
-  // with a later sequence number.
-  uint64 sequence = 1;
-  // identifies the port on the sending chain.
-  string source_port = 2 [(gogoproto.moretags) = "yaml:\"source_port\""];
-  // identifies the channel end on the sending chain.
-  string source_channel = 3 [(gogoproto.moretags) = "yaml:\"source_channel\""];
-  // identifies the port on the receiving chain.
-  string destination_port = 4 [(gogoproto.moretags) = "yaml:\"destination_port\""];
-  // identifies the channel end on the receiving chain.
-  string destination_channel = 5 [(gogoproto.moretags) = "yaml:\"destination_channel\""];
-  // actual opaque bytes transferred directly to the application module
-  bytes data = 6;
-  // block height after which the packet times out
-  Height timeout_height = 7
-      [(gogoproto.moretags) = "yaml:\"timeout_height\"", (gogoproto.nullable) = false];
-  // block timestamp (in nanoseconds) after which the packet times out
-  uint64 timeout_timestamp = 8 [(gogoproto.moretags) = "yaml:\"timeout_timestamp\""];
-}
-
-// PacketState defines the generic type necessary to retrieve and store
-// packet commitments, acknowledgements, and receipts.
-// Caller is responsible for knowing the context necessary to interpret this
-// state as a commitment, acknowledgement, or a receipt.
-message PacketState {
-  option (gogoproto.goproto_getters) = false;
-
-  // channel port identifier.
-  string port_id = 1 [(gogoproto.moretags) = "yaml:\"port_id\""];
-  // channel unique identifier.
-  string channel_id = 2 [(gogoproto.moretags) = "yaml:\"channel_id\""];
-  // packet sequence.
-  uint64 sequence = 3;
-  // embedded data that represents packet state.
-  bytes data = 4;
 }
