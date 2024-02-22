@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ILightClient} from "../core/02-client/ILightClient.sol";
+import {ILightClientErrors} from "../core/02-client/ILightClientErrors.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
 import {Height} from "../proto/Client.sol";
@@ -16,11 +17,9 @@ import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
  * - `getLatestHeight` always returns the current block number
  * - `verifyMembership` checks the proof height is not greater than the current block height
  */
-contract LocalhostClient is ILightClient {
+contract LocalhostClient is ILightClient, ILightClientErrors {
     using IBCHeight for Height.Data;
 
-    /// @param caller the caller of the function
-    error InvalidCaller(address caller);
     error InvalidClientID();
     error InvalidConsensusState();
     error InvalidHeightRevisionNumber();

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ILightClient} from "../core/02-client/ILightClient.sol";
+import {ILightClientErrors} from "../core/02-client/ILightClientErrors.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
 import {Height} from "../proto/Client.sol";
@@ -16,44 +17,38 @@ import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
 import {MPTProof} from "solidity-mpt/src/MPTProof.sol";
 
 /// @notice please see docs/ibft2-light-client.md for client spec
-contract IBFT2Client is ILightClient {
+contract IBFT2Client is ILightClient, ILightClientErrors {
     using MPTProof for bytes;
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
     using IBCHeight for Height.Data;
 
-    /// @param caller the caller of the function
-    error InvalidCaller(address caller);
+    struct ParsedBesuHeader {
+        Header.Data base;
+        Height.Data height;
+        bytes32 stateRoot;
+        uint64 time;
+        RLPReader.RLPItem[] validators;
+    }
 
+    /// @dev An error indicating that the IBC address of the initial client state is invalid
     error InvalidIBCAddressLength();
+    /// @dev An error indicating that the initial consensus state root length is invalid
     error InvalidConsensusStateRootLength();
-    /// @param clientId client identifier
-    error ClientStateNotFound(string clientId);
-    /// @param clientId client identifier
-    /// @param height consensus height
-    error ConsensusStateNotFound(string clientId, Height.Data height);
-
+    /// @dev An error indicating that the validator set is empty
     error EmptyValidators();
-
+    /// @dev An error indicating that a validator address length is invalid
     error InvalidValidatorAddressLength();
-
     /// @param itemsLength length of items in the header
     error UnexpectedEthereumHeaderFormat(uint256 itemsLength);
-
     /// @param itemsLength length of items in the extra data
     error UnexpectedExtraDataFormat(uint256 itemsLength);
-
     /// @param actual actual number of valid seals
     /// @param threshold threshold of seals
     error InsufficientTrustedValidatorsSeals(uint256 actual, uint256 threshold);
-
     /// @param actual actual number of valid seals
     /// @param threshold threshold of seals
     error InsuffientUntrustedValidatorsSeals(uint256 actual, uint256 threshold);
-
-    /// @param url type url of the any
-    error UnexpectedProtoAnyTypeURL(string url);
-
     /// @param length length of the signature
     error InvalidECDSASignatureLength(uint256 length);
 
@@ -74,14 +69,6 @@ contract IBFT2Client is ILightClient {
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
     mapping(string => mapping(uint128 => uint256)) internal processedTimes;
     mapping(string => mapping(uint128 => uint256)) internal processedHeights;
-
-    struct ParsedBesuHeader {
-        Header.Data base;
-        Height.Data height;
-        bytes32 stateRoot;
-        uint64 time;
-        RLPReader.RLPItem[] validators;
-    }
 
     constructor(address ibcHandler_) {
         ibcHandler = ibcHandler_;
@@ -162,6 +149,9 @@ contract IBFT2Client is ILightClient {
         return ILightClient.ClientStatus.Active;
     }
 
+    /**
+     * @dev updateClient updates the client with the given header
+     */
     function updateClient(string calldata clientId, Header.Data calldata header)
         public
         returns (Height.Data[] memory heights)

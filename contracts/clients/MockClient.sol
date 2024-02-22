@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ILightClient} from "../core/02-client/ILightClient.sol";
+import {ILightClientErrors} from "../core/02-client/ILightClientErrors.sol";
 import {IBCHeight} from "../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
 import {Height} from "../proto/Client.sol";
@@ -15,24 +16,14 @@ import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
 
 /// @notice MockClient implements https://github.com/datachainlab/ibc-mock-client
 /// WARNING: This client is intended to be used for testing purpose.
-contract MockClient is Ownable, ILightClient {
+contract MockClient is Ownable, ILightClient, ILightClientErrors {
     using IBCHeight for Height.Data;
 
-    /// @param caller the caller of the function
-    error InvalidCaller(address caller);
     error InvalidClientState();
     error InvalidConsensusState();
     error InvalidHeader();
     error InvalidProof();
     error InvalidPrefix();
-    /// @param clientId client identifier
-    error ClientStateNotFound(string clientId);
-    /// @param clientId client identifier
-    /// @param height consensus height
-    error ConsensusStateNotFound(string clientId, Height.Data height);
-    error NotActiveClient();
-    /// @param url type url of the any
-    error UnexpectedProtoAnyTypeURL(string url);
 
     string internal constant HEADER_TYPE_URL = "/ibc.lightclients.mock.v1.Header";
     string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.mock.v1.ClientState";
@@ -147,7 +138,7 @@ contract MockClient is Ownable, ILightClient {
         returns (Height.Data[] memory heights)
     {
         if (statuses[clientId] != ClientStatus.Active) {
-            revert NotActiveClient();
+            revert NotActiveClient(clientId);
         }
         if (header.height.revision_number != 0 || header.height.revision_height == 0 || header.timestamp == 0) {
             revert InvalidHeader();
