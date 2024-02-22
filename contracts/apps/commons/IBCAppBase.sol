@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
-import {Packet} from "../../proto/Channel.sol";
+import {Packet} from "../../core/04-channel/IIBCChannel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {IIBCModuleErrors} from "../../core/26-router/IIBCModuleErrors.sol";
 
@@ -91,7 +91,7 @@ abstract contract IBCAppBase is Context, IIBCModule, IIBCModuleErrors {
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onRecvPacket(Packet.Data calldata, address)
+    function onRecvPacket(Packet calldata, address)
         external
         virtual
         override
@@ -104,12 +104,12 @@ abstract contract IBCAppBase is Context, IIBCModule, IIBCModuleErrors {
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onAcknowledgementPacket(Packet.Data calldata, bytes calldata, address) external virtual override onlyIBC {}
+    function onAcknowledgementPacket(Packet calldata, bytes calldata, address) external virtual override onlyIBC {}
 
     /**
      * @dev See IIBCModule-onTimeoutPacket
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onTimeoutPacket(Packet.Data calldata, address relayer) external virtual onlyIBC {}
+    function onTimeoutPacket(Packet calldata, address relayer) external virtual onlyIBC {}
 }

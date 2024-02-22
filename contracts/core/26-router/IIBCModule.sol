@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
-import {Channel, ChannelCounterparty, Packet} from "../../proto/Channel.sol";
+import {Channel, ChannelCounterparty} from "../../proto/Channel.sol";
+import {Packet} from "../04-channel/IIBCChannel.sol";
 
 // IIBCModule defines an interface that implements all the callbacks
 // that modules must define as specified in ICS-26
@@ -100,15 +101,15 @@ interface IIBCModule {
      * otherwise the application state changes are discarded. In either case the packet is received
      * and the acknowledgement is written (in synchronous cases).
      */
-    function onRecvPacket(Packet.Data calldata, address relayer) external returns (bytes memory);
+    function onRecvPacket(Packet calldata, address relayer) external returns (bytes memory);
 
     /**
      * @dev onAcknowledgementPacket is called when a packet sent by this module has been acknowledged.
      */
-    function onAcknowledgementPacket(Packet.Data calldata, bytes calldata acknowledgement, address relayer) external;
+    function onAcknowledgementPacket(Packet calldata, bytes calldata acknowledgement, address relayer) external;
 
     /**
      * @dev onTimeoutPacket is called when a packet sent by this module has timed-out (such that it will not be received on the destination chain).
      */
-    function onTimeoutPacket(Packet.Data calldata, address relayer) external;
+    function onTimeoutPacket(Packet calldata, address relayer) external;
 }

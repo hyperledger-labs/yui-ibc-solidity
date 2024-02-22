@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "../../../../contracts/proto/Connection.sol";
 import "../../../../contracts/proto/Channel.sol";
+import "../../../../contracts/core/04-channel/IIBCChannel.sol";
 import "../../../../contracts/core/04-channel/IBCChannelLib.sol";
 import "../../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../../contracts/core/25-handler/OwnableIBCHandler.sol";
@@ -73,15 +74,15 @@ contract TestableIBCHandler is OwnableIBCHandler {
         commitments[IBCCommitment.packetCommitmentKey(portId, channelId, sequence)] = commitment;
     }
 
-    function setPacketCommitment(Packet.Data memory packet) external {
-        commitments[IBCCommitment.packetCommitmentKey(packet.source_port, packet.source_channel, packet.sequence)] =
+    function setPacketCommitment(Packet memory packet) external {
+        commitments[IBCCommitment.packetCommitmentKey(packet.sourcePort, packet.sourceChannel, packet.sequence)] =
         keccak256(
             abi.encodePacked(
                 sha256(
                     abi.encodePacked(
-                        packet.timeout_timestamp,
-                        packet.timeout_height.revision_number,
-                        packet.timeout_height.revision_height,
+                        packet.timeoutTimestamp,
+                        packet.timeoutHeight.revision_number,
+                        packet.timeoutHeight.revision_height,
                         sha256(packet.data)
                     )
                 )

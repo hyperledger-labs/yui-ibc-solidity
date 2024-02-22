@@ -2,8 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {IBCAppBase} from "../commons/IBCAppBase.sol";
+import {Packet} from "../../core/04-channel/IIBCChannel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
-import {Channel, Packet} from "../../proto/Channel.sol";
+import {Channel} from "../../proto/Channel.sol";
 import {ICS20Lib} from "./ICS20Lib.sol";
 import {IICS20Errors} from "./IICS20Errors.sol";
 
@@ -12,7 +13,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
 
     mapping(string => address) channelEscrowAddresses;
 
-    function onRecvPacket(Packet.Data calldata packet, address)
+    function onRecvPacket(Packet calldata packet, address)
         external
         virtual
         override
@@ -27,7 +28,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
             return ICS20Lib.FAILED_ACKNOWLEDGEMENT_JSON;
         }
 
-        bytes memory denomPrefix = _getDenomPrefix(packet.source_port, packet.source_channel);
+        bytes memory denomPrefix = _getDenomPrefix(packet.sourcePort, packet.sourceChannel);
         bytes memory denom = bytes(data.denom);
         if (
             denom.length >= denomPrefix.length
@@ -36,7 +37,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
             // sender chain is not the source, unescrow tokens
             bytes memory unprefixedDenom = ICS20Lib.slice(denom, denomPrefix.length, denom.length - denomPrefix.length);
             success = _tryTransferFrom(
-                _getEscrowAddress(packet.destination_channel), receiver, string(unprefixedDenom), data.amount
+                _getEscrowAddress(packet.destinationChannel), receiver, string(unprefixedDenom), data.amount
             );
         } else {
             // sender chain is the source, mint vouchers
@@ -47,9 +48,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
             } else {
                 success = _tryMint(
                     receiver,
-                    string(
-                        abi.encodePacked(_getDenomPrefix(packet.destination_port, packet.destination_channel), denom)
-                    ),
+                    string(abi.encodePacked(_getDenomPrefix(packet.destinationPort, packet.destinationChannel), denom)),
                     data.amount
                 );
             }
@@ -61,14 +60,14 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
         }
     }
 
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address)
+    function onAcknowledgementPacket(Packet calldata packet, bytes calldata acknowledgement, address)
         external
         virtual
         override
         onlyIBC
     {
         if (keccak256(acknowledgement) != ICS20Lib.KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON) {
-            _refundTokens(ICS20Lib.unmarshalJSON(packet.data), packet.source_port, packet.source_channel);
+            _refundTokens(ICS20Lib.unmarshalJSON(packet.data), packet.sourcePort, packet.sourceChannel);
         }
     }
 
@@ -117,8 +116,8 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
         revert IBCModuleChannelCloseNotAllowed(msg_.portId, msg_.channelId);
     }
 
-    function onTimeoutPacket(Packet.Data calldata packet, address) external virtual override onlyIBC {
-        _refundTokens(ICS20Lib.unmarshalJSON(packet.data), packet.source_port, packet.source_channel);
+    function onTimeoutPacket(Packet calldata packet, address) external virtual override onlyIBC {
+        _refundTokens(ICS20Lib.unmarshalJSON(packet.data), packet.sourcePort, packet.sourceChannel);
     }
 
     function _getEscrowAddress(string memory sourceChannel) internal view virtual returns (address) {

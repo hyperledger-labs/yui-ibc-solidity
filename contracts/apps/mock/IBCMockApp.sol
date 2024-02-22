@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Height} from "../../proto/Client.sol";
-import {Packet} from "../../proto/Channel.sol";
 import {IBCAppBase} from "../commons/IBCAppBase.sol";
+import {Packet} from "../../core/04-channel/IIBCChannel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
 import {IBCMockLib} from "./IBCMockLib.sol";
@@ -47,7 +47,7 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
         closeChannelAllowed = allow;
     }
 
-    function onRecvPacket(Packet.Data calldata packet, address)
+    function onRecvPacket(Packet calldata packet, address)
         external
         view
         override
@@ -63,7 +63,7 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
         }
     }
 
-    function onAcknowledgementPacket(Packet.Data calldata packet, bytes calldata acknowledgement, address)
+    function onAcknowledgementPacket(Packet calldata packet, bytes calldata acknowledgement, address)
         external
         virtual
         override
@@ -126,9 +126,9 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
         }
     }
 
-    function onTimeoutPacket(Packet.Data calldata packet, address) external view override onlyIBC {
+    function onTimeoutPacket(Packet calldata packet, address) external view override onlyIBC {
         if (!closeChannelAllowed) {
-            revert IBCModuleChannelCloseNotAllowed(packet.source_port, packet.source_channel);
+            revert IBCModuleChannelCloseNotAllowed(packet.sourcePort, packet.sourceChannel);
         }
     }
 
