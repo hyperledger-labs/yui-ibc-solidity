@@ -48,7 +48,7 @@ jobs:
       run: make SOLC_VERSION=${{ env.MINIMAL_SOLC_VERSION }} test
 
   e2e-test:
-    name: Integration test
+    name: E2E test
     needs: contract-test
     runs-on: ubuntu-latest
     steps:

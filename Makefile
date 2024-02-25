@@ -2,11 +2,15 @@ FORGE ?= forge
 SOLC_VERSION ?= 0.8.24
 ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 DOCKER_COMPOSE ?= docker compose
-INTEGRATION_TEST_COMPOSE_FILE ?= ./chains/docker-compose.yml
+E2E_TEST_COMPOSE_FILE ?= ./chains/docker-compose.yml
 TEST_BROADCAST_LOG_DIR ?= ./broadcast/Deploy.s.sol
 TEST_MNEMONIC ?= "math razor capable expose worth grape metal sunset metal sudden usage scheme"
 
 ######## Development ########
+
+.PHONY: build
+build:
+	@forge build --sizes --skip test --use solc:$(SOLC_VERSION)
 
 .PHONY: fmt
 fmt:
@@ -20,10 +24,6 @@ fmt:
 lint:
 	@npx solhint 'contracts/{apps,clients,core}/**/*.sol' 'tests/foundry/src/**/*.sol'
 	@$(MAKE) FORGE_FMT_OPTS=--check fmt
-
-.PHONY: build
-build:
-	@forge build --sizes --skip test --use solc:$(SOLC_VERSION)
 
 .PHONY: test
 test:
@@ -60,11 +60,17 @@ endif
 .PHONY: proto-gen
 proto-gen: proto-sol proto-go
 
-######## Integration test ########
+######## Abigen ########
+
+.PHONY: abigen
+abigen: build
+	ABIGEN=$(ABIGEN) ./scripts/abigen.sh
+
+######## E2E test ########
 
 .PHONY: network-e2e
 network-e2e:
-	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up --detach --wait testchain0 testchain1
+	$(DOCKER_COMPOSE) -f $(E2E_TEST_COMPOSE_FILE) up --detach --wait testchain0 testchain1
 	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
@@ -72,12 +78,8 @@ network-e2e:
 
 .PHONY: network-down
 network-down:
-	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) down
+	$(DOCKER_COMPOSE) -f $(E2E_TEST_COMPOSE_FILE) down
 
 .PHONY: e2e-test
 e2e-test:
 	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
-
-.PHONY: abigen
-abigen: build
-	ABIGEN=$(ABIGEN) ./scripts/abigen.sh
