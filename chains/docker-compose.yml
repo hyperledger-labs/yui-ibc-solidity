@@ -1,15 +1,4 @@
 services:
-  development:
-    image: trufflesuite/ganache:v7.9.0
-    ports:
-      - 8545:8545
-      - 8546:8546
-    command: --chain.chainId 1337 --chain.vmErrorsOnRPCResponse true -p 8545 -m "${TEST_MNEMONIC}"
-    healthcheck:
-      test: [ "CMD-SHELL", "grep \"00000000:2161 00000000:0000 0A\" /proc/net/tcp || exit 1" ]
-      interval: 100ms
-      timeout: 1s
-      retries: 100
   testchain0:
     build: ./besu/chain0
     ports:
