@@ -47,7 +47,7 @@ jobs:
     - name: Run tests with minimal solidity version
       run: make SOLC_VERSION=${{ env.MINIMAL_SOLC_VERSION }} test
 
-  integration-test:
+  e2e-test:
     name: Integration test
     needs: contract-test
     runs-on: ubuntu-latest
@@ -72,12 +72,6 @@ jobs:
 
     - name: Resolve dependencies
       run: npm install
-
-    - name: Setup ganache-cli
-      run: make network-development
-
-    - name: Integration test
-      run: make integration-test
 
     - name: Setup chains for E2E test
       run: make network-e2e

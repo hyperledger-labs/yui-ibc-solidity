@@ -62,12 +62,6 @@ proto-gen: proto-sol proto-go
 
 ######## Integration test ########
 
-.PHONY: network-development
-network-development:
-	TEST_MNEMONIC=$(TEST_MNEMONIC) $(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up --detach --wait development
-	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --slow --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8545 --broadcast \
-		./tests/foundry/src/Deploy.s.sol
-
 .PHONY: network-e2e
 network-e2e:
 	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) up --detach --wait testchain0 testchain1
@@ -79,10 +73,6 @@ network-e2e:
 .PHONY: network-down
 network-down:
 	$(DOCKER_COMPOSE) -f $(INTEGRATION_TEST_COMPOSE_FILE) down
-
-.PHONY: integration-test
-integration-test:
-	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/integration/... -count=1
 
 .PHONY: e2e-test
 e2e-test:
