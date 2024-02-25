@@ -267,7 +267,7 @@ contract TestICS04Packet is
 
                 // OK
                 {
-                    Packet.Data memory p0 = createPacket(
+                    Packet memory p0 = createPacket(
                         channelInfo,
                         counterpartyChannelInfo,
                         nextSeqRecv,
@@ -279,7 +279,7 @@ contract TestICS04Packet is
                     nextSeqRecv++;
                     validateRecvPacketPostState(counterpartyHandler, counterpartyChannelInfo, nextSeqRecv);
                     Vm.Log[] memory logs = vm.getRecordedLogs();
-                    Packet.Data memory p1 = getLastRecvPacket(counterpartyHandler, logs);
+                    Packet memory p1 = getLastRecvPacket(counterpartyHandler, logs);
                     assertEq(abi.encode(p0), abi.encode(p1));
                     WriteAcknolwedgement memory ack = getLastWrittenAcknowledgement(counterpartyHandler, logs);
                     assertEq(ack.acknowledgement, IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
@@ -291,7 +291,7 @@ contract TestICS04Packet is
                 }
                 // OK - Async-ack
                 {
-                    Packet.Data memory p0 = createPacket(
+                    Packet memory p0 = createPacket(
                         channelInfo,
                         counterpartyChannelInfo,
                         nextSeqRecv,
@@ -302,7 +302,7 @@ contract TestICS04Packet is
                     counterpartyHandler.recvPacket(msgPacketRecv(p0, H(1)));
                     nextSeqRecv++;
                     Vm.Log[] memory logs = vm.getRecordedLogs();
-                    Packet.Data memory p1 = getLastRecvPacket(counterpartyHandler, logs);
+                    Packet memory p1 = getLastRecvPacket(counterpartyHandler, logs);
                     assertEq(abi.encode(p0), abi.encode(p1));
                     assertTrue(findWrittenAcknowledgement(counterpartyHandler, logs).length == 0);
                     // same packet relay must be failed
@@ -320,7 +320,7 @@ contract TestICS04Packet is
 
                 // valid source and dest but proof is invalid
                 {
-                    Packet.Data memory p0 = createPacket(
+                    Packet memory p0 = createPacket(
                         channelInfo,
                         counterpartyChannelInfo,
                         nextSeqRecv,
@@ -335,7 +335,7 @@ contract TestICS04Packet is
                 }
                 // valid proof but source is invalid
                 {
-                    Packet.Data memory p0 = createPacket(
+                    Packet memory p0 = createPacket(
                         channelInfo,
                         counterpartyChannelInfo,
                         nextSeqRecv,
@@ -365,7 +365,7 @@ contract TestICS04Packet is
                 {
                     string memory tmp = counterpartyChannelInfo.channelId;
                     counterpartyChannelInfo.channelId = genChannelId(0);
-                    Packet.Data memory p0 = createPacket(
+                    Packet memory p0 = createPacket(
                         channelInfo,
                         counterpartyChannelInfo,
                         nextSeqRecv,
@@ -418,7 +418,7 @@ contract TestICS04Packet is
             mockApp.sendPacket(
                 IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(block.number + 1), 0
             );
-            Packet.Data memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
+            Packet memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
                     msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
@@ -432,7 +432,7 @@ contract TestICS04Packet is
                 abi.encodeWithSelector(
                     IIBCChannelErrors.IBCChannelTimeoutPacketHeight.selector,
                     block.number,
-                    p0.timeout_height.revision_height
+                    p0.timeoutHeight.revision_height
                 )
             );
             counterpartyHandler.recvPacket(msg_);
@@ -468,7 +468,7 @@ contract TestICS04Packet is
                 H(0),
                 uint64(block.timestamp * 1e9 + 1)
             );
-            Packet.Data memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
+            Packet memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
                     msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
@@ -483,7 +483,7 @@ contract TestICS04Packet is
                 abi.encodeWithSelector(
                     IIBCChannelErrors.IBCChannelTimeoutPacketTimestamp.selector,
                     block.timestamp * 1e9,
-                    p0.timeout_timestamp
+                    p0.timeoutTimestamp
                 )
             );
             counterpartyHandler.recvPacket(msg_);
@@ -514,7 +514,7 @@ contract TestICS04Packet is
                 H(1)
             );
             mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(2), 0);
-            Packet.Data memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
+            Packet memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutOnClose memory msg_ =
                     msgTimeoutOnClose(counterpartyHandler, orders[i], p0, H(1));
@@ -541,7 +541,7 @@ contract TestICS04Packet is
 
             // OK
             {
-                Packet.Data memory p0 = createPacket(
+                Packet memory p0 = createPacket(
                     channelInfo,
                     counterpartyChannelInfo,
                     1,
@@ -557,7 +557,7 @@ contract TestICS04Packet is
             }
             // Receiving duplicate acks must be failed
             {
-                Packet.Data memory p0 = createPacket(
+                Packet memory p0 = createPacket(
                     channelInfo,
                     counterpartyChannelInfo,
                     2,
@@ -574,7 +574,7 @@ contract TestICS04Packet is
             }
             // Receiving an ack with no corresponding packet commitment must be failed
             {
-                Packet.Data memory p0 = createPacket(
+                Packet memory p0 = createPacket(
                     channelInfo,
                     counterpartyChannelInfo,
                     3,
@@ -601,18 +601,18 @@ contract TestICS04Packet is
         IIBCHandler h = IIBCHandler(app.ibcAddress());
         uint64 sequence = app.sendPacket(message, src.portId, src.channelId, timeoutHeight, timeoutTimestamp);
         assertEq(h.getNextSequenceSend(src.portId, src.channelId), sequence + 1);
-        Packet.Data memory packet = getLastSentPacket(h, vm.getRecordedLogs());
+        Packet memory packet = getLastSentPacket(h, vm.getRecordedLogs());
         assertEq(
             abi.encode(packet),
             abi.encode(
-                Packet.Data({
+                Packet({
                     sequence: sequence,
-                    source_port: src.portId,
-                    source_channel: src.channelId,
-                    destination_port: dst.portId,
-                    destination_channel: dst.channelId,
-                    timeout_height: timeoutHeight,
-                    timeout_timestamp: timeoutTimestamp,
+                    sourcePort: src.portId,
+                    sourceChannel: src.channelId,
+                    destinationPort: dst.portId,
+                    destinationChannel: dst.channelId,
+                    timeoutHeight: timeoutHeight,
+                    timeoutTimestamp: timeoutTimestamp,
                     data: message
                 })
             )

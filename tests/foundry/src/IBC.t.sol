@@ -116,14 +116,14 @@ contract IBCTest is Test {
 
     function testBenchmarkSendPacket() public {
         handler.setCapability(string.concat(MOCK_PORT_ID, "/channel-0"), address(this));
-        Packet.Data memory packet = createPacket(0, 100);
+        Packet memory packet = createPacket(0, 100);
         handler.sendPacket(
-            packet.source_port, packet.source_channel, packet.timeout_height, packet.timeout_timestamp, packet.data
+            packet.sourcePort, packet.sourceChannel, packet.timeoutHeight, packet.timeoutTimestamp, packet.data
         );
     }
 
     function testBenchmarkRecvPacket() public {
-        Packet.Data memory packet = createPacket(0, 100);
+        Packet memory packet = createPacket(0, 100);
         handler.recvPacket(
             IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: packet,
@@ -213,33 +213,29 @@ contract IBCTest is Test {
         return versions;
     }
 
-    function createPacket(uint64 revisionNumber, uint64 revisionHeight)
-        internal
-        pure
-        returns (Packet.Data memory packet)
-    {
-        return Packet.Data({
+    function createPacket(uint64 revisionNumber, uint64 revisionHeight) internal pure returns (Packet memory packet) {
+        return Packet({
             sequence: 1,
-            source_port: MOCK_PORT_ID,
-            source_channel: "channel-0",
-            destination_port: MOCK_PORT_ID,
-            destination_channel: "channel-0",
+            sourcePort: MOCK_PORT_ID,
+            sourceChannel: "channel-0",
+            destinationPort: MOCK_PORT_ID,
+            destinationChannel: "channel-0",
             data: bytes("{\"amount\": \"100\"}"),
-            timeout_height: Height.Data({revision_number: revisionNumber, revision_height: revisionHeight}),
-            timeout_timestamp: 0
+            timeoutHeight: Height.Data({revision_number: revisionNumber, revision_height: revisionHeight}),
+            timeoutTimestamp: 0
         });
     }
 
-    function makeMockClientPacketCommitmentProof(Packet.Data memory packet, Height.Data memory proofHeight)
+    function makeMockClientPacketCommitmentProof(Packet memory packet, Height.Data memory proofHeight)
         internal
         pure
         returns (bytes32)
     {
         bytes32 value = sha256(
             abi.encodePacked(
-                packet.timeout_timestamp,
-                packet.timeout_height.revision_number,
-                packet.timeout_height.revision_height,
+                packet.timeoutTimestamp,
+                packet.timeoutHeight.revision_number,
+                packet.timeoutHeight.revision_height,
                 sha256(packet.data)
             )
         );
@@ -247,7 +243,7 @@ contract IBCTest is Test {
             abi.encodePacked(
                 proofHeight.toUint128(),
                 sha256("ibc"),
-                sha256(IBCCommitment.packetCommitmentPath(packet.source_port, packet.source_channel, packet.sequence)),
+                sha256(IBCCommitment.packetCommitmentPath(packet.sourcePort, packet.sourceChannel, packet.sequence)),
                 sha256(abi.encodePacked(value))
             )
         );

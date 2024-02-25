@@ -2,7 +2,27 @@
 pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
-import {Channel, Packet} from "../../proto/Channel.sol";
+import {Channel} from "../../proto/Channel.sol";
+
+/// @notice Packet defines a type that carries data across different chains through IBC.
+/// @param sequence corresponds to the order of sends and receives, where a packet with an earlier sequence number must be sent and received before a packet with a later sequence number
+/// @param sourcePort identifies the port on the sending chain
+/// @param sourceChannel identifies the channel end on the sending chain
+/// @param destPort identifies the port on the receiving chain
+/// @param destChannel identifies the channel end on the receiving chain
+/// @param data is an opaque value which can be defined by the application logic of the associated modules
+/// @param timeoutHeight indicates a consensus height on the destination chain after which the packet will no longer be processed, and will instead count as having timed-out
+/// @param timeoutTimestamp indicates a timestamp on the destination chain after which the packet will no longer be processed, and will instead count as having timed-out
+struct Packet {
+    uint64 sequence;
+    string sourcePort;
+    string sourceChannel;
+    string destinationPort;
+    string destinationChannel;
+    bytes data;
+    Height.Data timeoutHeight;
+    uint64 timeoutTimestamp;
+}
 
 interface IIBCChannelHandshake {
     // --------------------- Data Structure --------------------- //
@@ -150,7 +170,7 @@ interface IIBCChannelRecvPacket {
     // --------------------- Data Structure --------------------- //
 
     struct MsgPacketRecv {
-        Packet.Data packet;
+        Packet packet;
         bytes proof;
         Height.Data proofHeight;
     }
@@ -158,7 +178,7 @@ interface IIBCChannelRecvPacket {
     // --------------------- Events --------------------- //
 
     /// @notice event emitted upon receiving a packet
-    event RecvPacket(Packet.Data packet);
+    event RecvPacket(Packet packet);
 
     // --------------------- Functions --------------------- //
 
@@ -173,7 +193,7 @@ interface IIBCChannelAcknowledgePacket {
     // --------------------- Data Structure --------------------- //
 
     struct MsgPacketAcknowledgement {
-        Packet.Data packet;
+        Packet packet;
         bytes acknowledgement;
         bytes proof;
         Height.Data proofHeight;
@@ -182,7 +202,7 @@ interface IIBCChannelAcknowledgePacket {
     // --------------------- Events --------------------- //
 
     /// @notice event emitted upon acknowledging a packet
-    event AcknowledgePacket(Packet.Data packet, bytes acknowledgement);
+    event AcknowledgePacket(Packet packet, bytes acknowledgement);
 
     // --------------------- Functions --------------------- //
 
@@ -201,14 +221,14 @@ interface IIBCChannelPacketTimeout {
     // --------------------- Data Structure --------------------- //
 
     struct MsgTimeoutPacket {
-        Packet.Data packet;
+        Packet packet;
         bytes proof;
         Height.Data proofHeight;
         uint64 nextSequenceRecv;
     }
 
     struct MsgTimeoutOnClose {
-        Packet.Data packet;
+        Packet packet;
         bytes proofUnreceived;
         bytes proofClose;
         Height.Data proofHeight;
@@ -218,7 +238,7 @@ interface IIBCChannelPacketTimeout {
     // --------------------- Events --------------------- //
 
     /// @notice event emitted upon timeout of a packet
-    event TimeoutPacket(Packet.Data packet);
+    event TimeoutPacket(Packet packet);
 
     // --------------------- Functions --------------------- //
 

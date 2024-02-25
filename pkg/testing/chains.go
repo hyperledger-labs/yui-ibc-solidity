@@ -1203,8 +1203,8 @@ func (chain *Chain) EnsurePacketCommitmentExistence(
 	return nil
 }
 
-func PacketToCallData(packet channeltypes.Packet) ibchandler.PacketData {
-	return ibchandler.PacketData{
+func PacketToCallData(packet channeltypes.Packet) ibchandler.Packet {
+	return ibchandler.Packet{
 		Sequence:           packet.Sequence,
 		SourcePort:         packet.SourcePort,
 		SourceChannel:      packet.SourceChannel,

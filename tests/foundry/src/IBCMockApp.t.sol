@@ -113,7 +113,7 @@ contract IBCMockAppTest is IBCTestHelper, ICS04PacketEventTestHelper {
                 createMockAppChannel(orders[i], connId0, connId1);
             Height.Data memory timeoutHeight = H(uint64(block.number + 1));
             mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channel0.portId, channel0.channelId, timeoutHeight, 0);
-            Packet.Data memory packet = getLastSentPacket(ibcHandler, vm.getRecordedLogs());
+            Packet memory packet = getLastSentPacket(ibcHandler, vm.getRecordedLogs());
 
             uint64 nextSequenceRecv = orders[i] == Channel.Order.ORDER_ORDERED
                 ? ibcHandler.getNextSequenceRecv(channel1.portId, channel1.channelId)
@@ -187,7 +187,7 @@ contract IBCMockAppTest is IBCTestHelper, ICS04PacketEventTestHelper {
         private
     {
         uint64 sequence = mockApp.sendPacket(rc.packetData, ca.portId, ca.channelId, H(uint64(block.number + 1)), 0);
-        Packet.Data memory packet = getLastSentPacket(ibcHandler, vm.getRecordedLogs());
+        Packet memory packet = getLastSentPacket(ibcHandler, vm.getRecordedLogs());
         assertEq(packet.data, rc.packetData);
         ibcHandler.recvPacket(
             IIBCChannelRecvPacket.MsgPacketRecv({

@@ -15,17 +15,17 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
     using IBCHeight for Height.Data;
 
     function timeoutPacket(MsgTimeoutPacket calldata msg_) external {
-        Channel.Data storage channel = channels[msg_.packet.source_port][msg_.packet.source_channel];
+        Channel.Data storage channel = channels[msg_.packet.sourcePort][msg_.packet.sourceChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
-        if (keccak256(bytes(msg_.packet.destination_port)) != keccak256(bytes(channel.counterparty.port_id))) {
-            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destination_port, msg_.packet.destination_channel);
+        if (keccak256(bytes(msg_.packet.destinationPort)) != keccak256(bytes(channel.counterparty.port_id))) {
+            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destinationPort, msg_.packet.destinationChannel);
         } else if (
-            keccak256(bytes(msg_.packet.destination_channel)) != keccak256(bytes(channel.counterparty.channel_id))
+            keccak256(bytes(msg_.packet.destinationChannel)) != keccak256(bytes(channel.counterparty.channel_id))
         ) {
-            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destination_port, msg_.packet.destination_channel);
+            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destinationPort, msg_.packet.destinationChannel);
         }
 
         // NOTE: we can assume here that the connection exists because the channel is open
@@ -35,8 +35,8 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
             Height.Data memory latestHeight = client.getLatestHeight(connection.client_id);
             uint64 proofTimestamp = client.getTimestampAtHeight(connection.client_id, latestHeight);
             if (
-                (msg_.packet.timeout_height.isZero() || msg_.proofHeight.lt(msg_.packet.timeout_height))
-                    && (msg_.packet.timeout_timestamp == 0 || proofTimestamp < msg_.packet.timeout_timestamp)
+                (msg_.packet.timeoutHeight.isZero() || msg_.proofHeight.lt(msg_.packet.timeoutHeight))
+                    && (msg_.packet.timeoutTimestamp == 0 || proofTimestamp < msg_.packet.timeoutTimestamp)
             ) {
                 revert("packet timeout has not been reached for height or timestamp");
             }
@@ -44,21 +44,21 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
 
         {
             bytes32 commitment = commitments[IBCCommitment.packetCommitmentKey(
-                msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
+                msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
             )];
             // NOTE: if false, this indicates that the timeoutPacket already been executed
             if (commitment == bytes32(0)) {
                 revert IBCChannelPacketCommitmentNotFound(
-                    msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
+                    msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
                 );
             }
             bytes32 packetCommitment = keccak256(
                 abi.encodePacked(
                     sha256(
                         abi.encodePacked(
-                            msg_.packet.timeout_timestamp,
-                            msg_.packet.timeout_height.revision_number,
-                            msg_.packet.timeout_height.revision_height,
+                            msg_.packet.timeoutTimestamp,
+                            msg_.packet.timeoutHeight.revision_number,
+                            msg_.packet.timeoutHeight.revision_height,
                             sha256(msg_.packet.data)
                         )
                     )
@@ -83,7 +83,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     msg_.proof,
                     connection.counterparty.prefix.key_prefix,
                     IBCCommitment.nextSequenceRecvCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel
                     ),
                     uint64ToBigEndianBytes(msg_.nextSequenceRecv)
                 )
@@ -91,7 +91,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 revert IBCChannelFailedVerifyNextSequenceRecv(
                     connection.client_id,
                     IBCCommitment.nextSequenceRecvCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel
                     ),
                     msg_.nextSequenceRecv,
                     msg_.proof,
@@ -109,14 +109,14 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     msg_.proof,
                     connection.counterparty.prefix.key_prefix,
                     IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
                     )
                 )
             ) {
                 revert IBCChannelFailedVerifyPacketReceiptAbsence(
                     connection.client_id,
                     IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
                     ),
                     msg_.proof,
                     msg_.proofHeight
@@ -127,48 +127,48 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         }
 
         delete commitments[IBCCommitment.packetCommitmentKey(
-            msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
+            msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
         )];
 
-        lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel).onTimeoutPacket(
+        lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onTimeoutPacket(
             msg_.packet, _msgSender()
         );
         emit TimeoutPacket(msg_.packet);
     }
 
     function timeoutOnClose(MsgTimeoutOnClose calldata msg_) external {
-        Channel.Data storage channel = channels[msg_.packet.source_port][msg_.packet.source_channel];
+        Channel.Data storage channel = channels[msg_.packet.sourcePort][msg_.packet.sourceChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
-        if (keccak256(bytes(msg_.packet.destination_port)) != keccak256(bytes(channel.counterparty.port_id))) {
-            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destination_port, msg_.packet.destination_channel);
+        if (keccak256(bytes(msg_.packet.destinationPort)) != keccak256(bytes(channel.counterparty.port_id))) {
+            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destinationPort, msg_.packet.destinationChannel);
         } else if (
-            keccak256(bytes(msg_.packet.destination_channel)) != keccak256(bytes(channel.counterparty.channel_id))
+            keccak256(bytes(msg_.packet.destinationChannel)) != keccak256(bytes(channel.counterparty.channel_id))
         ) {
-            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destination_port, msg_.packet.destination_channel);
+            revert IBCChannelUnexpectedPacketDestination(msg_.packet.destinationPort, msg_.packet.destinationChannel);
         }
 
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         ILightClient client = ILightClient(clientImpls[connection.client_id]);
         {
             bytes32 commitment = commitments[IBCCommitment.packetCommitmentKey(
-                msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
+                msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
             )];
             // NOTE: if false, this indicates that the timeoutPacket already been executed
             if (commitment == bytes32(0)) {
                 revert IBCChannelPacketCommitmentNotFound(
-                    msg_.packet.source_port, msg_.packet.source_channel, msg_.packet.sequence
+                    msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
                 );
             }
             bytes32 packetCommitment = keccak256(
                 abi.encodePacked(
                     sha256(
                         abi.encodePacked(
-                            msg_.packet.timeout_timestamp,
-                            msg_.packet.timeout_height.revision_number,
-                            msg_.packet.timeout_height.revision_height,
+                            msg_.packet.timeoutTimestamp,
+                            msg_.packet.timeoutHeight.revision_number,
+                            msg_.packet.timeoutHeight.revision_height,
                             sha256(msg_.packet.data)
                         )
                     )
@@ -184,8 +184,8 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 state: Channel.State.STATE_CLOSED,
                 ordering: channel.ordering,
                 counterparty: ChannelCounterparty.Data({
-                    port_id: msg_.packet.source_port,
-                    channel_id: msg_.packet.source_channel
+                    port_id: msg_.packet.sourcePort,
+                    channel_id: msg_.packet.sourceChannel
                 }),
                 connection_hops: buildConnectionHops(connection.counterparty.connection_id),
                 version: channel.version
@@ -198,13 +198,13 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     calcBlockDelay(connection.delay_period),
                     msg_.proofClose,
                     connection.counterparty.prefix.key_prefix,
-                    IBCCommitment.channelPath(msg_.packet.destination_port, msg_.packet.destination_channel),
+                    IBCCommitment.channelPath(msg_.packet.destinationPort, msg_.packet.destinationChannel),
                     Channel.encode(expectedChannel)
                 )
             ) {
                 revert IBCChannelFailedVerifyChannelState(
                     connection.client_id,
-                    IBCCommitment.channelPath(msg_.packet.destination_port, msg_.packet.destination_channel),
+                    IBCCommitment.channelPath(msg_.packet.destinationPort, msg_.packet.destinationChannel),
                     Channel.encode(expectedChannel),
                     msg_.proofClose,
                     msg_.proofHeight
@@ -226,7 +226,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     msg_.proofUnreceived,
                     connection.counterparty.prefix.key_prefix,
                     IBCCommitment.nextSequenceRecvCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel
                     ),
                     uint64ToBigEndianBytes(msg_.nextSequenceRecv)
                 )
@@ -234,7 +234,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 revert IBCChannelFailedVerifyNextSequenceRecv(
                     connection.client_id,
                     IBCCommitment.nextSequenceRecvCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel
                     ),
                     msg_.nextSequenceRecv,
                     msg_.proofUnreceived,
@@ -251,14 +251,14 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     msg_.proofUnreceived,
                     connection.counterparty.prefix.key_prefix,
                     IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
                     )
                 )
             ) {
                 revert IBCChannelFailedVerifyPacketReceiptAbsence(
                     connection.client_id,
                     IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destination_port, msg_.packet.destination_channel, msg_.packet.sequence
+                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
                     ),
                     msg_.proofUnreceived,
                     msg_.proofHeight
@@ -267,7 +267,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         } else {
             revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
-        lookupModuleByChannel(msg_.packet.source_port, msg_.packet.source_channel).onTimeoutPacket(
+        lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onTimeoutPacket(
             msg_.packet, _msgSender()
         );
         emit TimeoutPacket(msg_.packet);

@@ -3,11 +3,10 @@ pragma solidity ^0.8.20;
 
 import {Vm} from "forge-std/Test.sol";
 import {Height} from "../../../../contracts/proto/Client.sol";
-import {Channel, Packet} from "../../../../contracts/proto/Channel.sol";
+import {Channel} from "../../../../contracts/proto/Channel.sol";
 import {
+    Packet,
     IIBCChannelRecvPacket,
-    IICS04SendPacket,
-    IICS04WriteAcknowledgement,
     IIBCChannelAcknowledgePacket,
     IIBCChannelPacketTimeout
 } from "../../../../contracts/core/04-channel/IIBCChannel.sol";
@@ -44,20 +43,20 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
         bytes memory data,
         Height.Data memory timeoutHeight,
         uint64 timeoutTimestamp
-    ) internal pure returns (Packet.Data memory) {
-        return Packet.Data({
+    ) internal pure returns (Packet memory) {
+        return Packet({
             sequence: sequence,
-            source_port: src.portId,
-            source_channel: src.channelId,
-            destination_port: dst.portId,
-            destination_channel: dst.channelId,
+            sourcePort: src.portId,
+            sourceChannel: src.channelId,
+            destinationPort: dst.portId,
+            destinationChannel: dst.channelId,
             data: data,
-            timeout_height: timeoutHeight,
-            timeout_timestamp: timeoutTimestamp
+            timeoutHeight: timeoutHeight,
+            timeoutTimestamp: timeoutTimestamp
         });
     }
 
-    function msgPacketRecv(Packet.Data memory packet, Height.Data memory proofHeight)
+    function msgPacketRecv(Packet memory packet, Height.Data memory proofHeight)
         internal
         pure
         returns (IIBCChannelRecvPacket.MsgPacketRecv memory)
@@ -70,7 +69,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
     }
 
     function msgPacketAcknowledgement(
-        Packet.Data memory packet,
+        Packet memory packet,
         bytes memory acknowledgement,
         Height.Data memory proofHeight
     ) internal pure returns (IIBCChannelAcknowledgePacket.MsgPacketAcknowledgement memory) {
@@ -78,13 +77,13 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
             packet: packet,
             acknowledgement: acknowledgement,
             proof: proveAcknowledgementCommitment(
-                packet.destination_port, packet.destination_channel, packet.sequence, acknowledgement, proofHeight
+                packet.destinationPort, packet.destinationChannel, packet.sequence, acknowledgement, proofHeight
                 ),
             proofHeight: proofHeight
         });
     }
 
-    function msgTimeoutPacket(Channel.Order ordering, Packet.Data memory packet, Height.Data memory proofHeight)
+    function msgTimeoutPacket(Channel.Order ordering, Packet memory packet, Height.Data memory proofHeight)
         internal
         pure
         returns (IIBCChannelPacketTimeout.MsgTimeoutPacket memory)
@@ -93,7 +92,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
             return IIBCChannelPacketTimeout.MsgTimeoutPacket({
                 packet: packet,
                 proof: proveNextSequenceRecv(
-                    packet.destination_port, packet.destination_channel, packet.sequence, proofHeight
+                    packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
                     ),
                 proofHeight: proofHeight,
                 nextSequenceRecv: packet.sequence
@@ -102,7 +101,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
             return IIBCChannelPacketTimeout.MsgTimeoutPacket({
                 packet: packet,
                 proof: provePacketReceiptAbsence(
-                    packet.destination_port, packet.destination_channel, packet.sequence, proofHeight
+                    packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
                     ),
                 proofHeight: proofHeight,
                 nextSequenceRecv: 0
@@ -115,18 +114,18 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
     function msgTimeoutOnClose(
         IIBCHandler cpH,
         Channel.Order ordering,
-        Packet.Data memory packet,
+        Packet memory packet,
         Height.Data memory proofHeight
     ) internal view returns (IIBCChannelPacketTimeout.MsgTimeoutOnClose memory) {
-        (Channel.Data memory channel, bool ok) = cpH.getChannel(packet.destination_port, packet.destination_channel);
+        (Channel.Data memory channel, bool ok) = cpH.getChannel(packet.destinationPort, packet.destinationChannel);
         require(ok, "channel not found");
         if (ordering == Channel.Order.ORDER_ORDERED) {
             return IIBCChannelPacketTimeout.MsgTimeoutOnClose({
                 packet: packet,
                 proofUnreceived: proveNextSequenceRecv(
-                    packet.destination_port, packet.destination_channel, packet.sequence, proofHeight
+                    packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
                     ),
-                proofClose: proveChannelState(proofHeight, packet.destination_port, packet.destination_channel, channel),
+                proofClose: proveChannelState(proofHeight, packet.destinationPort, packet.destinationChannel, channel),
                 proofHeight: proofHeight,
                 nextSequenceRecv: packet.sequence
             });
@@ -134,9 +133,9 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
             return IIBCChannelPacketTimeout.MsgTimeoutOnClose({
                 packet: packet,
                 proofUnreceived: provePacketReceiptAbsence(
-                    packet.destination_port, packet.destination_channel, packet.sequence, proofHeight
+                    packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
                     ),
-                proofClose: proveChannelState(proofHeight, packet.destination_port, packet.destination_channel, channel),
+                proofClose: proveChannelState(proofHeight, packet.destinationPort, packet.destinationChannel, channel),
                 proofHeight: proofHeight,
                 nextSequenceRecv: 0
             });
@@ -145,7 +144,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
         }
     }
 
-    function provePacketCommitment(Packet.Data memory packet, Height.Data memory proofHeight)
+    function provePacketCommitment(Packet memory packet, Height.Data memory proofHeight)
         internal
         pure
         virtual
@@ -175,7 +174,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
 }
 
 abstract contract ICS04PacketMockClientTestHelper is ICS04PacketTestHelper, MockClientTestHelper {
-    function provePacketCommitment(Packet.Data memory packet, Height.Data memory proofHeight)
+    function provePacketCommitment(Packet memory packet, Height.Data memory proofHeight)
         internal
         pure
         virtual
@@ -185,13 +184,13 @@ abstract contract ICS04PacketMockClientTestHelper is ICS04PacketTestHelper, Mock
         return genMockProof(
             proofHeight,
             DEFAULT_COMMITMENT_PREFIX,
-            IBCCommitment.packetCommitmentPath(packet.source_port, packet.source_channel, packet.sequence),
+            IBCCommitment.packetCommitmentPath(packet.sourcePort, packet.sourceChannel, packet.sequence),
             abi.encodePacked(
                 sha256(
                     abi.encodePacked(
-                        packet.timeout_timestamp,
-                        packet.timeout_height.revision_number,
-                        packet.timeout_height.revision_height,
+                        packet.timeoutTimestamp,
+                        packet.timeoutHeight.revision_number,
+                        packet.timeoutHeight.revision_height,
                         sha256(packet.data)
                     )
                 )
@@ -264,18 +263,18 @@ abstract contract ICS04PacketEventTestHelper {
         string destinationPortId, string destinationChannel, uint64 sequence, bytes acknowledgement
     );
 
-    event RecvPacket(Packet.Data packet);
+    event RecvPacket(Packet packet);
 
-    function getLastSentPacket(IIBCHandler handler, Vm.Log[] memory logs) internal view returns (Packet.Data memory) {
+    function getLastSentPacket(IIBCHandler handler, Vm.Log[] memory logs) internal view returns (Packet memory) {
         for (uint256 i = logs.length; i > 0; i--) {
             if (logs[i - 1].emitter == address(handler)) {
-                (Packet.Data memory p, bool ok) = tryDecodeSendPacketEvent(logs[i - 1]);
+                (Packet memory p, bool ok) = tryDecodeSendPacketEvent(logs[i - 1]);
                 if (ok) {
                     Channel.Data memory c;
-                    (c, ok) = handler.getChannel(p.source_port, p.source_channel);
+                    (c, ok) = handler.getChannel(p.sourcePort, p.sourceChannel);
                     require(ok, "channel not found");
-                    p.destination_port = c.counterparty.port_id;
-                    p.destination_channel = c.counterparty.channel_id;
+                    p.destinationPort = c.counterparty.port_id;
+                    p.destinationChannel = c.counterparty.channel_id;
                     return p;
                 }
             }
@@ -321,10 +320,10 @@ abstract contract ICS04PacketEventTestHelper {
         return acks;
     }
 
-    function getLastRecvPacket(IIBCHandler handler, Vm.Log[] memory logs) internal pure returns (Packet.Data memory) {
+    function getLastRecvPacket(IIBCHandler handler, Vm.Log[] memory logs) internal pure returns (Packet memory) {
         for (uint256 i = logs.length; i > 0; i--) {
             if (logs[i - 1].emitter == address(handler)) {
-                (Packet.Data memory p, bool ok) = tryDecodeRecvPacketEvent(logs[i - 1]);
+                (Packet memory p, bool ok) = tryDecodeRecvPacketEvent(logs[i - 1]);
                 if (ok) {
                     return p;
                 }
@@ -333,14 +332,14 @@ abstract contract ICS04PacketEventTestHelper {
         revert("no packet received");
     }
 
-    function tryDecodeSendPacketEvent(Vm.Log memory log) internal pure returns (Packet.Data memory p, bool) {
+    function tryDecodeSendPacketEvent(Vm.Log memory log) internal pure returns (Packet memory p, bool) {
         if (log.topics[0] != SendPacket.selector) {
             return (p, false);
         }
         return (decodeSendPacketEvent(log.data), true);
     }
 
-    function decodeSendPacketEvent(bytes memory data) internal pure returns (Packet.Data memory) {
+    function decodeSendPacketEvent(bytes memory data) internal pure returns (Packet memory) {
         (
             uint64 sequence,
             string memory sourcePort,
@@ -349,14 +348,14 @@ abstract contract ICS04PacketEventTestHelper {
             uint64 timeoutTimestamp,
             bytes memory packetData
         ) = abi.decode(data, (uint64, string, string, Height.Data, uint64, bytes));
-        return Packet.Data({
+        return Packet({
             sequence: sequence,
-            source_port: sourcePort,
-            source_channel: sourceChannel,
-            destination_port: "",
-            destination_channel: "",
-            timeout_height: timeoutHeight,
-            timeout_timestamp: timeoutTimestamp,
+            sourcePort: sourcePort,
+            sourceChannel: sourceChannel,
+            destinationPort: "",
+            destinationChannel: "",
+            timeoutHeight: timeoutHeight,
+            timeoutTimestamp: timeoutTimestamp,
             data: packetData
         });
     }
@@ -382,14 +381,14 @@ abstract contract ICS04PacketEventTestHelper {
         return wa;
     }
 
-    function tryDecodeRecvPacketEvent(Vm.Log memory log) internal pure returns (Packet.Data memory p, bool) {
+    function tryDecodeRecvPacketEvent(Vm.Log memory log) internal pure returns (Packet memory p, bool) {
         if (log.topics[0] != RecvPacket.selector) {
             return (p, false);
         }
         return (decodeRecvPacketEvent(log.data), true);
     }
 
-    function decodeRecvPacketEvent(bytes memory data) internal pure returns (Packet.Data memory) {
-        return abi.decode(data, (Packet.Data));
+    function decodeRecvPacketEvent(bytes memory data) internal pure returns (Packet memory) {
+        return abi.decode(data, (Packet));
     }
 }
