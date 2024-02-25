@@ -62,14 +62,16 @@ library LocalhostHelper {
         ibcHandler.createClient(
             IIBCClient.MsgCreateClient({
                 clientType: LocalhostClientLib.CLIENT_TYPE,
-                protoClientState: Any.encode(Any.Data({
-                    type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
-                    value: ClientState.encode(
-                    ClientState.Data({
-                        latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                protoClientState: Any.encode(
+                    Any.Data({
+                        type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
+                        value: ClientState.encode(
+                            ClientState.Data({
+                                latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                            })
+                            )
                     })
-                    )
-                })),
+                    ),
                 protoConsensusState: LocalhostClientLib.sentinelConsensusState()
             })
         );
@@ -82,14 +84,16 @@ library LocalhostHelper {
         ibcHandler.updateClient(
             IIBCClient.MsgUpdateClient({
                 clientId: LocalhostClientLib.CLIENT_ID,
-                protoClientMessage: Any.encode(Any.Data({
-                    type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
-                    value: ClientState.encode(
-                    ClientState.Data({
-                        latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                protoClientMessage: Any.encode(
+                    Any.Data({
+                        type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
+                        value: ClientState.encode(
+                            ClientState.Data({
+                                latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                            })
+                            )
                     })
                     )
-                }))
             })
         );
     }
@@ -97,14 +101,20 @@ library LocalhostHelper {
     /**
      * @dev Create a localhost connection
      */
-    function createLocalhostConnection(IIBCHandler ibcHandler) internal returns (string memory connectionId0, string memory connectionId1) {
+    function createLocalhostConnection(IIBCHandler ibcHandler)
+        internal
+        returns (string memory connectionId0, string memory connectionId1)
+    {
         return createLocalhostConnection(ibcHandler, defaultMsgCreateConnection());
     }
 
     /**
      * @dev Create a localhost connection with the localhost client
      */
-    function createLocalhostConnection(IIBCHandler ibcHandler, MsgCreateConnection memory msg_) internal returns (string memory connectionId0, string memory connectionId1) {
+    function createLocalhostConnection(IIBCHandler ibcHandler, MsgCreateConnection memory msg_)
+        internal
+        returns (string memory connectionId0, string memory connectionId1)
+    {
         // ensure the localhost client is created
         getLocalhostClient(ibcHandler);
 
@@ -129,14 +139,16 @@ library LocalhostHelper {
                 }),
                 delayPeriod: msg_.delayPeriod,
                 clientId: LocalhostClientLib.CLIENT_ID,
-                clientStateBytes: Any.encode(Any.Data({
-                    type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
-                    value: ClientState.encode(
-                    ClientState.Data({
-                        latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                clientStateBytes: Any.encode(
+                    Any.Data({
+                        type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
+                        value: ClientState.encode(
+                            ClientState.Data({
+                                latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                            })
+                            )
                     })
-                    )
-                })),
+                    ),
                 counterpartyVersions: getConnectionVersions(),
                 proofInit: LocalhostClientLib.sentinelProof(),
                 proofClient: LocalhostClientLib.sentinelProof(),
@@ -151,14 +163,16 @@ library LocalhostHelper {
                 connectionId: connectionId0,
                 counterpartyConnectionId: connectionId1,
                 version: IBCConnectionLib.defaultIBCVersion(),
-                clientStateBytes: Any.encode(Any.Data({
-                    type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
-                    value: ClientState.encode(
-                    ClientState.Data({
-                        latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                clientStateBytes: Any.encode(
+                    Any.Data({
+                        type_url: LocalhostClientLib.CLIENT_STATE_TYPE_URL,
+                        value: ClientState.encode(
+                            ClientState.Data({
+                                latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
+                            })
+                            )
                     })
-                    )
-                })),
+                    ),
                 proofTry: LocalhostClientLib.sentinelProof(),
                 proofClient: LocalhostClientLib.sentinelProof(),
                 proofConsensus: LocalhostClientLib.sentinelProof(),
@@ -179,7 +193,10 @@ library LocalhostHelper {
     /**
      * @dev Create a localhost channel with the localhost client
      */
-    function createLocalhostChannel(IIBCHandler ibcHandler, MsgCreateChannel memory msg_) internal returns (string memory channelId0, string memory channelId1) {
+    function createLocalhostChannel(IIBCHandler ibcHandler, MsgCreateChannel memory msg_)
+        internal
+        returns (string memory channelId0, string memory channelId1)
+    {
         string memory version0;
         string memory version1;
         (channelId0, version0) = ibcHandler.channelOpenInit(
@@ -230,10 +247,7 @@ library LocalhostHelper {
     }
 
     function defaultMsgCreateConnection() internal pure returns (MsgCreateConnection memory) {
-        return MsgCreateConnection({
-            version: IBCConnectionLib.defaultIBCVersion(),
-            delayPeriod: 0
-        });
+        return MsgCreateConnection({version: IBCConnectionLib.defaultIBCVersion(), delayPeriod: 0});
     }
 
     function getConnectionVersions() private pure returns (Version.Data[] memory) {

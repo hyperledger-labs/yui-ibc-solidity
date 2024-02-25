@@ -15,9 +15,10 @@ build:
 .PHONY: fmt
 fmt:
 	@$(FORGE) fmt $(FORGE_FMT_OPTS) \
-		./contracts/core \
 		./contracts/apps \
 		./contracts/clients \
+		./contracts/core \
+		./contracts/helpers \
 		./tests/foundry/src
 
 .PHONY: lint
