@@ -68,6 +68,14 @@ interface ILightClient {
     function getStatus(string calldata clientId) external view returns (ClientStatus);
 
     /**
+     * @dev getLatestInfo returns the latest height, the latest timestamp, and the status of the client corresponding to `clientId`.
+     */
+    function getLatestInfo(string calldata clientId)
+        external
+        view
+        returns (Height.Data memory latestHeight, uint64 latestTimestamp, ClientStatus status);
+
+    /**
      * @dev verifyMembership is a generic proof verification method which verifies a proof of the existence of a value at a given CommitmentPath at the specified height.
      * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
      */

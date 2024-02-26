@@ -49,19 +49,14 @@ contract IBCChannelPacketSendRecv is
         {
             // NOTE: We can assume here that the connection state is OPEN because the channel state is OPEN
             ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-            ILightClient client = ILightClient(clientImpls[connection.client_id]);
-            if (address(client) == address(0)) {
-                revert IBCHostClientNotFound(connection.client_id);
-            }
-            if (client.getStatus(connection.client_id) != ILightClient.ClientStatus.Active) {
+            (Height.Data memory latestHeight, uint64 latestTimestamp, ILightClient.ClientStatus status) =
+                ILightClient(clientImpls[connection.client_id]).getLatestInfo(connection.client_id);
+            if (status != ILightClient.ClientStatus.Active) {
                 revert IBCClientNotActiveClient(connection.client_id);
             }
-
-            Height.Data memory latestHeight = client.getLatestHeight(connection.client_id);
             if (!timeoutHeight.isZero() && latestHeight.gte(timeoutHeight)) {
                 revert IBCChannelPastPacketTimeoutHeight(timeoutHeight, latestHeight);
             }
-            uint64 latestTimestamp = client.getTimestampAtHeight(connection.client_id, latestHeight);
             if (timeoutTimestamp != 0 && latestTimestamp >= timeoutTimestamp) {
                 revert IBCChannelPastPacketTimeoutTimestamp(timeoutTimestamp, latestTimestamp);
             }

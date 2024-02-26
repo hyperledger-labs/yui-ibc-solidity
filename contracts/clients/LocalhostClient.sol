@@ -114,6 +114,16 @@ contract LocalhostClient is ILightClient, ILightClientErrors {
         return ClientStatus.Active;
     }
 
+    function getLatestInfo(string calldata clientId)
+        public
+        view
+        returns (Height.Data memory latestHeight, uint64 latestTimestamp, ClientStatus status)
+    {
+        latestHeight = getLatestHeight(clientId);
+        latestTimestamp = uint64(block.timestamp);
+        status = ILightClient.ClientStatus.Active;
+    }
+
     /**
      * @dev verifyMembership is a generic proof verification method which verifies a proof of the existence of a value at a given CommitmentPath at the specified height.
      * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
