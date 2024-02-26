@@ -15,6 +15,7 @@ import {IIBCHandler} from "../../../../contracts/core/25-handler/IIBCHandler.sol
 import {IBCCommitment} from "../../../../contracts/core/24-host/IBCCommitment.sol";
 import {ICS04HandshakeTestHelper} from "./ICS04HandshakeTestHelper.t.sol";
 import {MockClientTestHelper} from "./MockClientTestHelper.t.sol";
+import {IBCCommitmentTestHelper} from "./IBCCommitmentTestHelper.sol";
 
 abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
     function validateRecvPacketPostState(IIBCHandler h, ChannelInfo memory dst, uint64 nextSequenceRecv) internal {
@@ -184,7 +185,7 @@ abstract contract ICS04PacketMockClientTestHelper is ICS04PacketTestHelper, Mock
         return genMockProof(
             proofHeight,
             DEFAULT_COMMITMENT_PREFIX,
-            IBCCommitment.packetCommitmentPath(packet.sourcePort, packet.sourceChannel, packet.sequence),
+            IBCCommitmentTestHelper.packetCommitmentPath(packet.sourcePort, packet.sourceChannel, packet.sequence),
             abi.encodePacked(
                 sha256(
                     abi.encodePacked(
@@ -208,7 +209,7 @@ abstract contract ICS04PacketMockClientTestHelper is ICS04PacketTestHelper, Mock
         return genMockProof(
             proofHeight,
             DEFAULT_COMMITMENT_PREFIX,
-            IBCCommitment.packetAcknowledgementCommitmentPath(destPort, destChannel, sequence),
+            IBCCommitmentTestHelper.packetAcknowledgementCommitmentPath(destPort, destChannel, sequence),
             abi.encodePacked(sha256(acknowledgement))
         );
     }
@@ -222,7 +223,7 @@ abstract contract ICS04PacketMockClientTestHelper is ICS04PacketTestHelper, Mock
         return genMockProof(
             proofHeight,
             DEFAULT_COMMITMENT_PREFIX,
-            IBCCommitment.packetReceiptCommitmentPath(destPort, destChannel, sequence),
+            IBCCommitmentTestHelper.packetReceiptCommitmentPath(destPort, destChannel, sequence),
             bytes("")
         );
     }
@@ -236,7 +237,7 @@ abstract contract ICS04PacketMockClientTestHelper is ICS04PacketTestHelper, Mock
         return genMockProof(
             proofHeight,
             DEFAULT_COMMITMENT_PREFIX,
-            IBCCommitment.nextSequenceRecvCommitmentPath(portId, channelId),
+            IBCCommitmentTestHelper.nextSequenceRecvCommitmentPath(portId, channelId),
             abi.encodePacked(bytes8(sequence))
         );
     }

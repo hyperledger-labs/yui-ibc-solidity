@@ -15,6 +15,7 @@ import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";
 import "../../../contracts/apps/mock/IBCMockApp.sol";
 import "./helpers/TestableIBCHandler.t.sol";
+import "./helpers/IBCCommitmentTestHelper.sol";
 
 // TODO split setup code into other contracts
 contract IBCTest is Test {
@@ -90,7 +91,7 @@ contract IBCTest is Test {
     function setUpMockApp() internal {
         mockApp = new IBCMockApp(handler);
         handler.bindPort(MOCK_PORT_ID, mockApp);
-        handler.setCapability(string.concat(MOCK_PORT_ID, "/channel-0"), address(mockApp));
+        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(mockApp));
     }
 
     /* test cases */
@@ -115,7 +116,7 @@ contract IBCTest is Test {
     }
 
     function testBenchmarkSendPacket() public {
-        handler.setCapability(string.concat(MOCK_PORT_ID, "/channel-0"), address(this));
+        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(this));
         Packet memory packet = createPacket(0, 100);
         handler.sendPacket(
             packet.sourcePort, packet.sourceChannel, packet.timeoutHeight, packet.timeoutTimestamp, packet.data
@@ -243,7 +244,11 @@ contract IBCTest is Test {
             abi.encodePacked(
                 proofHeight.toUint128(),
                 sha256("ibc"),
-                sha256(IBCCommitment.packetCommitmentPath(packet.sourcePort, packet.sourceChannel, packet.sequence)),
+                sha256(
+                    IBCCommitmentTestHelper.packetCommitmentPath(
+                        packet.sourcePort, packet.sourceChannel, packet.sequence
+                    )
+                ),
                 sha256(abi.encodePacked(value))
             )
         );

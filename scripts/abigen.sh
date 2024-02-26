@@ -28,7 +28,6 @@ function main() {
     "IBFT2Client"
     "MockClient"
     "IBCMockApp"
-    "IBCCommitmentTestHelper"
   )
   for src in "${srcs[@]}" ; do
     gen_code ${src}

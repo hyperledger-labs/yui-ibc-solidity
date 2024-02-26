@@ -12,10 +12,10 @@ contract IBCModuleManager is IBCHost, Context {
     /**
      * @dev lookupModuleByPort will return the IBCModule along with the capability associated with a given portID
      */
-    function lookupModuleByPort(string memory portId) internal view virtual returns (IIBCModule) {
-        address module = lookupModule(portCapabilityPath(portId));
+    function lookupModuleByPort(string calldata portId) internal view virtual returns (IIBCModule) {
+        address module = portCapabilities[portId];
         if (module == address(0)) {
-            revert IBCHostModuleNotFound(portCapabilityPath(portId));
+            revert IBCHostModulePortNotFound(portId);
         }
         return IIBCModule(module);
     }
@@ -23,62 +23,44 @@ contract IBCModuleManager is IBCHost, Context {
     /**
      * @dev lookupModuleByChannel will return the IBCModule along with the capability associated with a given channel defined by its portID and channelID
      */
-    function lookupModuleByChannel(string memory portId, string memory channelId)
+    function lookupModuleByChannel(string calldata portId, string calldata channelId)
         internal
         view
         virtual
         returns (IIBCModule)
     {
-        address module = lookupModule(channelCapabilityPath(portId, channelId));
+        address module = channelCapabilities[portId][channelId];
         if (module == address(0)) {
-            revert IBCHostModuleNotFound(channelCapabilityPath(portId, channelId));
+            revert IBCHostModuleChannelNotFound(portId, channelId);
         }
         return IIBCModule(module);
+    }
+
+    function claimPortCapability(string calldata portId, address addr) internal {
+        if (portCapabilities[portId] != address(0)) {
+            revert IBCHostPortCapabilityAlreadyClaimed(portId);
+        }
+        portCapabilities[portId] = addr;
     }
 
     /**
      * @dev claimCapability allows the IBC app module to claim a capability that core IBC passes to it
      */
-    function claimCapability(string memory name, address addr) internal {
-        if (capabilities[name] != address(0)) {
-            revert IBCHostCapabilityAlreadyClaimed(name);
+    function claimChannelCapability(string calldata portId, string memory channelId, address addr) internal {
+        if (channelCapabilities[portId][channelId] != address(0)) {
+            revert IBCHostChannelCapabilityAlreadyClaimed(portId, channelId);
         }
-        capabilities[name] = addr;
+        channelCapabilities[portId][channelId] = addr;
     }
 
     /**
-     * @dev authenticateCapability attempts to authenticate a given name from a caller.
+     * @dev authenticateChannelCapability attempts to authenticate a given name from a caller.
      * It allows for a caller to check that a capability does in fact correspond to a particular name.
      */
-    function authenticateCapability(string memory name) internal view {
-        if (capabilities[name] != _msgSender()) {
-            revert IBCHostFailedAuthenticateCapability(name, _msgSender());
+    function authenticateChannelCapability(string calldata portId, string calldata channelId) internal view {
+        if (channelCapabilities[portId][channelId] != _msgSender()) {
+            revert IBCHostFailedAuthenticateChannelCapability(portId, channelId, _msgSender());
         }
-    }
-
-    /**
-     * @dev lookupModule will return the IBCModule addresses bound to a given name.
-     */
-    function lookupModule(string memory name) internal view returns (address) {
-        return capabilities[name];
-    }
-
-    /**
-     * @dev portCapabilityPath returns the path under which owner module address associated with a port should be stored.
-     */
-    function portCapabilityPath(string memory portId) internal pure returns (string memory) {
-        return portId;
-    }
-
-    /**
-     * @dev channelCapabilityPath returns the path under which module address associated with a port and channel should be stored.
-     */
-    function channelCapabilityPath(string memory portId, string memory channelId)
-        internal
-        pure
-        returns (string memory)
-    {
-        return string.concat(portId, "/", channelId);
     }
 
     /**

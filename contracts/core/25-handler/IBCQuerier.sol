@@ -66,7 +66,7 @@ contract IBCQuerier is IBCHost, IIBCQuerier {
         returns (IBCChannelLib.PacketReceipt)
     {
         return IBCChannelLib.receiptCommitmentToReceipt(
-            commitments[IBCCommitment.packetReceiptCommitmentKey(portId, channelId, sequence)]
+            commitments[IBCCommitment.packetReceiptCommitmentKeyCalldata(portId, channelId, sequence)]
         );
     }
 

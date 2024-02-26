@@ -36,7 +36,7 @@ contract IBCChannelPacketSendRecv is
         uint64 timeoutTimestamp,
         bytes calldata data
     ) external returns (uint64) {
-        authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel));
+        authenticateChannelCapability(sourcePort, sourceChannel);
 
         Channel.Data storage channel = channels[sourcePort][sourceChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
@@ -69,7 +69,7 @@ contract IBCChannelPacketSendRecv is
 
         uint64 packetSequence = nextSequenceSends[sourcePort][sourceChannel];
         nextSequenceSends[sourcePort][sourceChannel] = packetSequence + 1;
-        commitments[IBCCommitment.packetCommitmentKey(sourcePort, sourceChannel, packetSequence)] = keccak256(
+        commitments[IBCCommitment.packetCommitmentKeyCalldata(sourcePort, sourceChannel, packetSequence)] = keccak256(
             abi.encodePacked(
                 sha256(
                     abi.encodePacked(
@@ -92,7 +92,7 @@ contract IBCChannelPacketSendRecv is
         uint64 sequence,
         bytes calldata acknowledgement
     ) public {
-        authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel));
+        authenticateChannelCapability(destinationPortId, destinationChannel);
         Channel.Data storage channel = channels[destinationPortId][destinationChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);
@@ -110,7 +110,7 @@ contract IBCChannelPacketSendRecv is
         bytes memory acknowledgement
     ) internal {
         bytes32 ackCommitmentKey =
-            IBCCommitment.packetAcknowledgementCommitmentKey(destinationPortId, destinationChannel, sequence);
+            IBCCommitment.packetAcknowledgementCommitmentKeyCalldata(destinationPortId, destinationChannel, sequence);
         if (commitments[ackCommitmentKey] != bytes32(0)) {
             revert IBCChannelAcknowledgementAlreadyWritten(destinationPortId, destinationChannel, sequence);
         }
@@ -146,7 +146,9 @@ contract IBCChannelPacketSendRecv is
             connections[channel.connection_hops[0]],
             msg_.proofHeight,
             msg_.proof,
-            IBCCommitment.packetCommitmentPath(msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence),
+            IBCCommitment.packetCommitmentPathCalldata(
+                msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
+            ),
             sha256(
                 abi.encodePacked(
                     msg_.packet.timeoutTimestamp,
@@ -158,7 +160,7 @@ contract IBCChannelPacketSendRecv is
         );
 
         if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
-            bytes32 commitmentKey = IBCCommitment.packetReceiptCommitmentKey(
+            bytes32 commitmentKey = IBCCommitment.packetReceiptCommitmentKeyCalldata(
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
             );
             if (commitments[commitmentKey] != bytes32(0)) {
@@ -175,7 +177,7 @@ contract IBCChannelPacketSendRecv is
                 );
             }
             nextSequenceRecvs[msg_.packet.destinationPort][msg_.packet.destinationChannel]++;
-            commitments[IBCCommitment.nextSequenceRecvCommitmentKey(
+            commitments[IBCCommitment.nextSequenceRecvCommitmentKeyCalldata(
                 msg_.packet.destinationPort, msg_.packet.destinationChannel
             )] = keccak256(
                 uint64ToBigEndianBytes(nextSequenceRecvs[msg_.packet.destinationPort][msg_.packet.destinationChannel])
@@ -219,8 +221,9 @@ contract IBCChannelPacketSendRecv is
         // NOTE: We can assume here that the connection state is OPEN because the channel state is OPEN
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
 
-        bytes32 packetCommitmentKey =
-            IBCCommitment.packetCommitmentKey(msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence);
+        bytes32 packetCommitmentKey = IBCCommitment.packetCommitmentKeyCalldata(
+            msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
+        );
         bytes32 packetCommitment = commitments[packetCommitmentKey];
         if (packetCommitment == bytes32(0)) {
             revert IBCChannelPacketCommitmentNotFound(
@@ -247,7 +250,7 @@ contract IBCChannelPacketSendRecv is
             connection,
             msg_.proofHeight,
             msg_.proof,
-            IBCCommitment.packetAcknowledgementCommitmentPath(
+            IBCCommitment.packetAcknowledgementCommitmentPathCalldata(
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
             ),
             sha256(msg_.acknowledgement)
@@ -324,11 +327,13 @@ contract IBCChannelPacketSendRecv is
     // private functions
 
     function calcBlockDelay(uint64 timeDelay) private view returns (uint64) {
-        uint64 blockDelay = 0;
-        if (expectedTimePerBlock != 0) {
-            blockDelay = (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
+        if (timeDelay == 0) {
+            return 0;
+        } else if (expectedTimePerBlock == 0) {
+            return 0;
+        } else {
+            return (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
         }
-        return blockDelay;
     }
 
     function buildConnectionHops(string memory connectionId) private pure returns (string[] memory hops) {
