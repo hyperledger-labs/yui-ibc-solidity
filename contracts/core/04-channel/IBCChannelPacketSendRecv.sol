@@ -324,11 +324,13 @@ contract IBCChannelPacketSendRecv is
     // private functions
 
     function calcBlockDelay(uint64 timeDelay) private view returns (uint64) {
-        uint64 blockDelay = 0;
-        if (expectedTimePerBlock != 0) {
-            blockDelay = (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
+        if (timeDelay == 0) {
+            return 0;
+        } else if (expectedTimePerBlock == 0) {
+            return 0;
+        } else {
+            return (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
         }
-        return blockDelay;
     }
 
     function buildConnectionHops(string memory connectionId) private pure returns (string[] memory hops) {
