@@ -9,12 +9,11 @@ import (
 )
 
 type ContractConfig struct {
-	IBCHandlerAddress              common.Address
-	ICS20TransferBankAddress       common.Address
-	ICS20BankAddress               common.Address
-	IBCCommitmentTestHelperAddress common.Address
-	ERC20TokenAddress              common.Address
-	IBCMockAppAddress              common.Address
+	IBCHandlerAddress        common.Address
+	ICS20TransferBankAddress common.Address
+	ICS20BankAddress         common.Address
+	ERC20TokenAddress        common.Address
+	IBCMockAppAddress        common.Address
 }
 
 func (cc *ContractConfig) Validate() error {
@@ -25,8 +24,6 @@ func (cc *ContractConfig) Validate() error {
 		return errors.New("ICS20TransferBankAddress is empty")
 	} else if cc.ICS20BankAddress == zero {
 		return errors.New("ICS20BankAddress is empty")
-	} else if cc.IBCCommitmentTestHelperAddress == zero {
-		return errors.New("IBCCommitmentTestHelperAddress is empty")
 	} else if cc.ERC20TokenAddress == zero {
 		return errors.New("ERC20TokenAddress is empty")
 	} else if cc.IBCMockAppAddress == zero {
@@ -68,8 +65,6 @@ func buildContractConfigFromBroadcastLog(path string) (*ContractConfig, error) {
 			cc.ICS20TransferBankAddress = tx.ContractAddress
 		case "ICS20Bank":
 			cc.ICS20BankAddress = tx.ContractAddress
-		case "IBCCommitmentTestHelper":
-			cc.IBCCommitmentTestHelperAddress = tx.ContractAddress
 		case "ERC20Token":
 			cc.ERC20TokenAddress = tx.ContractAddress
 		case "IBCMockApp":

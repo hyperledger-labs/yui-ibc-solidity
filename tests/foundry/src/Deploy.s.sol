@@ -16,7 +16,6 @@ import {IBFT2Client} from "../../../contracts/clients/IBFT2Client.sol";
 import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
 import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
 import {ERC20Token} from "../../../contracts/apps/20-transfer/ERC20Token.sol";
-import {IBCCommitmentTestHelper} from "./helpers/IBCCommitmentTestHelper.sol";
 import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
 contract DeployScript is Script {
@@ -57,7 +56,6 @@ contract DeployScript is Script {
 
         // deploy test helpers
         new ERC20Token("test", "test", 1000000);
-        new IBCCommitmentTestHelper();
 
         vm.stopBroadcast();
     }

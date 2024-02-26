@@ -28,7 +28,6 @@ import (
 
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
-	ibccommitment "github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibccommitmenttesthelper"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
@@ -126,8 +125,7 @@ type Chain struct {
 	ContractConfig ContractConfig
 
 	// Core Modules
-	IBCHandler    ibchandler.Ibchandler
-	IBCCommitment ibccommitment.Ibccommitmenttesthelper
+	IBCHandler ibchandler.Ibchandler
 
 	// App Modules
 	ERC20         erc20.Erc20
@@ -161,10 +159,6 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		t.Fatal(err)
 	}
 	ibcHandler, err := ibchandler.NewIbchandler(config.IBCHandlerAddress, client)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ibcCommitment, err := ibccommitment.NewIbccommitmenttesthelper(config.IBCCommitmentTestHelperAddress, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,8 +196,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		isAutoMining:     isAutoMining,
 		startBlockNumber: big.NewInt(int64(startBlockNumber)),
 
-		IBCHandler:    *ibcHandler,
-		IBCCommitment: *ibcCommitment,
+		IBCHandler: *ibcHandler,
 
 		ERC20:         *erc20_,
 		ICS20Transfer: *ics20transfer,
