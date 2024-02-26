@@ -37,7 +37,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 msg_.packet.timeoutTimestamp == 0
                     || client.getTimestampAtHeight(connection.client_id, msg_.proofHeight) < msg_.packet.timeoutTimestamp
             ) {
-                revert("packet timeout has not been reached for height or timestamp");
+                revert IBCChannelTimeoutNotReached();
             }
         }
 

@@ -51,6 +51,9 @@ interface IIBCChannelErrors {
     /// @param latestTimestamp latest timestamp of the receiving chain
     error IBCChannelPastPacketTimeoutTimestamp(uint64 timeoutTimestamp, uint64 latestTimestamp);
 
+    /// @notice packet timeout has not been reached for height or timestamp
+    error IBCChannelTimeoutNotReached();
+
     /// @param commitment packet receipt commitment
     error IBCChannelUnknownPacketReceiptCommitment(bytes32 commitment);
 
