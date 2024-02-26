@@ -33,7 +33,7 @@ library IBCCommitment {
         return abi.encodePacked("channelEnds/ports/", portId, "/channels/", channelId);
     }
 
-    function packetCommitmentPath(string memory portId, string memory channelId, uint64 sequence)
+    function packetCommitmentPathCalldata(string calldata portId, string calldata channelId, uint64 sequence)
         internal
         pure
         returns (bytes memory)
@@ -43,16 +43,16 @@ library IBCCommitment {
         );
     }
 
-    function packetAcknowledgementCommitmentPath(string memory portId, string memory channelId, uint64 sequence)
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function packetAcknowledgementCommitmentPathCalldata(
+        string calldata portId,
+        string calldata channelId,
+        uint64 sequence
+    ) internal pure returns (bytes memory) {
         return
             abi.encodePacked("acks/ports/", portId, "/channels/", channelId, "/sequences/", Strings.toString(sequence));
     }
 
-    function packetReceiptCommitmentPath(string memory portId, string memory channelId, uint64 sequence)
+    function packetReceiptCommitmentPathCalldata(string calldata portId, string calldata channelId, uint64 sequence)
         internal
         pure
         returns (bytes memory)
@@ -63,6 +63,14 @@ library IBCCommitment {
     }
 
     function nextSequenceRecvCommitmentPath(string memory portId, string memory channelId)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked("nextSequenceRecv/ports/", portId, "/channels/", channelId);
+    }
+
+    function nextSequenceRecvCommitmentPathCalldata(string calldata portId, string calldata channelId)
         internal
         pure
         returns (bytes memory)
@@ -92,35 +100,43 @@ library IBCCommitment {
         return keccak256(channelPath(portId, channelId));
     }
 
-    function packetCommitmentKey(string memory portId, string memory channelId, uint64 sequence)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(packetCommitmentPath(portId, channelId, sequence));
-    }
-
-    function packetAcknowledgementCommitmentKey(string memory portId, string memory channelId, uint64 sequence)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(packetAcknowledgementCommitmentPath(portId, channelId, sequence));
-    }
-
-    function packetReceiptCommitmentKey(string memory portId, string memory channelId, uint64 sequence)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(packetReceiptCommitmentPath(portId, channelId, sequence));
-    }
-
     function nextSequenceRecvCommitmentKey(string memory portId, string memory channelId)
         internal
         pure
         returns (bytes32)
     {
         return keccak256(nextSequenceRecvCommitmentPath(portId, channelId));
+    }
+
+    function packetCommitmentKeyCalldata(string calldata portId, string calldata channelId, uint64 sequence)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(packetCommitmentPathCalldata(portId, channelId, sequence));
+    }
+
+    function packetAcknowledgementCommitmentKeyCalldata(
+        string calldata portId,
+        string calldata channelId,
+        uint64 sequence
+    ) internal pure returns (bytes32) {
+        return keccak256(packetAcknowledgementCommitmentPathCalldata(portId, channelId, sequence));
+    }
+
+    function packetReceiptCommitmentKeyCalldata(string calldata portId, string calldata channelId, uint64 sequence)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(packetReceiptCommitmentPathCalldata(portId, channelId, sequence));
+    }
+
+    function nextSequenceRecvCommitmentKeyCalldata(string calldata portId, string calldata channelId)
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(nextSequenceRecvCommitmentPathCalldata(portId, channelId));
     }
 }

@@ -71,12 +71,12 @@ contract TestableIBCHandler is OwnableIBCHandler {
     function setPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence, bytes32 commitment)
         external
     {
-        commitments[IBCCommitment.packetCommitmentKey(portId, channelId, sequence)] = commitment;
+        commitments[IBCCommitment.packetCommitmentKeyCalldata(portId, channelId, sequence)] = commitment;
     }
 
-    function setPacketCommitment(Packet memory packet) external {
-        commitments[IBCCommitment.packetCommitmentKey(packet.sourcePort, packet.sourceChannel, packet.sequence)] =
-        keccak256(
+    function setPacketCommitment(Packet calldata packet) external {
+        commitments[IBCCommitment.packetCommitmentKeyCalldata(packet.sourcePort, packet.sourceChannel, packet.sequence)]
+        = keccak256(
             abi.encodePacked(
                 sha256(
                     abi.encodePacked(
@@ -94,21 +94,23 @@ contract TestableIBCHandler is OwnableIBCHandler {
         capabilities[name] = addr;
     }
 
-    function getPacketCommitment(string memory portId, string memory channelId, uint64 sequence)
+    function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
         external
         view
         returns (bytes32)
     {
-        return getCommitment(IBCCommitment.packetCommitmentKey(portId, channelId, sequence));
+        return getCommitment(IBCCommitment.packetCommitmentKeyCalldata(portId, channelId, sequence));
     }
 
-    function hasPacketReceipt(string memory destinationPortId, string memory destinationChannelId, uint64 sequence)
+    function hasPacketReceipt(string calldata destinationPortId, string calldata destinationChannelId, uint64 sequence)
         external
         view
         returns (bool)
     {
         return IBCChannelLib.receiptCommitmentToReceipt(
-            commitments[IBCCommitment.packetReceiptCommitmentKey(destinationPortId, destinationChannelId, sequence)]
+            commitments[IBCCommitment.packetReceiptCommitmentKeyCalldata(
+                destinationPortId, destinationChannelId, sequence
+            )]
         ) == IBCChannelLib.PacketReceipt.SUCCESSFUL;
     }
 }

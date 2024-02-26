@@ -43,7 +43,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         }
 
         {
-            bytes32 commitment = commitments[IBCCommitment.packetCommitmentKey(
+            bytes32 commitment = commitments[IBCCommitment.packetCommitmentKeyCalldata(
                 msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
             )];
             // NOTE: if false, this indicates that the timeoutPacket already been executed
@@ -100,6 +100,9 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
             }
             channel.state = Channel.State.STATE_CLOSED;
         } else if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
+            bytes memory path = IBCCommitment.packetReceiptCommitmentPathCalldata(
+                msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
+            );
             if (
                 !client.verifyNonMembership(
                     connection.client_id,
@@ -108,25 +111,18 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     calcBlockDelay(connection.delay_period),
                     msg_.proof,
                     connection.counterparty.prefix.key_prefix,
-                    IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
-                    )
+                    path
                 )
             ) {
                 revert IBCChannelFailedVerifyPacketReceiptAbsence(
-                    connection.client_id,
-                    IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
-                    ),
-                    msg_.proof,
-                    msg_.proofHeight
+                    connection.client_id, path, msg_.proof, msg_.proofHeight
                 );
             }
         } else {
             revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
 
-        delete commitments[IBCCommitment.packetCommitmentKey(
+        delete commitments[IBCCommitment.packetCommitmentKeyCalldata(
             msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
         )];
 
@@ -153,7 +149,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         ILightClient client = ILightClient(clientImpls[connection.client_id]);
         {
-            bytes32 commitment = commitments[IBCCommitment.packetCommitmentKey(
+            bytes32 commitment = commitments[IBCCommitment.packetCommitmentKeyCalldata(
                 msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
             )];
             // NOTE: if false, this indicates that the timeoutPacket already been executed
@@ -242,6 +238,9 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 );
             }
         } else if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
+            bytes memory path = IBCCommitment.packetReceiptCommitmentPathCalldata(
+                msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
+            );
             if (
                 !client.verifyNonMembership(
                     connection.client_id,
@@ -250,18 +249,11 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     calcBlockDelay(connection.delay_period),
                     msg_.proofUnreceived,
                     connection.counterparty.prefix.key_prefix,
-                    IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
-                    )
+                    path
                 )
             ) {
                 revert IBCChannelFailedVerifyPacketReceiptAbsence(
-                    connection.client_id,
-                    IBCCommitment.packetReceiptCommitmentPath(
-                        msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
-                    ),
-                    msg_.proofUnreceived,
-                    msg_.proofHeight
+                    connection.client_id, path, msg_.proofUnreceived, msg_.proofHeight
                 );
             }
         } else {
