@@ -34,6 +34,6 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
         if (address(moduleAddress) == address(0) || address(moduleAddress) == address(this)) {
             revert IBCHostInvalidModuleAddress(address(moduleAddress));
         }
-        claimCapability(portCapabilityPath(portId), address(moduleAddress));
+        claimPortCapability(portId, address(moduleAddress));
     }
 }

@@ -90,8 +90,8 @@ contract TestableIBCHandler is OwnableIBCHandler {
         );
     }
 
-    function setCapability(string calldata name, address addr) external {
-        capabilities[name] = addr;
+    function setChannelCapability(string calldata portId, string calldata channelId, address addr) external {
+        channelCapabilities[portId][channelId] = addr;
     }
 
     function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)

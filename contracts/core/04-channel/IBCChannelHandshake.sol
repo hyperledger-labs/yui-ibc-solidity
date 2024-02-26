@@ -64,7 +64,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
                 version: msg_.channel.version
             })
         );
-        claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
+        claimChannelCapability(msg_.portId, channelId, address(module));
         writeChannel(
             msg_.portId,
             channelId,
@@ -138,7 +138,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
                 counterpartyVersion: msg_.counterpartyVersion
             })
         );
-        claimCapability(channelCapabilityPath(msg_.portId, channelId), address(module));
+        claimChannelCapability(msg_.portId, channelId, address(module));
         writeChannel(
             msg_.portId,
             channelId,

@@ -36,7 +36,7 @@ contract IBCChannelPacketSendRecv is
         uint64 timeoutTimestamp,
         bytes calldata data
     ) external returns (uint64) {
-        authenticateCapability(channelCapabilityPath(sourcePort, sourceChannel));
+        authenticateChannelCapability(sourcePort, sourceChannel);
 
         Channel.Data storage channel = channels[sourcePort][sourceChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
@@ -92,7 +92,7 @@ contract IBCChannelPacketSendRecv is
         uint64 sequence,
         bytes calldata acknowledgement
     ) public {
-        authenticateCapability(channelCapabilityPath(destinationPortId, destinationChannel));
+        authenticateChannelCapability(destinationPortId, destinationChannel);
         Channel.Data storage channel = channels[destinationPortId][destinationChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);

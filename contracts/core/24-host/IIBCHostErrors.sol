@@ -20,13 +20,22 @@ interface IIBCHostErrors {
     /// @param moduleAddress module contract address
     error IBCHostInvalidModuleAddress(address moduleAddress);
 
-    /// @param name module name
-    error IBCHostModuleNotFound(string name);
+    /// @param portId port identifier
+    error IBCHostModulePortNotFound(string portId);
 
-    /// @param name capability name
-    error IBCHostCapabilityAlreadyClaimed(string name);
+    /// @param portId port identifier
+    /// @param channelId channel identifier
+    error IBCHostModuleChannelNotFound(string portId, string channelId);
 
-    /// @param name capability name
+    /// @param portId port identifier
+    error IBCHostPortCapabilityAlreadyClaimed(string portId);
+
+    /// @param portId port identifier
+    /// @param channelId channel identifier
+    error IBCHostChannelCapabilityAlreadyClaimed(string portId, string channelId);
+
+    /// @param portId port identifier
+    /// @param channelId channel identifier
     /// @param caller caller address
-    error IBCHostFailedAuthenticateCapability(string name, address caller);
+    error IBCHostFailedAuthenticateChannelCapability(string portId, string channelId, address caller);
 }

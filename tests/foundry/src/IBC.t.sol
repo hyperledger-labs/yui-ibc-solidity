@@ -91,7 +91,7 @@ contract IBCTest is Test {
     function setUpMockApp() internal {
         mockApp = new IBCMockApp(handler);
         handler.bindPort(MOCK_PORT_ID, mockApp);
-        handler.setCapability(string.concat(MOCK_PORT_ID, "/channel-0"), address(mockApp));
+        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(mockApp));
     }
 
     /* test cases */
@@ -116,7 +116,7 @@ contract IBCTest is Test {
     }
 
     function testBenchmarkSendPacket() public {
-        handler.setCapability(string.concat(MOCK_PORT_ID, "/channel-0"), address(this));
+        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(this));
         Packet memory packet = createPacket(0, 100);
         handler.sendPacket(
             packet.sourcePort, packet.sourceChannel, packet.timeoutHeight, packet.timeoutTimestamp, packet.data
