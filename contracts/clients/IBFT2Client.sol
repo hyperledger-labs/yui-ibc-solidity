@@ -81,7 +81,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         string calldata clientId,
         bytes calldata protoClientState,
         bytes calldata protoConsensusState
-    ) external override onlyIBC returns (Height.Data memory height) {
+    ) public override onlyIBC returns (Height.Data memory height) {
         ClientState.Data memory clientState = unmarshalClientState(protoClientState);
         ConsensusState.Data memory consensusState = unmarshalConsensusState(protoConsensusState);
         if (clientState.ibc_store_address.length != 20) {
@@ -103,7 +103,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
      *      The light client encodes a client message as ethereum ABI.
      */
     function routeUpdateClient(string calldata clientId, bytes calldata protoClientMessage)
-        external
+        public
         pure
         virtual
         override
@@ -118,7 +118,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
      *      The timestamp is nanoseconds since unix epoch.
      */
     function getTimestampAtHeight(string calldata clientId, Height.Data calldata height)
-        external
+        public
         view
         override
         returns (uint64)
@@ -134,7 +134,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     /**
      * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
      */
-    function getLatestHeight(string calldata clientId) external view override returns (Height.Data memory) {
+    function getLatestHeight(string calldata clientId) public view override returns (Height.Data memory) {
         ClientState.Data storage clientState = clientStates[clientId];
         if (clientState.latest_height.revision_height == 0) {
             revert ClientStateNotFound(clientId);
@@ -145,8 +145,21 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     /**
      * @dev getStatus returns the status of the client corresponding to `clientId`.
      */
-    function getStatus(string calldata) external pure override returns (ILightClient.ClientStatus) {
+    function getStatus(string calldata) public pure override returns (ILightClient.ClientStatus) {
         return ILightClient.ClientStatus.Active;
+    }
+
+    /**
+     * @dev getLatestInfo returns the latest height, timestamp and status of the client corresponding to `clientId`.
+     */
+    function getLatestInfo(string calldata clientId)
+        public
+        view
+        returns (Height.Data memory latestHeight, uint64 latestTimestamp, ClientStatus status)
+    {
+        latestHeight = getLatestHeight(clientId);
+        latestTimestamp = consensusStates[clientId][latestHeight.toUint128()].timestamp;
+        status = ILightClient.ClientStatus.Active;
     }
 
     /**
@@ -204,7 +217,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         bytes memory prefix,
         bytes memory path,
         bytes calldata value
-    ) external view override returns (bool) {
+    ) public view override returns (bool) {
         if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix, proof)) {
             return false;
         }
@@ -232,7 +245,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         bytes calldata proof,
         bytes calldata prefix,
         bytes calldata path
-    ) external view override returns (bool) {
+    ) public view override returns (bool) {
         if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix, proof)) {
             return false;
         }
@@ -493,7 +506,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
      * @dev getClientState returns the clientState corresponding to `clientId`.
      *      If it's not found, the function returns false.
      */
-    function getClientState(string calldata clientId) external view returns (bytes memory clientStateBytes, bool) {
+    function getClientState(string calldata clientId) public view returns (bytes memory clientStateBytes, bool) {
         ClientState.Data storage clientState = clientStates[clientId];
         if (clientState.latest_height.revision_height == 0) {
             return (clientStateBytes, false);
@@ -506,7 +519,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
      *      If it's not found, the function returns false.
      */
     function getConsensusState(string calldata clientId, Height.Data calldata height)
-        external
+        public
         view
         returns (bytes memory consensusStateBytes, bool)
     {

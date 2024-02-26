@@ -50,7 +50,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
         string calldata clientId,
         bytes calldata protoClientState,
         bytes calldata protoConsensusState
-    ) external virtual override onlyIBC returns (Height.Data memory height) {
+    ) public virtual override onlyIBC returns (Height.Data memory height) {
         ClientState.Data memory clientState = unmarshalClientState(protoClientState);
         ConsensusState.Data memory consensusState = unmarshalConsensusState(protoConsensusState);
         if (clientState.latest_height.revision_number != 0 || clientState.latest_height.revision_height == 0) {
@@ -70,7 +70,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
      *      The light client encodes a client message as ethereum ABI.
      */
     function routeUpdateClient(string calldata clientId, bytes calldata protoClientMessage)
-        external
+        public
         pure
         virtual
         override
@@ -92,7 +92,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
      *      The timestamp is nanoseconds since unix epoch.
      */
     function getTimestampAtHeight(string calldata clientId, Height.Data calldata height)
-        external
+        public
         view
         virtual
         override
@@ -108,7 +108,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
     /**
      * @dev getLatestHeight returns the latest height of the client state corresponding to `clientId`.
      */
-    function getLatestHeight(string calldata clientId) external view virtual override returns (Height.Data memory) {
+    function getLatestHeight(string calldata clientId) public view virtual override returns (Height.Data memory) {
         ClientState.Data storage clientState = clientStates[clientId];
         if (clientState.latest_height.revision_height == 0) {
             revert ClientStateNotFound(clientId);
@@ -119,14 +119,27 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
     /**
      * @dev getStatus returns the status of the client corresponding to `clientId`.
      */
-    function getStatus(string calldata clientId) external view virtual override returns (ClientStatus) {
+    function getStatus(string calldata clientId) public view virtual override returns (ClientStatus) {
         return statuses[clientId];
     }
 
     /**
+     * @dev getLatestInfo returns the latest height, the latest timestamp, and the status of the client corresponding to `clientId`.
+     */
+    function getLatestInfo(string calldata clientId)
+        public
+        view
+        returns (Height.Data memory latestHeight, uint64 latestTimestamp, ClientStatus status)
+    {
+        latestHeight = getLatestHeight(clientId);
+        latestTimestamp = consensusStates[clientId][latestHeight.toUint128()].timestamp;
+        status = statuses[clientId];
+    }
+    /**
      * @dev setStatus sets the status of the client corresponding to `clientId`.
      */
-    function setStatus(string calldata clientId, ClientStatus status) external virtual onlyOwner {
+
+    function setStatus(string calldata clientId, ClientStatus status) public virtual onlyOwner {
         statuses[clientId] = status;
     }
 
@@ -165,7 +178,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
         bytes memory prefix,
         bytes memory path,
         bytes calldata value
-    ) external view virtual override returns (bool) {
+    ) public view virtual override returns (bool) {
         if (consensusStates[clientId][height.toUint128()].timestamp == 0) {
             revert ConsensusStateNotFound(clientId, height);
         }
@@ -191,7 +204,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
         bytes calldata proof,
         bytes memory prefix,
         bytes memory path
-    ) external view virtual override returns (bool) {
+    ) public view virtual override returns (bool) {
         if (consensusStates[clientId][height.toUint128()].timestamp == 0) {
             revert ConsensusStateNotFound(clientId, height);
         }
@@ -208,7 +221,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
      *      If it's not found, the function returns false.
      */
     function getClientState(string calldata clientId)
-        external
+        public
         view
         virtual
         returns (bytes memory clientStateBytes, bool)
@@ -225,7 +238,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
      *      If it's not found, the function returns false.
      */
     function getConsensusState(string calldata clientId, Height.Data calldata height)
-        external
+        public
         view
         virtual
         returns (bytes memory consensusStateBytes, bool)
