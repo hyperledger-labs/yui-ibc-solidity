@@ -31,12 +31,11 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         // NOTE: we can assume here that the connection exists because the channel is open
         ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
         ILightClient client = ILightClient(clientImpls[connection.client_id]);
-        {
-            Height.Data memory latestHeight = client.getLatestHeight(connection.client_id);
-            uint64 proofTimestamp = client.getTimestampAtHeight(connection.client_id, latestHeight);
+
+        if (msg_.packet.timeoutHeight.isZero() || msg_.proofHeight.lt(msg_.packet.timeoutHeight)) {
             if (
-                (msg_.packet.timeoutHeight.isZero() || msg_.proofHeight.lt(msg_.packet.timeoutHeight))
-                    && (msg_.packet.timeoutTimestamp == 0 || proofTimestamp < msg_.packet.timeoutTimestamp)
+                msg_.packet.timeoutTimestamp == 0
+                    || client.getTimestampAtHeight(connection.client_id, msg_.proofHeight) < msg_.packet.timeoutTimestamp
             ) {
                 revert("packet timeout has not been reached for height or timestamp");
             }
