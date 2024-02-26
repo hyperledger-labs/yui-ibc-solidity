@@ -422,7 +422,7 @@ contract TestICS04Packet is
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
                     msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
-                vm.expectRevert("packet timeout has not been reached for height or timestamp");
+                vm.expectRevert(abi.encodeWithSelector(IIBCChannelErrors.IBCChannelTimeoutNotReached.selector));
                 handler.timeoutPacket(msg1);
             }
 
@@ -472,7 +472,7 @@ contract TestICS04Packet is
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
                     msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
-                vm.expectRevert("packet timeout has not been reached for height or timestamp");
+                vm.expectRevert(abi.encodeWithSelector(IIBCChannelErrors.IBCChannelTimeoutNotReached.selector));
                 handler.timeoutPacket(msg1);
             }
 
