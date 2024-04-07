@@ -2,7 +2,9 @@
 pragma solidity ^0.8.20;
 
 import {Upgrade, UpgradeFields, Timeout} from "../../../../contracts/proto/Channel.sol";
-import {IIBCChannelUpgrade} from "../../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
+import {
+    IIBCChannelUpgrade, IIBCChannelUpgradeBase
+} from "../../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
 import {IIBCHandler} from "../../../../contracts/core/25-handler/IIBCHandler.sol";
 import {IBCMockApp} from "../../../../contracts/apps/mock/IBCMockApp.sol";
 import {IBCChannelUpgradableModuleBase} from "./IBCChannelUpgradableModule.sol";
@@ -18,7 +20,7 @@ contract TestIBCChannelUpgradableMockApp is IBCMockApp, IBCChannelUpgradableModu
     ) public virtual returns (uint64) {
         proposeUpgrade(portId, channelId, proposedUpgradeFields, timeout);
         return IIBCHandler(ibcHandler).channelUpgradeInit(
-            IIBCChannelUpgrade.MsgChannelUpgradeInit({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                 portId: portId,
                 channelId: channelId,
                 proposedUpgradeFields: proposedUpgradeFields

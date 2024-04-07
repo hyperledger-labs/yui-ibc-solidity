@@ -7,16 +7,372 @@ import {Channel, ChannelCounterparty, Upgrade, UpgradeFields, ErrorReceipt, Time
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCConnectionLib} from "../03-connection/IBCConnectionLib.sol";
 import {IIBCConnectionErrors} from "../03-connection/IIBCConnectionErrors.sol";
-import {IIBCChannelUpgrade} from "../04-channel/IIBCChannelUpgrade.sol";
+import {
+    IIBCChannelUpgradeBase,
+    IIBCChannelUpgradeInitTryAck,
+    IIBCChannelUpgradeConfirmOpenTimeoutCancel
+} from "../04-channel/IIBCChannelUpgrade.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
-import {IIBCModuleUpgrade} from "../26-router/IIBCModuleUpgrade.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
+import {IIBCModuleUpgrade} from "../26-router/IIBCModuleUpgrade.sol";
 import {IBCChannelLib} from "./IBCChannelLib.sol";
 import {IIBCChannelUpgradeErrors} from "./IIBCChannelUpgradeErrors.sol";
 
-/// @dev IBCChannelUpgrade is a module that implements the IBC channel upgrade protocol.
-/// https://github.com/cosmos/ibc/blob/main/spec/core/ics-004-channel-and-packet-semantics/UPGRADES.md
-contract IBCChannelUpgrade is IBCModuleManager, IIBCChannelUpgrade, IIBCChannelUpgradeErrors, IIBCConnectionErrors {
+abstract contract IBCChannelUpgradeBase is
+    IBCModuleManager,
+    IIBCChannelUpgradeBase,
+    IIBCChannelUpgradeErrors,
+    IIBCConnectionErrors
+{
+    // --------------------- Internal Functions --------------------- //
+
+    /**
+     * @dev validateInitUpgradeHandshake will verify that the channel is in the
+     * correct precondition to call the initUpgradeHandshake protocol.
+     * It will verify the new upgrade field parameters.
+     */
+    function validateInitUpgradeHandshake(Channel.Data storage channel, UpgradeFields.Data memory proposedUpgradeFields)
+        internal
+        view
+    {
+        // current channel must be OPEN
+        // If channel already has an upgrade but isn't in FLUSHING,
+        // then this will override the previous upgrade attempt
+        if (channel.state != Channel.State.STATE_OPEN) {
+            revert IBCChannelUnexpectedChannelState(channel.state);
+        }
+
+        // proposedUpgradeFields must be valid
+        if (
+            bytes(proposedUpgradeFields.version).length == 0
+                || proposedUpgradeFields.ordering == Channel.Order.ORDER_NONE_UNSPECIFIED
+                || proposedUpgradeFields.connection_hops.length != 1
+        ) {
+            revert IBCChannelUpgradeInvalidUpgradeFields();
+        }
+
+        // proposedConnection must exist and be in OPEN state for
+        // channel upgrade to be accepted
+        ConnectionEnd.Data storage proposedConnection = connections[proposedUpgradeFields.connection_hops[0]];
+        if (proposedConnection.state != ConnectionEnd.State.STATE_OPEN) {
+            revert IBCConnectionUnexpectedConnectionState(proposedConnection.state);
+        }
+
+        // new order must be supported by the new connection
+        if (
+            !IBCConnectionLib.isSupported(
+                proposedConnection.versions, IBCChannelLib.toString(proposedUpgradeFields.ordering)
+            )
+        ) {
+            revert IBCConnectionIBCVersionNotSupported();
+        }
+
+        // there exists at least one valid proposed change to the existing channel fields
+        if (
+            channel.ordering == proposedUpgradeFields.ordering
+                && keccak256(bytes(channel.version)) == keccak256(bytes(proposedUpgradeFields.version))
+                && keccak256(abi.encodePacked(proposedUpgradeFields.connection_hops[0]))
+                    == keccak256(abi.encodePacked(channel.connection_hops[0]))
+        ) {
+            revert IBCChannelUpgradeNoChanges();
+        }
+    }
+
+    /**
+     * @dev startFlushUpgradeHandshake will verify that the channel
+     * is in a valid precondition for calling the startFlushUpgradeHandshake.
+     * it will set the channel to flushing state.
+     * it will store the nextSequenceSend and upgrade timeout in the upgrade state.
+     */
+    function startFlushUpgradeHandshake(
+        Channel.Data storage channel,
+        Upgrade.Data storage upgrade,
+        string calldata portId,
+        string calldata channelId
+    ) internal {
+        Timeout.Data memory upgradeTimeout = getUpgradeTimeout(portId, channelId);
+        if (
+            !(
+                upgradeTimeout.height.revision_number > 0 || upgradeTimeout.height.revision_height > 0
+                    || upgradeTimeout.timestamp > 0
+            )
+        ) {
+            revert IBCChannelUpgradeInvalidTimeout();
+        }
+        channel.state = Channel.State.STATE_FLUSHING;
+        upgrade.timeout = upgradeTimeout;
+        upgrade.next_sequence_send = nextSequenceSends[portId][channelId];
+    }
+
+    /**
+     * @dev restoreChannel will restore the channel state to its pre-upgrade state
+     * and delete upgrade auxiliary state so that upgrade is aborted.
+     * it writes an error receipt to state so counterparty can restore as well.
+     * NOTE: this function signature may be modified by implementors to take a custom error
+     */
+    // reason
+    function restoreChannel(string calldata portId, string calldata channelId, UpgradeHandshakeError err) internal {
+        Channel.Data storage channel = channels[portId][channelId];
+        channel.state = Channel.State.STATE_OPEN;
+
+        delete upgrades[portId][channelId];
+        deleteUpgradeCommitment(portId, channelId);
+        revertCounterpartyUpgrade(portId, channelId);
+
+        updateChannelCommitment(portId, channelId, channel);
+        writeErrorReceipt(portId, channelId, channel.upgrade_sequence, err);
+    }
+
+    /**
+     * @dev openUpgradeHandshake will switch the channel fields
+     * over to the agreed upon upgrade fields.
+     * it will reset the channel state to OPEN.
+     * it will delete auxiliary upgrade state.
+     * caller must do all relevant checks before calling this function.
+     */
+    function openUpgradeHandshake(string calldata portId, string calldata channelId) internal {
+        Channel.Data storage channel = channels[portId][channelId];
+        Upgrade.Data storage upgrade = upgrades[portId][channelId];
+
+        // In ibc-solidity, we need to set the nextSequenceRecv and nextSequenceAck appropriately for each upgrade
+        if (upgrade.fields.ordering == Channel.Order.ORDER_ORDERED) {
+            // set nextSequenceRecv to the counterparty nextSequenceSend since all packets were flushed
+            nextSequenceRecvs[portId][channelId] = recvStartSequences[portId][channelId].sequence;
+            // set nextSequenceAck to our own nextSequenceSend since all packets were flushed
+            nextSequenceAcks[portId][channelId] = nextSequenceSends[portId][channelId];
+        } else if (upgrade.fields.ordering == Channel.Order.ORDER_UNORDERED) {
+            // reset recv and ack sequences to 1 for UNORDERED channel
+            nextSequenceRecvs[portId][channelId] = 1;
+            nextSequenceAcks[portId][channelId] = 1;
+        } else {
+            revert IBCChannelUpgradeUnsupportedOrdering(upgrade.fields.ordering);
+        }
+        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
+            keccak256(abi.encodePacked(nextSequenceRecvs[portId][channelId]));
+        ackStartSequences[portId][channelId] = nextSequenceSends[portId][channelId];
+
+        // switch channel fields to upgrade fields
+        // and set channel state to OPEN
+        channel.ordering = upgrade.fields.ordering;
+        channel.version = upgrade.fields.version;
+        channel.connection_hops = upgrade.fields.connection_hops;
+        channel.state = Channel.State.STATE_OPEN;
+
+        // IMPLEMENTATION DETAIL: Implementations may choose to prune stale acknowledgements and receipts at this stage
+        // Since flushing has completed, any acknowledgement or receipt written before the chain went into flushing has
+        // already been processed by the counterparty and can be removed.
+        // Implementations may do this pruning work over multiple blocks for gas reasons. In this case, they should be sure
+        // to only prune stale acknowledgements/receipts and not new ones that have been written after the channel has reopened.
+        // Implementations may use the counterparty NextSequenceSend as a way to determine which acknowledgement/receipts
+        // were already processed by counterparty when flushing completed
+
+        // delete auxiliary state
+        delete upgrades[portId][channelId];
+        recvStartSequences[portId][channelId].prevSequence = 0;
+
+        updateChannelCommitment(portId, channelId, channel);
+        deleteUpgradeCommitment(portId, channelId);
+    }
+
+    function isCompatibleUpgradeFields(
+        UpgradeFields.Data memory proposedUpgradeFields,
+        UpgradeFields.Data calldata counterpartyUpgradeFields
+    ) internal view returns (bool) {
+        if (proposedUpgradeFields.ordering != counterpartyUpgradeFields.ordering) {
+            return false;
+        }
+        if (keccak256(bytes(proposedUpgradeFields.version)) != keccak256(bytes(counterpartyUpgradeFields.version))) {
+            return false;
+        }
+
+        // connectionHops can change in a channel upgrade, however both sides must
+        // still be each other's counterparty. Since connection hops may be provided
+        // by relayer, we will abort to avoid changing state based on relayer-provided value
+        // Note: If the proposed connection came from an existing upgrade, then the
+        // off-chain authority is responsible for replacing one side's upgrade fields
+        // to be compatible so that the upgrade handshake can proceed
+
+        ConnectionEnd.Data storage proposedConnection = connections[proposedUpgradeFields.connection_hops[0]];
+        if (proposedConnection.state != ConnectionEnd.State.STATE_OPEN) {
+            return false;
+        }
+
+        return keccak256(bytes(counterpartyUpgradeFields.connection_hops[0]))
+            == keccak256(bytes(proposedConnection.counterparty.connection_id));
+    }
+
+    function lookupUpgradableModuleByPort(string calldata portId) internal view returns (IIBCModuleUpgrade) {
+        return IIBCModuleUpgrade(address(lookupModuleByPort(portId)));
+    }
+
+    function isAuthorizedUpgrader(string calldata portId, string calldata channelId, address msgSender)
+        internal
+        view
+        returns (bool)
+    {
+        return lookupUpgradableModuleByPort(portId).isAuthorizedUpgrader(portId, channelId, msgSender);
+    }
+
+    function getUpgradeTimeout(string calldata portId, string calldata channelId)
+        internal
+        view
+        returns (Timeout.Data memory)
+    {
+        return lookupUpgradableModuleByPort(portId).getUpgradeTimeout(portId, channelId);
+    }
+
+    function canTransitionToFlushComplete(
+        Channel.Order ordering,
+        string calldata portId,
+        string calldata channelId,
+        uint64 upgradeSequence
+    ) internal view virtual returns (bool) {
+        if (ordering == Channel.Order.ORDER_ORDERED) {
+            if (nextSequenceSends[portId][channelId] == nextSequenceAcks[portId][channelId]) {
+                return true;
+            }
+        }
+        return lookupUpgradableModuleByPort(portId).canTransitionToFlushComplete(
+            portId, channelId, upgradeSequence, _msgSender()
+        );
+    }
+
+    // --------------------- Private Functions --------------------- //
+
+    function writeErrorReceipt(
+        string calldata portId,
+        string calldata channelId,
+        uint64 upgradeSequence,
+        UpgradeHandshakeError err
+    ) internal {
+        if (latestErrorReceiptSequences[portId][channelId] >= upgradeSequence) {
+            revert IBCChannelUpgradeWriteOldErrorReceiptSequence(
+                latestErrorReceiptSequences[portId][channelId], upgradeSequence
+            );
+        }
+        latestErrorReceiptSequences[portId][channelId] = upgradeSequence;
+        string memory message = toString(err);
+        commitments[IBCCommitment.channelUpgradeErrorCommitmentKey(portId, channelId)] =
+            keccak256(ErrorReceipt.encode(ErrorReceipt.Data({sequence: upgradeSequence, message: message})));
+        emit WriteErrorReceipt(portId, channelId, upgradeSequence, message);
+    }
+
+    function updateChannelCommitment(string calldata portId, string calldata channelId, Channel.Data storage channel)
+        internal
+    {
+        commitments[IBCCommitment.channelCommitmentKey(portId, channelId)] = keccak256(Channel.encode(channel));
+    }
+
+    function updateUpgradeCommitment(string calldata portId, string calldata channelId, Upgrade.Data storage upgrade)
+        internal
+    {
+        updateUpgradeCommitment(portId, channelId, keccak256(Upgrade.encode(upgrade)));
+    }
+
+    function deleteUpgradeCommitment(string calldata portId, string calldata channelId) internal {
+        updateUpgradeCommitment(portId, channelId, bytes32(0));
+    }
+
+    function updateUpgradeCommitment(string calldata portId, string calldata channelId, bytes32 commitment) internal {
+        commitments[IBCCommitment.channelUpgradeCommitmentKey(portId, channelId)] = commitment;
+    }
+
+    function setCounterpartyUpgrade(string calldata portId, string calldata channelId, Upgrade.Data calldata upgrade)
+        internal
+    {
+        if (recvStartSequences[portId][channelId].prevSequence != 0) {
+            revertCounterpartyUpgrade(portId, channelId);
+        }
+        recvStartSequences[portId][channelId].prevSequence = recvStartSequences[portId][channelId].sequence;
+        recvStartSequences[portId][channelId].sequence = upgrade.next_sequence_send;
+    }
+
+    function revertCounterpartyUpgrade(string calldata portId, string calldata channelId) internal {
+        uint64 prevRecvStartSequence = recvStartSequences[portId][channelId].prevSequence;
+        if (prevRecvStartSequence == 0) {
+            return;
+        }
+        recvStartSequences[portId][channelId].prevSequence = 0;
+        recvStartSequences[portId][channelId].sequence = prevRecvStartSequence;
+    }
+
+    function verifyMembership(
+        ConnectionEnd.Data storage connection,
+        Height.Data calldata height,
+        bytes calldata proof,
+        bytes memory path,
+        bytes memory value
+    ) internal {
+        if (
+            ILightClient(clientImpls[connection.client_id]).verifyMembership(
+                connection.client_id, height, 0, 0, proof, connection.counterparty.prefix.key_prefix, path, value
+            )
+        ) {
+            return;
+        }
+        revert IBCChannelUpgradeFailedVerifyMembership(connection.client_id, string(path), value, proof, height);
+    }
+
+    function verifyChannelState(
+        ConnectionEnd.Data storage connection,
+        Height.Data calldata height,
+        bytes calldata proof,
+        string memory portId,
+        string memory channelId,
+        Channel.Data memory channel
+    ) internal {
+        return verifyMembership(
+            connection, height, proof, IBCCommitment.channelPath(portId, channelId), Channel.encode(channel)
+        );
+    }
+
+    function verifyChannelAndUpgradeMembership(
+        Channel.Data storage channel,
+        ChannelCounterparty.Data memory counterparty,
+        uint64 counterpartyUpgradeSequence,
+        Upgrade.Data memory counterpartyUpgrade,
+        Channel.State counterpartyChannelState,
+        ChannelUpgradeProofs calldata proofs
+    ) internal {
+        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
+        {
+            Channel.Data memory counterpartyChannel = Channel.Data({
+                state: counterpartyChannelState,
+                ordering: channel.ordering,
+                counterparty: counterparty,
+                connection_hops: IBCChannelLib.buildConnectionHops(connection.counterparty.connection_id),
+                version: channel.version,
+                upgrade_sequence: counterpartyUpgradeSequence
+            });
+            verifyChannelState(
+                connection,
+                proofs.proofHeight,
+                proofs.proofChannel,
+                channel.counterparty.port_id,
+                channel.counterparty.channel_id,
+                counterpartyChannel
+            );
+        }
+
+        verifyMembership(
+            connection,
+            proofs.proofHeight,
+            proofs.proofUpgrade,
+            IBCCommitment.channelUpgradePath(channel.counterparty.port_id, channel.counterparty.channel_id),
+            Upgrade.encode(counterpartyUpgrade)
+        );
+    }
+
+    function toString(UpgradeHandshakeError err) internal pure returns (string memory) {
+        bytes memory result = new bytes(1);
+        unchecked {
+            result[0] = bytes1(uint8(err) + 48);
+        }
+        return string(result);
+    }
+}
+
+contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgradeInitTryAck {
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeInit}
      */
@@ -246,7 +602,9 @@ contract IBCChannelUpgrade is IBCModuleManager, IIBCChannelUpgrade, IIBCChannelU
 
         return true;
     }
+}
 
+contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCChannelUpgradeConfirmOpenTimeoutCancel {
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeConfirm}
      */
@@ -501,352 +859,5 @@ contract IBCChannelUpgrade is IBCModuleManager, IIBCChannelUpgrade, IIBCChannelU
             msg_.counterpartyChannel
         );
         restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.Timeout);
-    }
-
-    // --------------------- Internal Functions --------------------- //
-
-    /**
-     * @dev validateInitUpgradeHandshake will verify that the channel is in the
-     * correct precondition to call the initUpgradeHandshake protocol.
-     * It will verify the new upgrade field parameters.
-     */
-    function validateInitUpgradeHandshake(Channel.Data storage channel, UpgradeFields.Data memory proposedUpgradeFields)
-        internal
-        view
-    {
-        // current channel must be OPEN
-        // If channel already has an upgrade but isn't in FLUSHING,
-        // then this will override the previous upgrade attempt
-        if (channel.state != Channel.State.STATE_OPEN) {
-            revert IBCChannelUnexpectedChannelState(channel.state);
-        }
-
-        // proposedUpgradeFields must be valid
-        if (
-            bytes(proposedUpgradeFields.version).length == 0
-                || proposedUpgradeFields.ordering == Channel.Order.ORDER_NONE_UNSPECIFIED
-                || proposedUpgradeFields.connection_hops.length != 1
-        ) {
-            revert IBCChannelUpgradeInvalidUpgradeFields();
-        }
-
-        // proposedConnection must exist and be in OPEN state for
-        // channel upgrade to be accepted
-        ConnectionEnd.Data storage proposedConnection = connections[proposedUpgradeFields.connection_hops[0]];
-        if (proposedConnection.state != ConnectionEnd.State.STATE_OPEN) {
-            revert IBCConnectionUnexpectedConnectionState(proposedConnection.state);
-        }
-
-        // new order must be supported by the new connection
-        if (
-            !IBCConnectionLib.isSupported(
-                proposedConnection.versions, IBCChannelLib.toString(proposedUpgradeFields.ordering)
-            )
-        ) {
-            revert IBCConnectionIBCVersionNotSupported();
-        }
-
-        // there exists at least one valid proposed change to the existing channel fields
-        if (
-            channel.ordering == proposedUpgradeFields.ordering
-                && keccak256(bytes(channel.version)) == keccak256(bytes(proposedUpgradeFields.version))
-                && keccak256(abi.encodePacked(proposedUpgradeFields.connection_hops[0]))
-                    == keccak256(abi.encodePacked(channel.connection_hops[0]))
-        ) {
-            revert IBCChannelUpgradeNoChanges();
-        }
-    }
-
-    /**
-     * @dev startFlushUpgradeHandshake will verify that the channel
-     * is in a valid precondition for calling the startFlushUpgradeHandshake.
-     * it will set the channel to flushing state.
-     * it will store the nextSequenceSend and upgrade timeout in the upgrade state.
-     */
-    function startFlushUpgradeHandshake(
-        Channel.Data storage channel,
-        Upgrade.Data storage upgrade,
-        string calldata portId,
-        string calldata channelId
-    ) internal {
-        Timeout.Data memory upgradeTimeout = getUpgradeTimeout(portId, channelId);
-        if (
-            !(
-                upgradeTimeout.height.revision_number > 0 || upgradeTimeout.height.revision_height > 0
-                    || upgradeTimeout.timestamp > 0
-            )
-        ) {
-            revert IBCChannelUpgradeInvalidTimeout();
-        }
-        channel.state = Channel.State.STATE_FLUSHING;
-        upgrade.timeout = upgradeTimeout;
-        upgrade.next_sequence_send = nextSequenceSends[portId][channelId];
-    }
-
-    /**
-     * @dev restoreChannel will restore the channel state to its pre-upgrade state
-     * and delete upgrade auxiliary state so that upgrade is aborted.
-     * it writes an error receipt to state so counterparty can restore as well.
-     * NOTE: this function signature may be modified by implementors to take a custom error
-     */
-    // reason
-    function restoreChannel(string calldata portId, string calldata channelId, UpgradeHandshakeError err) internal {
-        Channel.Data storage channel = channels[portId][channelId];
-        channel.state = Channel.State.STATE_OPEN;
-
-        delete upgrades[portId][channelId];
-        deleteUpgradeCommitment(portId, channelId);
-        revertCounterpartyUpgrade(portId, channelId);
-
-        updateChannelCommitment(portId, channelId, channel);
-        writeErrorReceipt(portId, channelId, channel.upgrade_sequence, err);
-    }
-
-    /**
-     * @dev openUpgradeHandshake will switch the channel fields
-     * over to the agreed upon upgrade fields.
-     * it will reset the channel state to OPEN.
-     * it will delete auxiliary upgrade state.
-     * caller must do all relevant checks before calling this function.
-     */
-    function openUpgradeHandshake(string calldata portId, string calldata channelId) internal {
-        Channel.Data storage channel = channels[portId][channelId];
-        Upgrade.Data storage upgrade = upgrades[portId][channelId];
-
-        // In ibc-solidity, we need to set the nextSequenceRecv and nextSequenceAck appropriately for each upgrade
-        if (upgrade.fields.ordering == Channel.Order.ORDER_ORDERED) {
-            // set nextSequenceRecv to the counterparty nextSequenceSend since all packets were flushed
-            nextSequenceRecvs[portId][channelId] = recvStartSequences[portId][channelId].sequence;
-            // set nextSequenceAck to our own nextSequenceSend since all packets were flushed
-            nextSequenceAcks[portId][channelId] = nextSequenceSends[portId][channelId];
-        } else if (upgrade.fields.ordering == Channel.Order.ORDER_UNORDERED) {
-            // reset recv and ack sequences to 1 for UNORDERED channel
-            nextSequenceRecvs[portId][channelId] = 1;
-            nextSequenceAcks[portId][channelId] = 1;
-        } else {
-            revert IBCChannelUpgradeUnsupportedOrdering(upgrade.fields.ordering);
-        }
-        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
-            keccak256(abi.encodePacked(nextSequenceRecvs[portId][channelId]));
-        ackStartSequences[portId][channelId] = nextSequenceSends[portId][channelId];
-
-        // switch channel fields to upgrade fields
-        // and set channel state to OPEN
-        channel.ordering = upgrade.fields.ordering;
-        channel.version = upgrade.fields.version;
-        channel.connection_hops = upgrade.fields.connection_hops;
-        channel.state = Channel.State.STATE_OPEN;
-
-        // IMPLEMENTATION DETAIL: Implementations may choose to prune stale acknowledgements and receipts at this stage
-        // Since flushing has completed, any acknowledgement or receipt written before the chain went into flushing has
-        // already been processed by the counterparty and can be removed.
-        // Implementations may do this pruning work over multiple blocks for gas reasons. In this case, they should be sure
-        // to only prune stale acknowledgements/receipts and not new ones that have been written after the channel has reopened.
-        // Implementations may use the counterparty NextSequenceSend as a way to determine which acknowledgement/receipts
-        // were already processed by counterparty when flushing completed
-
-        // delete auxiliary state
-        delete upgrades[portId][channelId];
-        recvStartSequences[portId][channelId].prevSequence = 0;
-
-        updateChannelCommitment(portId, channelId, channel);
-        deleteUpgradeCommitment(portId, channelId);
-    }
-
-    function isCompatibleUpgradeFields(
-        UpgradeFields.Data memory proposedUpgradeFields,
-        UpgradeFields.Data calldata counterpartyUpgradeFields
-    ) internal view returns (bool) {
-        if (proposedUpgradeFields.ordering != counterpartyUpgradeFields.ordering) {
-            return false;
-        }
-        if (keccak256(bytes(proposedUpgradeFields.version)) != keccak256(bytes(counterpartyUpgradeFields.version))) {
-            return false;
-        }
-
-        // connectionHops can change in a channel upgrade, however both sides must
-        // still be each other's counterparty. Since connection hops may be provided
-        // by relayer, we will abort to avoid changing state based on relayer-provided value
-        // Note: If the proposed connection came from an existing upgrade, then the
-        // off-chain authority is responsible for replacing one side's upgrade fields
-        // to be compatible so that the upgrade handshake can proceed
-
-        ConnectionEnd.Data storage proposedConnection = connections[proposedUpgradeFields.connection_hops[0]];
-        if (proposedConnection.state != ConnectionEnd.State.STATE_OPEN) {
-            return false;
-        }
-
-        return keccak256(bytes(counterpartyUpgradeFields.connection_hops[0]))
-            == keccak256(bytes(proposedConnection.counterparty.connection_id));
-    }
-
-    function lookupUpgradableModuleByPort(string calldata portId) internal view returns (IIBCModuleUpgrade) {
-        return IIBCModuleUpgrade(address(lookupModuleByPort(portId)));
-    }
-
-    function isAuthorizedUpgrader(string calldata portId, string calldata channelId, address msgSender)
-        internal
-        view
-        returns (bool)
-    {
-        return lookupUpgradableModuleByPort(portId).isAuthorizedUpgrader(portId, channelId, msgSender);
-    }
-
-    function getUpgradeTimeout(string calldata portId, string calldata channelId)
-        internal
-        view
-        returns (Timeout.Data memory)
-    {
-        return lookupUpgradableModuleByPort(portId).getUpgradeTimeout(portId, channelId);
-    }
-
-    function canTransitionToFlushComplete(
-        Channel.Order ordering,
-        string calldata portId,
-        string calldata channelId,
-        uint64 upgradeSequence
-    ) internal view virtual returns (bool) {
-        if (ordering == Channel.Order.ORDER_ORDERED) {
-            if (nextSequenceSends[portId][channelId] == nextSequenceAcks[portId][channelId]) {
-                return true;
-            }
-        }
-        return lookupUpgradableModuleByPort(portId).canTransitionToFlushComplete(
-            portId, channelId, upgradeSequence, _msgSender()
-        );
-    }
-
-    // --------------------- Private Functions --------------------- //
-
-    function writeErrorReceipt(
-        string calldata portId,
-        string calldata channelId,
-        uint64 upgradeSequence,
-        UpgradeHandshakeError err
-    ) private {
-        if (latestErrorReceiptSequences[portId][channelId] >= upgradeSequence) {
-            revert IBCChannelUpgradeWriteOldErrorReceiptSequence(
-                latestErrorReceiptSequences[portId][channelId], upgradeSequence
-            );
-        }
-        latestErrorReceiptSequences[portId][channelId] = upgradeSequence;
-        string memory message = toString(err);
-        commitments[IBCCommitment.channelUpgradeErrorCommitmentKey(portId, channelId)] =
-            keccak256(ErrorReceipt.encode(ErrorReceipt.Data({sequence: upgradeSequence, message: message})));
-        emit WriteErrorReceipt(portId, channelId, upgradeSequence, message);
-    }
-
-    function updateChannelCommitment(string calldata portId, string calldata channelId, Channel.Data storage channel)
-        private
-    {
-        commitments[IBCCommitment.channelCommitmentKey(portId, channelId)] = keccak256(Channel.encode(channel));
-    }
-
-    function updateUpgradeCommitment(string calldata portId, string calldata channelId, Upgrade.Data storage upgrade)
-        private
-    {
-        updateUpgradeCommitment(portId, channelId, keccak256(Upgrade.encode(upgrade)));
-    }
-
-    function deleteUpgradeCommitment(string calldata portId, string calldata channelId) private {
-        updateUpgradeCommitment(portId, channelId, bytes32(0));
-    }
-
-    function updateUpgradeCommitment(string calldata portId, string calldata channelId, bytes32 commitment) private {
-        commitments[IBCCommitment.channelUpgradeCommitmentKey(portId, channelId)] = commitment;
-    }
-
-    function setCounterpartyUpgrade(string calldata portId, string calldata channelId, Upgrade.Data calldata upgrade)
-        private
-    {
-        if (recvStartSequences[portId][channelId].prevSequence != 0) {
-            revertCounterpartyUpgrade(portId, channelId);
-        }
-        recvStartSequences[portId][channelId].prevSequence = recvStartSequences[portId][channelId].sequence;
-        recvStartSequences[portId][channelId].sequence = upgrade.next_sequence_send;
-    }
-
-    function revertCounterpartyUpgrade(string calldata portId, string calldata channelId) private {
-        uint64 prevRecvStartSequence = recvStartSequences[portId][channelId].prevSequence;
-        if (prevRecvStartSequence == 0) {
-            return;
-        }
-        recvStartSequences[portId][channelId].prevSequence = 0;
-        recvStartSequences[portId][channelId].sequence = prevRecvStartSequence;
-    }
-
-    function verifyMembership(
-        ConnectionEnd.Data storage connection,
-        Height.Data calldata height,
-        bytes calldata proof,
-        bytes memory path,
-        bytes memory value
-    ) private {
-        if (
-            ILightClient(clientImpls[connection.client_id]).verifyMembership(
-                connection.client_id, height, 0, 0, proof, connection.counterparty.prefix.key_prefix, path, value
-            )
-        ) {
-            return;
-        }
-        revert IBCChannelUpgradeFailedVerifyMembership(connection.client_id, string(path), value, proof, height);
-    }
-
-    function verifyChannelState(
-        ConnectionEnd.Data storage connection,
-        Height.Data calldata height,
-        bytes calldata proof,
-        string memory portId,
-        string memory channelId,
-        Channel.Data memory channel
-    ) private {
-        return verifyMembership(
-            connection, height, proof, IBCCommitment.channelPath(portId, channelId), Channel.encode(channel)
-        );
-    }
-
-    function verifyChannelAndUpgradeMembership(
-        Channel.Data storage channel,
-        ChannelCounterparty.Data memory counterparty,
-        uint64 counterpartyUpgradeSequence,
-        Upgrade.Data memory counterpartyUpgrade,
-        Channel.State counterpartyChannelState,
-        ChannelUpgradeProofs calldata proofs
-    ) private {
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        {
-            Channel.Data memory counterpartyChannel = Channel.Data({
-                state: counterpartyChannelState,
-                ordering: channel.ordering,
-                counterparty: counterparty,
-                connection_hops: IBCChannelLib.buildConnectionHops(connection.counterparty.connection_id),
-                version: channel.version,
-                upgrade_sequence: counterpartyUpgradeSequence
-            });
-            verifyChannelState(
-                connection,
-                proofs.proofHeight,
-                proofs.proofChannel,
-                channel.counterparty.port_id,
-                channel.counterparty.channel_id,
-                counterpartyChannel
-            );
-        }
-
-        verifyMembership(
-            connection,
-            proofs.proofHeight,
-            proofs.proofUpgrade,
-            IBCCommitment.channelUpgradePath(channel.counterparty.port_id, channel.counterparty.channel_id),
-            Upgrade.encode(counterpartyUpgrade)
-        );
-    }
-
-    function toString(UpgradeHandshakeError err) internal pure returns (string memory) {
-        bytes memory result = new bytes(1);
-        unchecked {
-            result[0] = bytes1(uint8(err) + 48);
-        }
-        return string(result);
     }
 }

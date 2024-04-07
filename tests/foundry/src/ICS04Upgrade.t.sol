@@ -8,7 +8,7 @@ import {Upgrade, UpgradeFields, Timeout} from "../../../contracts/proto/Channel.
 import {LocalhostClientLib} from "../../../contracts/clients/LocalhostClient.sol";
 import {LocalhostHelper} from "../../../contracts/helpers/LocalhostHelper.sol";
 import {IIBCChannelRecvPacket, IIBCChannelAcknowledgePacket} from "../../../contracts/core/04-channel/IIBCChannel.sol";
-import {IIBCChannelUpgrade} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
+import {IIBCChannelUpgrade, IIBCChannelUpgradeBase} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
 import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradableMockApp.t.sol";
 import {ICS04UpgradeTestHelper} from "./helpers/ICS04UpgradeTestHelper.t.sol";
 import {ICS04PacketEventTestHelper} from "./helpers/ICS04PacketTestHelper.t.sol";
@@ -57,7 +57,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         {
             // failure because the msg sender is not the upgrade authority
             vm.startPrank(address(0x01));
-            IIBCChannelUpgrade.MsgChannelUpgradeInit memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeInit({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeInit memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                 portId: channel0.portId,
                 channelId: channel0.channelId,
                 proposedUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields
@@ -70,7 +70,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // success
             assertEq(
                 ibcHandler.channelUpgradeInit(
-                    IIBCChannelUpgrade.MsgChannelUpgradeInit({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         proposedUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields
@@ -95,7 +95,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             );
             assertEq(
                 ibcHandler.channelUpgradeInit(
-                    IIBCChannelUpgrade.MsgChannelUpgradeInit({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         proposedUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields
@@ -156,7 +156,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         );
         {
             // channel0: sequence 1, channel1: sequence 2
-            IIBCChannelUpgrade.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeTry({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel0.portId,
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
@@ -173,7 +173,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // channel0: sequence 2, channel1: sequence 2
             assertTrue(
                 ibcHandler.channelUpgradeAck(
-                    IIBCChannelUpgrade.MsgChannelUpgradeAck({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeAck({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
                         counterpartyUpgrade: getCounterpartyUpgrade(channel0.portId, channel0.channelId),
@@ -218,7 +218,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
         // Try msg is reverted because the proposals are incompatible
         {
-            IIBCChannelUpgrade.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeTry({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel0.portId,
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
@@ -230,7 +230,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             ibcHandler.channelUpgradeTry(msg_);
         }
         {
-            IIBCChannelUpgrade.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeTry({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel1.portId,
                 channelId: channel1.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
@@ -260,7 +260,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         {
             // channel0: sequence 2, channel1: sequence 1
             // The error receipt of sequence 1 is already written for channel0, so the Try msg is reverted
-            IIBCChannelUpgrade.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeTry({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel0.portId,
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
@@ -278,7 +278,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         {
             // channel0: sequence 2, channel1: sequence 1
             // The upgrade proposal is compatible with the channel1's
-            IIBCChannelUpgrade.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeTry({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel1.portId,
                 channelId: channel1.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
@@ -307,7 +307,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         );
         // channel0: sequence 2, channel1: sequence 2
         (bool ok,) = ibcHandler.channelUpgradeTry(
-            IIBCChannelUpgrade.MsgChannelUpgradeTry({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel0.portId,
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
@@ -331,7 +331,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }),
             Timeout.Data({height: H(10), timestamp: 0})
         );
-        IIBCChannelUpgrade.MsgChannelUpgradeInit memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeInit({
+        IIBCChannelUpgradeBase.MsgChannelUpgradeInit memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
             portId: channel0.portId,
             channelId: channel0.channelId,
             proposedUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields
@@ -618,7 +618,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             Timeout.Data({height: H(10), timestamp: 0})
         );
         ibcHandler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: channel1.portId,
                 channelId: channel1.channelId,
                 errorReceipt: emptyErrorReceipt(),
@@ -640,7 +640,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         vm.startPrank(address(0x01));
         vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeOldErrorReceiptSequence.selector);
         ibcHandler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: channel0.portId,
                 channelId: channel0.channelId,
                 errorReceipt: rc,
@@ -852,7 +852,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             })
         );
         ibcHandler.channelUpgradeOpen(
-            IIBCChannelUpgrade.MsgChannelUpgradeOpen({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeOpen({
                 portId: channel1.portId,
                 channelId: channel1.channelId,
                 counterpartyChannelState: Channel.State.STATE_OPEN,
@@ -1120,7 +1120,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             );
             assertEq(
                 ibcHandler.channelUpgradeInit(
-                    IIBCChannelUpgrade.MsgChannelUpgradeInit({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         proposedUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields
@@ -1155,7 +1155,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Init@channel1: OPEN -> OPEN(INIT)
             assertEq(
                 ibcHandler.channelUpgradeInit(
-                    IIBCChannelUpgrade.MsgChannelUpgradeInit({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
                         proposedUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields
@@ -1167,7 +1167,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
         {
             // Try@channel1: OPEN(INIT) -> FLUSHING
-            IIBCChannelUpgrade.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgrade.MsgChannelUpgradeTry({
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel1.portId,
                 channelId: channel1.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
@@ -1211,7 +1211,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Ack@channel0: OPEN(INIT) -> FLUSHING
             assertTrue(
                 ibcHandler.channelUpgradeAck(
-                    IIBCChannelUpgrade.MsgChannelUpgradeAck({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeAck({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         counterpartyUpgrade: getCounterpartyUpgrade(channel1.portId, channel1.channelId),
@@ -1227,7 +1227,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Ack@channel0: OPEN(INIT) or FLUSHING -> FLUSHCOMPLETE
             assertTrue(
                 ibcHandler.channelUpgradeAck(
-                    IIBCChannelUpgrade.MsgChannelUpgradeAck({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeAck({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         counterpartyUpgrade: getCounterpartyUpgrade(channel1.portId, channel1.channelId),
@@ -1240,7 +1240,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Confirm@channel1: FLUSHING -> OPEN
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
-                    IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
                         counterpartyChannelState: Channel.State.STATE_FLUSHCOMPLETE,
@@ -1253,7 +1253,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
             // Open@channel0: FLUSHCOMPLETE -> OPEN
             ibcHandler.channelUpgradeOpen(
-                IIBCChannelUpgrade.MsgChannelUpgradeOpen({
+                IIBCChannelUpgradeBase.MsgChannelUpgradeOpen({
                     portId: channel0.portId,
                     channelId: channel0.channelId,
                     counterpartyChannelState: Channel.State.STATE_OPEN,
@@ -1271,7 +1271,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Ack@channel0: OPEN(INIT) -> FLUSHING
             assertTrue(
                 ibcHandler.channelUpgradeAck(
-                    IIBCChannelUpgrade.MsgChannelUpgradeAck({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeAck({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         counterpartyUpgrade: getCounterpartyUpgrade(channel1.portId, channel1.channelId),
@@ -1285,7 +1285,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Confirm@channel0: FLUSHING -> FLUSHCOMPLETE
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
-                    IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         counterpartyChannelState: Channel.State.STATE_FLUSHING,
@@ -1299,7 +1299,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Confirm@channel1: FLUSHING -> OPEN
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
-                    IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
                         counterpartyChannelState: Channel.State.STATE_FLUSHCOMPLETE,
@@ -1312,7 +1312,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
             // Open@channel0: FLUSHCOMPLETE -> OPEN
             ibcHandler.channelUpgradeOpen(
-                IIBCChannelUpgrade.MsgChannelUpgradeOpen({
+                IIBCChannelUpgradeBase.MsgChannelUpgradeOpen({
                     portId: channel0.portId,
                     channelId: channel0.channelId,
                     counterpartyChannelState: Channel.State.STATE_OPEN,
@@ -1330,7 +1330,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Ack@channel0: OPEN(INIT) -> FLUSHCOMPLETE
             assertTrue(
                 ibcHandler.channelUpgradeAck(
-                    IIBCChannelUpgrade.MsgChannelUpgradeAck({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeAck({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         counterpartyUpgrade: getCounterpartyUpgrade(channel1.portId, channel1.channelId),
@@ -1344,7 +1344,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Confirm@channel1: FLUSHING -> OPEN
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
-                    IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
                         counterpartyChannelState: Channel.State.STATE_FLUSHCOMPLETE,
@@ -1357,7 +1357,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
             // Open@channel0: FLUSHCOMPLETE -> OPEN
             ibcHandler.channelUpgradeOpen(
-                IIBCChannelUpgrade.MsgChannelUpgradeOpen({
+                IIBCChannelUpgradeBase.MsgChannelUpgradeOpen({
                     portId: channel0.portId,
                     channelId: channel0.channelId,
                     counterpartyChannelState: Channel.State.STATE_OPEN,
@@ -1371,7 +1371,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Ack@channel0: OPEN(INIT) -> FLUSHING
             assertTrue(
                 ibcHandler.channelUpgradeAck(
-                    IIBCChannelUpgrade.MsgChannelUpgradeAck({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeAck({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         counterpartyUpgrade: getCounterpartyUpgrade(channel1.portId, channel1.channelId),
@@ -1394,7 +1394,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             // Confirm@channel1: FLUSHING -> FLUSHING
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
-                    IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
                         counterpartyChannelState: Channel.State.STATE_FLUSHING,
@@ -1411,7 +1411,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 mockApp.allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
                 assertTrue(
                     ibcHandler.channelUpgradeConfirm(
-                        IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                        IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                             portId: channel1.portId,
                             channelId: channel1.channelId,
                             counterpartyChannelState: Channel.State.STATE_FLUSHING,
@@ -1437,7 +1437,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 );
                 // Confirm@channel0: FLUSHING -> FLUSHCOMPLETE
                 ibcHandler.channelUpgradeConfirm(
-                    IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
                         counterpartyChannelState: Channel.State.STATE_FLUSHING,
@@ -1459,7 +1459,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             // Open@channel0: FLUSHCOMPLETE -> OPEN
             ibcHandler.channelUpgradeOpen(
-                IIBCChannelUpgrade.MsgChannelUpgradeOpen({
+                IIBCChannelUpgradeBase.MsgChannelUpgradeOpen({
                     portId: channel0.portId,
                     channelId: channel0.channelId,
                     counterpartyChannelState: Channel.State.STATE_FLUSHCOMPLETE,
@@ -1483,7 +1483,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 (Channel.Data memory ch0,) = ibcHandler.getChannel(channel0.portId, channel0.channelId);
                 // Open@channel1: FLUSHCOMPLETE -> OPEN
                 ibcHandler.channelUpgradeOpen(
-                    IIBCChannelUpgrade.MsgChannelUpgradeOpen({
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeOpen({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
                         counterpartyChannelState: ch0.state,
@@ -1549,8 +1549,8 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         });
     }
 
-    function upgradeLocalhostProofs() private view returns (IIBCChannelUpgrade.ChannelUpgradeProofs memory) {
-        return IIBCChannelUpgrade.ChannelUpgradeProofs({
+    function upgradeLocalhostProofs() private view returns (IIBCChannelUpgradeBase.ChannelUpgradeProofs memory) {
+        return IIBCChannelUpgradeBase.ChannelUpgradeProofs({
             proofChannel: LocalhostClientLib.sentinelProof(),
             proofUpgrade: LocalhostClientLib.sentinelProof(),
             proofHeight: H(block.number)
@@ -1682,7 +1682,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         returns (bool)
     {
         handler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: src.portId,
                 channelId: src.channelId,
                 errorReceipt: emptyErrorReceipt(),
@@ -1700,7 +1700,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         // flush recordes logs
         vm.getRecordedLogs();
         handler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: src.portId,
                 channelId: src.channelId,
                 errorReceipt: emptyErrorReceipt(),
@@ -1710,7 +1710,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         );
         ErrorReceipt.Data memory rc = getLastWriteErrorReceiptEvent(handler, vm.getRecordedLogs());
         handler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: dst.portId,
                 channelId: dst.channelId,
                 errorReceipt: rc,
@@ -1724,7 +1724,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
     function _cancelFail(IIBCHandler handler, ChannelInfo memory src, ChannelInfo memory) internal returns (bool) {
         vm.expectRevert();
         handler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: src.portId,
                 channelId: src.channelId,
                 errorReceipt: emptyErrorReceipt(),
@@ -1742,7 +1742,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         // channelUpgradeAck returns false because the upgrade timeout is reached
         assertFalse(
             handler.channelUpgradeAck(
-                IIBCChannelUpgrade.MsgChannelUpgradeAck({
+                IIBCChannelUpgradeBase.MsgChannelUpgradeAck({
                     portId: src.portId,
                     channelId: src.channelId,
                     counterpartyUpgrade: getCounterpartyUpgrade(dst.portId, dst.channelId),
@@ -1755,7 +1755,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         assertFalse(found);
         vm.startPrank(address(0x01));
         ibcHandler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: dst.portId,
                 channelId: dst.channelId,
                 errorReceipt: getLastWriteErrorReceiptEvent(ibcHandler, vm.getRecordedLogs()),
@@ -1774,7 +1774,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         // channelUpgradeConfirm returns false because the upgrade timeout is reached
         assertFalse(
             handler.channelUpgradeConfirm(
-                IIBCChannelUpgrade.MsgChannelUpgradeConfirm({
+                IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
                     portId: dst.portId,
                     channelId: dst.channelId,
                     counterpartyChannelState: Channel.State.STATE_FLUSHING,
@@ -1788,7 +1788,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         assertFalse(found);
         vm.startPrank(address(0x01));
         handler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: src.portId,
                 channelId: src.channelId,
                 errorReceipt: getLastWriteErrorReceiptEvent(handler, vm.getRecordedLogs()),
@@ -1814,7 +1814,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         }
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
         handler.timeoutChannelUpgrade(
-            IIBCChannelUpgrade.MsgTimeoutChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({
                 portId: channel0.portId,
                 channelId: channel0.channelId,
                 counterpartyChannel: counterpartyChannel,
@@ -1824,7 +1824,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         );
         vm.startPrank(address(0x01));
         handler.cancelChannelUpgrade(
-            IIBCChannelUpgrade.MsgCancelChannelUpgrade({
+            IIBCChannelUpgradeBase.MsgCancelChannelUpgrade({
                 portId: channel1.portId,
                 channelId: channel1.channelId,
                 errorReceipt: ErrorReceipt.Data({sequence: 1, message: "3"}),
@@ -1842,7 +1842,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         ChannelInfo memory channel1
     ) internal returns (bool) {
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
-        IIBCChannelUpgrade.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgrade.MsgTimeoutChannelUpgrade({
+        IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({
             portId: channel0.portId,
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
@@ -1868,7 +1868,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             vm.warp(uint256(timeout.timestamp));
         }
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
-        IIBCChannelUpgrade.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgrade.MsgTimeoutChannelUpgrade({
+        IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({
             portId: channel0.portId,
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
@@ -1889,7 +1889,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         vm.roll(100);
         vm.warp(100);
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
-        IIBCChannelUpgrade.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgrade.MsgTimeoutChannelUpgrade({
+        IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({
             portId: channel0.portId,
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
@@ -1914,7 +1914,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             vm.warp(uint256(timeout.timestamp));
         }
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
-        IIBCChannelUpgrade.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgrade.MsgTimeoutChannelUpgrade({
+        IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({
             portId: channel0.portId,
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,

@@ -7,7 +7,10 @@ import {IIBCConnection} from "../03-connection/IIBCConnection.sol";
 import {
     IIBCChannelHandshake, IIBCChannelPacketSendRecv, IIBCChannelPacketTimeout
 } from "../04-channel/IIBCChannel.sol";
-import {IIBCChannelUpgrade} from "../04-channel/IIBCChannelUpgrade.sol";
+import {
+    IIBCChannelUpgradeInitTryAck,
+    IIBCChannelUpgradeConfirmOpenTimeoutCancel
+} from "../04-channel/IIBCChannelUpgrade.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IIBCModule} from "../26-router/IIBCModule.sol";
 import {IBCHandler} from "./IBCHandler.sol";
@@ -23,7 +26,8 @@ contract OwnableIBCHandler is IBCHandler, Ownable {
      * @param ibcChannelHandshake_ is the address of a contract that implements `IIBCChannelHandshake`.
      * @param ibcChannelPacketSendRecv_ is the address of a contract that implements `IIBCChannelPacketSendRecv`.
      * @param ibcChannelPacketTimeout_ is the address of a contract that implements `IIBCChannelPacketTimeout`.
-     * @param ibcChannelUpgrade_ is the address of a contract that implements `IIBCChannelUpgrade`.
+     * @param ibcChannelUpgradeInitTryAck_ is the address of a contract that implements `IIBCChannelUpgrade`.
+     * @param ibcChannelUpgradeConfirmOpenTimeoutCancel_ is the address of a contract that implements `IIBCChannelUpgrade`.
      */
     constructor(
         IIBCClient ibcClient_,
@@ -31,7 +35,8 @@ contract OwnableIBCHandler is IBCHandler, Ownable {
         IIBCChannelHandshake ibcChannelHandshake_,
         IIBCChannelPacketSendRecv ibcChannelPacketSendRecv_,
         IIBCChannelPacketTimeout ibcChannelPacketTimeout_,
-        IIBCChannelUpgrade ibcChannelUpgrade_
+        IIBCChannelUpgradeInitTryAck ibcChannelUpgradeInitTryAck_,
+        IIBCChannelUpgradeConfirmOpenTimeoutCancel ibcChannelUpgradeConfirmOpenTimeoutCancel_
     )
         IBCHandler(
             ibcClient_,
@@ -39,7 +44,8 @@ contract OwnableIBCHandler is IBCHandler, Ownable {
             ibcChannelHandshake_,
             ibcChannelPacketSendRecv_,
             ibcChannelPacketTimeout_,
-            ibcChannelUpgrade_
+            ibcChannelUpgradeInitTryAck_,
+            ibcChannelUpgradeConfirmOpenTimeoutCancel_
         )
         Ownable(msg.sender)
     {}

@@ -37,7 +37,8 @@ contract IBCTest is Test {
             new IBCChannelHandshake(),
             new IBCChannelPacketSendRecv(),
             new IBCChannelPacketTimeout(),
-            new IBCChannelUpgrade()
+            new IBCChannelUpgradeInitTryAck(),
+            new IBCChannelUpgradeConfirmTimeoutCancel()
         );
 
         mockClient = new MockClient(address(handler));
