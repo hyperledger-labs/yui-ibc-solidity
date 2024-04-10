@@ -79,7 +79,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
             acknowledgement: acknowledgement,
             proof: proveAcknowledgementCommitment(
                 packet.destinationPort, packet.destinationChannel, packet.sequence, acknowledgement, proofHeight
-                ),
+            ),
             proofHeight: proofHeight
         });
     }
@@ -94,7 +94,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
                 packet: packet,
                 proof: proveNextSequenceRecv(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofHeight: proofHeight,
                 nextSequenceRecv: packet.sequence
             });
@@ -103,7 +103,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
                 packet: packet,
                 proof: provePacketReceiptAbsence(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofHeight: proofHeight,
                 nextSequenceRecv: 0
             });
@@ -125,7 +125,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
                 packet: packet,
                 proofUnreceived: proveNextSequenceRecv(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofClose: proveChannelState(proofHeight, packet.destinationPort, packet.destinationChannel, channel),
                 proofHeight: proofHeight,
                 nextSequenceRecv: packet.sequence,
@@ -136,7 +136,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
                 packet: packet,
                 proofUnreceived: provePacketReceiptAbsence(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofClose: proveChannelState(proofHeight, packet.destinationPort, packet.destinationChannel, channel),
                 proofHeight: proofHeight,
                 nextSequenceRecv: 0,

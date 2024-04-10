@@ -69,9 +69,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    ),
+                ),
                 protoConsensusState: LocalhostClientLib.sentinelConsensusState()
             })
         );
@@ -91,9 +91,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    )
+                )
             })
         );
     }
@@ -146,9 +146,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    ),
+                ),
                 counterpartyVersions: getConnectionVersions(),
                 proofInit: LocalhostClientLib.sentinelProof(),
                 proofClient: LocalhostClientLib.sentinelProof(),
@@ -170,9 +170,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    ),
+                ),
                 proofTry: LocalhostClientLib.sentinelProof(),
                 proofClient: LocalhostClientLib.sentinelProof(),
                 proofConsensus: LocalhostClientLib.sentinelProof(),

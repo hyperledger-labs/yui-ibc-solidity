@@ -179,17 +179,17 @@ abstract contract ICS03HandshakeTestHelper is ICS03TestHelper {
             proofHeight: proofHeight,
             proofInit: proveConnectionState(
                 proofHeight, counterpartyPrefix, counterpartyConnectionId, counterpartyConnection
-                ),
+            ),
             proofClient: proveClientState(
                 proofHeight, counterpartyPrefix, counterpartyClientId, getSelfClientState(proofHeight)
-                ),
+            ),
             proofConsensus: proveConsensusState(
                 proofHeight,
                 counterpartyPrefix,
                 counterpartyClientId,
                 consensusHeight,
                 getSelfConsensusState(consensusHeight)
-                ),
+            ),
             consensusHeight: consensusHeight,
             hostConsensusStateProof: getSelfConsensusState(consensusHeight)
         });
@@ -214,11 +214,11 @@ abstract contract ICS03HandshakeTestHelper is ICS03TestHelper {
             proofHeight: proofHeight,
             proofTry: proveConnectionState(
                 proofHeight, counterpartyPrefix, counterpartyConnectionId, counterpartyConnection
-                ),
+            ),
             proofClient: proveClientState(proofHeight, counterpartyPrefix, counterpartyClientId, selfClientState),
             proofConsensus: proveConsensusState(
                 proofHeight, counterpartyPrefix, counterpartyClientId, H(1), selfConsensusState
-                ),
+            ),
             consensusHeight: consensusHeight,
             hostConsensusStateProof: selfConsensusState
         });
@@ -236,7 +236,7 @@ abstract contract ICS03HandshakeTestHelper is ICS03TestHelper {
             proofHeight: proofHeight,
             proofAck: proveConnectionState(
                 proofHeight, counterpartyPrefix, counterpartyConnectionId, counterpartyConnection
-                )
+            )
         });
     }
 

@@ -104,7 +104,7 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                     version: counterpartyChannelInfo.version,
                     upgrade_sequence: 0
                 })
-                ),
+            ),
             proofHeight: proofHeight
         });
     }
@@ -129,7 +129,7 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                     version: counterpartyChannelInfo.version,
                     upgrade_sequence: 0
                 })
-                ),
+            ),
             proofHeight: proofHeight
         });
     }
@@ -171,7 +171,7 @@ abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
                     version: counterpartyChannelInfo.version,
                     upgrade_sequence: 0
                 })
-                ),
+            ),
             proofHeight: proofHeight
         });
     }

@@ -148,10 +148,10 @@ contract IBCTest is Test {
                     IbcLightclientsMockV1ClientState.Data({
                         latest_height: Height.Data({revision_number: 0, revision_height: revisionHeight})
                     })
-                    ),
+                ),
                 protoConsensusState: wrapAnyMockConsensusState(
                     IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp * 1e9)})
-                    )
+                )
             })
         );
     }
@@ -165,7 +165,7 @@ contract IBCTest is Test {
                         height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
                         timestamp: uint64(block.timestamp * 1e9)
                     })
-                    )
+                )
             })
         );
     }

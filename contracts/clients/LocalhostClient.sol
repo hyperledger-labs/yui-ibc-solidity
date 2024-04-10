@@ -200,7 +200,7 @@ contract LocalhostClient is ILightClient, ILightClientErrors {
                 ClientState.Data({
                     latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                 })
-                ),
+            ),
             true
         );
     }
