@@ -6,6 +6,7 @@ import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel, ChannelCounterparty} from "../../proto/Channel.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCHeight} from "../02-client/IBCHeight.sol";
+import {IBCChannelLib} from "./IBCChannelLib.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 import {IIBCChannelPacketTimeout} from "./IIBCChannel.sol";
@@ -182,8 +183,9 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     port_id: msg_.packet.sourcePort,
                     channel_id: msg_.packet.sourceChannel
                 }),
-                connection_hops: buildConnectionHops(connection.counterparty.connection_id),
-                version: channel.version
+                connection_hops: IBCChannelLib.buildConnectionHops(connection.counterparty.connection_id),
+                version: channel.version,
+                upgrade_sequence: msg_.counterpartyUpgradeSequence
             });
             if (
                 !client.verifyMembership(
@@ -274,12 +276,6 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         } else {
             return (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
         }
-    }
-
-    function buildConnectionHops(string memory connectionId) private pure returns (string[] memory hops) {
-        hops = new string[](1);
-        hops[0] = connectionId;
-        return hops;
     }
 
     function uint64ToBigEndianBytes(uint64 v) private pure returns (bytes memory) {

@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
-import {Channel} from "../../proto/Channel.sol";
+import {Channel, Upgrade} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
 import {IBCHost} from "../24-host/IBCHost.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
@@ -80,5 +80,14 @@ contract IBCQuerier is IBCHost, IIBCQuerier {
 
     function getExpectedTimePerBlock() external view returns (uint64) {
         return expectedTimePerBlock;
+    }
+
+    function getChannelUpgrade(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (Upgrade.Data memory, bool)
+    {
+        Upgrade.Data storage upgrade = upgrades[portId][channelId];
+        return (upgrade, upgrade.fields.connection_hops.length != 0);
     }
 }

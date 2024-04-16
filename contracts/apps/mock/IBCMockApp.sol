@@ -50,6 +50,7 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
     function onRecvPacket(Packet calldata packet, address)
         external
         view
+        virtual
         override
         onlyIBC
         returns (bytes memory acknowledgement)
@@ -126,13 +127,13 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
         }
     }
 
-    function onTimeoutPacket(Packet calldata packet, address) external view override onlyIBC {
+    function onTimeoutPacket(Packet calldata packet, address) external view virtual override onlyIBC {
         if (!closeChannelAllowed) {
             revert IBCModuleChannelCloseNotAllowed(packet.sourcePort, packet.sourceChannel);
         }
     }
 
-    function equals(bytes calldata a, bytes memory b) private pure returns (bool) {
+    function equals(bytes calldata a, bytes memory b) internal pure returns (bool) {
         return keccak256(a) == keccak256(b);
     }
 }

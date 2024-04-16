@@ -65,6 +65,12 @@ interface IIBCChannelErrors {
     /// @param destinationChannel destination channel
     error IBCChannelUnexpectedPacketDestination(string destinationPort, string destinationChannel);
 
+    error IBCChannelCannotRecvNextUpgradePacket(uint64 sequence, uint64 counterpartyNextSequenceSend);
+
+    error IBCChannelPacketAlreadyProcessInPreviousUpgrade(uint64 sequence, uint64 recvStartSequence);
+
+    error IBCChannelAckAlreadyProcessedInPreviousUpgrade(uint64 sequence, uint64 ackStartSequence);
+
     /// @param currentBlockNumber current block number
     /// @param timeoutHeight packet timeout height
     error IBCChannelTimeoutPacketHeight(uint256 currentBlockNumber, uint64 timeoutHeight);

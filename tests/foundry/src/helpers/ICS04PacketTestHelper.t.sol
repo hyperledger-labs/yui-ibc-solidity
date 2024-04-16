@@ -79,7 +79,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
             acknowledgement: acknowledgement,
             proof: proveAcknowledgementCommitment(
                 packet.destinationPort, packet.destinationChannel, packet.sequence, acknowledgement, proofHeight
-                ),
+            ),
             proofHeight: proofHeight
         });
     }
@@ -94,7 +94,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
                 packet: packet,
                 proof: proveNextSequenceRecv(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofHeight: proofHeight,
                 nextSequenceRecv: packet.sequence
             });
@@ -103,7 +103,7 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
                 packet: packet,
                 proof: provePacketReceiptAbsence(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofHeight: proofHeight,
                 nextSequenceRecv: 0
             });
@@ -125,20 +125,22 @@ abstract contract ICS04PacketTestHelper is ICS04HandshakeTestHelper {
                 packet: packet,
                 proofUnreceived: proveNextSequenceRecv(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofClose: proveChannelState(proofHeight, packet.destinationPort, packet.destinationChannel, channel),
                 proofHeight: proofHeight,
-                nextSequenceRecv: packet.sequence
+                nextSequenceRecv: packet.sequence,
+                counterpartyUpgradeSequence: 0
             });
         } else if (ordering == Channel.Order.ORDER_UNORDERED) {
             return IIBCChannelPacketTimeout.MsgTimeoutOnClose({
                 packet: packet,
                 proofUnreceived: provePacketReceiptAbsence(
                     packet.destinationPort, packet.destinationChannel, packet.sequence, proofHeight
-                    ),
+                ),
                 proofClose: proveChannelState(proofHeight, packet.destinationPort, packet.destinationChannel, channel),
                 proofHeight: proofHeight,
-                nextSequenceRecv: 0
+                nextSequenceRecv: 0,
+                counterpartyUpgradeSequence: 0
             });
         } else {
             revert("unknown ordering");
@@ -266,11 +268,22 @@ abstract contract ICS04PacketEventTestHelper {
 
     event RecvPacket(Packet packet);
 
-    function getLastSentPacket(IIBCHandler handler, Vm.Log[] memory logs) internal view returns (Packet memory) {
+    function getLastSentPacket(
+        IIBCHandler handler,
+        string memory sourcePort,
+        string memory sourceChannel,
+        Vm.Log[] memory logs
+    ) internal view returns (Packet memory) {
         for (uint256 i = logs.length; i > 0; i--) {
             if (logs[i - 1].emitter == address(handler)) {
                 (Packet memory p, bool ok) = tryDecodeSendPacketEvent(logs[i - 1]);
                 if (ok) {
+                    if (
+                        keccak256(abi.encodePacked(p.sourcePort)) != keccak256(abi.encodePacked(sourcePort))
+                            || keccak256(abi.encodePacked(p.sourceChannel)) != keccak256(abi.encodePacked(sourceChannel))
+                    ) {
+                        continue;
+                    }
                     Channel.Data memory c;
                     (c, ok) = handler.getChannel(p.sourcePort, p.sourceChannel);
                     require(ok, "channel not found");

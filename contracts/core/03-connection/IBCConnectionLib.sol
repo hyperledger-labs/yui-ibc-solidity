@@ -50,6 +50,19 @@ library IBCConnectionLib {
         return verifyProposedVersion(supportedVersion, version);
     }
 
+    function isSupported(Version.Data[] storage supportedVersions, string memory feature)
+        internal
+        view
+        returns (bool)
+    {
+        for (uint256 i = 0; i < supportedVersions.length; i++) {
+            if (verifySupportedFeature(supportedVersions[i], feature)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * @dev verifyProposedVersion verifies that the entire feature set in the
      * proposed version is supported by this chain. If the feature set is

@@ -233,6 +233,7 @@ interface IIBCChannelPacketTimeout {
         bytes proofClose;
         Height.Data proofHeight;
         uint64 nextSequenceRecv;
+        uint64 counterpartyUpgradeSequence;
     }
 
     // --------------------- Events --------------------- //

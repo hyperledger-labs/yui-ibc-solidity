@@ -69,9 +69,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    ),
+                ),
                 protoConsensusState: LocalhostClientLib.sentinelConsensusState()
             })
         );
@@ -91,9 +91,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    )
+                )
             })
         );
     }
@@ -146,9 +146,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    ),
+                ),
                 counterpartyVersions: getConnectionVersions(),
                 proofInit: LocalhostClientLib.sentinelProof(),
                 proofClient: LocalhostClientLib.sentinelProof(),
@@ -170,9 +170,9 @@ library LocalhostHelper {
                             ClientState.Data({
                                 latest_height: Height.Data({revision_number: 0, revision_height: uint64(block.number)})
                             })
-                            )
+                        )
                     })
-                    ),
+                ),
                 proofTry: LocalhostClientLib.sentinelProof(),
                 proofClient: LocalhostClientLib.sentinelProof(),
                 proofConsensus: LocalhostClientLib.sentinelProof(),
@@ -207,7 +207,8 @@ library LocalhostHelper {
                     ordering: msg_.ordering,
                     counterparty: ChannelCounterparty.Data({port_id: msg_.portId1, channel_id: ""}),
                     connection_hops: newConnectionHops(msg_.connectionId0),
-                    version: msg_.version
+                    version: msg_.version,
+                    upgrade_sequence: 0
                 })
             })
         );
@@ -219,7 +220,8 @@ library LocalhostHelper {
                     ordering: msg_.ordering,
                     counterparty: ChannelCounterparty.Data({port_id: msg_.portId0, channel_id: channelId0}),
                     connection_hops: newConnectionHops(msg_.connectionId1),
-                    version: msg_.version
+                    version: msg_.version,
+                    upgrade_sequence: 0
                 }),
                 counterpartyVersion: version0,
                 proofInit: LocalhostClientLib.sentinelProof(),

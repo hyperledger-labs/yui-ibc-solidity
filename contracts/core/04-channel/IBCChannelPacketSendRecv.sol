@@ -119,7 +119,20 @@ contract IBCChannelPacketSendRecv is
      */
     function recvPacket(MsgPacketRecv calldata msg_) external {
         Channel.Data storage channel = channels[msg_.packet.destinationPort][msg_.packet.destinationChannel];
-        if (channel.state != Channel.State.STATE_OPEN) {
+        if (channel.state == Channel.State.STATE_OPEN) {} else if (
+            channel.state == Channel.State.STATE_FLUSHING || channel.state == Channel.State.STATE_FLUSHCOMPLETE
+        ) {
+            RecvStartSequence storage rseq =
+                recvStartSequences[msg_.packet.destinationPort][msg_.packet.destinationChannel];
+            // prevSequence=0 means the channel is not in the process of being upgraded or counterparty has not been upgraded yet
+            if (rseq.prevSequence != 0) {
+                if (msg_.packet.sequence >= rseq.sequence) {
+                    revert IBCChannelCannotRecvNextUpgradePacket(msg_.packet.sequence, rseq.sequence);
+                } else if (msg_.packet.sequence < rseq.prevSequence) {
+                    revert IBCChannelPacketAlreadyProcessInPreviousUpgrade(msg_.packet.sequence, rseq.prevSequence);
+                }
+            }
+        } else {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
@@ -155,6 +168,17 @@ contract IBCChannelPacketSendRecv is
         );
 
         if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
+            if (channel.state == Channel.State.STATE_OPEN) {
+                if (
+                    msg_.packet.sequence
+                        < recvStartSequences[msg_.packet.destinationPort][msg_.packet.destinationChannel].sequence
+                ) {
+                    revert IBCChannelPacketAlreadyProcessInPreviousUpgrade(
+                        msg_.packet.sequence,
+                        recvStartSequences[msg_.packet.destinationPort][msg_.packet.destinationChannel].sequence
+                    );
+                }
+            }
             bytes32 commitmentKey = IBCCommitment.packetReceiptCommitmentKeyCalldata(
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
             );
@@ -202,7 +226,9 @@ contract IBCChannelPacketSendRecv is
     function acknowledgePacket(MsgPacketAcknowledgement calldata msg_) external {
         Channel.Data storage channel = channels[msg_.packet.sourcePort][msg_.packet.sourceChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
-            revert IBCChannelUnexpectedChannelState(channel.state);
+            if (channel.state != Channel.State.STATE_FLUSHING) {
+                revert IBCChannelUnexpectedChannelState(channel.state);
+            }
         }
 
         if (keccak256(bytes(msg_.packet.destinationPort)) != keccak256(bytes(channel.counterparty.port_id))) {
@@ -258,6 +284,14 @@ contract IBCChannelPacketSendRecv is
                 );
             }
             nextSequenceAcks[msg_.packet.sourcePort][msg_.packet.sourceChannel]++;
+        } else if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
+            if (msg_.packet.sequence < ackStartSequences[msg_.packet.sourcePort][msg_.packet.sourceChannel]) {
+                revert IBCChannelAckAlreadyProcessedInPreviousUpgrade(
+                    msg_.packet.sequence, ackStartSequences[msg_.packet.sourcePort][msg_.packet.sourceChannel]
+                );
+            }
+        } else {
+            revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
 
         delete commitments[packetCommitmentKey];
@@ -329,12 +363,6 @@ contract IBCChannelPacketSendRecv is
         } else {
             return (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
         }
-    }
-
-    function buildConnectionHops(string memory connectionId) private pure returns (string[] memory hops) {
-        hops = new string[](1);
-        hops[0] = connectionId;
-        return hops;
     }
 
     function uint64ToBigEndianBytes(uint64 v) private pure returns (bytes memory) {

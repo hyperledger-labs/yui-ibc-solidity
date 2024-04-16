@@ -14,14 +14,18 @@ contract TestableIBCHandler is OwnableIBCHandler {
         IIBCConnection ibcConnection_,
         IIBCChannelHandshake ibcChannelHandshake_,
         IIBCChannelPacketSendRecv ibcChannelPacketSendRecv_,
-        IIBCChannelPacketTimeout ibcChannelPacketTimeout_
+        IIBCChannelPacketTimeout ibcChannelPacketTimeout_,
+        IIBCChannelUpgradeInitTryAck ibcChannelUpgradeInitTryAck_,
+        IIBCChannelUpgradeConfirmOpenTimeoutCancel ibcChannelUpgradeConfirmOpenTimeoutCancel_
     )
         OwnableIBCHandler(
             ibcClient_,
             ibcConnection_,
             ibcChannelHandshake_,
             ibcChannelPacketSendRecv_,
-            ibcChannelPacketTimeout_
+            ibcChannelPacketTimeout_,
+            ibcChannelUpgradeInitTryAck_,
+            ibcChannelUpgradeConfirmOpenTimeoutCancel_
         )
     {}
 

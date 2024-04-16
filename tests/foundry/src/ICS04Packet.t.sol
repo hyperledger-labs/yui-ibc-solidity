@@ -418,7 +418,8 @@ contract TestICS04Packet is
             mockApp.sendPacket(
                 IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(block.number + 1), 0
             );
-            Packet memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
+            Packet memory p0 =
+                getLastSentPacket(handler, channelInfo.portId, channelInfo.channelId, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
                     msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
@@ -468,7 +469,8 @@ contract TestICS04Packet is
                 H(0),
                 uint64(block.timestamp * 1e9 + 1)
             );
-            Packet memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
+            Packet memory p0 =
+                getLastSentPacket(handler, channelInfo.portId, channelInfo.channelId, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
                     msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
@@ -514,7 +516,8 @@ contract TestICS04Packet is
                 H(1)
             );
             mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(2), 0);
-            Packet memory p0 = getLastSentPacket(handler, vm.getRecordedLogs());
+            Packet memory p0 =
+                getLastSentPacket(handler, channelInfo.portId, channelInfo.channelId, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutOnClose memory msg_ =
                     msgTimeoutOnClose(counterpartyHandler, orders[i], p0, H(1));
@@ -601,7 +604,7 @@ contract TestICS04Packet is
         IIBCHandler h = IIBCHandler(app.ibcAddress());
         uint64 sequence = app.sendPacket(message, src.portId, src.channelId, timeoutHeight, timeoutTimestamp);
         assertEq(h.getNextSequenceSend(src.portId, src.channelId), sequence + 1);
-        Packet memory packet = getLastSentPacket(h, vm.getRecordedLogs());
+        Packet memory packet = getLastSentPacket(h, src.portId, src.channelId, vm.getRecordedLogs());
         assertEq(
             abi.encode(packet),
             abi.encode(
