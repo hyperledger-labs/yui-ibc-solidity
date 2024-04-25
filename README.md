@@ -19,7 +19,7 @@
 
 [IBC](https://github.com/cosmos/ibc) implementations in Solidity.
 
-**IBC compatibility:** [v7](https://github.com/cosmos/ibc-go/releases/tag/v7.0.0)
+**IBC compatibility:** [v8](https://github.com/cosmos/ibc-go/releases/tag/v8.2.0)
 
 This is available not only for Ethereum and Hyperledger Besu, but also for Polygon PoS and other EVM-compatible chains.
 
@@ -42,6 +42,7 @@ DISCLAIMER: This project is still under development and has not been audited.
 You can deploy a Light Client that implements [the ILightClient interface](./contracts/core/02-client/ILightClient.sol) to [integrate with ibc-solidity](./docs/architecture.md#light-client).
 
 Here are some such examples:
+- [Tendermint ZK Light Client](https://github.com/datachainlab/tendermint-zk-ibc)
 - [IBFT 2.0 Light Client](./contracts/clients/IBFT2Client.sol)
 - [LCP(TEE) Client](https://github.com/datachainlab/lcp-solidity)
 - [Localhost Client](./contracts/clients/LocalhostClient.sol)
