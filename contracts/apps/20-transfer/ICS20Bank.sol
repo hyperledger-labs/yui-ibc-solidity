@@ -4,14 +4,11 @@ pragma solidity ^0.8.20;
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {ICS20Lib} from "./ICS20Lib.sol";
 import {IICS20Bank} from "./IICS20Bank.sol";
 import {IICS20Errors} from "./IICS20Errors.sol";
 
 contract ICS20Bank is Context, AccessControl, IICS20Bank, IICS20Errors {
-    using Address for address;
-
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
