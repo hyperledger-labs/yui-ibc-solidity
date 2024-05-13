@@ -73,8 +73,14 @@ jobs:
     - name: Resolve dependencies
       run: npm install
 
-    - name: Setup chains for E2E test
-      run: make network-e2e
+    - name: Setup chains for E2E test (IBFT2)
+      run: make network-ibft2
 
-    - name: E2E test
-      run: make e2e-test
+    - name: E2E test (IBFT2)
+      run: make e2e-test network-down
+
+    - name: Setup chains for E2E test (QBFT)
+      run: make network-qbft
+
+    - name: E2E test (QBFT)
+      run: make e2e-test network-down
