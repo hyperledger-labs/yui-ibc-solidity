@@ -69,9 +69,18 @@ abigen: build
 
 ######## E2E test ########
 
-.PHONY: network-e2e
-network-e2e:
-	$(DOCKER_COMPOSE) -f $(E2E_TEST_COMPOSE_FILE) up --detach --wait testchain0 testchain1
+.PHONY: network-ibft2
+network-ibft2:
+	$(DOCKER_COMPOSE) -f $(E2E_TEST_COMPOSE_FILE) up --detach --wait ibft2-testchain0 ibft2-testchain1
+	$(MAKE) deploy
+
+.PHONY: network-qbft
+network-qbft:
+	$(DOCKER_COMPOSE) -f $(E2E_TEST_COMPOSE_FILE) up --detach --wait qbft-testchain0 qbft-testchain1
+	$(MAKE) deploy
+
+.PHONY: deploy
+deploy:
 	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \

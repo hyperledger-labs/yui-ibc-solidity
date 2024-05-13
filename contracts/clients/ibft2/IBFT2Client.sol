@@ -455,15 +455,16 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
 
         parsedHeader.base = header;
         RLPReader.RLPItem[] memory items = header.besu_header_rlp.toRlpItem().toList();
-        parsedHeader.stateRoot = bytes32(items[3].toUint());
-        parsedHeader.height = Height.Data({revision_number: 0, revision_height: uint64(items[8].toUint())});
-
-        if (items.length != 15) {
+        if (items.length < 15) {
             revert UnexpectedEthereumHeaderFormat(items.length);
         }
+        parsedHeader.stateRoot = bytes32(items[3].toUint());
+        parsedHeader.height = Height.Data({revision_number: 0, revision_height: uint64(items[8].toUint())});
         parsedHeader.time = uint64(items[11].toUint());
         items = items[12].toBytes().toRlpItem().toList();
-        if (items.length != 4) {
+        // IBFT2: {Vanity, Validators, Vote, Round}
+        // QBFT:  {Vanity, Validators, Vote, Round, Empty-Seals}
+        if (items.length != 4 && items.length != 5) {
             revert UnexpectedExtraDataFormat(items.length);
         }
         parsedHeader.validators = items[1].toList();
