@@ -12,6 +12,7 @@ library IbcLightclientsIbft2V1ClientState {
     string chain_id;
     bytes ibc_store_address;
     Height.Data latest_height;
+    uint64 trusting_period;
   }
 
   // Decoder section
@@ -67,6 +68,9 @@ library IbcLightclientsIbft2V1ClientState {
       } else
       if (fieldId == 3) {
         pointer += _read_latest_height(pointer, bs, r);
+      } else
+      if (fieldId == 4) {
+        pointer += _read_trusting_period(pointer, bs, r);
       } else
       {
         pointer += ProtoBufRuntime._skip_field_decode(wireType, pointer, bs);
@@ -126,6 +130,23 @@ library IbcLightclientsIbft2V1ClientState {
   ) internal pure returns (uint) {
     (Height.Data memory x, uint256 sz) = _decode_Height(p, bs);
     r.latest_height = x;
+    return sz;
+  }
+
+  /**
+   * @dev The decoder for reading a field
+   * @param p The offset of bytes array to start decode
+   * @param bs The bytes array to be decoded
+   * @param r The in-memory struct
+   * @return The number of bytes decoded
+   */
+  function _read_trusting_period(
+    uint256 p,
+    bytes memory bs,
+    Data memory r
+  ) internal pure returns (uint) {
+    (uint64 x, uint256 sz) = ProtoBufRuntime._decode_uint64(p, bs);
+    r.trusting_period = x;
     return sz;
   }
 
@@ -209,6 +230,15 @@ library IbcLightclientsIbft2V1ClientState {
     );
     pointer += Height._encode_nested(r.latest_height, pointer, bs);
     
+    if (r.trusting_period != 0) {
+    pointer += ProtoBufRuntime._encode_key(
+      4,
+      ProtoBufRuntime.WireType.Varint,
+      pointer,
+      bs
+    );
+    pointer += ProtoBufRuntime._encode_uint64(r.trusting_period, pointer, bs);
+    }
     return pointer - offset;
   }
   // nested encoder
@@ -255,6 +285,7 @@ library IbcLightclientsIbft2V1ClientState {
     e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.chain_id).length);
     e += 1 + ProtoBufRuntime._sz_lendelim(r.ibc_store_address.length);
     e += 1 + ProtoBufRuntime._sz_lendelim(Height._estimate(r.latest_height));
+    e += 1 + ProtoBufRuntime._sz_uint64(r.trusting_period);
     return e;
   }
   // empty checker
@@ -268,6 +299,10 @@ library IbcLightclientsIbft2V1ClientState {
   }
 
   if (r.ibc_store_address.length != 0) {
+    return false;
+  }
+
+  if (r.trusting_period != 0) {
     return false;
   }
 
@@ -285,6 +320,7 @@ library IbcLightclientsIbft2V1ClientState {
     output.chain_id = input.chain_id;
     output.ibc_store_address = input.ibc_store_address;
     Height.store(input.latest_height, output.latest_height);
+    output.trusting_period = input.trusting_period;
 
   }
 
