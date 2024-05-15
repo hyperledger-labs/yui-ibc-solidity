@@ -12,6 +12,7 @@ interface ILightClientErrors {
     /// @param clientId client identifier
     /// @param height consensus height
     error ConsensusStateNotFound(string clientId, Height.Data height);
+    error ConsensusStateExpired();
     /// @param url type url of the any
     error UnexpectedProtoAnyTypeURL(string url);
 }

@@ -35,6 +35,8 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     error InvalidIBCAddressLength();
     /// @dev An error indicating that the initial consensus state root length is invalid
     error InvalidConsensusStateRootLength();
+    /// @dev An error indicating that the latest height of the client state is invalid
+    error InvalidClientStateLatestHeight();
     /// @dev An error indicating that the validator set is empty
     error EmptyValidators();
     /// @dev An error indicating that a validator address length is invalid
@@ -56,19 +58,28 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ClientState";
     string internal constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ConsensusState";
 
-    bytes32 internal constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked(HEADER_TYPE_URL));
-    bytes32 internal constant CLIENT_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CLIENT_STATE_TYPE_URL));
-    bytes32 internal constant CONSENSUS_STATE_TYPE_URL_HASH = keccak256(abi.encodePacked(CONSENSUS_STATE_TYPE_URL));
+    bytes32 internal constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.Header"));
+    bytes32 internal constant CLIENT_STATE_TYPE_URL_HASH =
+        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ClientState"));
+    bytes32 internal constant CONSENSUS_STATE_TYPE_URL_HASH =
+        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState"));
 
     uint256 internal constant COMMITMENT_SLOT = 0;
     uint8 internal constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
-    address internal immutable ibcHandler;
+    address public immutable ibcHandler;
 
     mapping(string => ClientState.Data) internal clientStates;
     mapping(string => mapping(uint128 => ConsensusState.Data)) internal consensusStates;
     mapping(string => mapping(uint128 => uint256)) internal processedTimes;
     mapping(string => mapping(uint128 => uint256)) internal processedHeights;
+
+    modifier onlyIBC() {
+        if (msg.sender != ibcHandler) {
+            revert InvalidCaller(msg.sender);
+        }
+        _;
+    }
 
     constructor(address ibcHandler_) {
         ibcHandler = ibcHandler_;
@@ -82,10 +93,14 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         bytes calldata protoClientState,
         bytes calldata protoConsensusState
     ) public override onlyIBC returns (Height.Data memory height) {
-        ClientState.Data memory clientState = unmarshalClientState(protoClientState);
-        ConsensusState.Data memory consensusState = unmarshalConsensusState(protoConsensusState);
+        ClientState.Data memory clientState = ClientState.decode(decode(protoClientState, CLIENT_STATE_TYPE_URL_HASH));
+        ConsensusState.Data memory consensusState =
+            ConsensusState.decode(decode(protoConsensusState, CONSENSUS_STATE_TYPE_URL_HASH));
         if (clientState.ibc_store_address.length != 20) {
             revert InvalidIBCAddressLength();
+        }
+        if (clientState.latest_height.revision_height == 0) {
+            revert InvalidClientStateLatestHeight();
         }
         if (consensusState.root.length != 32) {
             revert InvalidConsensusStateRootLength();
@@ -109,7 +124,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         override
         returns (bytes4, bytes memory)
     {
-        Header.Data memory header = unmarshalHeader(protoClientMessage);
+        Header.Data memory header = Header.decode(decode(protoClientMessage, HEADER_TYPE_URL_HASH));
         return (this.updateClient.selector, abi.encode(clientId, header));
     }
 
@@ -179,6 +194,12 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         if (trustedConsensusState.timestamp == 0) {
             revert ConsensusStateNotFound(clientId, header.trusted_height);
         }
+        if (
+            clientState.trusting_period > 0
+                && trustedConsensusState.timestamp + clientState.trusting_period <= block.timestamp
+        ) {
+            revert ConsensusStateExpired();
+        }
 
         bytes[] memory validators = verify(trustedConsensusState.validators, parsedHeader);
         if (validators.length == 0) {
@@ -218,12 +239,12 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         bytes memory path,
         bytes calldata value
     ) public view override returns (bool) {
-        if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix, proof)) {
-            return false;
-        }
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         if (consensusState.timestamp == 0) {
             revert ConsensusStateNotFound(clientId, height);
+        }
+        if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix)) {
+            return false;
         }
         return verifyMembership(
             proof,
@@ -246,70 +267,59 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         bytes calldata prefix,
         bytes calldata path
     ) public view override returns (bool) {
-        if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix, proof)) {
-            return false;
-        }
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         if (consensusState.timestamp == 0) {
             revert ConsensusStateNotFound(clientId, height);
+        }
+        if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix)) {
+            return false;
         }
         return verifyNonMembership(
             proof, bytes32(consensusState.root), keccak256(abi.encodePacked(keccak256(path), COMMITMENT_SLOT))
         );
     }
 
-    function marshalClientState(ClientState.Data storage clientState) internal pure returns (bytes memory) {
-        Any.Data memory anyClientState;
-        anyClientState.type_url = CLIENT_STATE_TYPE_URL;
-        anyClientState.value = ClientState.encode(clientState);
-        return Any.encode(anyClientState);
-    }
-
-    function marshalConsensusState(ConsensusState.Data storage consensusState) internal pure returns (bytes memory) {
-        Any.Data memory anyConsensusState;
-        anyConsensusState.type_url = CONSENSUS_STATE_TYPE_URL;
-        anyConsensusState.value = ConsensusState.encode(consensusState);
-        return Any.encode(anyConsensusState);
-    }
-
-    function unmarshalHeader(bytes calldata bz) internal pure returns (Header.Data memory header) {
-        Any.Data memory anyHeader = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyHeader.type_url)) != HEADER_TYPE_URL_HASH) {
-            revert UnexpectedProtoAnyTypeURL(anyHeader.type_url);
+    /**
+     * @dev getClientState returns the clientState corresponding to `clientId`.
+     *      If it's not found, the function returns false.
+     */
+    function getClientState(string calldata clientId) public view returns (bytes memory clientStateBytes, bool) {
+        ClientState.Data storage clientState = clientStates[clientId];
+        if (clientState.latest_height.revision_height == 0) {
+            return (clientStateBytes, false);
         }
-        return Header.decode(anyHeader.value);
+        return (Any.encode(Any.Data({type_url: CLIENT_STATE_TYPE_URL, value: ClientState.encode(clientState)})), true);
     }
 
-    function unmarshalClientState(bytes calldata bz) internal pure returns (ClientState.Data memory clientState) {
-        Any.Data memory anyClientState = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyClientState.type_url)) != CLIENT_STATE_TYPE_URL_HASH) {
-            revert UnexpectedProtoAnyTypeURL(anyClientState.type_url);
-        }
-        return ClientState.decode(anyClientState.value);
-    }
-
-    function unmarshalConsensusState(bytes calldata bz)
-        internal
-        pure
-        returns (ConsensusState.Data memory consensusState)
+    /**
+     * @dev getConsensusState returns the consensusState corresponding to `clientId` and `height`.
+     *      If it's not found, the function returns false.
+     */
+    function getConsensusState(string calldata clientId, Height.Data calldata height)
+        public
+        view
+        returns (bytes memory consensusStateBytes, bool)
     {
-        Any.Data memory anyConsensusState = Any.decode(bz);
-        if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != CONSENSUS_STATE_TYPE_URL_HASH) {
-            revert UnexpectedProtoAnyTypeURL(anyConsensusState.type_url);
+        ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
+        if (consensusState.timestamp == 0) {
+            return (consensusStateBytes, false);
         }
-        return ConsensusState.decode(anyConsensusState.value);
+        return (
+            Any.encode(Any.Data({type_url: CONSENSUS_STATE_TYPE_URL, value: ConsensusState.encode(consensusState)})),
+            true
+        );
     }
 
-    /// Validity predicate ///
+    // --------------------- Signature verification --------------------- //
 
     /**
      * @dev verify verifies untrusted header
      * @param trustedVals trusted validators
      * @param untrustedHeader untrusted header
      */
-    function verify(bytes[] memory trustedVals, ParsedBesuHeader memory untrustedHeader)
+    function verify(bytes[] storage trustedVals, ParsedBesuHeader memory untrustedHeader)
         internal
-        pure
+        view
         returns (bytes[] memory)
     {
         bytes32 blkHash = keccak256(untrustedHeader.base.besu_header_rlp);
@@ -323,18 +333,19 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
      * @param seals commit seals for untrusted block header
      * @param blkHash the hash of untrusted block
      */
-    function verifyCommitSealsTrusting(bytes[] memory trustedVals, bytes[] memory seals, bytes32 blkHash)
+    function verifyCommitSealsTrusting(bytes[] storage trustedVals, bytes[] memory seals, bytes32 blkHash)
         internal
-        pure
+        view
     {
-        uint8 success = 0;
-        bool[] memory marked = new bool[](trustedVals.length);
+        uint256 success = 0;
+        uint256 valsNum = trustedVals.length;
+        bool[] memory marked = new bool[](valsNum);
         for (uint256 i = 0; i < seals.length; i++) {
             if (seals[i].length == 0) {
                 continue;
             }
             address signer = ecdsaRecover(blkHash, seals[i]);
-            for (uint256 j = 0; j < trustedVals.length; j++) {
+            for (uint256 j = 0; j < valsNum; j++) {
                 if (trustedVals[j].length != 20) {
                     revert InvalidValidatorAddressLength();
                 }
@@ -344,8 +355,8 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
                 }
             }
         }
-        if (success < trustedVals.length / 3) {
-            revert InsufficientTrustedValidatorsSeals(success, trustedVals.length / 3);
+        if (success < valsNum / 3) {
+            revert InsufficientTrustedValidatorsSeals(success, valsNum / 3);
         }
     }
 
@@ -360,8 +371,9 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         pure
         returns (bytes[] memory)
     {
-        bytes[] memory validators = new bytes[](untrustedVals.length);
-        uint8 success = 0;
+        uint256 valsNum = untrustedVals.length;
+        bytes[] memory validators = new bytes[](valsNum);
+        uint256 success = 0;
         for (uint256 i = 0; i < seals.length; i++) {
             validators[i] = untrustedVals[i].toBytes();
             if (validators[i].length != 20) {
@@ -373,36 +385,20 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
                 success++;
             }
         }
-        if (success < untrustedVals.length * 2 / 3) {
-            revert InsuffientUntrustedValidatorsSeals(success, untrustedVals.length * 2 / 3);
+        if (success < valsNum * 2 / 3) {
+            revert InsuffientUntrustedValidatorsSeals(success, valsNum * 2 / 3);
         }
         return validators;
     }
 
-    /// helper functions ///
-
-    function validateArgs(
-        ClientState.Data storage cs,
-        Height.Data memory height,
-        bytes memory prefix,
-        bytes memory proof
-    ) internal view returns (bool) {
-        if (cs.latest_height.lt(height)) {
-            return false;
-        } else if (prefix.length == 0) {
-            return false;
-        } else if (proof.length == 0) {
-            return false;
-        }
-        return true;
-    }
+    // --------------------- Internal functions --------------------- //
 
     function validateDelayPeriod(
         string memory clientId,
         Height.Data memory height,
         uint64 delayPeriodTime,
         uint64 delayPeriodBlocks
-    ) private view returns (bool) {
+    ) internal view returns (bool) {
         uint128 heightU128 = height.toUint128();
         uint64 currentTime = uint64(block.timestamp * 1000 * 1000 * 1000);
         uint64 validTime = uint64(processedTimes[clientId][heightU128]) * 1000 * 1000 * 1000 + delayPeriodTime;
@@ -422,13 +418,10 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         Height.Data memory height,
         uint64 delayTimePeriod,
         uint64 delayBlockPeriod,
-        bytes memory prefix,
-        bytes memory proof
+        bytes memory prefix
     ) internal view returns (bool) {
         ClientState.Data storage clientState = clientStates[clientId];
-        assert(clientState.ibc_store_address.length != 0);
-
-        if (!validateArgs(clientState, height, prefix, proof)) {
+        if (clientState.latest_height.lt(height)) {
             return false;
         }
         if (
@@ -500,43 +493,11 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
         return signer;
     }
 
-    /* State accessors */
-
-    /**
-     * @dev getClientState returns the clientState corresponding to `clientId`.
-     *      If it's not found, the function returns false.
-     */
-    function getClientState(string calldata clientId) public view returns (bytes memory clientStateBytes, bool) {
-        ClientState.Data storage clientState = clientStates[clientId];
-        if (clientState.latest_height.revision_height == 0) {
-            return (clientStateBytes, false);
+    function decode(bytes calldata bz, bytes32 hashTypeUrl) internal pure returns (bytes memory) {
+        Any.Data memory any = Any.decode(bz);
+        if (keccak256(abi.encodePacked(any.type_url)) != hashTypeUrl) {
+            revert UnexpectedProtoAnyTypeURL(any.type_url);
         }
-        return (Any.encode(Any.Data({type_url: CLIENT_STATE_TYPE_URL, value: ClientState.encode(clientState)})), true);
-    }
-
-    /**
-     * @dev getConsensusState returns the consensusState corresponding to `clientId` and `height`.
-     *      If it's not found, the function returns false.
-     */
-    function getConsensusState(string calldata clientId, Height.Data calldata height)
-        public
-        view
-        returns (bytes memory consensusStateBytes, bool)
-    {
-        ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
-        if (consensusState.timestamp == 0) {
-            return (consensusStateBytes, false);
-        }
-        return (
-            Any.encode(Any.Data({type_url: CONSENSUS_STATE_TYPE_URL, value: ConsensusState.encode(consensusState)})),
-            true
-        );
-    }
-
-    modifier onlyIBC() {
-        if (msg.sender != ibcHandler) {
-            revert InvalidCaller(msg.sender);
-        }
-        _;
+        return any.value;
     }
 }
