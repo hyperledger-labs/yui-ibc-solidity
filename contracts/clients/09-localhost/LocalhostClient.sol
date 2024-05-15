@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
-import {ILightClient} from "../core/02-client/ILightClient.sol";
-import {ILightClientErrors} from "../core/02-client/ILightClientErrors.sol";
-import {IBCHeight} from "../core/02-client/IBCHeight.sol";
-import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
-import {Height} from "../proto/Client.sol";
-import {IbcLightclientsLocalhostV2ClientState as ClientState} from "../proto/Localhost.sol";
-import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
+import {ILightClient} from "../../core/02-client/ILightClient.sol";
+import {ILightClientErrors} from "../../core/02-client/ILightClientErrors.sol";
+import {IBCHeight} from "../../core/02-client/IBCHeight.sol";
+import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
+import {Height} from "../../proto/Client.sol";
+import {IbcLightclientsLocalhostV2ClientState as ClientState} from "../../proto/Localhost.sol";
+import {GoogleProtobufAny as Any} from "../../proto/GoogleProtobufAny.sol";
 
 /**
  * @title LocalhostClient
  * @notice LocalhostClient is a light client to facilitate testing of IBC Apps on a single chain
- * @dev LocalhostClient implements [09-localhost](https://github.com/cosmos/ibc/tree/main/spec/client/ics-009-loopback-cilent), but the following differences:
+ * @dev LocalhostClient implements [09-localhost](https://github.com/cosmos/ibc/tree/main/spec/client/ics-009-loopback-cilent), but there are some differences:
  * - The client identifier is `09-localhost-0`, not `09-localhost`
  * - `getLatestHeight` always returns the current block number
  * - `verifyMembership` checks the proof height is not greater than the current block height

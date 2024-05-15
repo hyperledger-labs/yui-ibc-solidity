@@ -13,7 +13,7 @@ import "../../../../contracts/proto/MockClient.sol";
 import "../../../../contracts/proto/Connection.sol";
 import "../../../../contracts/proto/Channel.sol";
 import "../../../../contracts/apps/mock/IBCMockApp.sol";
-import "../../../../contracts/clients/MockClient.sol";
+import "../../../../contracts/clients/mock/MockClient.sol";
 import {TestableIBCHandler} from "./TestableIBCHandler.t.sol";
 
 abstract contract IBCTestHelper is Test {

@@ -14,8 +14,8 @@ import {
 } from "../../../contracts/core/04-channel/IBCChannelUpgrade.sol";
 import {IIBCHandler} from "../../../contracts/core/25-handler/IIBCHandler.sol";
 import {OwnableIBCHandler} from "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
-import {MockClient} from "../../../contracts/clients/MockClient.sol";
-import {IBFT2Client} from "../../../contracts/clients/IBFT2Client.sol";
+import {MockClient} from "../../../contracts/clients/mock/MockClient.sol";
+import {IBFT2Client} from "../../../contracts/clients/ibft2/IBFT2Client.sol";
 import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
 import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
 import {ERC20Token} from "../../../contracts/apps/20-transfer/ERC20Token.sol";
