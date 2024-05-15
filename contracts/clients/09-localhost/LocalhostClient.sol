@@ -222,7 +222,7 @@ contract LocalhostClient is ILightClient, ILightClientErrors {
 
     modifier onlyIBC() {
         if (msg.sender != ibcHandler) {
-            revert InvalidCaller(msg.sender);
+            revert LightClientInvalidCaller(msg.sender);
         }
         _;
     }

@@ -5,14 +5,14 @@ import {Height} from "../../proto/Client.sol";
 
 interface ILightClientErrors {
     /// @param caller the caller of the function
-    error InvalidCaller(address caller);
-    error NotActiveClient(string clientId);
+    error LightClientInvalidCaller(address caller);
+    error LightClientNotActiveClient(string clientId);
     /// @param clientId client identifier
-    error ClientStateNotFound(string clientId);
+    error LightClientClientStateNotFound(string clientId);
     /// @param clientId client identifier
     /// @param height consensus height
-    error ConsensusStateNotFound(string clientId, Height.Data height);
-    error ConsensusStateExpired();
+    error LightClientConsensusStateNotFound(string clientId, Height.Data height);
+    error LightClientConsensusStateExpired();
     /// @param url type url of the any
-    error UnexpectedProtoAnyTypeURL(string url);
+    error LightClientUnexpectedProtoAnyTypeURL(string url);
 }
