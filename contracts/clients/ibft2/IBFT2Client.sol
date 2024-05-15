@@ -13,8 +13,8 @@ import {
 } from "../../proto/IBFT2.sol";
 import {GoogleProtobufAny as Any} from "../../proto/GoogleProtobufAny.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import {RLPReader} from "solidity-rlp/contracts/RLPReader.sol";
-import {MPTProof} from "solidity-mpt/src/MPTProof.sol";
+import {RLPReader} from "./RLPReader.sol";
+import {MPTProof} from "./MPTProof.sol";
 
 /// @notice please see docs/ibft2-light-client.md for client spec
 contract IBFT2Client is ILightClient, ILightClientErrors {
