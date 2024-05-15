@@ -2,17 +2,17 @@
 pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {ILightClient} from "../core/02-client/ILightClient.sol";
-import {ILightClientErrors} from "../core/02-client/ILightClientErrors.sol";
-import {IBCHeight} from "../core/02-client/IBCHeight.sol";
-import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
-import {Height} from "../proto/Client.sol";
+import {ILightClient} from "../../core/02-client/ILightClient.sol";
+import {ILightClientErrors} from "../../core/02-client/ILightClientErrors.sol";
+import {IBCHeight} from "../../core/02-client/IBCHeight.sol";
+import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
+import {Height} from "../../proto/Client.sol";
 import {
     IbcLightclientsMockV1ClientState as ClientState,
     IbcLightclientsMockV1ConsensusState as ConsensusState,
     IbcLightclientsMockV1Header as Header
-} from "../proto/MockClient.sol";
-import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
+} from "../../proto/MockClient.sol";
+import {GoogleProtobufAny as Any} from "../../proto/GoogleProtobufAny.sol";
 
 /// @notice MockClient implements https://github.com/datachainlab/ibc-mock-client
 /// WARNING: This client is intended to be used for testing purpose.

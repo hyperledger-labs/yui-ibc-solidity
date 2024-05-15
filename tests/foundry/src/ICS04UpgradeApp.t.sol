@@ -4,8 +4,8 @@ pragma solidity ^0.8.20;
 import "./helpers/IBCTestHelper.t.sol";
 import {Vm} from "forge-std/Test.sol";
 import {Upgrade, UpgradeFields, Timeout} from "../../../contracts/proto/Channel.sol";
-import {LocalhostClientLib} from "../../../contracts/clients/LocalhostClient.sol";
-import {LocalhostHelper} from "../../../contracts/helpers/LocalhostHelper.sol";
+import {LocalhostClientLib} from "../../../contracts/clients/09-localhost/LocalhostClient.sol";
+import {LocalhostHelper} from "../../../contracts/clients/09-localhost/LocalhostHelper.sol";
 import {IIBCChannelUpgrade} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
 import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradableMockApp.t.sol";
 import {

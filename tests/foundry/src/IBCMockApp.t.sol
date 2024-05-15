@@ -6,8 +6,8 @@ import {Vm} from "forge-std/Test.sol";
 import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 import {IBCMockLib} from "../../../contracts/apps/mock/IBCMockLib.sol";
 import {IIBCChannelRecvPacket, IIBCChannelAcknowledgePacket} from "../../../contracts/core/04-channel/IIBCChannel.sol";
-import {LocalhostClientLib} from "../../../contracts/clients/LocalhostClient.sol";
-import {LocalhostHelper} from "../../../contracts/helpers/LocalhostHelper.sol";
+import {LocalhostClientLib} from "../../../contracts/clients/09-localhost/LocalhostClient.sol";
+import {LocalhostHelper} from "../../../contracts/clients/09-localhost/LocalhostHelper.sol";
 import {ICS04PacketEventTestHelper} from "./helpers/ICS04PacketTestHelper.t.sol";
 
 contract IBCMockAppTest is IBCTestHelper, ICS04PacketEventTestHelper {

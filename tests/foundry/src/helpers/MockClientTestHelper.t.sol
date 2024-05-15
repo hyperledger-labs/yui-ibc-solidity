@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Height} from "../../../../contracts/proto/Client.sol";
 import {IBCHeight} from "../../../../contracts/core/02-client/IBCHeight.sol";
-import {MockClient} from "../../../../contracts/clients/MockClient.sol";
+import {MockClient} from "../../../../contracts/clients/mock/MockClient.sol";
 import "./IBCTestHelper.t.sol";
 
 abstract contract MockClientTestHelper is IBCTestHelper {

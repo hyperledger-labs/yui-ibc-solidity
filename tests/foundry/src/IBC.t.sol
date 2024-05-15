@@ -10,7 +10,7 @@ import "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
 import "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
 import "../../../contracts/core/04-channel/IBCChannelUpgrade.sol";
 import "../../../contracts/core/24-host/IBCCommitment.sol";
-import "../../../contracts/clients/MockClient.sol";
+import "../../../contracts/clients/mock/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";

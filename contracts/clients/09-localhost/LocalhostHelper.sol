@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
-import {IIBCHandler} from "../core/25-handler/IIBCHandler.sol";
-import {LocalhostClient, LocalhostClientLib} from "../clients/LocalhostClient.sol";
-import {Version, Counterparty, MerklePrefix} from "../proto/Connection.sol";
-import {IBCConnectionLib} from "../core/03-connection/IBCConnectionLib.sol";
-import {IIBCClient} from "../core/02-client/IIBCClient.sol";
-import {IIBCClientErrors} from "../core/02-client/IIBCClientErrors.sol";
-import {IIBCConnection} from "../core/03-connection/IIBCConnection.sol";
-import {Height} from "../proto/Client.sol";
-import {Channel, ChannelCounterparty} from "../proto/Channel.sol";
-import {IbcLightclientsLocalhostV2ClientState as ClientState} from "../proto/Localhost.sol";
-import {GoogleProtobufAny as Any} from "../proto/GoogleProtobufAny.sol";
-import {IIBCChannelHandshake} from "../core/04-channel/IIBCChannel.sol";
+import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
+import {LocalhostClient, LocalhostClientLib} from "./LocalhostClient.sol";
+import {Version, Counterparty, MerklePrefix} from "../../proto/Connection.sol";
+import {IBCConnectionLib} from "../../core/03-connection/IBCConnectionLib.sol";
+import {IIBCClient} from "../../core/02-client/IIBCClient.sol";
+import {IIBCClientErrors} from "../../core/02-client/IIBCClientErrors.sol";
+import {IIBCConnection} from "../../core/03-connection/IIBCConnection.sol";
+import {Height} from "../../proto/Client.sol";
+import {Channel, ChannelCounterparty} from "../../proto/Channel.sol";
+import {IbcLightclientsLocalhostV2ClientState as ClientState} from "../../proto/Localhost.sol";
+import {GoogleProtobufAny as Any} from "../../proto/GoogleProtobufAny.sol";
+import {IIBCChannelHandshake} from "../../core/04-channel/IIBCChannel.sol";
 
 /**
  * @title LocalhostHelper
