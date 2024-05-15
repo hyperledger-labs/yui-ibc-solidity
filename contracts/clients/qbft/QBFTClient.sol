@@ -34,6 +34,8 @@ contract QBFTClient is ILightClient, ILightClientErrors {
         RLPReader.RLPItem[] validators;
     }
 
+    /// @dev An error indicating that the chain ID is invalid
+    error InvalidChainID();
     /// @dev An error indicating that the IBC address of the initial client state is invalid
     error InvalidIBCAddressLength();
     /// @dev An error indicating that the initial consensus state root length is invalid
@@ -99,6 +101,9 @@ contract QBFTClient is ILightClient, ILightClientErrors {
         ClientState.Data memory clientState = ClientState.decode(decode(protoClientState, CLIENT_STATE_TYPE_URL_HASH));
         ConsensusState.Data memory consensusState =
             ConsensusState.decode(decode(protoConsensusState, CONSENSUS_STATE_TYPE_URL_HASH));
+        if (clientState.chain_id.length != 32) {
+            revert InvalidChainID();
+        }
         if (clientState.ibc_store_address.length != 20) {
             revert InvalidIBCAddressLength();
         }

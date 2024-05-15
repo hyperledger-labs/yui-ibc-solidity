@@ -101,7 +101,7 @@ func init() {
 type Chain struct {
 	t *testing.T
 
-	chainID       int64
+	chainID       *big.Int
 	client        *client.ETHClient
 	lc            *LightClient
 	delayPeriod   uint64 // nano second
@@ -181,7 +181,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 	chain := &Chain{
 		t:             t,
 		client:        client,
-		chainID:       chainID.Int64(),
+		chainID:       chainID,
 		lc:            lc,
 		consensusType: lc.consensusType,
 		delayPeriod:   DefaultDelayPeriod,
@@ -221,7 +221,7 @@ func (chain *Chain) Client() *client.ETHClient {
 }
 
 func (chain *Chain) TxOpts(ctx context.Context, index uint32) *bind.TransactOpts {
-	return makeGenTxOpts(big.NewInt(chain.chainID), chain.prvKey(index))(ctx)
+	return makeGenTxOpts(chain.chainID, chain.prvKey(index))(ctx)
 }
 
 func (chain *Chain) CallOpts(ctx context.Context, index uint32) *bind.CallOpts {
@@ -245,12 +245,10 @@ func (chain *Chain) prvKey(index uint32) *ecdsa.PrivateKey {
 	return key
 }
 
-func (chain *Chain) ChainID() int64 {
-	return chain.chainID
-}
-
-func (chain *Chain) ChainIDString() string {
-	return fmt.Sprint(chain.chainID)
+func (chain *Chain) ChainIDU256() []byte {
+	var chainID [32]byte
+	chain.chainID.FillBytes(chainID[:])
+	return chainID[:]
 }
 
 func (chain *Chain) GetCommitmentPrefix() []byte {
@@ -301,7 +299,7 @@ func (chain *Chain) GetLightClientInputData(counterparty *Chain, counterpartyCli
 
 func (chain *Chain) ConstructQBFTMsgCreateClient(counterparty *Chain) ibchandler.IIBCClientMsgCreateClient {
 	clientState := qbftclienttypes.ClientState{
-		ChainId:         counterparty.ChainIDString(),
+		ChainId:         counterparty.ChainIDU256(),
 		IbcStoreAddress: counterparty.ContractConfig.IBCHandlerAddress.Bytes(),
 		LatestHeight:    ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 	}
