@@ -76,7 +76,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
 
     modifier onlyIBC() {
         if (msg.sender != ibcHandler) {
-            revert InvalidCaller(msg.sender);
+            revert LightClientInvalidCaller(msg.sender);
         }
         _;
     }
@@ -140,7 +140,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         if (consensusState.timestamp == 0) {
-            revert ConsensusStateNotFound(clientId, height);
+            revert LightClientConsensusStateNotFound(clientId, height);
         }
         // ConsensState.timestamp is seconds since unix epoch, so need to convert it to nanoseconds
         return consensusState.timestamp * 1e9;
@@ -152,7 +152,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     function getLatestHeight(string calldata clientId) public view override returns (Height.Data memory) {
         ClientState.Data storage clientState = clientStates[clientId];
         if (clientState.latest_height.revision_height == 0) {
-            revert ClientStateNotFound(clientId);
+            revert LightClientClientStateNotFound(clientId);
         }
         return clientState.latest_height;
     }
@@ -192,13 +192,13 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
 
         ConsensusState.Data storage trustedConsensusState = consensusStates[clientId][header.trusted_height.toUint128()];
         if (trustedConsensusState.timestamp == 0) {
-            revert ConsensusStateNotFound(clientId, header.trusted_height);
+            revert LightClientConsensusStateNotFound(clientId, header.trusted_height);
         }
         if (
             clientState.trusting_period > 0
                 && trustedConsensusState.timestamp + clientState.trusting_period <= block.timestamp
         ) {
-            revert ConsensusStateExpired();
+            revert LightClientConsensusStateExpired();
         }
 
         bytes[] memory validators = verify(trustedConsensusState.validators, parsedHeader);
@@ -241,7 +241,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     ) public view override returns (bool) {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         if (consensusState.timestamp == 0) {
-            revert ConsensusStateNotFound(clientId, height);
+            revert LightClientConsensusStateNotFound(clientId, height);
         }
         if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix)) {
             return false;
@@ -269,7 +269,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     ) public view override returns (bool) {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         if (consensusState.timestamp == 0) {
-            revert ConsensusStateNotFound(clientId, height);
+            revert LightClientConsensusStateNotFound(clientId, height);
         }
         if (!validateArgsAndDelayPeriod(clientId, height, delayTimePeriod, delayBlockPeriod, prefix)) {
             return false;
@@ -496,7 +496,7 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     function decode(bytes calldata bz, bytes32 hashTypeUrl) internal pure returns (bytes memory) {
         Any.Data memory any = Any.decode(bz);
         if (keccak256(abi.encodePacked(any.type_url)) != hashTypeUrl) {
-            revert UnexpectedProtoAnyTypeURL(any.type_url);
+            revert LightClientUnexpectedProtoAnyTypeURL(any.type_url);
         }
         return any.value;
     }

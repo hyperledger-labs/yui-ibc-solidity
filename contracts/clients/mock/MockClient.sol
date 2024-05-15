@@ -78,7 +78,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
     {
         Any.Data memory any = Any.decode(protoClientMessage);
         if (keccak256(abi.encodePacked(any.type_url)) != HEADER_TYPE_URL_HASH) {
-            revert UnexpectedProtoAnyTypeURL(any.type_url);
+            revert LightClientUnexpectedProtoAnyTypeURL(any.type_url);
         }
         Header.Data memory header = Header.decode(any.value);
         if (header.height.revision_number != 0 || header.height.revision_height == 0 || header.timestamp == 0) {
@@ -100,7 +100,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
     {
         ConsensusState.Data storage consensusState = consensusStates[clientId][height.toUint128()];
         if (consensusState.timestamp == 0) {
-            revert ConsensusStateNotFound(clientId, height);
+            revert LightClientConsensusStateNotFound(clientId, height);
         }
         return consensusState.timestamp;
     }
@@ -111,7 +111,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
     function getLatestHeight(string calldata clientId) public view virtual override returns (Height.Data memory) {
         ClientState.Data storage clientState = clientStates[clientId];
         if (clientState.latest_height.revision_height == 0) {
-            revert ClientStateNotFound(clientId);
+            revert LightClientClientStateNotFound(clientId);
         }
         return clientState.latest_height;
     }
@@ -151,7 +151,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
         returns (Height.Data[] memory heights)
     {
         if (statuses[clientId] != ClientStatus.Active) {
-            revert NotActiveClient(clientId);
+            revert LightClientNotActiveClient(clientId);
         }
         if (header.height.revision_number != 0 || header.height.revision_height == 0 || header.timestamp == 0) {
             revert InvalidHeader();
@@ -180,7 +180,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
         bytes calldata value
     ) public view virtual override returns (bool) {
         if (consensusStates[clientId][height.toUint128()].timestamp == 0) {
-            revert ConsensusStateNotFound(clientId, height);
+            revert LightClientConsensusStateNotFound(clientId, height);
         }
         if (keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) != keccak256(prefix)) {
             revert InvalidPrefix();
@@ -206,7 +206,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
         bytes memory path
     ) public view virtual override returns (bool) {
         if (consensusStates[clientId][height.toUint128()].timestamp == 0) {
-            revert ConsensusStateNotFound(clientId, height);
+            revert LightClientConsensusStateNotFound(clientId, height);
         }
         if (keccak256(IIBCHandler(ibcHandler).getCommitmentPrefix()) != keccak256(prefix)) {
             revert InvalidPrefix();
@@ -258,7 +258,7 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
     function unmarshalClientState(bytes calldata bz) internal pure returns (ClientState.Data memory clientState) {
         Any.Data memory anyClientState = Any.decode(bz);
         if (keccak256(abi.encodePacked(anyClientState.type_url)) != CLIENT_STATE_TYPE_URL_HASH) {
-            revert UnexpectedProtoAnyTypeURL(anyClientState.type_url);
+            revert LightClientUnexpectedProtoAnyTypeURL(anyClientState.type_url);
         }
         return ClientState.decode(anyClientState.value);
     }
@@ -270,14 +270,14 @@ contract MockClient is Ownable, ILightClient, ILightClientErrors {
     {
         Any.Data memory anyConsensusState = Any.decode(bz);
         if (keccak256(abi.encodePacked(anyConsensusState.type_url)) != CONSENSUS_STATE_TYPE_URL_HASH) {
-            revert UnexpectedProtoAnyTypeURL(anyConsensusState.type_url);
+            revert LightClientUnexpectedProtoAnyTypeURL(anyConsensusState.type_url);
         }
         return ConsensusState.decode(anyConsensusState.value);
     }
 
     modifier onlyIBC() {
         if (msg.sender != ibcHandler) {
-            revert InvalidCaller(msg.sender);
+            revert LightClientInvalidCaller(msg.sender);
         }
         _;
     }
