@@ -2,7 +2,7 @@ FORGE ?= forge
 SOLC_VERSION ?= 0.8.24
 ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 DOCKER_COMPOSE ?= docker compose
-E2E_TEST_COMPOSE_FILE ?= ./chains/docker-compose.yml
+E2E_TEST_COMPOSE_FILE ?= ./chains/compose.yml
 TEST_BROADCAST_LOG_DIR ?= ./broadcast/Deploy.s.sol
 TEST_MNEMONIC ?= "math razor capable expose worth grape metal sunset metal sudden usage scheme"
 
