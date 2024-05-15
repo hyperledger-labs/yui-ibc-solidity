@@ -29,10 +29,10 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibft2client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
-	ibft2clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/qbftclient"
+	qbftclienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/qbft"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/commitment"
@@ -87,7 +87,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	abiIBFT2Client, err := abi.JSON(strings.NewReader(ibft2client.Ibft2clientABI))
+	abiQBFTClient, err := abi.JSON(strings.NewReader(qbftclient.QbftclientABI))
 	if err != nil {
 		panic(err)
 	}
@@ -95,7 +95,7 @@ func init() {
 	addErrorsToRepository(abiIBCHandler.Errors, IBCErrorsRepository)
 	addErrorsToRepository(abiICS20Bank.Errors, IBCErrorsRepository)
 	addErrorsToRepository(abiICS20TransferBank.Errors, IBCErrorsRepository)
-	addErrorsToRepository(abiIBFT2Client.Errors, IBCErrorsRepository)
+	addErrorsToRepository(abiQBFTClient.Errors, IBCErrorsRepository)
 }
 
 type Chain struct {
@@ -130,7 +130,7 @@ type Chain struct {
 	IBCMockApp    ibcmockapp.Ibcmockapp
 
 	// Input data for light client
-	LatestLCInputData *IBFT2LightClientInputData
+	LatestLCInputData *LightClientInputData
 
 	// IBC specific helpers
 	ClientIDs   []string          // ClientID's used on this chain
@@ -200,7 +200,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		IBCMockApp:    *ibcMockApp,
 	}
 
-	lcAddr, err := ibcHandler.GetClientByType(chain.CallOpts(context.TODO(), RelayerKeyIndex), ibcclient.BesuIBFT2Client)
+	lcAddr, err := ibcHandler.GetClientByType(chain.CallOpts(context.TODO(), RelayerKeyIndex), ibcclient.BesuQBFTClient)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func (chain *Chain) GetCommitmentPrefix() []byte {
 	return []byte(DefaultPrefix)
 }
 
-func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.ClientState {
+func (chain *Chain) GetQBFTClientState(clientID string) *qbftclienttypes.ClientState {
 	ctx := context.Background()
 	bz, found, err := chain.IBCHandler.GetClientState(chain.CallOpts(ctx, RelayerKeyIndex), clientID)
 	if err != nil {
@@ -265,14 +265,14 @@ func (chain *Chain) GetIBFT2ClientState(clientID string) *ibft2clienttypes.Clien
 	} else if !found {
 		panic("clientState not found")
 	}
-	var cs ibft2clienttypes.ClientState
+	var cs qbftclienttypes.ClientState
 	if err := UnmarshalWithAny(bz, &cs); err != nil {
 		panic(err)
 	}
 	return &cs
 }
 
-func (chain *Chain) GetIBFT2ConsensusState(clientID string, height ibcclient.Height) *ibft2clienttypes.ConsensusState {
+func (chain *Chain) GetQBFTConsensusState(clientID string, height ibcclient.Height) *qbftclienttypes.ConsensusState {
 	ctx := context.Background()
 	bz, found, err := chain.IBCHandler.GetConsensusState(chain.CallOpts(ctx, RelayerKeyIndex), clientID, ibchandler.HeightData(height))
 	if err != nil {
@@ -280,16 +280,16 @@ func (chain *Chain) GetIBFT2ConsensusState(clientID string, height ibcclient.Hei
 	} else if !found {
 		panic("consensusState not found")
 	}
-	var cs ibft2clienttypes.ConsensusState
+	var cs qbftclienttypes.ConsensusState
 	if err := UnmarshalWithAny(bz, &cs); err != nil {
 		panic(err)
 	}
 	return &cs
 }
 
-func (chain *Chain) GetLightClientInputData(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (*IBFT2LightClientInputData, error) {
+func (chain *Chain) GetLightClientInputData(counterparty *Chain, counterpartyClientID string, storageKeys [][]byte, height *big.Int) (*LightClientInputData, error) {
 	if height == nil {
-		height = counterparty.GetIBFT2ClientState(counterpartyClientID).LatestHeight.ToBN()
+		height = counterparty.GetQBFTClientState(counterpartyClientID).LatestHeight.ToBN()
 	}
 	return chain.lc.GenerateInputData(
 		context.Background(),
@@ -299,13 +299,13 @@ func (chain *Chain) GetLightClientInputData(counterparty *Chain, counterpartyCli
 	)
 }
 
-func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandler.IIBCClientMsgCreateClient {
-	clientState := ibft2clienttypes.ClientState{
+func (chain *Chain) ConstructQBFTMsgCreateClient(counterparty *Chain) ibchandler.IIBCClientMsgCreateClient {
+	clientState := qbftclienttypes.ClientState{
 		ChainId:         counterparty.ChainIDString(),
 		IbcStoreAddress: counterparty.ContractConfig.IBCHandlerAddress.Bytes(),
 		LatestHeight:    ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 	}
-	consensusState := ibft2clienttypes.ConsensusState{
+	consensusState := qbftclienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Time,
 		Root:       counterparty.LastHeader().Root.Bytes(),
 		Validators: counterparty.LatestLCInputData.Validators(),
@@ -319,16 +319,16 @@ func (chain *Chain) ConstructIBFT2MsgCreateClient(counterparty *Chain) ibchandle
 		panic(err)
 	}
 	return ibchandler.IIBCClientMsgCreateClient{
-		ClientType:          ibcclient.BesuIBFT2Client,
+		ClientType:          ibcclient.BesuQBFTClient,
 		ProtoClientState:    clientStateBytes,
 		ProtoConsensusState: consensusStateBytes,
 	}
 }
 
-func (chain *Chain) ConstructIBFT2MsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IIBCClientMsgUpdateClient {
-	trustedHeight := chain.GetIBFT2ClientState(clientID).LatestHeight
+func (chain *Chain) ConstructQBFTMsgUpdateClient(counterparty *Chain, clientID string) ibchandler.IIBCClientMsgUpdateClient {
+	trustedHeight := chain.GetQBFTClientState(clientID).LatestHeight
 	cs := counterparty.LatestLCInputData
-	var header = ibft2clienttypes.Header{
+	var header = qbftclienttypes.Header{
 		BesuHeaderRlp:     cs.SealingHeaderRLP(chain.consensusType),
 		Seals:             cs.CommitSeals,
 		TrustedHeight:     trustedHeight,
@@ -361,18 +361,18 @@ func (chain *Chain) UpdateLCInputData() {
 	}
 }
 
-func (chain *Chain) CreateIBFT2Client(ctx context.Context, counterparty *Chain) (string, error) {
-	msg := chain.ConstructIBFT2MsgCreateClient(counterparty)
+func (chain *Chain) CreateQBFTClient(ctx context.Context, counterparty *Chain) (string, error) {
+	msg := chain.ConstructQBFTMsgCreateClient(counterparty)
 	if err := chain.WaitIfNoError(ctx, "IBCHandler::CreateClient")(
 		chain.IBCHandler.CreateClient(chain.TxOpts(ctx, RelayerKeyIndex), msg),
 	); err != nil {
-		return "", fmt.Errorf("CreateIBFT2Client: %w", err)
+		return "", fmt.Errorf("CreateQBFTClient: %w", err)
 	}
 	return chain.GetLastGeneratedClientID(ctx)
 }
 
-func (chain *Chain) UpdateIBFT2Client(ctx context.Context, counterparty *Chain, clientID string, updateCommitment bool) error {
-	msg := chain.ConstructIBFT2MsgUpdateClient(counterparty, clientID)
+func (chain *Chain) UpdateQBFTClient(ctx context.Context, counterparty *Chain, clientID string, updateCommitment bool) error {
+	msg := chain.ConstructQBFTMsgUpdateClient(counterparty, clientID)
 	return chain.updateClient(ctx, msg, updateCommitment)
 }
 
@@ -668,7 +668,7 @@ func (chain *Chain) ChannelCloseConfirm(
 
 func (chain *Chain) SendPacket(
 	ctx context.Context,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 ) error {
 	return chain.WaitIfNoError(ctx, "IBCHandler::SendPacket")(
 		chain.IBCHandler.SendPacket(
@@ -686,7 +686,7 @@ func (chain *Chain) HandlePacketRecv(
 	ctx context.Context,
 	counterparty *Chain,
 	ch, counterpartyCh TestChannel,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 ) error {
 	proof, err := counterparty.QueryProof(chain, ch.ClientID, commitment.PacketCommitmentSlot(packet.SourcePort, packet.SourceChannel, packet.Sequence), nil)
 	if err != nil {
@@ -708,7 +708,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 	ctx context.Context,
 	counterparty *Chain,
 	ch, counterpartyCh TestChannel,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 	acknowledgement []byte,
 ) error {
 	proof, err := counterparty.QueryProof(chain, ch.ClientID, commitment.PacketAcknowledgementCommitmentSlot(packet.DestinationPort, packet.DestinationChannel, packet.Sequence), nil)
@@ -730,7 +730,7 @@ func (chain *Chain) HandlePacketAcknowledgement(
 
 func (chain *Chain) TimeoutPacket(
 	ctx context.Context,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 	counterparty *Chain,
 	channel TestChannel,
 	counterpartyChannel TestChannel,
@@ -801,7 +801,7 @@ func (chain *Chain) TimeoutPacket(
 
 func (chain *Chain) TimeoutOnClose(
 	ctx context.Context,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 	counterparty *Chain,
 	channel TestChannel,
 	counterpartyChannel TestChannel,
@@ -951,7 +951,7 @@ func (chain *Chain) GetLastSentPacket(
 	ctx context.Context,
 	sourcePortID string,
 	sourceChannel string,
-) (*channeltypes.Packet, error) {
+) (*ibchandler.Packet, error) {
 	seq, err := chain.IBCHandler.GetNextSequenceSend(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
 	if err != nil {
 		return nil, err
@@ -964,7 +964,7 @@ func (chain *Chain) FindPacket(
 	sourcePortID string,
 	sourceChannel string,
 	sequence uint64,
-) (*channeltypes.Packet, error) {
+) (*ibchandler.Packet, error) {
 	channel, found, err := chain.IBCHandler.GetChannel(chain.CallOpts(ctx, RelayerKeyIndex), sourcePortID, sourceChannel)
 	if err != nil {
 		return nil, err
@@ -994,14 +994,14 @@ func (chain *Chain) FindPacket(
 		if sendPacket.SourcePort != sourcePortID || sendPacket.SourceChannel != sourceChannel || sendPacket.Sequence != sequence {
 			continue
 		}
-		return &channeltypes.Packet{
+		return &ibchandler.Packet{
 			Sequence:           sendPacket.Sequence,
 			SourcePort:         sendPacket.SourcePort,
 			SourceChannel:      sendPacket.SourceChannel,
 			DestinationPort:    channel.Counterparty.PortId,
 			DestinationChannel: channel.Counterparty.ChannelId,
 			Data:               sendPacket.Data,
-			TimeoutHeight:      ibcclient.Height{RevisionNumber: sendPacket.TimeoutHeight.RevisionNumber, RevisionHeight: sendPacket.TimeoutHeight.RevisionHeight},
+			TimeoutHeight:      ibchandler.HeightData{RevisionNumber: sendPacket.TimeoutHeight.RevisionNumber, RevisionHeight: sendPacket.TimeoutHeight.RevisionHeight},
 			TimeoutTimestamp:   sendPacket.TimeoutTimestamp,
 		}, nil
 	}
@@ -1105,7 +1105,7 @@ func (chain *Chain) EnsurePacketCommitmentExistence(
 	return nil
 }
 
-func PacketToCallData(packet channeltypes.Packet) ibchandler.Packet {
+func PacketToCallData(packet ibchandler.Packet) ibchandler.Packet {
 	return ibchandler.Packet{
 		Sequence:           packet.Sequence,
 		SourcePort:         packet.SourcePort,
@@ -1150,7 +1150,7 @@ func (chain *Chain) QueryClientStateProof(counterparty *Chain, clientID, counter
 	if err != nil {
 		return nil, ibcclient.Height{}, nil, err
 	}
-	return cs, chain.GetIBFT2ClientState(clientID).LatestHeight, proof, nil
+	return cs, chain.GetQBFTClientState(clientID).LatestHeight, proof, nil
 }
 
 func (chain *Chain) QueryConsensusStateProof(counterparty *Chain, clientID, counterpartyClientID string, consensusHeight ibcclient.Height, height *big.Int) ([]byte, *Proof, error) {
@@ -1175,7 +1175,7 @@ func (chain *Chain) QueryChannelProof(counterparty *Chain, counterpartyClientID 
 	return chain.QueryProof(counterparty, counterpartyClientID, commitment.ChannelStateCommitmentSlot(channel.PortID, channel.ID), height)
 }
 
-func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyClientID string, packetFromCounterparty channeltypes.Packet, counterpartyHeight *big.Int) (*Proof, error) {
+func (chain *Chain) QueryPacketReceiptProof(counterparty *Chain, counterpartyClientID string, packetFromCounterparty ibchandler.Packet, counterpartyHeight *big.Int) (*Proof, error) {
 	return chain.QueryProof(counterparty, counterpartyClientID, commitment.PacketReceiptCommitmentSlot(
 		packetFromCounterparty.DestinationPort,
 		packetFromCounterparty.DestinationChannel,

@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package ibc.lightclients.ibft2.v1;
+package ibc.lightclients.qbft.v1;
 
 import "gogoproto/gogo.proto";
 import "solidity-protobuf-extensions.proto";
 import "core/02-client/Client.proto";
 
-option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/ibft2";
+option go_package = "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/qbft";
 option (gogoproto.goproto_getters_all)  = false;
 option (.solidity.file_options) = { location: "@hyperledger-labs/yui-ibc-solidity/contracts/proto" };
 

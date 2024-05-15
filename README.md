@@ -43,7 +43,7 @@ You can deploy a Light Client that implements [the ILightClient interface](./con
 
 Here are some such examples:
 - [Tendermint ZK Light Client](https://github.com/datachainlab/tendermint-zk-ibc)
-- [IBFT 2.0 Light Client](./contracts/clients/IBFT2Client.sol)
+- [QBFT/IBFT2.0 Light Client](./contracts/clients/qbft/QBFTClient.sol)
 - [LCP(TEE) Client](https://github.com/datachainlab/lcp-solidity)
 - [Localhost Client](./contracts/clients/LocalhostClient.sol)
 

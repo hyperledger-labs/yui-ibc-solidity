@@ -19,8 +19,8 @@ func NewLightClient(cl *client.ETHClient, consensusType chains.ConsensusType) *L
 	return &LightClient{client: cl, consensusType: consensusType}
 }
 
-func (lc LightClient) GenerateInputData(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (*IBFT2LightClientInputData, error) {
-	var state IBFT2LightClientInputData
+func (lc LightClient) GenerateInputData(ctx context.Context, address common.Address, storageKeys [][]byte, bn *big.Int) (*LightClientInputData, error) {
+	var state LightClientInputData
 	block, err := lc.client.BlockByNumber(ctx, bn)
 	if err != nil {
 		return nil, err
@@ -41,21 +41,21 @@ func (lc LightClient) GenerateInputData(ctx context.Context, address common.Addr
 	return &state, nil
 }
 
-type IBFT2LightClientInputData struct {
+type LightClientInputData struct {
 	ParsedHeader *chains.ParsedHeader
 	StateProof   *client.StateProof
 	CommitSeals  [][]byte
 }
 
-func (cs IBFT2LightClientInputData) Header() *gethtypes.Header {
+func (cs LightClientInputData) Header() *gethtypes.Header {
 	return cs.ParsedHeader.Base
 }
 
-func (cs IBFT2LightClientInputData) MembershipProof() *client.StateProof {
+func (cs LightClientInputData) MembershipProof() *client.StateProof {
 	return cs.StateProof
 }
 
-func (cs IBFT2LightClientInputData) SealingHeaderRLP(consensusType chains.ConsensusType) []byte {
+func (cs LightClientInputData) SealingHeaderRLP(consensusType chains.ConsensusType) []byte {
 	bz, err := cs.ParsedHeader.GetSealingHeaderBytes(consensusType)
 	if err != nil {
 		panic(err)
@@ -63,11 +63,11 @@ func (cs IBFT2LightClientInputData) SealingHeaderRLP(consensusType chains.Consen
 	return bz
 }
 
-func (cs IBFT2LightClientInputData) GetCommitSeals() [][]byte {
+func (cs LightClientInputData) GetCommitSeals() [][]byte {
 	return cs.CommitSeals
 }
 
-func (cs IBFT2LightClientInputData) Validators() [][]byte {
+func (cs LightClientInputData) Validators() [][]byte {
 	var addrs [][]byte
 	for _, val := range cs.ParsedHeader.Validators {
 		addrs = append(addrs, val.Bytes())

@@ -7,17 +7,20 @@ import {IBCHeight} from "../../core/02-client/IBCHeight.sol";
 import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
 import {Height} from "../../proto/Client.sol";
 import {
-    IbcLightclientsIbft2V1ClientState as ClientState,
-    IbcLightclientsIbft2V1ConsensusState as ConsensusState,
-    IbcLightclientsIbft2V1Header as Header
-} from "../../proto/IBFT2.sol";
+    IbcLightclientsQbftV1ClientState as ClientState,
+    IbcLightclientsQbftV1ConsensusState as ConsensusState,
+    IbcLightclientsQbftV1Header as Header
+} from "../../proto/QBFT.sol";
 import {GoogleProtobufAny as Any} from "../../proto/GoogleProtobufAny.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {RLPReader} from "./RLPReader.sol";
 import {MPTProof} from "./MPTProof.sol";
 
-/// @notice please see docs/ibft2-light-client.md for client spec
-contract IBFT2Client is ILightClient, ILightClientErrors {
+/**
+ * @notice The QBFTClient contract is a light client implementation for both QBFT and IBFT2 consensus algorithms.
+ * please see docs/ibft2-light-client.md for the spec
+ */
+contract QBFTClient is ILightClient, ILightClientErrors {
     using MPTProof for bytes;
     using RLPReader for RLPReader.RLPItem;
     using RLPReader for bytes;
@@ -54,15 +57,15 @@ contract IBFT2Client is ILightClient, ILightClientErrors {
     /// @param length length of the signature
     error InvalidECDSASignatureLength(uint256 length);
 
-    string internal constant HEADER_TYPE_URL = "/ibc.lightclients.ibft2.v1.Header";
-    string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ClientState";
-    string internal constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.ibft2.v1.ConsensusState";
+    string internal constant HEADER_TYPE_URL = "/ibc.lightclients.qbft.v1.Header";
+    string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.qbft.v1.ClientState";
+    string internal constant CONSENSUS_STATE_TYPE_URL = "/ibc.lightclients.qbft.v1.ConsensusState";
 
-    bytes32 internal constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.Header"));
+    bytes32 internal constant HEADER_TYPE_URL_HASH = keccak256(abi.encodePacked("/ibc.lightclients.qbft.v1.Header"));
     bytes32 internal constant CLIENT_STATE_TYPE_URL_HASH =
-        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ClientState"));
+        keccak256(abi.encodePacked("/ibc.lightclients.qbft.v1.ClientState"));
     bytes32 internal constant CONSENSUS_STATE_TYPE_URL_HASH =
-        keccak256(abi.encodePacked("/ibc.lightclients.ibft2.v1.ConsensusState"));
+        keccak256(abi.encodePacked("/ibc.lightclients.qbft.v1.ConsensusState"));
 
     uint256 internal constant COMMITMENT_SLOT = 0;
     uint8 internal constant ACCOUNT_STORAGE_ROOT_INDEX = 2;

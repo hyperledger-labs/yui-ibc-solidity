@@ -26,7 +26,7 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // State defines if a channel is in one of the following states:
-// CLOSED, INIT, TRYOPEN, OPEN or UNINITIALIZED.
+// CLOSED, INIT, TRYOPEN, OPEN, FLUSHING, FLUSHCOMPLETE or UNINITIALIZED.
 type Channel_State int32
 
 const (
@@ -42,6 +42,10 @@ const (
 	// A channel has been closed and can no longer be used to send or receive
 	// packets.
 	CLOSED Channel_State = 4
+	// A channel has just accepted the upgrade handshake attempt and is flushing in-flight packets.
+	FLUSHING Channel_State = 5
+	// A channel has just completed flushing any in-flight packets.
+	FLUSHCOMPLETE Channel_State = 6
 )
 
 var Channel_State_name = map[int32]string{
@@ -50,6 +54,8 @@ var Channel_State_name = map[int32]string{
 	2: "STATE_TRYOPEN",
 	3: "STATE_OPEN",
 	4: "STATE_CLOSED",
+	5: "STATE_FLUSHING",
+	6: "STATE_FLUSHCOMPLETE",
 }
 
 var Channel_State_value = map[string]int32{
@@ -58,6 +64,8 @@ var Channel_State_value = map[string]int32{
 	"STATE_TRYOPEN":                   2,
 	"STATE_OPEN":                      3,
 	"STATE_CLOSED":                    4,
+	"STATE_FLUSHING":                  5,
+	"STATE_FLUSHCOMPLETE":             6,
 }
 
 func (x Channel_State) String() string {
@@ -116,6 +124,9 @@ type Channel struct {
 	ConnectionHops []string `protobuf:"bytes,4,rep,name=connection_hops,json=connectionHops,proto3" json:"connection_hops,omitempty" yaml:"connection_hops"`
 	// opaque channel version, which is agreed upon during the handshake
 	Version string `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
+	// upgrade sequence indicates the latest upgrade attempt performed by this channel
+	// the value of 0 indicates the channel has never been upgraded
+	UpgradeSequence uint64 `protobuf:"varint,6,opt,name=upgrade_sequence,json=upgradeSequence,proto3" json:"upgrade_sequence,omitempty"`
 }
 
 func (m *Channel) Reset()         { *m = Channel{} }
@@ -192,93 +203,28 @@ func (m *Channel_Counterparty) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Channel_Counterparty proto.InternalMessageInfo
 
-// IdentifiedChannel defines a channel with additional port and channel
-// identifier fields.
-type Channel_IdentifiedChannel struct {
-	// current state of the channel end
-	State Channel_State `protobuf:"varint,1,opt,name=state,proto3,enum=Channel_State" json:"state,omitempty"`
-	// whether the channel is ordered or unordered
-	Ordering Channel_Order `protobuf:"varint,2,opt,name=ordering,proto3,enum=Channel_Order" json:"ordering,omitempty"`
-	// counterparty channel end
-	Counterparty Channel_Counterparty `protobuf:"bytes,3,opt,name=counterparty,proto3" json:"counterparty"`
-	// list of connection identifiers, in order, along which packets sent on
-	// this channel will travel
-	ConnectionHops []string `protobuf:"bytes,4,rep,name=connection_hops,json=connectionHops,proto3" json:"connection_hops,omitempty" yaml:"connection_hops"`
-	// opaque channel version, which is agreed upon during the handshake
-	Version string `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"`
-	// port identifier
-	PortId string `protobuf:"bytes,6,opt,name=port_id,json=portId,proto3" json:"port_id,omitempty"`
-	// channel identifier
-	ChannelId string `protobuf:"bytes,7,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+// Timeout defines an execution deadline structure for 04-channel handlers.
+// This includes packet lifecycle handlers as well as the upgrade handshake handlers.
+// A valid Timeout contains either one or both of a timestamp and block height (sequence).
+type Timeout struct {
+	// block height after which the packet or upgrade times out
+	Height client.Height `protobuf:"bytes,1,opt,name=height,proto3" json:"height"`
+	// block timestamp (in nanoseconds) after which the packet or upgrade times out
+	Timestamp uint64 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
-func (m *Channel_IdentifiedChannel) Reset()         { *m = Channel_IdentifiedChannel{} }
-func (m *Channel_IdentifiedChannel) String() string { return proto.CompactTextString(m) }
-func (*Channel_IdentifiedChannel) ProtoMessage()    {}
-func (*Channel_IdentifiedChannel) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2f64d8fe59dd9c38, []int{0, 1}
-}
-func (m *Channel_IdentifiedChannel) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *Channel_IdentifiedChannel) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_Channel_IdentifiedChannel.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *Channel_IdentifiedChannel) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Channel_IdentifiedChannel.Merge(m, src)
-}
-func (m *Channel_IdentifiedChannel) XXX_Size() int {
-	return m.Size()
-}
-func (m *Channel_IdentifiedChannel) XXX_DiscardUnknown() {
-	xxx_messageInfo_Channel_IdentifiedChannel.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Channel_IdentifiedChannel proto.InternalMessageInfo
-
-// Packet defines a type that carries data across different chains through IBC
-type Packet struct {
-	// number corresponds to the order of sends and receives, where a Packet
-	// with an earlier sequence number must be sent and received before a Packet
-	// with a later sequence number.
-	Sequence uint64 `protobuf:"varint,1,opt,name=sequence,proto3" json:"sequence,omitempty"`
-	// identifies the port on the sending chain.
-	SourcePort string `protobuf:"bytes,2,opt,name=source_port,json=sourcePort,proto3" json:"source_port,omitempty" yaml:"source_port"`
-	// identifies the channel end on the sending chain.
-	SourceChannel string `protobuf:"bytes,3,opt,name=source_channel,json=sourceChannel,proto3" json:"source_channel,omitempty" yaml:"source_channel"`
-	// identifies the port on the receiving chain.
-	DestinationPort string `protobuf:"bytes,4,opt,name=destination_port,json=destinationPort,proto3" json:"destination_port,omitempty" yaml:"destination_port"`
-	// identifies the channel end on the receiving chain.
-	DestinationChannel string `protobuf:"bytes,5,opt,name=destination_channel,json=destinationChannel,proto3" json:"destination_channel,omitempty" yaml:"destination_channel"`
-	// actual opaque bytes transferred directly to the application module
-	Data []byte `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
-	// block height after which the packet times out
-	TimeoutHeight client.Height `protobuf:"bytes,7,opt,name=timeout_height,json=timeoutHeight,proto3" json:"timeout_height" yaml:"timeout_height"`
-	// block timestamp (in nanoseconds) after which the packet times out
-	TimeoutTimestamp uint64 `protobuf:"varint,8,opt,name=timeout_timestamp,json=timeoutTimestamp,proto3" json:"timeout_timestamp,omitempty" yaml:"timeout_timestamp"`
-}
-
-func (m *Packet) Reset()         { *m = Packet{} }
-func (m *Packet) String() string { return proto.CompactTextString(m) }
-func (*Packet) ProtoMessage()    {}
-func (*Packet) Descriptor() ([]byte, []int) {
+func (m *Timeout) Reset()         { *m = Timeout{} }
+func (m *Timeout) String() string { return proto.CompactTextString(m) }
+func (*Timeout) ProtoMessage()    {}
+func (*Timeout) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2f64d8fe59dd9c38, []int{1}
 }
-func (m *Packet) XXX_Unmarshal(b []byte) error {
+func (m *Timeout) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Packet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Timeout) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Packet.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Timeout.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -288,45 +234,55 @@ func (m *Packet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Packet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Packet.Merge(m, src)
+func (m *Timeout) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Timeout.Merge(m, src)
 }
-func (m *Packet) XXX_Size() int {
+func (m *Timeout) XXX_Size() int {
 	return m.Size()
 }
-func (m *Packet) XXX_DiscardUnknown() {
-	xxx_messageInfo_Packet.DiscardUnknown(m)
+func (m *Timeout) XXX_DiscardUnknown() {
+	xxx_messageInfo_Timeout.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Packet proto.InternalMessageInfo
+var xxx_messageInfo_Timeout proto.InternalMessageInfo
 
-// PacketState defines the generic type necessary to retrieve and store
-// packet commitments, acknowledgements, and receipts.
-// Caller is responsible for knowing the context necessary to interpret this
-// state as a commitment, acknowledgement, or a receipt.
-type PacketState struct {
-	// channel port identifier.
-	PortId string `protobuf:"bytes,1,opt,name=port_id,json=portId,proto3" json:"port_id,omitempty" yaml:"port_id"`
-	// channel unique identifier.
-	ChannelId string `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty" yaml:"channel_id"`
-	// packet sequence.
-	Sequence uint64 `protobuf:"varint,3,opt,name=sequence,proto3" json:"sequence,omitempty"`
-	// embedded data that represents packet state.
-	Data []byte `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
+func (m *Timeout) GetHeight() client.Height {
+	if m != nil {
+		return m.Height
+	}
+	return client.Height{}
 }
 
-func (m *PacketState) Reset()         { *m = PacketState{} }
-func (m *PacketState) String() string { return proto.CompactTextString(m) }
-func (*PacketState) ProtoMessage()    {}
-func (*PacketState) Descriptor() ([]byte, []int) {
+func (m *Timeout) GetTimestamp() uint64 {
+	if m != nil {
+		return m.Timestamp
+	}
+	return 0
+}
+
+// Upgrade is a verifiable type which contains the relevant information
+// for an attempted upgrade. It provides the proposed changes to the channel
+// end, the timeout for this upgrade attempt and the next packet sequence
+// which allows the counterparty to efficiently know the highest sequence it has received.
+// The next sequence send is used for pruning and upgrading from unordered to ordered channels.
+type Upgrade struct {
+	Fields           UpgradeFields `protobuf:"bytes,1,opt,name=fields,proto3" json:"fields"`
+	Timeout          Timeout       `protobuf:"bytes,2,opt,name=timeout,proto3" json:"timeout"`
+	NextSequenceSend uint64        `protobuf:"varint,3,opt,name=next_sequence_send,json=nextSequenceSend,proto3" json:"next_sequence_send,omitempty"`
+}
+
+func (m *Upgrade) Reset()         { *m = Upgrade{} }
+func (m *Upgrade) String() string { return proto.CompactTextString(m) }
+func (*Upgrade) ProtoMessage()    {}
+func (*Upgrade) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2f64d8fe59dd9c38, []int{2}
 }
-func (m *PacketState) XXX_Unmarshal(b []byte) error {
+func (m *Upgrade) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *PacketState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *Upgrade) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_PacketState.Marshal(b, m, deterministic)
+		return xxx_messageInfo_Upgrade.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -336,88 +292,171 @@ func (m *PacketState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) 
 		return b[:n], nil
 	}
 }
-func (m *PacketState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PacketState.Merge(m, src)
+func (m *Upgrade) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Upgrade.Merge(m, src)
 }
-func (m *PacketState) XXX_Size() int {
+func (m *Upgrade) XXX_Size() int {
 	return m.Size()
 }
-func (m *PacketState) XXX_DiscardUnknown() {
-	xxx_messageInfo_PacketState.DiscardUnknown(m)
+func (m *Upgrade) XXX_DiscardUnknown() {
+	xxx_messageInfo_Upgrade.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_PacketState proto.InternalMessageInfo
+var xxx_messageInfo_Upgrade proto.InternalMessageInfo
+
+// UpgradeFields are the fields in a channel end which may be changed
+// during a channel upgrade.
+type UpgradeFields struct {
+	Ordering       Channel_Order `protobuf:"varint,1,opt,name=ordering,proto3,enum=Channel_Order" json:"ordering,omitempty"`
+	ConnectionHops []string      `protobuf:"bytes,2,rep,name=connection_hops,json=connectionHops,proto3" json:"connection_hops,omitempty"`
+	Version        string        `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
+}
+
+func (m *UpgradeFields) Reset()         { *m = UpgradeFields{} }
+func (m *UpgradeFields) String() string { return proto.CompactTextString(m) }
+func (*UpgradeFields) ProtoMessage()    {}
+func (*UpgradeFields) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2f64d8fe59dd9c38, []int{3}
+}
+func (m *UpgradeFields) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *UpgradeFields) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_UpgradeFields.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *UpgradeFields) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpgradeFields.Merge(m, src)
+}
+func (m *UpgradeFields) XXX_Size() int {
+	return m.Size()
+}
+func (m *UpgradeFields) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpgradeFields.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpgradeFields proto.InternalMessageInfo
+
+// ErrorReceipt defines a type which encapsulates the upgrade sequence and error associated with the
+// upgrade handshake failure. When a channel upgrade handshake is aborted both chains are expected to increment to the
+// next sequence.
+type ErrorReceipt struct {
+	// the channel upgrade sequence
+	Sequence uint64 `protobuf:"varint,1,opt,name=sequence,proto3" json:"sequence,omitempty"`
+	// the error message detailing the cause of failure
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (m *ErrorReceipt) Reset()         { *m = ErrorReceipt{} }
+func (m *ErrorReceipt) String() string { return proto.CompactTextString(m) }
+func (*ErrorReceipt) ProtoMessage()    {}
+func (*ErrorReceipt) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2f64d8fe59dd9c38, []int{4}
+}
+func (m *ErrorReceipt) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ErrorReceipt) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ErrorReceipt.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ErrorReceipt) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ErrorReceipt.Merge(m, src)
+}
+func (m *ErrorReceipt) XXX_Size() int {
+	return m.Size()
+}
+func (m *ErrorReceipt) XXX_DiscardUnknown() {
+	xxx_messageInfo_ErrorReceipt.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ErrorReceipt proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterEnum("Channel_State", Channel_State_name, Channel_State_value)
 	proto.RegisterEnum("Channel_Order", Channel_Order_name, Channel_Order_value)
 	proto.RegisterType((*Channel)(nil), "Channel")
 	proto.RegisterType((*Channel_Counterparty)(nil), "Channel.Counterparty")
-	proto.RegisterType((*Channel_IdentifiedChannel)(nil), "Channel.IdentifiedChannel")
-	proto.RegisterType((*Packet)(nil), "Packet")
-	proto.RegisterType((*PacketState)(nil), "PacketState")
+	proto.RegisterType((*Timeout)(nil), "Timeout")
+	proto.RegisterType((*Upgrade)(nil), "Upgrade")
+	proto.RegisterType((*UpgradeFields)(nil), "UpgradeFields")
+	proto.RegisterType((*ErrorReceipt)(nil), "ErrorReceipt")
 }
 
 func init() { proto.RegisterFile("core/04-channel/Channel.proto", fileDescriptor_2f64d8fe59dd9c38) }
 
 var fileDescriptor_2f64d8fe59dd9c38 = []byte{
-	// 889 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe4, 0x55, 0xbf, 0x6f, 0xdb, 0x46,
-	0x14, 0x16, 0x2d, 0x5a, 0xb2, 0x4e, 0x96, 0x2c, 0x5f, 0x6b, 0x87, 0x65, 0x62, 0x91, 0x20, 0x32,
-	0x18, 0x2d, 0x64, 0x16, 0xaa, 0xd1, 0x02, 0x59, 0x1a, 0x4b, 0x62, 0x10, 0x02, 0xa9, 0x64, 0x9c,
-	0xe5, 0xa1, 0x59, 0x04, 0x8a, 0xbc, 0x48, 0x44, 0x64, 0x9e, 0x4a, 0x9e, 0x9a, 0x6a, 0xed, 0x14,
-	0x68, 0x2a, 0xd0, 0x59, 0x40, 0x81, 0x02, 0xfd, 0x0f, 0x8a, 0xfe, 0x01, 0x5d, 0x32, 0x7a, 0xec,
-	0x44, 0x14, 0xf6, 0xda, 0x49, 0xfd, 0x07, 0x0a, 0xde, 0x1d, 0xf5, 0xab, 0x43, 0xa7, 0x4e, 0x99,
-	0xee, 0xde, 0xf7, 0x7d, 0xf7, 0xee, 0xd3, 0x7b, 0x8f, 0x3a, 0x70, 0xe2, 0x92, 0x10, 0x9b, 0x9f,
-	0x9e, 0xd7, 0xdc, 0xa1, 0x13, 0x04, 0x78, 0x64, 0x36, 0xf9, 0x7a, 0x36, 0x0e, 0x09, 0x25, 0xaa,
-	0x11, 0x91, 0x91, 0xef, 0xf9, 0x74, 0x5a, 0x63, 0x71, 0x7f, 0xf2, 0xaa, 0x86, 0xbf, 0xa3, 0x38,
-	0x88, 0x7c, 0x12, 0x44, 0x42, 0xf3, 0xe1, 0x80, 0x0c, 0x08, 0xdb, 0x9a, 0xc9, 0x4e, 0xa0, 0x0f,
-	0x79, 0xe2, 0x7a, 0xcd, 0x1d, 0xf9, 0x38, 0xa0, 0x66, 0x93, 0x2d, 0x9c, 0x34, 0xfe, 0xce, 0x83,
-	0xbc, 0xb8, 0x08, 0x3e, 0x06, 0xbb, 0x11, 0x75, 0x28, 0x56, 0x24, 0x5d, 0x3a, 0x2d, 0xd7, 0xcb,
-	0x67, 0xa9, 0x83, 0xab, 0x04, 0x45, 0x9c, 0x84, 0x1f, 0x83, 0x3d, 0x12, 0x7a, 0x38, 0xf4, 0x83,
-	0x81, 0xb2, 0xb3, 0x25, 0xec, 0x24, 0x04, 0x5a, 0xf2, 0xf0, 0x4b, 0xb0, 0xef, 0x92, 0x49, 0x40,
-	0x71, 0x38, 0x76, 0x42, 0x3a, 0x55, 0xb2, 0xba, 0x74, 0x5a, 0xac, 0x1f, 0x2d, 0xf5, 0xcd, 0x35,
-	0xb2, 0x21, 0xbf, 0x8b, 0xb5, 0x0c, 0xda, 0x38, 0x00, 0x9b, 0xe0, 0xc0, 0x25, 0x41, 0x80, 0x5d,
-	0xea, 0x93, 0xa0, 0x37, 0x24, 0xe3, 0x48, 0x91, 0xf5, 0xec, 0x69, 0xa1, 0xa1, 0x2e, 0x62, 0xed,
-	0x78, 0xea, 0xdc, 0x8c, 0x9e, 0x18, 0x5b, 0x02, 0x03, 0x95, 0x57, 0xc8, 0x73, 0x32, 0x8e, 0xa0,
-	0x02, 0xf2, 0xdf, 0xe2, 0x30, 0x29, 0x94, 0xb2, 0xab, 0x4b, 0xa7, 0x05, 0x94, 0x86, 0xea, 0x1b,
-	0xb0, 0xbf, 0x6e, 0x01, 0x7e, 0x02, 0xf2, 0x63, 0x12, 0xd2, 0x9e, 0xef, 0xb1, 0x1a, 0x14, 0x1a,
-	0x70, 0x11, 0x6b, 0x65, 0x7e, 0x8d, 0x20, 0x0c, 0x94, 0x4b, 0x76, 0xb6, 0x07, 0xcf, 0x01, 0x10,
-	0xad, 0x4a, 0xf4, 0x3b, 0x4c, 0x7f, 0xb4, 0x88, 0xb5, 0x43, 0x61, 0x6b, 0xc9, 0x19, 0xa8, 0x20,
-	0x02, 0xdb, 0x7b, 0x22, 0xbf, 0xfd, 0x49, 0xcb, 0xa8, 0xbf, 0xef, 0x80, 0x43, 0xdb, 0xc3, 0x01,
-	0xf5, 0x5f, 0xf9, 0xd8, 0x7b, 0x6f, 0x1b, 0x00, 0x1f, 0xac, 0x0a, 0x9e, 0x63, 0x4c, 0x5a, 0xdc,
-	0x93, 0x8d, 0xe2, 0xe6, 0x19, 0xb7, 0x5d, 0x45, 0xe3, 0x37, 0x09, 0xec, 0xb2, 0xd2, 0xc0, 0xcf,
-	0x81, 0x76, 0xd5, 0xbd, 0xe8, 0x5a, 0xbd, 0xeb, 0xb6, 0xdd, 0xb6, 0xbb, 0xf6, 0xc5, 0x0b, 0xfb,
-	0xa5, 0xd5, 0xea, 0x5d, 0xb7, 0xaf, 0x2e, 0xad, 0xa6, 0xfd, 0xcc, 0xb6, 0x5a, 0x95, 0x8c, 0x7a,
-	0x38, 0x9b, 0xeb, 0xa5, 0x0d, 0x01, 0x54, 0x00, 0xe0, 0xe7, 0x12, 0xb0, 0x22, 0xa9, 0x7b, 0xb3,
-	0xb9, 0x2e, 0x27, 0x7b, 0x58, 0x05, 0x25, 0xce, 0x74, 0xd1, 0xd7, 0x9d, 0x4b, 0xab, 0x5d, 0xd9,
-	0x51, 0x8b, 0xb3, 0xb9, 0x9e, 0x17, 0xe1, 0xea, 0x24, 0x23, 0xb3, 0xfc, 0x24, 0x63, 0x1e, 0x81,
-	0x7d, 0xce, 0x34, 0x5f, 0x74, 0xae, 0xac, 0x56, 0x45, 0x56, 0xc1, 0x6c, 0xae, 0xe7, 0x78, 0xa4,
-	0xca, 0x6f, 0x7f, 0xae, 0x66, 0x8c, 0x37, 0x60, 0x97, 0xb5, 0x0a, 0x3e, 0x06, 0xc7, 0x1d, 0xd4,
-	0xb2, 0x50, 0xaf, 0xdd, 0x69, 0x5b, 0x5b, 0x7e, 0x59, 0xca, 0x04, 0x87, 0x06, 0x38, 0xe0, 0xaa,
-	0xeb, 0x36, 0x5b, 0xad, 0x56, 0x45, 0x52, 0x4b, 0xb3, 0xb9, 0x5e, 0x58, 0x02, 0x89, 0x61, 0xae,
-	0x49, 0x15, 0xc2, 0xb0, 0x08, 0xf9, 0xc5, 0xa2, 0x70, 0x7f, 0x65, 0x41, 0xee, 0xd2, 0x71, 0x5f,
-	0x63, 0x0a, 0x55, 0xb0, 0x17, 0xe1, 0x6f, 0x26, 0x38, 0x70, 0xf9, 0xd8, 0xc9, 0x68, 0x19, 0xc3,
-	0x2f, 0x40, 0x31, 0x22, 0x93, 0xd0, 0xc5, 0xbd, 0xa4, 0x2b, 0x62, 0xc4, 0x8f, 0x17, 0xb1, 0x06,
-	0x79, 0xe3, 0xd7, 0x48, 0x03, 0x01, 0x1e, 0x5d, 0x92, 0x90, 0xc2, 0xa7, 0xa0, 0x2c, 0x38, 0xd1,
-	0x32, 0x36, 0x78, 0x85, 0xc6, 0x47, 0x8b, 0x58, 0x3b, 0xda, 0x38, 0x2b, 0x78, 0x03, 0x95, 0x38,
-	0x90, 0x7e, 0x0a, 0xcf, 0x40, 0xc5, 0xc3, 0x11, 0xf5, 0x03, 0x87, 0xcd, 0x15, 0xbb, 0x5f, 0x66,
-	0x39, 0x1e, 0x2e, 0x62, 0xed, 0x01, 0xcf, 0xb1, 0xad, 0x30, 0xd0, 0xc1, 0x1a, 0xc4, 0x9c, 0x74,
-	0xc0, 0x07, 0xeb, 0xaa, 0xd4, 0x0e, 0x1b, 0xc3, 0x46, 0x75, 0x11, 0x6b, 0xea, 0xbf, 0x53, 0x2d,
-	0x3d, 0xc1, 0x35, 0x34, 0x35, 0x06, 0x81, 0xec, 0x39, 0xd4, 0x61, 0xe3, 0xba, 0x8f, 0xd8, 0x1e,
-	0x7e, 0x05, 0xca, 0xd4, 0xbf, 0xc1, 0x64, 0x42, 0x7b, 0x43, 0xec, 0x0f, 0x86, 0x94, 0x0d, 0x6c,
-	0xb1, 0x9e, 0x3f, 0x7b, 0xce, 0xc2, 0xc6, 0x49, 0xf2, 0x65, 0xad, 0x7e, 0xfb, 0xa6, 0xd8, 0x40,
-	0x25, 0x01, 0x70, 0x35, 0xb4, 0xc1, 0x61, 0xaa, 0x48, 0xd6, 0x88, 0x3a, 0x37, 0x63, 0x65, 0x2f,
-	0xe9, 0x4d, 0xe3, 0xd1, 0x22, 0xd6, 0x94, 0xcd, 0x24, 0x4b, 0x89, 0x81, 0x2a, 0x02, 0xeb, 0xa6,
-	0x90, 0x68, 0xf7, 0x2f, 0x12, 0x28, 0xf2, 0x76, 0xf3, 0xaf, 0xe5, 0xff, 0xff, 0x9b, 0xdb, 0x18,
-	0xab, 0xec, 0xd6, 0x58, 0xa5, 0x25, 0x94, 0x57, 0x25, 0xe4, 0x46, 0x1b, 0x3f, 0x4a, 0xdf, 0xff,
-	0xaa, 0x9c, 0x83, 0xfa, 0xd3, 0xe1, 0x74, 0x8c, 0xc3, 0x11, 0xf6, 0x06, 0x38, 0xac, 0x8d, 0x9c,
-	0x7e, 0x64, 0x4e, 0x27, 0x7e, 0xcd, 0xef, 0xbb, 0xb5, 0xf4, 0x15, 0x34, 0x5d, 0x12, 0xd0, 0xd0,
-	0x71, 0x69, 0x64, 0xb2, 0x87, 0xec, 0xdd, 0x5d, 0x55, 0xba, 0xbd, 0xab, 0x4a, 0x7f, 0xde, 0x55,
-	0xa5, 0x1f, 0xee, 0xab, 0x99, 0xdb, 0xfb, 0x6a, 0xe6, 0x8f, 0xfb, 0x6a, 0xe6, 0xe5, 0xc5, 0xc0,
-	0xa7, 0xc3, 0x49, 0xff, 0xcc, 0x25, 0x37, 0xe6, 0x7f, 0x67, 0x1d, 0xbf, 0x1e, 0x98, 0x7e, 0xdf,
-	0x35, 0xd9, 0x93, 0x29, 0x7e, 0x4d, 0x3f, 0xc7, 0x6e, 0xf8, 0xec, 0x9f, 0x00, 0x00, 0x00, 0xff,
-	0xff, 0xc0, 0xc3, 0x98, 0xdd, 0xa2, 0x07, 0x00, 0x00,
+	// 861 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0x4f, 0x8f, 0xdb, 0x44,
+	0x14, 0x8f, 0xb3, 0xce, 0xbf, 0xd9, 0x6c, 0xd6, 0x1d, 0x68, 0x65, 0x99, 0x92, 0x58, 0x56, 0x11,
+	0xa1, 0x34, 0x31, 0x0a, 0x2b, 0x0e, 0xbd, 0xc0, 0x6e, 0xe2, 0x65, 0x8d, 0x16, 0x67, 0xe5, 0x24,
+	0x07, 0x7a, 0x89, 0x1c, 0x7b, 0xea, 0x58, 0x24, 0x1e, 0x63, 0x4f, 0x68, 0x73, 0x45, 0x20, 0x55,
+	0x39, 0x21, 0x21, 0x8e, 0x91, 0x90, 0x90, 0xf8, 0x06, 0x7c, 0x87, 0x1e, 0x7b, 0xe4, 0x14, 0xa1,
+	0xdd, 0x6f, 0xb0, 0x9f, 0x00, 0x79, 0x66, 0x9c, 0xdd, 0x2c, 0x52, 0x7b, 0xf2, 0xbc, 0xdf, 0xef,
+	0x37, 0x6f, 0xde, 0xf8, 0xbd, 0xdf, 0x80, 0x0f, 0x5d, 0x1c, 0x23, 0xfd, 0xb3, 0xa3, 0x96, 0x3b,
+	0x75, 0xc2, 0x10, 0xcd, 0xf4, 0x2e, 0xfb, 0xb6, 0xa3, 0x18, 0x13, 0xac, 0x7c, 0xc0, 0xe8, 0x4e,
+	0xcb, 0x9d, 0x05, 0x28, 0x24, 0x7a, 0x97, 0x7e, 0x38, 0xa9, 0x25, 0x78, 0x16, 0x78, 0x01, 0x59,
+	0xb6, 0x68, 0x3c, 0x59, 0x3c, 0x6f, 0xa1, 0x97, 0x04, 0x85, 0x49, 0x80, 0xc3, 0x84, 0x6b, 0xde,
+	0xf7, 0xb1, 0x8f, 0xe9, 0x52, 0x4f, 0x57, 0x0c, 0xd5, 0xfe, 0x2a, 0x82, 0x12, 0x3f, 0x08, 0x3e,
+	0x02, 0x85, 0x84, 0x38, 0x04, 0xc9, 0x82, 0x2a, 0x34, 0x6b, 0x9d, 0x5a, 0x3b, 0xab, 0x60, 0x90,
+	0xa2, 0x36, 0x23, 0xe1, 0x63, 0x50, 0xc6, 0xb1, 0x87, 0xe2, 0x20, 0xf4, 0xe5, 0xfc, 0x1d, 0x61,
+	0x3f, 0x25, 0xec, 0x2d, 0x0f, 0xbf, 0x04, 0x55, 0x17, 0x2f, 0x42, 0x82, 0xe2, 0xc8, 0x89, 0xc9,
+	0x52, 0xde, 0x53, 0x85, 0xe6, 0x7e, 0xe7, 0xfe, 0x56, 0xdf, 0xbd, 0x45, 0x9e, 0x88, 0xaf, 0x37,
+	0x8d, 0x9c, 0xbd, 0xb3, 0x01, 0x76, 0xc1, 0xa1, 0x8b, 0xc3, 0x10, 0xb9, 0x24, 0xc0, 0xe1, 0x78,
+	0x8a, 0xa3, 0x44, 0x16, 0xd5, 0xbd, 0x66, 0xe5, 0x44, 0xb9, 0xde, 0x34, 0x1e, 0x2c, 0x9d, 0xf9,
+	0xec, 0xa9, 0x76, 0x47, 0xa0, 0xd9, 0xb5, 0x1b, 0xe4, 0x0c, 0x47, 0x09, 0x94, 0x41, 0xe9, 0x47,
+	0x14, 0xa7, 0xff, 0x42, 0x2e, 0xa8, 0x42, 0xb3, 0x62, 0x67, 0x21, 0xfc, 0x04, 0x48, 0x8b, 0xc8,
+	0x8f, 0x1d, 0x0f, 0x8d, 0x13, 0xf4, 0xc3, 0x02, 0x85, 0x2e, 0x92, 0x8b, 0xaa, 0xd0, 0x14, 0xed,
+	0x43, 0x8e, 0x0f, 0x38, 0xac, 0xbc, 0x00, 0xd5, 0xdb, 0xd5, 0xc2, 0x4f, 0x41, 0x29, 0xc2, 0x31,
+	0x19, 0x07, 0x1e, 0xfd, 0x5d, 0x95, 0x13, 0x78, 0xbd, 0x69, 0xd4, 0x58, 0x45, 0x9c, 0xd0, 0xec,
+	0x62, 0xba, 0x32, 0x3d, 0x78, 0x04, 0x00, 0xef, 0x6a, 0xaa, 0xcf, 0x53, 0xfd, 0xfd, 0xeb, 0x4d,
+	0xe3, 0x1e, 0xbf, 0xc1, 0x96, 0xd3, 0xec, 0x0a, 0x0f, 0x4c, 0xef, 0xa9, 0xf8, 0xea, 0x8f, 0x46,
+	0x4e, 0xfb, 0x25, 0x0f, 0x0a, 0xb4, 0x01, 0xf0, 0x0b, 0xd0, 0x18, 0x0c, 0x8f, 0x87, 0xc6, 0x78,
+	0x64, 0x99, 0x96, 0x39, 0x34, 0x8f, 0xcf, 0xcd, 0x67, 0x46, 0x6f, 0x3c, 0xb2, 0x06, 0x17, 0x46,
+	0xd7, 0x3c, 0x35, 0x8d, 0x9e, 0x94, 0x53, 0xee, 0xad, 0xd6, 0xea, 0xc1, 0x8e, 0x00, 0xca, 0x00,
+	0xb0, 0x7d, 0x29, 0x28, 0x09, 0x4a, 0x79, 0xb5, 0x56, 0xc5, 0x74, 0x0d, 0xeb, 0xe0, 0x80, 0x31,
+	0x43, 0xfb, 0xbb, 0xfe, 0x85, 0x61, 0x49, 0x79, 0x65, 0x7f, 0xb5, 0x56, 0x4b, 0x3c, 0xbc, 0xd9,
+	0x49, 0xc9, 0x3d, 0xb6, 0x93, 0x32, 0x0f, 0x41, 0x95, 0x31, 0xdd, 0xf3, 0xfe, 0xc0, 0xe8, 0x49,
+	0xa2, 0x02, 0x56, 0x6b, 0xb5, 0xc8, 0x22, 0xa8, 0x82, 0x1a, 0x63, 0x4f, 0xcf, 0x47, 0x83, 0x33,
+	0xd3, 0xfa, 0x5a, 0x2a, 0x28, 0xd5, 0xd5, 0x5a, 0x2d, 0x67, 0x31, 0x7c, 0x0c, 0xde, 0xbb, 0xa5,
+	0xe8, 0xf6, 0xbf, 0xbd, 0x38, 0x37, 0x86, 0x86, 0x54, 0x64, 0xf5, 0xef, 0x80, 0x8a, 0xf8, 0xea,
+	0xcf, 0x7a, 0x4e, 0x7b, 0x01, 0x0a, 0x74, 0xbc, 0xe0, 0x23, 0xf0, 0xa0, 0x6f, 0xf7, 0x0c, 0x7b,
+	0x6c, 0xf5, 0x2d, 0xe3, 0xce, 0xed, 0x69, 0x81, 0x29, 0x0e, 0x35, 0x70, 0xc8, 0x54, 0x23, 0x8b,
+	0x7e, 0x8d, 0x9e, 0x24, 0x28, 0x07, 0xab, 0xb5, 0x5a, 0xd9, 0x02, 0xe9, 0xf5, 0x99, 0x26, 0x53,
+	0xf0, 0xeb, 0xf3, 0x90, 0x1d, 0xcc, 0xdb, 0x60, 0x81, 0xd2, 0x30, 0x98, 0x23, 0xbc, 0x20, 0xf0,
+	0x23, 0x50, 0x9c, 0xa2, 0xc0, 0x9f, 0x12, 0xda, 0xf9, 0xfd, 0x4e, 0xa9, 0x7d, 0x46, 0x43, 0x3e,
+	0xc1, 0x9c, 0x84, 0x0f, 0x41, 0x85, 0x04, 0x73, 0x94, 0x10, 0x67, 0x1e, 0xd1, 0x9e, 0x8b, 0xf6,
+	0x0d, 0xa0, 0xfd, 0x2e, 0x80, 0xd2, 0x88, 0xcd, 0x18, 0x7c, 0x02, 0x8a, 0xcf, 0x03, 0x34, 0xf3,
+	0x12, 0x9e, 0xb0, 0xd6, 0xe6, 0xcc, 0x29, 0x45, 0xb3, 0xbc, 0x4c, 0x03, 0x9b, 0xa0, 0x44, 0x58,
+	0x25, 0x34, 0xeb, 0x7e, 0xa7, 0xdc, 0xe6, 0x95, 0x71, 0x61, 0x46, 0xc3, 0x27, 0x00, 0x86, 0xe8,
+	0x25, 0xd9, 0xce, 0xf6, 0x38, 0x41, 0xa1, 0x47, 0x4d, 0x28, 0xda, 0x52, 0xca, 0x64, 0xd3, 0x3d,
+	0x40, 0x61, 0x36, 0x6e, 0x3f, 0x0b, 0xe0, 0x60, 0xe7, 0xf4, 0x1d, 0xc3, 0x0b, 0xef, 0x30, 0xfc,
+	0xc7, 0xff, 0xf7, 0x6b, 0x3e, 0xf5, 0xeb, 0xdb, 0x3c, 0xb9, 0xb7, 0xe3, 0x49, 0x5e, 0xc6, 0x37,
+	0xa0, 0x6a, 0xc4, 0x31, 0x8e, 0x6d, 0xe4, 0xa2, 0x20, 0x22, 0x50, 0x01, 0xe5, 0xad, 0x43, 0x05,
+	0x7a, 0x81, 0x6d, 0x9c, 0xe6, 0x9a, 0xa3, 0x24, 0x71, 0x7c, 0xc4, 0xac, 0x65, 0x67, 0x21, 0xcb,
+	0x75, 0xf2, 0x9b, 0xf0, 0xd3, 0xdf, 0xf2, 0x11, 0xe8, 0x7c, 0x35, 0x5d, 0x46, 0x28, 0x9e, 0x21,
+	0xcf, 0x47, 0x71, 0x6b, 0xe6, 0x4c, 0x12, 0x7d, 0xb9, 0x08, 0x5a, 0xc1, 0xc4, 0x6d, 0x65, 0xcf,
+	0xa7, 0xee, 0xe2, 0x90, 0xc4, 0x8e, 0x4b, 0x12, 0x9d, 0x3e, 0x8f, 0xaf, 0x2f, 0xeb, 0xc2, 0x9b,
+	0xcb, 0xba, 0xf0, 0xef, 0x65, 0x5d, 0xf8, 0xf5, 0xaa, 0x9e, 0x7b, 0x73, 0x55, 0xcf, 0xfd, 0x73,
+	0x55, 0xcf, 0x3d, 0x3b, 0xf6, 0x03, 0x32, 0x5d, 0x4c, 0xda, 0x2e, 0x9e, 0xeb, 0xef, 0xce, 0x1a,
+	0x7d, 0xef, 0xeb, 0xc1, 0xc4, 0xd5, 0xe9, 0x13, 0xce, 0xfd, 0x3d, 0x29, 0xd2, 0x13, 0x3e, 0xff,
+	0x2f, 0x00, 0x00, 0xff, 0xff, 0x27, 0x23, 0x23, 0x0d, 0xf8, 0x05, 0x00, 0x00,
 }
 
 func (m *Channel) Marshal() (dAtA []byte, err error) {
@@ -440,6 +479,11 @@ func (m *Channel) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.UpgradeSequence != 0 {
+		i = encodeVarintChannel(dAtA, i, uint64(m.UpgradeSequence))
+		i--
+		dAtA[i] = 0x30
+	}
 	if len(m.Version) > 0 {
 		i -= len(m.Version)
 		copy(dAtA[i:], m.Version)
@@ -516,7 +560,7 @@ func (m *Channel_Counterparty) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Channel_IdentifiedChannel) Marshal() (dAtA []byte, err error) {
+func (m *Timeout) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -526,36 +570,108 @@ func (m *Channel_IdentifiedChannel) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Channel_IdentifiedChannel) MarshalTo(dAtA []byte) (int, error) {
+func (m *Timeout) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Channel_IdentifiedChannel) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *Timeout) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(m.ChannelId) > 0 {
-		i -= len(m.ChannelId)
-		copy(dAtA[i:], m.ChannelId)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.ChannelId)))
+	if m.Timestamp != 0 {
+		i = encodeVarintChannel(dAtA, i, uint64(m.Timestamp))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x10
 	}
-	if len(m.PortId) > 0 {
-		i -= len(m.PortId)
-		copy(dAtA[i:], m.PortId)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.PortId)))
+	{
+		size, err := m.Height.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintChannel(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *Upgrade) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *Upgrade) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Upgrade) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.NextSequenceSend != 0 {
+		i = encodeVarintChannel(dAtA, i, uint64(m.NextSequenceSend))
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x18
 	}
+	{
+		size, err := m.Timeout.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintChannel(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.Fields.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintChannel(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *UpgradeFields) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *UpgradeFields) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *UpgradeFields) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
 	if len(m.Version) > 0 {
 		i -= len(m.Version)
 		copy(dAtA[i:], m.Version)
 		i = encodeVarintChannel(dAtA, i, uint64(len(m.Version)))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x1a
 	}
 	if len(m.ConnectionHops) > 0 {
 		for iNdEx := len(m.ConnectionHops) - 1; iNdEx >= 0; iNdEx-- {
@@ -563,33 +679,18 @@ func (m *Channel_IdentifiedChannel) MarshalToSizedBuffer(dAtA []byte) (int, erro
 			copy(dAtA[i:], m.ConnectionHops[iNdEx])
 			i = encodeVarintChannel(dAtA, i, uint64(len(m.ConnectionHops[iNdEx])))
 			i--
-			dAtA[i] = 0x22
+			dAtA[i] = 0x12
 		}
 	}
-	{
-		size, err := m.Counterparty.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintChannel(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x1a
 	if m.Ordering != 0 {
 		i = encodeVarintChannel(dAtA, i, uint64(m.Ordering))
 		i--
-		dAtA[i] = 0x10
-	}
-	if m.State != 0 {
-		i = encodeVarintChannel(dAtA, i, uint64(m.State))
-		i--
 		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *Packet) Marshal() (dAtA []byte, err error) {
+func (m *ErrorReceipt) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -599,63 +700,20 @@ func (m *Packet) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Packet) MarshalTo(dAtA []byte) (int, error) {
+func (m *ErrorReceipt) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Packet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ErrorReceipt) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if m.TimeoutTimestamp != 0 {
-		i = encodeVarintChannel(dAtA, i, uint64(m.TimeoutTimestamp))
-		i--
-		dAtA[i] = 0x40
-	}
-	{
-		size, err := m.TimeoutHeight.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintChannel(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x3a
-	if len(m.Data) > 0 {
-		i -= len(m.Data)
-		copy(dAtA[i:], m.Data)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.Data)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if len(m.DestinationChannel) > 0 {
-		i -= len(m.DestinationChannel)
-		copy(dAtA[i:], m.DestinationChannel)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.DestinationChannel)))
-		i--
-		dAtA[i] = 0x2a
-	}
-	if len(m.DestinationPort) > 0 {
-		i -= len(m.DestinationPort)
-		copy(dAtA[i:], m.DestinationPort)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.DestinationPort)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if len(m.SourceChannel) > 0 {
-		i -= len(m.SourceChannel)
-		copy(dAtA[i:], m.SourceChannel)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.SourceChannel)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.SourcePort) > 0 {
-		i -= len(m.SourcePort)
-		copy(dAtA[i:], m.SourcePort)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.SourcePort)))
+	if len(m.Message) > 0 {
+		i -= len(m.Message)
+		copy(dAtA[i:], m.Message)
+		i = encodeVarintChannel(dAtA, i, uint64(len(m.Message)))
 		i--
 		dAtA[i] = 0x12
 	}
@@ -663,55 +721,6 @@ func (m *Packet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintChannel(dAtA, i, uint64(m.Sequence))
 		i--
 		dAtA[i] = 0x8
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *PacketState) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *PacketState) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *PacketState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Data) > 0 {
-		i -= len(m.Data)
-		copy(dAtA[i:], m.Data)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.Data)))
-		i--
-		dAtA[i] = 0x22
-	}
-	if m.Sequence != 0 {
-		i = encodeVarintChannel(dAtA, i, uint64(m.Sequence))
-		i--
-		dAtA[i] = 0x18
-	}
-	if len(m.ChannelId) > 0 {
-		i -= len(m.ChannelId)
-		copy(dAtA[i:], m.ChannelId)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.ChannelId)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.PortId) > 0 {
-		i -= len(m.PortId)
-		copy(dAtA[i:], m.PortId)
-		i = encodeVarintChannel(dAtA, i, uint64(len(m.PortId)))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -751,6 +760,9 @@ func (m *Channel) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovChannel(uint64(l))
 	}
+	if m.UpgradeSequence != 0 {
+		n += 1 + sovChannel(uint64(m.UpgradeSequence))
+	}
 	return n
 }
 
@@ -771,20 +783,45 @@ func (m *Channel_Counterparty) Size() (n int) {
 	return n
 }
 
-func (m *Channel_IdentifiedChannel) Size() (n int) {
+func (m *Timeout) Size() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.State != 0 {
-		n += 1 + sovChannel(uint64(m.State))
+	l = m.Height.Size()
+	n += 1 + l + sovChannel(uint64(l))
+	if m.Timestamp != 0 {
+		n += 1 + sovChannel(uint64(m.Timestamp))
 	}
+	return n
+}
+
+func (m *Upgrade) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Fields.Size()
+	n += 1 + l + sovChannel(uint64(l))
+	l = m.Timeout.Size()
+	n += 1 + l + sovChannel(uint64(l))
+	if m.NextSequenceSend != 0 {
+		n += 1 + sovChannel(uint64(m.NextSequenceSend))
+	}
+	return n
+}
+
+func (m *UpgradeFields) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	if m.Ordering != 0 {
 		n += 1 + sovChannel(uint64(m.Ordering))
 	}
-	l = m.Counterparty.Size()
-	n += 1 + l + sovChannel(uint64(l))
 	if len(m.ConnectionHops) > 0 {
 		for _, s := range m.ConnectionHops {
 			l = len(s)
@@ -795,18 +832,10 @@ func (m *Channel_IdentifiedChannel) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovChannel(uint64(l))
 	}
-	l = len(m.PortId)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	l = len(m.ChannelId)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
 	return n
 }
 
-func (m *Packet) Size() (n int) {
+func (m *ErrorReceipt) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -815,52 +844,7 @@ func (m *Packet) Size() (n int) {
 	if m.Sequence != 0 {
 		n += 1 + sovChannel(uint64(m.Sequence))
 	}
-	l = len(m.SourcePort)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	l = len(m.SourceChannel)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	l = len(m.DestinationPort)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	l = len(m.DestinationChannel)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	l = len(m.Data)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	l = m.TimeoutHeight.Size()
-	n += 1 + l + sovChannel(uint64(l))
-	if m.TimeoutTimestamp != 0 {
-		n += 1 + sovChannel(uint64(m.TimeoutTimestamp))
-	}
-	return n
-}
-
-func (m *PacketState) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.PortId)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	l = len(m.ChannelId)
-	if l > 0 {
-		n += 1 + l + sovChannel(uint64(l))
-	}
-	if m.Sequence != 0 {
-		n += 1 + sovChannel(uint64(m.Sequence))
-	}
-	l = len(m.Data)
+	l = len(m.Message)
 	if l > 0 {
 		n += 1 + l + sovChannel(uint64(l))
 	}
@@ -1037,6 +1021,25 @@ func (m *Channel) Unmarshal(dAtA []byte) error {
 			}
 			m.Version = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 6:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UpgradeSequence", wireType)
+			}
+			m.UpgradeSequence = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChannel
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.UpgradeSequence |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipChannel(dAtA[iNdEx:])
@@ -1172,7 +1175,7 @@ func (m *Channel_Counterparty) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Channel_IdentifiedChannel) Unmarshal(dAtA []byte) error {
+func (m *Timeout) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1195,53 +1198,15 @@ func (m *Channel_IdentifiedChannel) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: IdentifiedChannel: wiretype end group for non-group")
+			return fmt.Errorf("proto: Timeout: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: IdentifiedChannel: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Timeout: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field State", wireType)
-			}
-			m.State = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.State |= Channel_State(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Ordering", wireType)
-			}
-			m.Ordering = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Ordering |= Channel_Order(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Counterparty", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Height", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1268,11 +1233,234 @@ func (m *Channel_IdentifiedChannel) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.Counterparty.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Height.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timestamp", wireType)
+			}
+			m.Timestamp = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChannel
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Timestamp |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipChannel(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthChannel
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *Upgrade) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowChannel
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: Upgrade: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: Upgrade: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Fields", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChannel
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthChannel
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthChannel
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Fields.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Timeout", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChannel
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthChannel
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthChannel
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Timeout.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NextSequenceSend", wireType)
+			}
+			m.NextSequenceSend = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChannel
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NextSequenceSend |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipChannel(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthChannel
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *UpgradeFields) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowChannel
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: UpgradeFields: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: UpgradeFields: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ordering", wireType)
+			}
+			m.Ordering = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowChannel
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Ordering |= Channel_Order(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ConnectionHops", wireType)
 			}
@@ -1304,7 +1492,7 @@ func (m *Channel_IdentifiedChannel) Unmarshal(dAtA []byte) error {
 			}
 			m.ConnectionHops = append(m.ConnectionHops, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
-		case 5:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Version", wireType)
 			}
@@ -1336,70 +1524,6 @@ func (m *Channel_IdentifiedChannel) Unmarshal(dAtA []byte) error {
 			}
 			m.Version = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PortId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.PortId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ChannelId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ChannelId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipChannel(dAtA[iNdEx:])
@@ -1421,7 +1545,7 @@ func (m *Channel_IdentifiedChannel) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Packet) Unmarshal(dAtA []byte) error {
+func (m *ErrorReceipt) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1444,10 +1568,10 @@ func (m *Packet) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Packet: wiretype end group for non-group")
+			return fmt.Errorf("proto: ErrorReceipt: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Packet: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ErrorReceipt: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1471,7 +1595,7 @@ func (m *Packet) Unmarshal(dAtA []byte) error {
 			}
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourcePort", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Message", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1499,356 +1623,7 @@ func (m *Packet) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.SourcePort = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SourceChannel", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.SourceChannel = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DestinationPort", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DestinationPort = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 5:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field DestinationChannel", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.DestinationChannel = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Data = append(m.Data[:0], dAtA[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
-			}
-			iNdEx = postIndex
-		case 7:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TimeoutHeight", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.TimeoutHeight.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TimeoutTimestamp", wireType)
-			}
-			m.TimeoutTimestamp = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.TimeoutTimestamp |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		default:
-			iNdEx = preIndex
-			skippy, err := skipChannel(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *PacketState) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowChannel
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: PacketState: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: PacketState: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PortId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.PortId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ChannelId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ChannelId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Sequence", wireType)
-			}
-			m.Sequence = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.Sequence |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowChannel
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthChannel
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthChannel
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Data = append(m.Data[:0], dAtA[iNdEx:postIndex]...)
-			if m.Data == nil {
-				m.Data = []byte{}
-			}
+			m.Message = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

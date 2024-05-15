@@ -4,7 +4,7 @@ import "./ProtoBufRuntime.sol";
 import "./GoogleProtobufAny.sol";
 import "./Client.sol";
 
-library IbcLightclientsIbft2V1ClientState {
+library IbcLightclientsQbftV1ClientState {
 
 
   //struct definition
@@ -348,9 +348,9 @@ library IbcLightclientsIbft2V1ClientState {
     }
   }
 }
-//library IbcLightclientsIbft2V1ClientState
+//library IbcLightclientsQbftV1ClientState
 
-library IbcLightclientsIbft2V1ConsensusState {
+library IbcLightclientsQbftV1ConsensusState {
 
 
   //struct definition
@@ -691,9 +691,9 @@ library IbcLightclientsIbft2V1ConsensusState {
     }
   }
 }
-//library IbcLightclientsIbft2V1ConsensusState
+//library IbcLightclientsQbftV1ConsensusState
 
-library IbcLightclientsIbft2V1Header {
+library IbcLightclientsQbftV1Header {
 
 
   //struct definition
@@ -1086,4 +1086,4 @@ library IbcLightclientsIbft2V1Header {
     }
   }
 }
-//library IbcLightclientsIbft2V1Header
+//library IbcLightclientsQbftV1Header

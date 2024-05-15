@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	"github.com/stretchr/testify/require"
 )
@@ -69,7 +70,7 @@ func (c Coordinator) CreateClient(
 	ctx context.Context,
 	source, counterparty *Chain,
 ) (clientID string, err error) {
-	return source.CreateIBFT2Client(ctx, counterparty)
+	return source.CreateQBFTClient(ctx, counterparty)
 }
 
 func (c Coordinator) UpdateClient(
@@ -79,7 +80,7 @@ func (c Coordinator) UpdateClient(
 	updateCommitment bool,
 ) error {
 	counterparty.UpdateLCInputData()
-	return source.UpdateIBFT2Client(ctx, counterparty, clientID, updateCommitment)
+	return source.UpdateQBFTClient(ctx, counterparty, clientID, updateCommitment)
 }
 
 // CreateConnection constructs and executes connection handshake messages in order to create
@@ -382,7 +383,7 @@ func (c *Coordinator) ChanCloseConfirm(
 func (c *Coordinator) SendPacket(
 	ctx context.Context,
 	source, counterparty *Chain,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 	counterpartyClientID string,
 ) error {
 	if err := source.SendPacket(ctx, packet); err != nil {
@@ -402,7 +403,7 @@ func (c *Coordinator) HandlePacketRecv(
 	ctx context.Context,
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 ) error {
 	if err := source.HandlePacketRecv(ctx, counterparty, sourceChannel, counterpartyChannel, packet); err != nil {
 		return err
@@ -421,7 +422,7 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 	ctx context.Context,
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 	acknowledgement []byte,
 ) error {
 	if err := source.HandlePacketAcknowledgement(ctx, counterparty, sourceChannel, counterpartyChannel, packet, acknowledgement); err != nil {

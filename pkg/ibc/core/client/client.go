@@ -8,8 +8,7 @@ import (
 
 // client type
 const (
-	// IBFT2 Client
-	BesuIBFT2Client = "hyperledger-besu-ibft2"
+	BesuQBFTClient = "hb-qbft"
 )
 
 func NewHeightFromBN(n *big.Int) Height {
