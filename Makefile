@@ -14,16 +14,11 @@ build:
 
 .PHONY: fmt
 fmt:
-	@$(FORGE) fmt $(FORGE_FMT_OPTS) \
-		./contracts/apps \
-		./contracts/clients \
-		./contracts/core \
-		./contracts/helpers \
-		./tests/foundry/src
+	@$(FORGE) fmt $(FORGE_FMT_OPTS)
 
 .PHONY: lint
 lint:
-	@npx solhint 'contracts/{apps,clients,core}/**/*.sol' 'tests/foundry/src/**/*.sol'
+	@npx solhint 'contracts/**/*.sol'
 	@$(MAKE) FORGE_FMT_OPTS=--check fmt
 
 .PHONY: test
