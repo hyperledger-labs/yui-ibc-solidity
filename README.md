@@ -52,7 +52,7 @@ Here are some such examples:
 - [yui-relayer](https://github.com/datachainlab/yui-relayer): An IBC relayer for heterogeneous chains
 - [ethereum-ibc-relay-chain](https://github.com/datachainlab/ethereum-ibc-relay-chain): A relay-chain module for EVM-compatible chains
 - [ethereum-ibc-relay-prover](https://github.com/datachainlab/ethereum-ibc-relay-prover): A relay-prover module for Ethereum sync committee
-- [ibft2-relay-prover](https://github.com/datachainlab/ibft2-relay-prover): A relay-prover module for IBFT 2.0 consensus
+- [besu-ibc-relay-prover](https://github.com/datachainlab/besu-ibc-relay-prover): A relay-prover module for Hyperledger Besu's QBFT and IBFT 2.0 consensus
 
 ## Related projects
 
@@ -74,7 +74,7 @@ $ make test
 Launch two Hyperledger Besu chains(ethereum-compatible) with the contracts deployed with the following command:
 
 ```sh
-$ make network-e2e
+$ make network-qbft
 ```
 
 After launch the chains, execute the following command:
