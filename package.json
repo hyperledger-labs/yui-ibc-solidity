@@ -6,7 +6,7 @@
     "@openzeppelin/contracts": "^5.0.1"
   },
   "devDependencies": {
-    "solhint": "^4.0.0"
+    "solhint": "^5.0.0"
   },
   "author": "Jun Kimura",
   "license": "Apache-2.0"
