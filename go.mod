@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/btcsuite/btcd v0.22.1
+	github.com/btcsuite/btcd v0.24.0
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/ibc-go/v7 v7.3.0
 	github.com/datachainlab/solidity-protobuf/protobuf-solidity/src/protoc/go v0.0.0-20211215073805-59460caf6e59
@@ -29,7 +29,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.1-0.20220910012023-760eaf8b6816 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
-	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
+	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cometbft/cometbft v0.37.2 // indirect
@@ -98,7 +98,6 @@ require (
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/regen-network/cosmos-proto v0.3.1 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/spf13/afero v1.9.5 // indirect
