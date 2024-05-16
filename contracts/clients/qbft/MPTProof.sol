@@ -216,18 +216,18 @@ library MPTProof {
 
     function merklePatriciaCompactDecode(bytes memory bz) internal pure returns (bool isLeaf, bytes memory nibbles) {
         require(bz.length > 0);
-        uint256 first_nibble = uint8(bz[0]) >> 4 & 0xF;
+        uint256 firstNibble = uint8(bz[0]) >> 4 & 0xF;
         uint256 offset = 0;
-        if (first_nibble == 0) {
+        if (firstNibble == 0) {
             offset = 2;
             isLeaf = false;
-        } else if (first_nibble == 1) {
+        } else if (firstNibble == 1) {
             offset = 1;
             isLeaf = false;
-        } else if (first_nibble == 2) {
+        } else if (firstNibble == 2) {
             offset = 2;
             isLeaf = true;
-        } else if (first_nibble == 3) {
+        } else if (firstNibble == 3) {
             offset = 1;
             isLeaf = true;
         } else {

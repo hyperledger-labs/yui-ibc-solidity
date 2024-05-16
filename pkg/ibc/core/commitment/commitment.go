@@ -1,8 +1,8 @@
 package commitment
 
 import (
-	clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
-	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 	"github.com/ethereum/go-ethereum/crypto"
 	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 )

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	host "github.com/cosmos/ibc-go/v7/modules/core/24-host"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
