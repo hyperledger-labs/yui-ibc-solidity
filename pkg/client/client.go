@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/chains"
 )
 
 type ETHClient struct {
@@ -101,6 +103,25 @@ func (cl *ETHClient) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tra
 		return nil, err
 	}
 	return receipt, nil
+}
+
+func (cl *ETHClient) DetectBesuConsensusType() (chains.ConsensusType, error) {
+	var res []string
+	if err := cl.rpcClient.CallContext(context.TODO(), &res, "ibft_getValidatorsByBlockNumber", "latest"); err == nil {
+		return chains.IBFT2, nil
+	} else {
+		if err.Error() != "Method not enabled" {
+			return chains.Unspecified, err
+		}
+	}
+	if err := cl.rpcClient.CallContext(context.TODO(), &res, "qbft_getValidatorsByBlockNumber", "latest"); err == nil {
+		return chains.QBFT, nil
+	} else {
+		if err.Error() != "Method not enabled" {
+			return chains.Unspecified, err
+		}
+	}
+	return chains.Unspecified, errors.New("failed to detect consensus type")
 }
 
 type ErrorsRepository struct {

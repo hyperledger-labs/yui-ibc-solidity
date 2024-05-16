@@ -11,10 +11,10 @@ import (
 	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	ibcchanneltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/chains"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
-	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
 	"github.com/stretchr/testify/suite"
 )
@@ -32,23 +32,36 @@ const (
 
 type ChainTestSuite struct {
 	suite.Suite
+
+	ethClA        *client.ETHClient
+	ethClB        *client.ETHClient
+	consensusType chains.ConsensusType
 }
 
-func (suite *ChainTestSuite) SetupTest() {}
-
-func (suite *ChainTestSuite) TestICS20() {
-	ctx := context.Background()
-
+func (suite *ChainTestSuite) SetupTest() {
 	ethClA, err := client.NewETHClient("http://127.0.0.1:8645", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
 	ethClB, err := client.NewETHClient("http://127.0.0.1:8745", ibctesting.IBCErrorsRepository)
 	suite.Require().NoError(err)
+	suite.ethClA = ethClA
+	suite.ethClB = ethClB
+	consensusTypeA, err := ethClA.DetectBesuConsensusType()
+	suite.Require().NoError(err)
+	consensusTypeB, err := ethClB.DetectBesuConsensusType()
+	suite.Require().NoError(err)
+	suite.Require().Equal(consensusTypeA, consensusTypeB)
+	suite.T().Logf("consensus type: %s", consensusTypeA)
+	suite.consensusType = consensusTypeA
+}
 
-	chainA := ibctesting.NewChain(suite.T(), ethClA, ibctesting.NewLightClient(ethClA, clienttypes.BesuIBFT2Client), true)
-	chainB := ibctesting.NewChain(suite.T(), ethClB, ibctesting.NewLightClient(ethClB, clienttypes.BesuIBFT2Client), true)
+func (suite *ChainTestSuite) TestICS20() {
+	ctx := context.Background()
+
+	chainA := ibctesting.NewChain(suite.T(), suite.ethClA, ibctesting.NewLightClient(suite.ethClA, suite.consensusType), true)
+	chainB := ibctesting.NewChain(suite.T(), suite.ethClB, ibctesting.NewLightClient(suite.ethClB, suite.consensusType), true)
 	coordinator := ibctesting.NewCoordinator(suite.T(), chainA, chainB)
 
-	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.BesuIBFT2Client)
+	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB)
 	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 	chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ibctesting.ICS20Version)
 
@@ -182,16 +195,11 @@ func (suite *ChainTestSuite) TestICS20() {
 func (suite *ChainTestSuite) TestTimeoutAndClose() {
 	ctx := context.Background()
 
-	ethClA, err := client.NewETHClient("http://127.0.0.1:8645", ibctesting.IBCErrorsRepository)
-	suite.Require().NoError(err)
-	ethClB, err := client.NewETHClient("http://127.0.0.1:8745", ibctesting.IBCErrorsRepository)
-	suite.Require().NoError(err)
-
-	chainA := ibctesting.NewChain(suite.T(), ethClA, ibctesting.NewLightClient(ethClA, clienttypes.BesuIBFT2Client), true)
-	chainB := ibctesting.NewChain(suite.T(), ethClB, ibctesting.NewLightClient(ethClB, clienttypes.BesuIBFT2Client), true)
+	chainA := ibctesting.NewChain(suite.T(), suite.ethClA, ibctesting.NewLightClient(suite.ethClA, suite.consensusType), true)
+	chainB := ibctesting.NewChain(suite.T(), suite.ethClB, ibctesting.NewLightClient(suite.ethClB, suite.consensusType), true)
 	coordinator := ibctesting.NewCoordinator(suite.T(), chainA, chainB)
 
-	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.BesuIBFT2Client)
+	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB)
 	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 
 	// Case: timeoutOnClose on ordered channel
@@ -302,18 +310,13 @@ func (suite *ChainTestSuite) TestTimeoutAndClose() {
 func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	ctx := context.Background()
 
-	ethClA, err := client.NewETHClient("http://127.0.0.1:8645", ibctesting.IBCErrorsRepository)
-	suite.Require().NoError(err)
-	ethClB, err := client.NewETHClient("http://127.0.0.1:8745", ibctesting.IBCErrorsRepository)
-	suite.Require().NoError(err)
-
-	chainA := ibctesting.NewChain(suite.T(), ethClA, ibctesting.NewLightClient(ethClA, clienttypes.BesuIBFT2Client), true)
+	chainA := ibctesting.NewChain(suite.T(), suite.ethClA, ibctesting.NewLightClient(suite.ethClA, suite.consensusType), true)
 	chainA.SetDelayPeriod(3 * ibctesting.BlockTime)
-	chainB := ibctesting.NewChain(suite.T(), ethClB, ibctesting.NewLightClient(ethClB, clienttypes.BesuIBFT2Client), true)
+	chainB := ibctesting.NewChain(suite.T(), suite.ethClB, ibctesting.NewLightClient(suite.ethClB, suite.consensusType), true)
 	chainB.SetDelayPeriod(3 * ibctesting.BlockTime)
 	coordinator := ibctesting.NewCoordinator(suite.T(), chainA, chainB)
 
-	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB, clienttypes.BesuIBFT2Client)
+	clientA, clientB := coordinator.SetupClients(ctx, chainA, chainB)
 	connA, connB := coordinator.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 	chanA, chanB := coordinator.CreateChannel(ctx, chainA, chainB, connA, connB, ibctesting.TransferPort, ibctesting.TransferPort, channeltypes.UNORDERED, ibctesting.ICS20Version)
 

@@ -25,7 +25,7 @@ function main() {
     "ERC20"
     "ICS20TransferBank"
     "ICS20Bank"
-    "IBFT2Client"
+    "QBFTClient"
     "MockClient"
     "IBCMockApp"
   )

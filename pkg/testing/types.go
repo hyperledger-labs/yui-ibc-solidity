@@ -74,15 +74,15 @@ func uint64ToBigEndian(i uint64) []byte {
 // sha256_hash(timeout_timestamp + timeout_height.RevisionNumber + timeout_height.RevisionHeight + sha256_hash(data))
 // from a given packet. This results in a fixed length preimage.
 // NOTE: uint64ToBigEndian sets the uint64 to a slice of length 8.
-func commitPacket(packet channeltypes.Packet) []byte {
+func commitPacket(packet ibchandler.Packet) []byte {
 	timeoutHeight := packet.TimeoutHeight
 
 	buf := uint64ToBigEndian(packet.TimeoutTimestamp)
 
-	revisionNumber := uint64ToBigEndian(timeoutHeight.GetRevisionNumber())
+	revisionNumber := uint64ToBigEndian(timeoutHeight.RevisionNumber)
 	buf = append(buf, revisionNumber...)
 
-	revisionHeight := uint64ToBigEndian(timeoutHeight.GetRevisionHeight())
+	revisionHeight := uint64ToBigEndian(timeoutHeight.RevisionHeight)
 	buf = append(buf, revisionHeight...)
 
 	dataHash := sha256.Sum256(packet.Data)

@@ -15,7 +15,7 @@ import {
 import {IIBCHandler} from "../../../contracts/core/25-handler/IIBCHandler.sol";
 import {OwnableIBCHandler} from "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 import {MockClient} from "../../../contracts/clients/mock/MockClient.sol";
-import {IBFT2Client} from "../../../contracts/clients/ibft2/IBFT2Client.sol";
+import {QBFTClient} from "../../../contracts/clients/qbft/QBFTClient.sol";
 import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
 import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
 import {ERC20Token} from "../../../contracts/apps/20-transfer/ERC20Token.sol";
@@ -23,7 +23,7 @@ import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
 contract DeployScript is Script {
     string private constant MOCK_CLIENT_TYPE = "mock-client";
-    string private constant IBFT2_CLIENT_TYPE = "hyperledger-besu-ibft2";
+    string private constant QBFT_CLIENT_TYPE = "hb-qbft";
 
     function run() external {
         uint256 privateKey =
@@ -55,9 +55,9 @@ contract DeployScript is Script {
 
         // deploy client contracts
         MockClient mockClient = new MockClient(address(handler));
-        IBFT2Client ibft2Client = new IBFT2Client(address(handler));
+        QBFTClient qbftClient = new QBFTClient(address(handler));
         handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
-        handler.registerClient(IBFT2_CLIENT_TYPE, ibft2Client);
+        handler.registerClient(QBFT_CLIENT_TYPE, qbftClient);
 
         // deploy test helpers
         new ERC20Token("test", "test", 1000000);

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
-	clienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,13 +34,12 @@ func (c Coordinator) GetChain(idx int) *Chain {
 func (coord *Coordinator) SetupClients(
 	ctx context.Context,
 	chainA, chainB *Chain,
-	clientType string,
 ) (string, string) {
 
-	clientA, err := coord.CreateClient(ctx, chainA, chainB, clientType)
+	clientA, err := coord.CreateClient(ctx, chainA, chainB)
 	require.NoError(coord.t, err)
 
-	clientB, err := coord.CreateClient(ctx, chainB, chainA, clientType)
+	clientB, err := coord.CreateClient(ctx, chainB, chainA)
 	require.NoError(coord.t, err)
 
 	return clientA, clientB
@@ -52,10 +51,9 @@ func (coord *Coordinator) SetupClients(
 func (coord *Coordinator) SetupClientConnections(
 	ctx context.Context,
 	chainA, chainB *Chain,
-	clientType string,
 ) (string, string, *TestConnection, *TestConnection) {
 
-	clientA, clientB := coord.SetupClients(ctx, chainA, chainB, clientType)
+	clientA, clientB := coord.SetupClients(ctx, chainA, chainB)
 
 	connA, connB := coord.CreateConnection(ctx, chainA, chainB, clientA, clientB)
 
@@ -71,22 +69,8 @@ func (coord *Coordinator) UpdateLCInputData() {
 func (c Coordinator) CreateClient(
 	ctx context.Context,
 	source, counterparty *Chain,
-	clientType string,
 ) (clientID string, err error) {
-	switch clientType {
-	case clienttypes.BesuIBFT2Client:
-		clientID, err = source.CreateIBFT2Client(ctx, counterparty)
-	case clienttypes.MockClient:
-		clientID, err = source.CreateMockClient(ctx, counterparty)
-	default:
-		err = fmt.Errorf("client type %s is not supported", clientType)
-	}
-
-	if err != nil {
-		return "", err
-	}
-
-	return clientID, nil
+	return source.CreateQBFTClient(ctx, counterparty)
 }
 
 func (c Coordinator) UpdateClient(
@@ -96,19 +80,7 @@ func (c Coordinator) UpdateClient(
 	updateCommitment bool,
 ) error {
 	counterparty.UpdateLCInputData()
-	var err error
-	switch counterparty.ClientType() {
-	case clienttypes.BesuIBFT2Client:
-		err = source.UpdateIBFT2Client(ctx, counterparty, clientID, updateCommitment)
-	case clienttypes.MockClient:
-		err = source.UpdateMockClient(ctx, counterparty, clientID, updateCommitment)
-	default:
-		err = fmt.Errorf("client type %s is not supported", counterparty.ClientType())
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+	return source.UpdateQBFTClient(ctx, counterparty, clientID, updateCommitment)
 }
 
 // CreateConnection constructs and executes connection handshake messages in order to create
@@ -411,7 +383,7 @@ func (c *Coordinator) ChanCloseConfirm(
 func (c *Coordinator) SendPacket(
 	ctx context.Context,
 	source, counterparty *Chain,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 	counterpartyClientID string,
 ) error {
 	if err := source.SendPacket(ctx, packet); err != nil {
@@ -431,7 +403,7 @@ func (c *Coordinator) HandlePacketRecv(
 	ctx context.Context,
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 ) error {
 	if err := source.HandlePacketRecv(ctx, counterparty, sourceChannel, counterpartyChannel, packet); err != nil {
 		return err
@@ -450,7 +422,7 @@ func (c *Coordinator) HandlePacketAcknowledgement(
 	ctx context.Context,
 	source, counterparty *Chain,
 	sourceChannel, counterpartyChannel TestChannel,
-	packet channeltypes.Packet,
+	packet ibchandler.Packet,
 	acknowledgement []byte,
 ) error {
 	if err := source.HandlePacketAcknowledgement(ctx, counterparty, sourceChannel, counterpartyChannel, packet, acknowledgement); err != nil {

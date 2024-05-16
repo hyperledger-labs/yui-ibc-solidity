@@ -24,9 +24,6 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-// MerklePrefix is merkle path prefixed to the key.
-// The constructed key from the Path and the key will be append(Path.KeyPath,
-// append(Path.KeyPrefix, key...))
 type MerklePrefix struct {
 	KeyPrefix []byte `protobuf:"bytes,1,opt,name=key_prefix,json=keyPrefix,proto3" json:"key_prefix,omitempty" yaml:"key_prefix"`
 }

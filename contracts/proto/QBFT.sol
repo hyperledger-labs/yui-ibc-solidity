@@ -4,12 +4,12 @@ import "./ProtoBufRuntime.sol";
 import "./GoogleProtobufAny.sol";
 import "./Client.sol";
 
-library IbcLightclientsIbft2V1ClientState {
+library IbcLightclientsQbftV1ClientState {
 
 
   //struct definition
   struct Data {
-    string chain_id;
+    bytes chain_id;
     bytes ibc_store_address;
     Height.Data latest_height;
     uint64 trusting_period;
@@ -94,7 +94,7 @@ library IbcLightclientsIbft2V1ClientState {
     bytes memory bs,
     Data memory r
   ) internal pure returns (uint) {
-    (string memory x, uint256 sz) = ProtoBufRuntime._decode_string(p, bs);
+    (bytes memory x, uint256 sz) = ProtoBufRuntime._decode_bytes(p, bs);
     r.chain_id = x;
     return sz;
   }
@@ -203,14 +203,14 @@ library IbcLightclientsIbft2V1ClientState {
     uint256 offset = p;
     uint256 pointer = p;
     
-    if (bytes(r.chain_id).length != 0) {
+    if (r.chain_id.length != 0) {
     pointer += ProtoBufRuntime._encode_key(
       1,
       ProtoBufRuntime.WireType.LengthDelim,
       pointer,
       bs
     );
-    pointer += ProtoBufRuntime._encode_string(r.chain_id, pointer, bs);
+    pointer += ProtoBufRuntime._encode_bytes(r.chain_id, pointer, bs);
     }
     if (r.ibc_store_address.length != 0) {
     pointer += ProtoBufRuntime._encode_key(
@@ -282,7 +282,7 @@ library IbcLightclientsIbft2V1ClientState {
     Data memory r
   ) internal pure returns (uint) {
     uint256 e;
-    e += 1 + ProtoBufRuntime._sz_lendelim(bytes(r.chain_id).length);
+    e += 1 + ProtoBufRuntime._sz_lendelim(r.chain_id.length);
     e += 1 + ProtoBufRuntime._sz_lendelim(r.ibc_store_address.length);
     e += 1 + ProtoBufRuntime._sz_lendelim(Height._estimate(r.latest_height));
     e += 1 + ProtoBufRuntime._sz_uint64(r.trusting_period);
@@ -294,7 +294,7 @@ library IbcLightclientsIbft2V1ClientState {
     Data memory r
   ) internal pure returns (bool) {
     
-  if (bytes(r.chain_id).length != 0) {
+  if (r.chain_id.length != 0) {
     return false;
   }
 
@@ -348,9 +348,9 @@ library IbcLightclientsIbft2V1ClientState {
     }
   }
 }
-//library IbcLightclientsIbft2V1ClientState
+//library IbcLightclientsQbftV1ClientState
 
-library IbcLightclientsIbft2V1ConsensusState {
+library IbcLightclientsQbftV1ConsensusState {
 
 
   //struct definition
@@ -691,9 +691,9 @@ library IbcLightclientsIbft2V1ConsensusState {
     }
   }
 }
-//library IbcLightclientsIbft2V1ConsensusState
+//library IbcLightclientsQbftV1ConsensusState
 
-library IbcLightclientsIbft2V1Header {
+library IbcLightclientsQbftV1Header {
 
 
   //struct definition
@@ -1086,4 +1086,4 @@ library IbcLightclientsIbft2V1Header {
     }
   }
 }
-//library IbcLightclientsIbft2V1Header
+//library IbcLightclientsQbftV1Header

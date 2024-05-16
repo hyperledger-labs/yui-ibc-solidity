@@ -1,0 +1,42 @@
+services:
+  ibft2-testchain0:
+    build: ./ibft2/chain0
+    ports:
+      - 8645:8545
+      - 8646:8546
+    healthcheck:
+      test: [ "CMD-SHELL", "grep \"00000000:2161 00000000:0000 0A\" /proc/net/tcp || exit 1" ]
+      interval: 100ms
+      timeout: 1s
+      retries: 100
+  ibft2-testchain1:
+    build: ./ibft2/chain1
+    ports:
+      - 8745:8545
+      - 8746:8546
+    healthcheck:
+      test: [ "CMD-SHELL", "grep \"00000000:2161 00000000:0000 0A\" /proc/net/tcp || exit 1" ]
+      interval: 100ms
+      timeout: 1s
+      retries: 100
+
+  qbft-testchain0:
+    build: ./qbft/chain0
+    ports:
+      - 8645:8545
+      - 8646:8546
+    healthcheck:
+      test: [ "CMD-SHELL", "grep \"00000000:2161 00000000:0000 0A\" /proc/net/tcp || exit 1" ]
+      interval: 100ms
+      timeout: 1s
+      retries: 100
+  qbft-testchain1:
+    build: ./qbft/chain1
+    ports:
+      - 8745:8545
+      - 8746:8546
+    healthcheck:
+      test: [ "CMD-SHELL", "grep \"00000000:2161 00000000:0000 0A\" /proc/net/tcp || exit 1" ]
+      interval: 100ms
+      timeout: 1s
+      retries: 100
