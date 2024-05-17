@@ -7,5 +7,11 @@ gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 9_999_999
 
+[fmt]
+ignore = [
+  './contracts/proto/**/*.sol',
+  './tests/**/*.sol'
+]
+
 [profile.no_optimization]
 optimizer = false
