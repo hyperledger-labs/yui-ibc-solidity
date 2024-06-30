@@ -57,7 +57,7 @@ var (
 
 	BlockTime            uint64 = 1000 * 1000 * 1000 // 1[sec]
 	DefaultDelayPeriod   uint64 = 0                  // sec
-	DefaultTrustPeriod   uint64 = 60                 // sec
+	DefaultTrustPeriod   uint64 = 5 * 60             // sec
 	DefaultMaxClockDrift uint64 = 30                 // sec
 )
 
