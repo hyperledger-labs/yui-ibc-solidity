@@ -14,7 +14,11 @@ message ClientState {
   bytes chain_id = 1;
   bytes ibc_store_address = 2;
   Height latest_height = 3 [(gogoproto.nullable) = false];
+  // duration in seconds
+  // if this is set to 0, the client will not verify the header's timestamp is within the trusting period
   uint64 trusting_period = 4;
+  // duration in seconds
+  uint64 max_clock_drift = 5;
 }
 
 message ConsensusState {
@@ -24,6 +28,7 @@ message ConsensusState {
 }
 
 message Header {
+  // RLP encoded header of Besu, which does not include the seals in the extra data
   bytes besu_header_rlp = 1;
   repeated bytes seals = 2;
   Height trusted_height = 3 [(gogoproto.nullable) = false];

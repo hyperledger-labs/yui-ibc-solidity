@@ -58,6 +58,8 @@ contract QBFTClient is ILightClient, ILightClientErrors {
     error InsuffientUntrustedValidatorsSeals(uint256 actual, uint256 threshold);
     /// @param length length of the signature
     error InvalidECDSASignatureLength(uint256 length);
+    /// @dev An error indicating that the header is from the future
+    error HeaderFromFuture();
 
     string internal constant HEADER_TYPE_URL = "/ibc.lightclients.qbft.v1.Header";
     string internal constant CLIENT_STATE_TYPE_URL = "/ibc.lightclients.qbft.v1.ClientState";
@@ -207,6 +209,9 @@ contract QBFTClient is ILightClient, ILightClientErrors {
                 && trustedConsensusState.timestamp + clientState.trusting_period <= block.timestamp
         ) {
             revert LightClientConsensusStateExpired();
+        }
+        if (block.timestamp + clientState.max_clock_drift < parsedHeader.time) {
+            revert HeaderFromFuture();
         }
 
         bytes[] memory validators = verify(trustedConsensusState.validators, parsedHeader);
