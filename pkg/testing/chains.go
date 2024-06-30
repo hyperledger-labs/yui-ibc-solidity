@@ -40,19 +40,25 @@ import (
 )
 
 const (
-	ICS20Version              = "ics20-1"
-	MockAppVersion            = "mockapp-1"
-	BlockTime          uint64 = 1000 * 1000 * 1000 // 1[sec]
-	DefaultDelayPeriod uint64 = 0
-	DefaultPrefix             = "ibc"
-	TransferPort              = "transfer"
-	MockPort                  = "mock"
+	ICS20Version   = "ics20-1"
+	MockAppVersion = "mockapp-1"
+	TransferPort   = "transfer"
+	MockPort       = "mock"
 
 	RelayerKeyIndex uint32 = 0
 
 	MockPacketData      = "mock packet data"
 	MockFailPacketData  = "mock failed packet data"
 	MockAsyncPacketData = "mock async packet data"
+)
+
+var (
+	DefaultPrefix = "ibc"
+
+	BlockTime            uint64 = 1000 * 1000 * 1000 // 1[sec]
+	DefaultDelayPeriod   uint64 = 0                  // sec
+	DefaultTrustPeriod   uint64 = 5 * 60             // sec
+	DefaultMaxClockDrift uint64 = 30                 // sec
 )
 
 var (
@@ -302,6 +308,8 @@ func (chain *Chain) ConstructQBFTMsgCreateClient(counterparty *Chain) ibchandler
 		ChainId:         counterparty.ChainIDU256(),
 		IbcStoreAddress: counterparty.ContractConfig.IBCHandlerAddress.Bytes(),
 		LatestHeight:    ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
+		TrustingPeriod:  DefaultTrustPeriod,
+		MaxClockDrift:   DefaultMaxClockDrift,
 	}
 	consensusState := qbftclienttypes.ConsensusState{
 		Timestamp:  counterparty.LastHeader().Time,
