@@ -7,8 +7,9 @@ import {
     IIBCChannelHandshake, IIBCChannelPacketSendRecv, IIBCChannelPacketTimeout
 } from "../04-channel/IIBCChannel.sol";
 import {
-    IIBCChannelUpgradeInitTryAck,
-    IIBCChannelUpgradeConfirmOpenTimeoutCancel
+    IIBCChannelUpgradeInitTry,
+    IIBCChannelUpgradeAckConfirm,
+    IIBCChannelUpgradeOpenTimeoutCancel
 } from "../04-channel/IIBCChannelUpgrade.sol";
 import {IBCHostConfigurator} from "../24-host/IBCHostConfigurator.sol";
 import {IBCClientConnectionChannelHandler} from "./IBCClientConnectionChannelHandler.sol";
@@ -23,8 +24,9 @@ abstract contract IBCHandler is IBCHostConfigurator, IBCClientConnectionChannelH
      * @param ibcChannelHandshake_ is the address of a contract that implements `IIBCChannelHandshake`.
      * @param ibcChannelPacketSendRecv_ is the address of a contract that implements `IIBCChannelPacketSendRecv`.
      * @param ibcChannelPacketTimeout_ is the address of a contract that implements `IIBCChannelPacketTimeout`.
-     * @param ibcChannelUpgradeInitTryAck_ is the address of a contract that implements `IIBCChannelUpgrade`.
-     * @param ibcChannelUpgradeConfirmOpenTimeoutCancel_ is the address of a contract that implements `IIBCChannelUpgrade`.
+     * @param ibcChannelUpgradeInitTry_ is the address of a contract that implements `IIBCChannelUpgradeInitTry`.
+     * @param ibcChannelUpgradeAckConfirm_ is the address of a contract that implements `IIBCChannelUpgradeAckConfirm`.
+     * @param ibcChannelUpgradeOpenTimeoutCancel_ is the address of a contract that implements `IIBCChannelUpgradeOpenTimeoutCancel`.
      */
     constructor(
         IIBCClient ibcClient_,
@@ -32,8 +34,9 @@ abstract contract IBCHandler is IBCHostConfigurator, IBCClientConnectionChannelH
         IIBCChannelHandshake ibcChannelHandshake_,
         IIBCChannelPacketSendRecv ibcChannelPacketSendRecv_,
         IIBCChannelPacketTimeout ibcChannelPacketTimeout_,
-        IIBCChannelUpgradeInitTryAck ibcChannelUpgradeInitTryAck_,
-        IIBCChannelUpgradeConfirmOpenTimeoutCancel ibcChannelUpgradeConfirmOpenTimeoutCancel_
+        IIBCChannelUpgradeInitTry ibcChannelUpgradeInitTry_,
+        IIBCChannelUpgradeAckConfirm ibcChannelUpgradeAckConfirm_,
+        IIBCChannelUpgradeOpenTimeoutCancel ibcChannelUpgradeOpenTimeoutCancel_
     )
         IBCClientConnectionChannelHandler(
             ibcClient_,
@@ -41,8 +44,9 @@ abstract contract IBCHandler is IBCHostConfigurator, IBCClientConnectionChannelH
             ibcChannelHandshake_,
             ibcChannelPacketSendRecv_,
             ibcChannelPacketTimeout_,
-            ibcChannelUpgradeInitTryAck_,
-            ibcChannelUpgradeConfirmOpenTimeoutCancel_
+            ibcChannelUpgradeInitTry_,
+            ibcChannelUpgradeAckConfirm_,
+            ibcChannelUpgradeOpenTimeoutCancel_
         )
     {}
 }

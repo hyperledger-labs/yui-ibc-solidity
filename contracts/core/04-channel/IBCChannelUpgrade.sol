@@ -9,8 +9,9 @@ import {IBCConnectionLib} from "../03-connection/IBCConnectionLib.sol";
 import {IIBCConnectionErrors} from "../03-connection/IIBCConnectionErrors.sol";
 import {
     IIBCChannelUpgradeBase,
-    IIBCChannelUpgradeInitTryAck,
-    IIBCChannelUpgradeConfirmOpenTimeoutCancel
+    IIBCChannelUpgradeInitTry,
+    IIBCChannelUpgradeAckConfirm,
+    IIBCChannelUpgradeOpenTimeoutCancel
 } from "../04-channel/IIBCChannelUpgrade.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
@@ -226,7 +227,7 @@ abstract contract IBCChannelUpgradeBase is
         string calldata portId,
         string calldata channelId,
         uint64 upgradeSequence
-    ) internal view virtual returns (bool) {
+    ) internal view returns (bool) {
         if (ordering == Channel.Order.ORDER_ORDERED) {
             if (nextSequenceSends[portId][channelId] == nextSequenceAcks[portId][channelId]) {
                 return true;
@@ -370,9 +371,21 @@ abstract contract IBCChannelUpgradeBase is
         }
         return string(result);
     }
+
+    // --------------------- External Functions --------------------- //
+
+    function getCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
+        external
+        view
+        override
+        returns (bool)
+    {
+        Channel.Data storage channel = channels[portId][channelId];
+        return canTransitionToFlushComplete(channel.ordering, portId, channelId, channel.upgrade_sequence);
+    }
 }
 
-contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgradeInitTryAck {
+contract IBCChannelUpgradeInitTry is IBCChannelUpgradeBase, IIBCChannelUpgradeInitTry {
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeInit}
      */
@@ -514,7 +527,9 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
 
         return (true, channel.upgrade_sequence);
     }
+}
 
+contract IBCChannelUpgradeAckConfirm is IBCChannelUpgradeBase, IIBCChannelUpgradeAckConfirm {
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeAck}
      */
@@ -602,9 +617,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
 
         return true;
     }
-}
 
-contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCChannelUpgradeConfirmOpenTimeoutCancel {
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeConfirm}
      */
@@ -665,7 +678,9 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
 
         return true;
     }
+}
 
+contract IBCChannelUpgradeOpenTimeoutCancel is IBCChannelUpgradeBase, IIBCChannelUpgradeOpenTimeoutCancel {
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeOpen}
      */

@@ -8,9 +8,11 @@ import {
     IIBCChannelHandshake, IIBCChannelPacketSendRecv, IIBCChannelPacketTimeout
 } from "../04-channel/IIBCChannel.sol";
 import {
+    IIBCChannelUpgradeBase,
     IIBCChannelUpgrade,
-    IIBCChannelUpgradeInitTryAck,
-    IIBCChannelUpgradeConfirmOpenTimeoutCancel
+    IIBCChannelUpgradeInitTry,
+    IIBCChannelUpgradeAckConfirm,
+    IIBCChannelUpgradeOpenTimeoutCancel
 } from "../04-channel/IIBCChannelUpgrade.sol";
 
 interface IBCHandlerViewFunctionWrapper {
@@ -18,6 +20,11 @@ interface IBCHandlerViewFunctionWrapper {
         external
         view
         returns (address, bytes4, bytes memory);
+
+    function wrappedGetCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (bool);
 }
 
 /**
@@ -36,8 +43,9 @@ abstract contract IBCClientConnectionChannelHandler is
     address internal immutable ibcChannelHandshake;
     address internal immutable ibcChannelPacketSendRecv;
     address internal immutable ibcChannelPacketTimeout;
-    address internal immutable ibcChannelUpgradeInitTryAck;
-    address internal immutable ibcChannelUpgradeConfirmOpenTimeoutCancel;
+    address internal immutable ibcChannelUpgradeInitTry;
+    address internal immutable ibcChannelUpgradeAckConfirm;
+    address internal immutable ibcChannelUpgradeOpenTimeoutCancel;
 
     /**
      * @dev The arguments of constructor must satisfy the followings:
@@ -46,8 +54,9 @@ abstract contract IBCClientConnectionChannelHandler is
      * @param ibcChannelHandshake_ is the address of a contract that implements `IIBCChannelHandshake`.
      * @param ibcChannelPacketSendRecv_ is the address of a contract that implements `IICS04Wrapper + IIBCChannelPacketReceiver`.
      * @param ibcChannelPacketTimeout_ is the address of a contract that implements `IIBCChannelPacketTimeout`.
-     * @param ibcChannelUpgradeInitTryAck_ is the address of a contract that implements `IIBCChannelUpgradeInitTryAck`.
-     * @param ibcChannelUpgradeConfirmOpenTimeoutCancel_ is the address of a contract that implements `IIBCChannelUpgradeConfirmOpenTimeoutCancel`.
+     * @param ibcChannelUpgradeInitTry_ is the address of a contract that implements `IIBCChannelUpgradeInitTry`.
+     * @param ibcChannelUpgradeAckConfirm_ is the address of a contract that implements `IIBCChannelUpgradeAckConfirm`.
+     * @param ibcChannelUpgradeOpenTimeoutCancel_ is the address of a contract that implements `IIBCChannelUpgradeOpenTimeoutCancel`.
      */
     constructor(
         IIBCClient ibcClient_,
@@ -55,16 +64,18 @@ abstract contract IBCClientConnectionChannelHandler is
         IIBCChannelHandshake ibcChannelHandshake_,
         IIBCChannelPacketSendRecv ibcChannelPacketSendRecv_,
         IIBCChannelPacketTimeout ibcChannelPacketTimeout_,
-        IIBCChannelUpgradeInitTryAck ibcChannelUpgradeInitTryAck_,
-        IIBCChannelUpgradeConfirmOpenTimeoutCancel ibcChannelUpgradeConfirmOpenTimeoutCancel_
+        IIBCChannelUpgradeInitTry ibcChannelUpgradeInitTry_,
+        IIBCChannelUpgradeAckConfirm ibcChannelUpgradeAckConfirm_,
+        IIBCChannelUpgradeOpenTimeoutCancel ibcChannelUpgradeOpenTimeoutCancel_
     ) {
         ibcClient = address(ibcClient_);
         ibcConnection = address(ibcConnection_);
         ibcChannelHandshake = address(ibcChannelHandshake_);
         ibcChannelPacketSendRecv = address(ibcChannelPacketSendRecv_);
         ibcChannelPacketTimeout = address(ibcChannelPacketTimeout_);
-        ibcChannelUpgradeInitTryAck = address(ibcChannelUpgradeInitTryAck_);
-        ibcChannelUpgradeConfirmOpenTimeoutCancel = address(ibcChannelUpgradeConfirmOpenTimeoutCancel_);
+        ibcChannelUpgradeInitTry = address(ibcChannelUpgradeInitTry_);
+        ibcChannelUpgradeAckConfirm = address(ibcChannelUpgradeAckConfirm_);
+        ibcChannelUpgradeOpenTimeoutCancel = address(ibcChannelUpgradeOpenTimeoutCancel_);
     }
 
     function createClient(MsgCreateClient calldata) external returns (string memory) {
@@ -173,31 +184,59 @@ abstract contract IBCClientConnectionChannelHandler is
     }
 
     function channelUpgradeInit(MsgChannelUpgradeInit calldata) external returns (uint64) {
-        doFallback(ibcChannelUpgradeInitTryAck);
+        doFallback(ibcChannelUpgradeInitTry);
     }
 
     function channelUpgradeTry(MsgChannelUpgradeTry calldata) external returns (bool, uint64) {
-        doFallback(ibcChannelUpgradeInitTryAck);
+        doFallback(ibcChannelUpgradeInitTry);
     }
 
     function channelUpgradeAck(MsgChannelUpgradeAck calldata) external returns (bool) {
-        doFallback(ibcChannelUpgradeInitTryAck);
+        doFallback(ibcChannelUpgradeAckConfirm);
     }
 
     function channelUpgradeConfirm(MsgChannelUpgradeConfirm calldata) external returns (bool) {
-        doFallback(ibcChannelUpgradeConfirmOpenTimeoutCancel);
+        doFallback(ibcChannelUpgradeAckConfirm);
     }
 
     function channelUpgradeOpen(MsgChannelUpgradeOpen calldata) external {
-        doFallback(ibcChannelUpgradeConfirmOpenTimeoutCancel);
+        doFallback(ibcChannelUpgradeOpenTimeoutCancel);
     }
 
     function cancelChannelUpgrade(MsgCancelChannelUpgrade calldata) external {
-        doFallback(ibcChannelUpgradeConfirmOpenTimeoutCancel);
+        doFallback(ibcChannelUpgradeOpenTimeoutCancel);
     }
 
     function timeoutChannelUpgrade(MsgTimeoutChannelUpgrade calldata) external {
-        doFallback(ibcChannelUpgradeConfirmOpenTimeoutCancel);
+        doFallback(ibcChannelUpgradeOpenTimeoutCancel);
+    }
+
+    function getCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (bool)
+    {
+        return IBCHandlerViewFunctionWrapper(address(this)).wrappedGetCanTransitionToFlushComplete(portId, channelId);
+    }
+
+    function wrappedGetCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
+        external
+        returns (bool)
+    {
+        (bool success, bytes memory returndata) = address(ibcChannelUpgradeInitTry).delegatecall(
+            abi.encodeWithSelector(IIBCChannelUpgradeBase.getCanTransitionToFlushComplete.selector, portId, channelId)
+        );
+        if (!success) {
+            if (returndata.length > 0) {
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert("getCanTransitionToFlushComplete failed");
+            }
+        }
+        return abi.decode(returndata, (bool));
     }
 
     function doFallback(address impl) internal virtual {

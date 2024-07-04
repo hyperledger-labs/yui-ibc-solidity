@@ -9,8 +9,9 @@ import {IBCChannelHandshake} from "../../../contracts/core/04-channel/IBCChannel
 import {IBCChannelPacketSendRecv} from "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
 import {IBCChannelPacketTimeout} from "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
 import {
-    IBCChannelUpgradeInitTryAck,
-    IBCChannelUpgradeConfirmTimeoutCancel
+    IBCChannelUpgradeInitTry,
+    IBCChannelUpgradeAckConfirm,
+    IBCChannelUpgradeOpenTimeoutCancel
 } from "../../../contracts/core/04-channel/IBCChannelUpgrade.sol";
 import {IIBCHandler} from "../../../contracts/core/25-handler/IIBCHandler.sol";
 import {OwnableIBCHandler} from "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
@@ -38,8 +39,9 @@ contract DeployScript is Script {
                 new IBCChannelHandshake(),
                 new IBCChannelPacketSendRecv(),
                 new IBCChannelPacketTimeout(),
-                new IBCChannelUpgradeInitTryAck(),
-                new IBCChannelUpgradeConfirmTimeoutCancel()
+                new IBCChannelUpgradeInitTry(),
+                new IBCChannelUpgradeAckConfirm(),
+                new IBCChannelUpgradeOpenTimeoutCancel()
             )
         );
 

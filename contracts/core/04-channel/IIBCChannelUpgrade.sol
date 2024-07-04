@@ -81,9 +81,16 @@ interface IIBCChannelUpgradeBase {
     /// @param channelId channel identifier
     /// @param upgradeSequence upgrade sequence
     event WriteErrorReceipt(string portId, string channelId, uint64 upgradeSequence, string message);
+
+    // --------------------- External Functions --------------------- //
+
+    function getCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (bool);
 }
 
-interface IIBCChannelUpgradeInitTryAck is IIBCChannelUpgradeBase {
+interface IIBCChannelUpgradeInitTry is IIBCChannelUpgradeBase {
     // --------------------- Events --------------------- //
 
     /// @notice emitted when channelUpgradeInit is successfully executed
@@ -96,18 +103,6 @@ interface IIBCChannelUpgradeInitTryAck is IIBCChannelUpgradeBase {
         string portId,
         string channelId,
         uint64 upgradeSequence,
-        UpgradeFields.Data upgradeFields,
-        Timeout.Data timeout,
-        uint64 nextSequenceSend
-    );
-
-    /// @notice emitted when channelUpgradeAck is successfully executed
-    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE)
-    event ChannelUpgradeAck(
-        string portId,
-        string channelId,
-        uint64 upgradeSequence,
-        Channel.State channelState,
         UpgradeFields.Data upgradeFields,
         Timeout.Data timeout,
         uint64 nextSequenceSend
@@ -130,6 +125,28 @@ interface IIBCChannelUpgradeInitTryAck is IIBCChannelUpgradeBase {
      * If the upgrade fails, the upgrade sequence will still be incremented but an error will be returned.
      */
     function channelUpgradeTry(MsgChannelUpgradeTry calldata msg_) external returns (bool ok, uint64 upgradeSequence);
+}
+
+interface IIBCChannelUpgradeAckConfirm is IIBCChannelUpgradeBase {
+    // --------------------- Events --------------------- //
+
+    /// @notice emitted when channelUpgradeAck is successfully executed
+    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE)
+    event ChannelUpgradeAck(
+        string portId,
+        string channelId,
+        uint64 upgradeSequence,
+        Channel.State channelState,
+        UpgradeFields.Data upgradeFields,
+        Timeout.Data timeout,
+        uint64 nextSequenceSend
+    );
+
+    /// @notice emitted when channelUpgradeConfirm is successfully executed
+    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE or OPEN)
+    event ChannelUpgradeConfirm(string portId, string channelId, uint64 upgradeSequence, Channel.State channelState);
+
+    // --------------------- External Functions --------------------- //
 
     /**
      * @dev channelUpgradeAck is called by a module to accept the ACKUPGRADE handshake step of the channel upgrade protocol.
@@ -144,19 +161,6 @@ interface IIBCChannelUpgradeInitTryAck is IIBCChannelUpgradeBase {
      *   A -> Init (OPEN), B -> Init (OPEN) -> A -> Try (FLUSHING), B -> Try (FLUSHING), A -> Ack (begins in FLUSHING, ends in FLUSHING or FLUSHCOMPLETE)
      */
     function channelUpgradeAck(MsgChannelUpgradeAck calldata msg_) external returns (bool);
-}
-
-interface IIBCChannelUpgradeConfirmOpenTimeoutCancel is IIBCChannelUpgradeBase {
-    // --------------------- Events --------------------- //
-
-    /// @notice emitted when channelUpgradeConfirm is successfully executed
-    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE or OPEN)
-    event ChannelUpgradeConfirm(string portId, string channelId, uint64 upgradeSequence, Channel.State channelState);
-
-    /// @notice emitted when channelUpgradeOpen is successfully executed
-    event ChannelUpgradeOpen(string portId, string channelId, uint64 upgradeSequence);
-
-    // --------------------- External Functions --------------------- //
 
     /**
      * @dev channelUpgradeConfirm is called on the chain which is on FLUSHING after channelUpgradeAck is called on the counterparty.
@@ -164,6 +168,15 @@ interface IIBCChannelUpgradeConfirmOpenTimeoutCancel is IIBCChannelUpgradeBase {
      * we will write an error receipt and restore the channel to OPEN state.
      */
     function channelUpgradeConfirm(MsgChannelUpgradeConfirm calldata msg_) external returns (bool);
+}
+
+interface IIBCChannelUpgradeOpenTimeoutCancel is IIBCChannelUpgradeBase {
+    // --------------------- Events --------------------- //
+
+    /// @notice emitted when channelUpgradeOpen is successfully executed
+    event ChannelUpgradeOpen(string portId, string channelId, uint64 upgradeSequence);
+
+    // --------------------- External Functions --------------------- //
 
     /**
      * @dev channelUpgradeOpen is called by a module to complete the channel upgrade handshake and move the channel back to an OPEN state.
@@ -185,4 +198,8 @@ interface IIBCChannelUpgradeConfirmOpenTimeoutCancel is IIBCChannelUpgradeBase {
     function timeoutChannelUpgrade(MsgTimeoutChannelUpgrade calldata msg_) external;
 }
 
-interface IIBCChannelUpgrade is IIBCChannelUpgradeInitTryAck, IIBCChannelUpgradeConfirmOpenTimeoutCancel {}
+interface IIBCChannelUpgrade is
+    IIBCChannelUpgradeInitTry,
+    IIBCChannelUpgradeAckConfirm,
+    IIBCChannelUpgradeOpenTimeoutCancel
+{}
