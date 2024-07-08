@@ -22,7 +22,7 @@ contract IBCModuleManager is IBCHost, Context {
     }
 
     /**
-     * @dev claimCapability allows the IBC app module to claim a capability that core IBC passes to it
+     * @dev claimChannelCapability allows the IBC app module to claim a capability that core IBC passes to it
      */
     function claimChannelCapability(string calldata portId, string memory channelId, address addr) internal {
         if (channelCapabilities[portId][channelId] != address(0)) {
@@ -36,13 +36,15 @@ contract IBCModuleManager is IBCHost, Context {
      * It allows for a caller to check that a capability does in fact correspond to a particular name.
      */
     function authenticateChannelCapability(string calldata portId, string calldata channelId) internal view {
-        if (channelCapabilities[portId][channelId] != _msgSender()) {
-            revert IBCHostFailedAuthenticateChannelCapability(portId, channelId, _msgSender());
+        address msgSender = _msgSender();
+        if (channelCapabilities[portId][channelId] != msgSender) {
+            revert IBCHostFailedAuthenticateChannelCapability(portId, channelId, msgSender);
         }
     }
 
     /**
      * @dev lookupModuleByPort will return the IBCModule along with the capability associated with a given portID
+     * If the module is not found, it will revert
      */
     function lookupModuleByPort(string calldata portId) internal view virtual returns (IIBCModule) {
         address module = portCapabilities[portId];
@@ -54,6 +56,7 @@ contract IBCModuleManager is IBCHost, Context {
 
     /**
      * @dev lookupModuleByChannel will return the IBCModule along with the capability associated with a given channel defined by its portID and channelID
+     * If the module is not found, it will revert
      */
     function lookupModuleByChannel(string calldata portId, string calldata channelId)
         internal
@@ -70,6 +73,7 @@ contract IBCModuleManager is IBCHost, Context {
 
     /**
      * @dev lookupUpgradableModuleByPort will return the IBCModule along with the capability associated with a given portID
+     * If the module is not found, it will revert
      */
     function lookupUpgradableModuleByPort(string calldata portId) internal view returns (IIBCModuleUpgrade) {
         return IIBCModuleUpgrade(address(lookupModuleByPort(portId)));
@@ -77,6 +81,7 @@ contract IBCModuleManager is IBCHost, Context {
 
     /**
      * @dev canTransitionToFlushComplete checks if the module can transition to flush complete at the given upgrade sequence
+     * If the module is not found, it will revert
      */
     function canTransitionToFlushComplete(
         Channel.Order ordering,
