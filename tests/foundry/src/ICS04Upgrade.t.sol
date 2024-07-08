@@ -1220,8 +1220,12 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 )
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHING);
+            assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
+            assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
             mockApp.allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+            assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
             mockApp.allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
+            assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
         }
         if (skipFlushCompleteAuthorization || flow.fastPath) {
             // Ack@channel0: OPEN(INIT) or FLUSHING -> FLUSHCOMPLETE
@@ -1281,7 +1285,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHING);
 
+            assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
             mockApp.allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+            assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
             // Confirm@channel0: FLUSHING -> FLUSHCOMPLETE
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
@@ -1340,7 +1346,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHCOMPLETE);
 
+            assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
             mockApp.allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
+            assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
             // Confirm@channel1: FLUSHING -> OPEN
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
@@ -1408,7 +1416,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             {
                 (Channel.Data memory channel1Data,) = ibcHandler.getChannel(channel1.portId, channel1.channelId);
                 // Confirm@channel1: FLUSHING -> FLUSHCOMPLETE
+                assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
                 mockApp.allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
+                assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
                 assertTrue(
                     ibcHandler.channelUpgradeConfirm(
                         IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
@@ -1431,7 +1441,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                     }
                 }
 
+                assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
                 mockApp.allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+                assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
                 mockCallVerifyChannelState(
                     address(LocalhostHelper.getLocalhostClient(ibcHandler)), channel1, channel1Data
                 );

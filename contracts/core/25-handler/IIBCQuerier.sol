@@ -48,4 +48,9 @@ interface IIBCQuerier {
         external
         view
         returns (Upgrade.Data memory, bool);
+
+    function getCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (bool);
 }

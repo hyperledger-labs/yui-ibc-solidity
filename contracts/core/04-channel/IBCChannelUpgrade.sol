@@ -14,7 +14,6 @@ import {
 } from "../04-channel/IIBCChannelUpgrade.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
-import {IIBCModuleUpgrade} from "../26-router/IIBCModuleUpgrade.sol";
 import {IBCChannelLib} from "./IBCChannelLib.sol";
 import {IIBCChannelUpgradeErrors} from "./IIBCChannelUpgradeErrors.sol";
 
@@ -201,10 +200,6 @@ abstract contract IBCChannelUpgradeBase is
             == keccak256(bytes(proposedConnection.counterparty.connection_id));
     }
 
-    function lookupUpgradableModuleByPort(string calldata portId) internal view returns (IIBCModuleUpgrade) {
-        return IIBCModuleUpgrade(address(lookupModuleByPort(portId)));
-    }
-
     function isAuthorizedUpgrader(string calldata portId, string calldata channelId, address msgSender)
         internal
         view
@@ -219,22 +214,6 @@ abstract contract IBCChannelUpgradeBase is
         returns (Timeout.Data memory)
     {
         return lookupUpgradableModuleByPort(portId).getUpgradeTimeout(portId, channelId);
-    }
-
-    function canTransitionToFlushComplete(
-        Channel.Order ordering,
-        string calldata portId,
-        string calldata channelId,
-        uint64 upgradeSequence
-    ) internal view virtual returns (bool) {
-        if (ordering == Channel.Order.ORDER_ORDERED) {
-            if (nextSequenceSends[portId][channelId] == nextSequenceAcks[portId][channelId]) {
-                return true;
-            }
-        }
-        return lookupUpgradableModuleByPort(portId).canTransitionToFlushComplete(
-            portId, channelId, upgradeSequence, _msgSender()
-        );
     }
 
     // --------------------- Private Functions --------------------- //

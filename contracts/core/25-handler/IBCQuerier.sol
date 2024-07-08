@@ -5,11 +5,23 @@ import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel, Upgrade} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
-import {IBCHost} from "../24-host/IBCHost.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IIBCQuerier} from "./IIBCQuerier.sol";
+import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 
-contract IBCQuerier is IBCHost, IIBCQuerier {
+contract IBCQuerier is IBCModuleManager, IIBCQuerier {
+    function getCommitmentPrefix() external view returns (bytes memory) {
+        return _getCommitmentPrefix();
+    }
+
+    function getCommitment(bytes32 hashedPath) public view returns (bytes32) {
+        return commitments[hashedPath];
+    }
+
+    function getExpectedTimePerBlock() external view returns (uint64) {
+        return expectedTimePerBlock;
+    }
+
     function getClientByType(string calldata clientType) external view returns (address) {
         return clientRegistry[clientType];
     }
@@ -70,18 +82,6 @@ contract IBCQuerier is IBCHost, IIBCQuerier {
         );
     }
 
-    function getCommitmentPrefix() external view returns (bytes memory) {
-        return _getCommitmentPrefix();
-    }
-
-    function getCommitment(bytes32 hashedPath) public view returns (bytes32) {
-        return commitments[hashedPath];
-    }
-
-    function getExpectedTimePerBlock() external view returns (uint64) {
-        return expectedTimePerBlock;
-    }
-
     function getChannelUpgrade(string calldata portId, string calldata channelId)
         external
         view
@@ -89,5 +89,17 @@ contract IBCQuerier is IBCHost, IIBCQuerier {
     {
         Upgrade.Data storage upgrade = upgrades[portId][channelId];
         return (upgrade, upgrade.fields.connection_hops.length != 0);
+    }
+
+    function getCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
+        external
+        view
+        returns (bool)
+    {
+        Channel.Data storage channel = channels[portId][channelId];
+        if (channel.state != Channel.State.STATE_FLUSHING) {
+            return false;
+        }
+        return canTransitionToFlushComplete(channel.ordering, portId, channelId, channel.upgrade_sequence);
     }
 }
