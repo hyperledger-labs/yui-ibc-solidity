@@ -6,8 +6,9 @@ import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel, Upgrade} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
-import {IIBCQuerier} from "./IIBCQuerier.sol";
+import {IIBCModule} from "../26-router/IIBCModule.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
+import {IIBCQuerier} from "./IIBCQuerier.sol";
 
 contract IBCQuerier is IBCModuleManager, IIBCQuerier {
     function getCommitmentPrefix() public view override returns (bytes memory) {
@@ -20,6 +21,19 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
 
     function getExpectedTimePerBlock() public view override returns (uint64) {
         return expectedTimePerBlock;
+    }
+
+    function getIBCModuleByPort(string calldata portId) public view override returns (IIBCModule) {
+        return lookupModuleByPort(portId);
+    }
+
+    function getIBCModuleByChannel(string calldata portId, string calldata channelId)
+        public
+        view
+        override
+        returns (IIBCModule)
+    {
+        return lookupModuleByChannel(portId, channelId);
     }
 
     function getClientByType(string calldata clientType) public view override returns (address) {
