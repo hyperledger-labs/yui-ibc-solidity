@@ -10,71 +10,94 @@ import {IIBCQuerier} from "./IIBCQuerier.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 
 contract IBCQuerier is IBCModuleManager, IIBCQuerier {
-    function getCommitmentPrefix() external view returns (bytes memory) {
+    function getCommitmentPrefix() public view override returns (bytes memory) {
         return _getCommitmentPrefix();
     }
 
-    function getCommitment(bytes32 hashedPath) public view returns (bytes32) {
+    function getCommitment(bytes32 hashedPath) public view override returns (bytes32) {
         return commitments[hashedPath];
     }
 
-    function getExpectedTimePerBlock() external view returns (uint64) {
+    function getExpectedTimePerBlock() public view override returns (uint64) {
         return expectedTimePerBlock;
     }
 
-    function getClientByType(string calldata clientType) external view returns (address) {
+    function getClientByType(string calldata clientType) public view override returns (address) {
         return clientRegistry[clientType];
     }
 
-    function getClientType(string calldata clientId) external view returns (string memory) {
+    function getClientType(string calldata clientId) public view override returns (string memory) {
         return clientTypes[clientId];
     }
 
-    function getClient(string calldata clientId) external view returns (address) {
+    function getClient(string calldata clientId) public view override returns (address) {
         return clientImpls[clientId];
     }
 
-    function getClientState(string calldata clientId) external view returns (bytes memory, bool) {
+    function getClientState(string calldata clientId) public view override returns (bytes memory, bool) {
         return checkAndGetClient(clientId).getClientState(clientId);
     }
 
     function getConsensusState(string calldata clientId, Height.Data calldata height)
-        external
+        public
         view
+        override
         returns (bytes memory consensusStateBytes, bool)
     {
         return checkAndGetClient(clientId).getConsensusState(clientId, height);
     }
 
-    function getConnection(string calldata connectionId) external view returns (ConnectionEnd.Data memory, bool) {
+    function getConnection(string calldata connectionId)
+        public
+        view
+        override
+        returns (ConnectionEnd.Data memory, bool)
+    {
         ConnectionEnd.Data storage connection = connections[connectionId];
         return (connection, connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
     function getChannel(string calldata portId, string calldata channelId)
-        external
+        public
         view
+        override
         returns (Channel.Data memory, bool)
     {
         Channel.Data storage channel = channels[portId][channelId];
         return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
-    function getNextSequenceSend(string calldata portId, string calldata channelId) external view returns (uint64) {
+    function getNextSequenceSend(string calldata portId, string calldata channelId)
+        public
+        view
+        override
+        returns (uint64)
+    {
         return nextSequenceSends[portId][channelId];
     }
 
-    function getNextSequenceRecv(string calldata portId, string calldata channelId) external view returns (uint64) {
+    function getNextSequenceRecv(string calldata portId, string calldata channelId)
+        public
+        view
+        override
+        returns (uint64)
+    {
         return nextSequenceRecvs[portId][channelId];
     }
 
-    function getNextSequenceAck(string calldata portId, string calldata channelId) external view returns (uint64) {
+    function getNextSequenceAck(string calldata portId, string calldata channelId)
+        public
+        view
+        override
+        returns (uint64)
+    {
         return nextSequenceAcks[portId][channelId];
     }
 
     function getPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence)
-        external
+        public
         view
+        override
         returns (IBCChannelLib.PacketReceipt)
     {
         return IBCChannelLib.receiptCommitmentToReceipt(
@@ -83,8 +106,9 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
     }
 
     function getChannelUpgrade(string calldata portId, string calldata channelId)
-        external
+        public
         view
+        override
         returns (Upgrade.Data memory, bool)
     {
         Upgrade.Data storage upgrade = upgrades[portId][channelId];
@@ -92,8 +116,9 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
     }
 
     function getCanTransitionToFlushComplete(string calldata portId, string calldata channelId)
-        external
+        public
         view
+        override
         returns (bool)
     {
         Channel.Data storage channel = channels[portId][channelId];

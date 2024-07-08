@@ -7,6 +7,12 @@ import {Channel, Upgrade} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
 
 interface IIBCQuerier {
+    function getCommitmentPrefix() external view returns (bytes memory);
+
+    function getCommitment(bytes32 hashedPath) external view returns (bytes32);
+
+    function getExpectedTimePerBlock() external view returns (uint64);
+
     function getClientByType(string calldata clientType) external view returns (address);
 
     function getClientType(string calldata clientId) external view returns (string memory);
@@ -37,12 +43,6 @@ interface IIBCQuerier {
         external
         view
         returns (IBCChannelLib.PacketReceipt);
-
-    function getCommitmentPrefix() external view returns (bytes memory);
-
-    function getCommitment(bytes32 hashedPath) external view returns (bytes32);
-
-    function getExpectedTimePerBlock() external view returns (uint64);
 
     function getChannelUpgrade(string calldata portId, string calldata channelId)
         external
