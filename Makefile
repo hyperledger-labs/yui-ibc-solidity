@@ -29,6 +29,10 @@ test:
 coverage:
 	@forge coverage --use solc:$(SOLC_VERSION)
 
+.PHONY: slither
+slither:
+	@slither .
+
 ######## Protobuf ########
 
 .PHONY: proto-sol

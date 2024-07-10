@@ -324,6 +324,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         string memory channelId,
         bytes memory channelBytes
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -336,6 +337,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
                 channelBytes
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCChannelFailedVerifyChannelState(

@@ -208,6 +208,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         bytes memory proof,
         bytes memory clientStateBytes
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -220,6 +221,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
                 clientStateBytes
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCConnectionFailedVerifyClientState(connection.client_id, path, clientStateBytes, proof, height);
@@ -232,6 +234,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         bytes memory proof,
         bytes memory consensusStateBytes
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -246,6 +249,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
                 consensusStateBytes
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCConnectionFailedVerifyClientConsensusState(
@@ -266,6 +270,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         string memory counterpartyConnectionId,
         ConnectionEnd.Data memory counterpartyConnection
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -278,6 +283,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
                 ConnectionEnd.encode(counterpartyConnection)
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCConnectionFailedVerifyConnectionState(

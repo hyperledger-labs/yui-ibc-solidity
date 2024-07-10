@@ -310,6 +310,7 @@ contract IBCChannelPacketSendRecv is
         bytes memory path,
         bytes32 commitment
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -322,6 +323,7 @@ contract IBCChannelPacketSendRecv is
                 abi.encodePacked(commitment)
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCChannelFailedVerifyPacketCommitment(connection.client_id, path, commitment, proof, height);
@@ -334,6 +336,7 @@ contract IBCChannelPacketSendRecv is
         bytes memory path,
         bytes32 acknowledgementCommitment
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -346,6 +349,7 @@ contract IBCChannelPacketSendRecv is
                 abi.encodePacked(acknowledgementCommitment)
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCChannelFailedVerifyPacketAcknowledgement(

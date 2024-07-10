@@ -47,6 +47,17 @@ jobs:
     - name: Run tests with minimal solidity version
       run: make SOLC_VERSION=${{ env.MINIMAL_SOLC_VERSION }} test
 
+  slither:
+    name: Slither analysis
+    needs: contract-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crytic/slither-action@v0.4.0
+        with:
+          node-version: 20.13
+          slither-version: 0.10.1
+
   e2e-test:
     name: E2E test
     needs: contract-test

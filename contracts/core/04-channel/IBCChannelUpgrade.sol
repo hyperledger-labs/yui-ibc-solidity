@@ -282,6 +282,7 @@ abstract contract IBCChannelUpgradeBase is
         bytes memory path,
         bytes memory value
     ) internal {
+        // slither-disable-start reentrancy-no-eth
         if (
             ILightClient(clientImpls[connection.client_id]).verifyMembership(
                 connection.client_id, height, 0, 0, proof, connection.counterparty.prefix.key_prefix, path, value
@@ -289,6 +290,7 @@ abstract contract IBCChannelUpgradeBase is
         ) {
             return;
         }
+        // slither-disable-end reentrancy-no-eth
         revert IBCChannelUpgradeFailedVerifyMembership(connection.client_id, string(path), value, proof, height);
     }
 
@@ -332,7 +334,7 @@ abstract contract IBCChannelUpgradeBase is
                 counterpartyChannel
             );
         }
-
+        // slither-disable-next-line reentrancy-no-eth
         verifyMembership(
             connection,
             proofs.proofHeight,
@@ -373,7 +375,9 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
         channel.upgrade_sequence++;
         updateChannelCommitment(msg_.portId, msg_.channelId, channel);
 
-        upgrade.fields = msg_.proposedUpgradeFields;
+        upgrade.fields.ordering = msg_.proposedUpgradeFields.ordering;
+        upgrade.fields.connection_hops = new string[](1);
+        upgrade.fields.connection_hops[0] = msg_.proposedUpgradeFields.connection_hops[0];
         upgrade.fields.version = lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeInit(
             msg_.portId, msg_.channelId, channel.upgrade_sequence, msg_.proposedUpgradeFields
         );
