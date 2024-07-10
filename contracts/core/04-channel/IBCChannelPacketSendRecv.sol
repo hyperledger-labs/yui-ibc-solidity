@@ -24,6 +24,8 @@ contract IBCChannelPacketSendRecv is
 {
     using IBCHeight for Height.Data;
 
+    // --------- IIBCChannelPacketSendRecv Implementation --------- //
+
     /**
      * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
      * The packet sequence generated for the packet to be sent is returned. An error
@@ -35,7 +37,7 @@ contract IBCChannelPacketSendRecv is
         Height.Data calldata timeoutHeight,
         uint64 timeoutTimestamp,
         bytes calldata data
-    ) external returns (uint64) {
+    ) public override returns (uint64) {
         authenticateChannelCapability(sourcePort, sourceChannel);
 
         Channel.Data storage channel = channels[sourcePort][sourceChannel];
@@ -86,7 +88,7 @@ contract IBCChannelPacketSendRecv is
         string calldata destinationChannel,
         uint64 sequence,
         bytes calldata acknowledgement
-    ) public {
+    ) public override {
         authenticateChannelCapability(destinationPortId, destinationChannel);
         Channel.Data storage channel = channels[destinationPortId][destinationChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
@@ -98,26 +100,11 @@ contract IBCChannelPacketSendRecv is
         _writeAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
     }
 
-    function _writeAcknowledgement(
-        string calldata destinationPortId,
-        string calldata destinationChannel,
-        uint64 sequence,
-        bytes memory acknowledgement
-    ) internal {
-        bytes32 ackCommitmentKey =
-            IBCCommitment.packetAcknowledgementCommitmentKeyCalldata(destinationPortId, destinationChannel, sequence);
-        if (commitments[ackCommitmentKey] != bytes32(0)) {
-            revert IBCChannelAcknowledgementAlreadyWritten(destinationPortId, destinationChannel, sequence);
-        }
-        commitments[ackCommitmentKey] = keccak256(abi.encodePacked(sha256(acknowledgement)));
-        emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
-    }
-
     /**
      * @dev recvPacket is called by a module in order to receive & process an IBC packet
      * sent on the corresponding channel end on the counterparty chain.
      */
-    function recvPacket(MsgPacketRecv calldata msg_) external {
+    function recvPacket(MsgPacketRecv calldata msg_) public override {
         Channel.Data storage channel = channels[msg_.packet.destinationPort][msg_.packet.destinationChannel];
         if (channel.state == Channel.State.STATE_OPEN) {} else if (
             channel.state == Channel.State.STATE_FLUSHING || channel.state == Channel.State.STATE_FLUSHCOMPLETE
@@ -204,6 +191,7 @@ contract IBCChannelPacketSendRecv is
         } else {
             revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
+        emit RecvPacket(msg_.packet);
         bytes memory acknowledgement = lookupModuleByChannel(
             msg_.packet.destinationPort, msg_.packet.destinationChannel
         ).onRecvPacket(msg_.packet, _msgSender());
@@ -212,7 +200,6 @@ contract IBCChannelPacketSendRecv is
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence, acknowledgement
             );
         }
-        emit RecvPacket(msg_.packet);
     }
 
     /**
@@ -223,7 +210,7 @@ contract IBCChannelPacketSendRecv is
      * which is no longer necessary since the packet has been received and acted upon.
      * It will also increment NextSequenceAck in case of ORDERED channels.
      */
-    function acknowledgePacket(MsgPacketAcknowledgement calldata msg_) external {
+    function acknowledgePacket(MsgPacketAcknowledgement calldata msg_) public override {
         Channel.Data storage channel = channels[msg_.packet.sourcePort][msg_.packet.sourceChannel];
         if (channel.state != Channel.State.STATE_OPEN) {
             if (channel.state != Channel.State.STATE_FLUSHING) {
@@ -295,13 +282,28 @@ contract IBCChannelPacketSendRecv is
         }
 
         delete commitments[packetCommitmentKey];
+        emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
         lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onAcknowledgementPacket(
             msg_.packet, msg_.acknowledgement, _msgSender()
         );
-        emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
     }
 
-    /* Verification functions */
+    // --------- Private Functions --------- //
+
+    function _writeAcknowledgement(
+        string calldata destinationPortId,
+        string calldata destinationChannel,
+        uint64 sequence,
+        bytes memory acknowledgement
+    ) private {
+        bytes32 ackCommitmentKey =
+            IBCCommitment.packetAcknowledgementCommitmentKeyCalldata(destinationPortId, destinationChannel, sequence);
+        if (commitments[ackCommitmentKey] != bytes32(0)) {
+            revert IBCChannelAcknowledgementAlreadyWritten(destinationPortId, destinationChannel, sequence);
+        }
+        commitments[ackCommitmentKey] = keccak256(abi.encodePacked(sha256(acknowledgement)));
+        emit WriteAcknowledgement(destinationPortId, destinationChannel, sequence, acknowledgement);
+    }
 
     function verifyPacketCommitment(
         ConnectionEnd.Data storage connection,
@@ -310,6 +312,7 @@ contract IBCChannelPacketSendRecv is
         bytes memory path,
         bytes32 commitment
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -322,6 +325,7 @@ contract IBCChannelPacketSendRecv is
                 abi.encodePacked(commitment)
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCChannelFailedVerifyPacketCommitment(connection.client_id, path, commitment, proof, height);
@@ -334,6 +338,7 @@ contract IBCChannelPacketSendRecv is
         bytes memory path,
         bytes32 acknowledgementCommitment
     ) private {
+        // slither-disable-start reentrancy-no-eth
         if (
             checkAndGetClient(connection.client_id).verifyMembership(
                 connection.client_id,
@@ -346,14 +351,13 @@ contract IBCChannelPacketSendRecv is
                 abi.encodePacked(acknowledgementCommitment)
             )
         ) {
+            // slither-disable-end reentrancy-no-eth
             return;
         }
         revert IBCChannelFailedVerifyPacketAcknowledgement(
             connection.client_id, path, acknowledgementCommitment, proof, height
         );
     }
-
-    // private functions
 
     function calcBlockDelay(uint64 timeDelay) private view returns (uint64) {
         if (timeDelay == 0) {

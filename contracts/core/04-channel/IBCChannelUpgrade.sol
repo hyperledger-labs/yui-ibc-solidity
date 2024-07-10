@@ -282,6 +282,7 @@ abstract contract IBCChannelUpgradeBase is
         bytes memory path,
         bytes memory value
     ) internal {
+        // slither-disable-start reentrancy-no-eth
         if (
             ILightClient(clientImpls[connection.client_id]).verifyMembership(
                 connection.client_id, height, 0, 0, proof, connection.counterparty.prefix.key_prefix, path, value
@@ -289,6 +290,7 @@ abstract contract IBCChannelUpgradeBase is
         ) {
             return;
         }
+        // slither-disable-end reentrancy-no-eth
         revert IBCChannelUpgradeFailedVerifyMembership(connection.client_id, string(path), value, proof, height);
     }
 
@@ -332,7 +334,7 @@ abstract contract IBCChannelUpgradeBase is
                 counterpartyChannel
             );
         }
-
+        // slither-disable-next-line reentrancy-no-eth
         verifyMembership(
             connection,
             proofs.proofHeight,
@@ -355,7 +357,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeInit}
      */
-    function channelUpgradeInit(MsgChannelUpgradeInit calldata msg_) external override returns (uint64) {
+    function channelUpgradeInit(MsgChannelUpgradeInit calldata msg_) public override returns (uint64) {
         if (!isAuthorizedUpgrader(msg_.portId, msg_.channelId, _msgSender())) {
             revert IBCChannelUpgradeUnauthorizedChannelUpgrader(_msgSender());
         }
@@ -373,7 +375,9 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
         channel.upgrade_sequence++;
         updateChannelCommitment(msg_.portId, msg_.channelId, channel);
 
-        upgrade.fields = msg_.proposedUpgradeFields;
+        upgrade.fields.ordering = msg_.proposedUpgradeFields.ordering;
+        upgrade.fields.connection_hops = new string[](1);
+        upgrade.fields.connection_hops[0] = msg_.proposedUpgradeFields.connection_hops[0];
         upgrade.fields.version = lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeInit(
             msg_.portId, msg_.channelId, channel.upgrade_sequence, msg_.proposedUpgradeFields
         );
@@ -387,7 +391,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeTry}
      */
-    function channelUpgradeTry(MsgChannelUpgradeTry calldata msg_) external override returns (bool, uint64) {
+    function channelUpgradeTry(MsgChannelUpgradeTry calldata msg_) public override returns (bool, uint64) {
         // current channel must be OPEN (i.e. not in FLUSHING)
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state != Channel.State.STATE_OPEN) {
@@ -497,7 +501,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeAck}
      */
-    function channelUpgradeAck(MsgChannelUpgradeAck calldata msg_) external override returns (bool) {
+    function channelUpgradeAck(MsgChannelUpgradeAck calldata msg_) public override returns (bool) {
         // current channel is OPEN or FLUSHING (crossing hellos)
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state != Channel.State.STATE_OPEN && channel.state != Channel.State.STATE_FLUSHING) {
@@ -587,7 +591,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeConfirm}
      */
-    function channelUpgradeConfirm(MsgChannelUpgradeConfirm calldata msg_) external override returns (bool) {
+    function channelUpgradeConfirm(MsgChannelUpgradeConfirm calldata msg_) public override returns (bool) {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         // current channel is in FLUSHING
         if (channel.state != Channel.State.STATE_FLUSHING) {
@@ -629,6 +633,8 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
         }
         setCounterpartyUpgrade(msg_.portId, msg_.channelId, msg_.counterpartyUpgrade);
 
+        emit ChannelUpgradeConfirm(msg_.portId, msg_.channelId, channel.upgrade_sequence, channel.state);
+
         // if both chains are already in flushcomplete we can move to OPEN
         if (
             channel.state == Channel.State.STATE_FLUSHCOMPLETE
@@ -639,16 +645,13 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
                 msg_.portId, msg_.channelId, channel.upgrade_sequence
             );
         }
-
-        emit ChannelUpgradeConfirm(msg_.portId, msg_.channelId, channel.upgrade_sequence, channel.state);
-
         return true;
     }
 
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeOpen}
      */
-    function channelUpgradeOpen(MsgChannelUpgradeOpen calldata msg_) external override {
+    function channelUpgradeOpen(MsgChannelUpgradeOpen calldata msg_) public override {
         // channel must have completed flushing
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state != Channel.State.STATE_FLUSHCOMPLETE) {
@@ -703,19 +706,19 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
 
         // move channel to OPEN and adopt upgrade parameters
         openUpgradeHandshake(msg_.portId, msg_.channelId);
+        emit ChannelUpgradeOpen(msg_.portId, msg_.channelId, channel.upgrade_sequence);
+
         // open callback must not return error since counterparty successfully upgraded
         // make application state changes based on new channel parameters
         lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeOpen(
             msg_.portId, msg_.channelId, channel.upgrade_sequence
         );
-
-        emit ChannelUpgradeOpen(msg_.portId, msg_.channelId, channel.upgrade_sequence);
     }
 
     /**
      * @dev See {IIBCChannelUpgrade-cancelChannelUpgrade}
      */
-    function cancelChannelUpgrade(MsgCancelChannelUpgrade calldata msg_) external override {
+    function cancelChannelUpgrade(MsgCancelChannelUpgrade calldata msg_) public override {
         // current channel has an upgrade stored
         Upgrade.Data storage upgrade = upgrades[msg_.portId][msg_.channelId];
         if (upgrade.fields.ordering == Channel.Order.ORDER_NONE_UNSPECIFIED) {
@@ -773,7 +776,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
     /**
      * @dev See {IIBCChannelUpgrade-timeoutChannelUpgrade}
      */
-    function timeoutChannelUpgrade(MsgTimeoutChannelUpgrade calldata msg_) external override {
+    function timeoutChannelUpgrade(MsgTimeoutChannelUpgrade calldata msg_) public override {
         // current channel must have an upgrade that is FLUSHING or FLUSHCOMPLETE
         Upgrade.Data storage upgrade = upgrades[msg_.portId][msg_.channelId];
         if (upgrade.fields.ordering == Channel.Order.ORDER_NONE_UNSPECIFIED) {

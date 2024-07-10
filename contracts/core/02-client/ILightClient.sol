@@ -78,6 +78,7 @@ interface ILightClient {
     /**
      * @dev verifyMembership is a generic proof verification method which verifies a proof of the existence of a value at a given CommitmentPath at the specified height.
      * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
+     * This function should not perform `call` to the IBC contract. However, `staticcall` is permitted.
      */
     function verifyMembership(
         string calldata clientId,
@@ -93,6 +94,7 @@ interface ILightClient {
     /**
      * @dev verifyNonMembership is a generic proof verification method which verifies the absence of a given CommitmentPath at a specified height.
      * The caller is expected to construct the full CommitmentPath from a CommitmentPrefix and a standardized path (as defined in ICS 24).
+     * This function should not perform `call` to the IBC contract. However, `staticcall` is permitted.
      */
     function verifyNonMembership(
         string calldata clientId,

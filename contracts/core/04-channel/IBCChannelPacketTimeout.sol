@@ -75,6 +75,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 revert IBCChannelPacketMaybeAlreadyReceived(msg_.packet.sequence, msg_.nextSequenceRecv);
             }
             if (
+                // slither-disable-next-line reentrancy-no-eth
                 !client.verifyMembership(
                     connection.client_id,
                     msg_.proofHeight,
@@ -104,6 +105,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
             );
             if (
+                // slither-disable-next-line reentrancy-no-eth
                 !client.verifyNonMembership(
                     connection.client_id,
                     msg_.proofHeight,
@@ -188,6 +190,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 upgrade_sequence: msg_.counterpartyUpgradeSequence
             });
             if (
+                // slither-disable-next-line reentrancy-no-eth
                 !client.verifyMembership(
                     connection.client_id,
                     msg_.proofHeight,
@@ -215,6 +218,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 revert IBCChannelPacketMaybeAlreadyReceived(msg_.packet.sequence, msg_.nextSequenceRecv);
             }
             if (
+                // slither-disable-next-line reentrancy-no-eth
                 !client.verifyMembership(
                     connection.client_id,
                     msg_.proofHeight,
@@ -243,6 +247,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
             );
             if (
+                // slither-disable-next-line reentrancy-no-eth
                 !client.verifyNonMembership(
                     connection.client_id,
                     msg_.proofHeight,
