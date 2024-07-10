@@ -20,11 +20,14 @@ import {IBCChannelLib} from "./IBCChannelLib.sol";
 contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChannelErrors {
     using IBCHeight for Height.Data;
 
+    // ------------- IIBCChannelHandshake implementation ------------------- //
+
     /**
      * @dev channelOpenInit is called by a module to initiate a channel opening handshake with a module on another chain.
      */
     function channelOpenInit(IIBCChannelHandshake.MsgChannelOpenInit calldata msg_)
-        external
+        public
+        override
         returns (string memory, string memory)
     {
         if (msg_.channel.connection_hops.length != 1) {
@@ -52,6 +55,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
 
         string memory channelId = generateChannelIdentifier();
         initializeSequences(msg_.portId, channelId);
+        emit GeneratedChannelIdentifier(channelId);
 
         IIBCModule module = lookupModuleByPort(msg_.portId);
         string memory version = module.onChanOpenInit(
@@ -74,7 +78,6 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             msg_.channel.connection_hops,
             version
         );
-        emit GeneratedChannelIdentifier(channelId);
         return (channelId, version);
     }
 
@@ -82,7 +85,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
      * @dev channelOpenTry is called by a module to accept the first step of a channel opening handshake initiated by a module on another chain.
      */
     function channelOpenTry(IIBCChannelHandshake.MsgChannelOpenTry calldata msg_)
-        external
+        public
+        override
         returns (string memory, string memory)
     {
         if (msg_.channel.connection_hops.length != 1) {
@@ -127,6 +131,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
 
         string memory channelId = generateChannelIdentifier();
         initializeSequences(msg_.portId, channelId);
+        emit GeneratedChannelIdentifier(channelId);
 
         IIBCModule module = lookupModuleByPort(msg_.portId);
         string memory version = module.onChanOpenTry(
@@ -149,14 +154,13 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             msg_.channel.connection_hops,
             version
         );
-        emit GeneratedChannelIdentifier(channelId);
         return (channelId, version);
     }
 
     /**
      * @dev channelOpenAck is called by the handshake-originating module to acknowledge the acceptance of the initial request by the counterparty module on the other chain.
      */
-    function channelOpenAck(IIBCChannelHandshake.MsgChannelOpenAck calldata msg_) external {
+    function channelOpenAck(IIBCChannelHandshake.MsgChannelOpenAck calldata msg_) public override {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state != Channel.State.STATE_INIT) {
             revert IBCChannelUnexpectedChannelState(channel.state);
@@ -195,7 +199,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
     /**
      * @dev channelOpenConfirm is called by the counterparty module to close their end of the channel, since the other end has been closed.
      */
-    function channelOpenConfirm(IIBCChannelHandshake.MsgChannelOpenConfirm calldata msg_) external {
+    function channelOpenConfirm(IIBCChannelHandshake.MsgChannelOpenConfirm calldata msg_) public override {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state != Channel.State.STATE_TRYOPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);
@@ -227,7 +231,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
     /**
      * @dev channelCloseInit is called by either module to close their end of the channel. Once closed, channels cannot be reopened.
      */
-    function channelCloseInit(IIBCChannelHandshake.MsgChannelCloseInit calldata msg_) external {
+    function channelCloseInit(IIBCChannelHandshake.MsgChannelCloseInit calldata msg_) public override {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelChannelNotFound(msg_.portId, msg_.channelId);
@@ -249,7 +253,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
      * @dev channelCloseConfirm is called by the counterparty module to close their end of the
      * channel, since the other end has been closed.
      */
-    function channelCloseConfirm(IIBCChannelHandshake.MsgChannelCloseConfirm calldata msg_) external {
+    function channelCloseConfirm(IIBCChannelHandshake.MsgChannelCloseConfirm calldata msg_) public override {
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelChannelNotFound(msg_.portId, msg_.channelId);
@@ -285,6 +289,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         );
     }
 
+    // ------------- Private functions ------------------- //
+
     /**
      * @dev writeChannel writes a channel which has successfully passed the OpenInit or OpenTry handshake step.
      */
@@ -296,7 +302,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         ChannelCounterparty.Data calldata counterparty,
         string[] calldata connectionHops,
         string memory version
-    ) internal {
+    ) private {
         Channel.Data storage channel = channels[portId][channelId];
         channel.state = state;
         channel.ordering = order;
@@ -309,12 +315,19 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         updateChannelCommitment(portId, channelId);
     }
 
+    function initializeSequences(string memory portId, string memory channelId) internal {
+        nextSequenceSends[portId][channelId] = 1;
+        nextSequenceRecvs[portId][channelId] = 1;
+        nextSequenceAcks[portId][channelId] = 1;
+        recvStartSequences[portId][channelId].sequence = 1;
+        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
+            keccak256(abi.encodePacked((bytes8(uint64(1)))));
+    }
+
     function updateChannelCommitment(string memory portId, string memory channelId) private {
         commitments[IBCCommitment.channelCommitmentKey(portId, channelId)] =
             keccak256(Channel.encode(channels[portId][channelId]));
     }
-
-    /* Verification functions */
 
     function verifyChannelState(
         ConnectionEnd.Data storage connection,
@@ -343,17 +356,6 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         revert IBCChannelFailedVerifyChannelState(
             connection.client_id, IBCCommitment.channelPath(portId, channelId), channelBytes, proof, height
         );
-    }
-
-    /* Internal functions */
-
-    function initializeSequences(string memory portId, string memory channelId) internal {
-        nextSequenceSends[portId][channelId] = 1;
-        nextSequenceRecvs[portId][channelId] = 1;
-        nextSequenceAcks[portId][channelId] = 1;
-        recvStartSequences[portId][channelId].sequence = 1;
-        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
-            keccak256(abi.encodePacked((bytes8(uint64(1)))));
     }
 
     function getCounterpartyHops(string memory connectionId) internal view returns (string[] memory hops) {
