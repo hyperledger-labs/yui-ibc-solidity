@@ -25,14 +25,22 @@ contract TestICS04Handshake is ICS03TestHelper, ICS04HandshakeMockClientTestHelp
     }
 
     function testBindPort() public {
+        assertNotEq(address(handler.getIBCModuleByPort("portidone")), address(0));
+        vm.expectRevert();
+        handler.getIBCModuleByPort("portidtwo");
+
+        // must be failed if the port is already binded
         vm.expectRevert();
         handler.bindPort("portidone", mockApp);
+        // must be failed if the module does not support IIBCModule
         vm.expectRevert();
-        handler.bindPort("portidone", IIBCModule(address(0x01)));
+        handler.bindPort("portidtwo", IIBCModule(address(0x01)));
+        // must be failed if the port is empty
         vm.expectRevert();
         handler.bindPort("", IIBCModule(address(0x01)));
+        // must be failed if the module address is empty
         vm.expectRevert();
-        handler.bindPort("portidone", IIBCModule(address(0)));
+        handler.bindPort("portidtwo", IIBCModule(address(0)));
     }
 
     function testChanOpenInit() public {
