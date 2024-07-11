@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Packet} from "../../core/04-channel/IIBCChannel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {IIBCModuleErrors} from "../../core/26-router/IIBCModuleErrors.sol";
 
-abstract contract AppBase is Context, IIBCModuleErrors {
+abstract contract AppBase is IERC165, Context, IIBCModuleErrors {
     /**
      * @dev Throws if called by any account other than the IBC contract.
      */
@@ -27,6 +28,16 @@ abstract contract AppBase is Context, IIBCModuleErrors {
         if (ibcAddress() != _msgSender()) {
             revert IBCModuleInvalidSender(_msgSender());
         }
+    }
+
+    /**
+     * @dev Returns true if this contract implements the interface defined by
+     * `interfaceId`. See the corresponding
+     * https://eips.ethereum.org/EIPS/eip-165#how-interfaces-are-identified[ERC section]
+     * to learn more about how these ids are created.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual returns (bool) {
+        return interfaceId == type(IERC165).interfaceId || interfaceId == this.ibcAddress.selector;
     }
 }
 
@@ -113,5 +124,9 @@ abstract contract IBCAppBase is AppBase, IIBCModule {
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
-    function onTimeoutPacket(Packet calldata, address relayer) external virtual onlyIBC {}
+    function onTimeoutPacket(Packet calldata, address relayer) external virtual override onlyIBC {}
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, AppBase) returns (bool) {
+        return interfaceId == type(IIBCModule).interfaceId || super.supportsInterface(interfaceId);
+    }
 }

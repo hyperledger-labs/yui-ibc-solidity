@@ -3,10 +3,14 @@ pragma solidity ^0.8.20;
 
 import {Channel, ChannelCounterparty} from "../../proto/Channel.sol";
 import {Packet} from "../04-channel/IIBCChannel.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-// IIBCModule defines an interface that implements all the callbacks
-// that modules must define as specified in ICS-26
-interface IIBCModule {
+/**
+ * @notice IIBCModule is an interface that defines all the callbacks that modules must define as specified in ICS-26
+ * @dev An IBC module must implement this interface and register itself with the IBCModuleManager
+ * IERC165's `supportsInterface` must return true for the interface ID of this interface, and the interface ID of IIBCModuleUpgrade if the module supports the channel upgrade
+ */
+interface IIBCModule is IERC165 {
     struct MsgOnChanOpenInit {
         Channel.Order order;
         string[] connectionHops;

@@ -27,6 +27,9 @@ interface IIBCHostErrors {
     /// @param channelId channel identifier
     error IBCHostModuleChannelNotFound(string portId, string channelId);
 
+    /// @param interfaceId expected interface identifier
+    error IBCHostModuleDoesNotImplementIIBCModule(bytes4 interfaceId);
+
     /// @param portId port identifier
     error IBCHostPortCapabilityAlreadyClaimed(string portId);
 
