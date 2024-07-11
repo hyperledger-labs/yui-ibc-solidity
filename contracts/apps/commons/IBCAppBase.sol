@@ -46,7 +46,7 @@ abstract contract AppBase is IERC165, Context, IIBCModuleErrors {
  */
 abstract contract IBCAppBase is AppBase, IIBCModule {
     /**
-     * @dev See IIBCModule-onChanOpenInit
+     * @dev See {IIBCModule-onChanOpenInit}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
@@ -59,7 +59,7 @@ abstract contract IBCAppBase is AppBase, IIBCModule {
     {}
 
     /**
-     * @dev See IIBCModule-onChanOpenTry
+     * @dev See {IIBCModule-onChanOpenTry}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
@@ -72,35 +72,35 @@ abstract contract IBCAppBase is AppBase, IIBCModule {
     {}
 
     /**
-     * @dev See IIBCModule-onChanOpenAck
+     * @dev See {IIBCModule-onChanOpenAck}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
     function onChanOpenAck(IIBCModule.MsgOnChanOpenAck calldata) external virtual override onlyIBC {}
 
     /**
-     * @dev See IIBCModule-onChanOpenConfirm
+     * @dev See {IIBCModule-onChanOpenConfirm}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
     function onChanOpenConfirm(IIBCModule.MsgOnChanOpenConfirm calldata) external virtual override onlyIBC {}
 
     /**
-     * @dev See IIBCModule-onChanCloseInit
+     * @dev See {IIBCModule-onChanCloseInit}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
     function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata) external virtual override onlyIBC {}
 
     /**
-     * @dev See IIBCModule-onChanCloseConfirm
+     * @dev See {IIBCModule-onChanCloseConfirm}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
     function onChanCloseConfirm(IIBCModule.MsgOnChanCloseConfirm calldata) external virtual override onlyIBC {}
 
     /**
-     * @dev See IIBCModule-onRecvPacket
+     * @dev See {IIBCModule-onRecvPacket}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
@@ -113,19 +113,24 @@ abstract contract IBCAppBase is AppBase, IIBCModule {
     {}
 
     /**
-     * @dev See IIBCModule-onAcknowledgementPacket
+     * @dev See {IIBCModule-onAcknowledgementPacket}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
     function onAcknowledgementPacket(Packet calldata, bytes calldata, address) external virtual override onlyIBC {}
 
     /**
-     * @dev See IIBCModule-onTimeoutPacket
+     * @dev See {IIBCModule-onTimeoutPacket}
      *
      * NOTE: You should apply an `onlyIBC` modifier to the function if a derived contract overrides it.
      */
     function onTimeoutPacket(Packet calldata, address relayer) external virtual override onlyIBC {}
 
+    /**
+     * @dev See {IERC165-supportsInterface}
+     *
+     * NOTE: This must return true if the `interfaceId` is equal to the `IIBCModule` interface.
+     */
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, AppBase) returns (bool) {
         return interfaceId == type(IIBCModule).interfaceId || super.supportsInterface(interfaceId);
     }

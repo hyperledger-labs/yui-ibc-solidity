@@ -308,11 +308,14 @@ abstract contract IBCChannelUpgradableModuleBase is
         delete allowedTransitions[portId][channelId][upgradeSequence];
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AppBase) returns (bool) {
+    /**
+     * @dev See {IERC165-supportsInterface}
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
         return
+            super.supportsInterface(interfaceId) ||
             interfaceId == type(IIBCModuleUpgrade).interfaceId ||
-            interfaceId == type(IIBCChannelUpgradableModule).interfaceId ||
-            super.supportsInterface(interfaceId);
+            interfaceId == type(IIBCChannelUpgradableModule).interfaceId;
     }
 
     // ------------------- Internal Functions ------------------- //
