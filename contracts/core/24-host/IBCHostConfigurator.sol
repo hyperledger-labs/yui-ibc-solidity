@@ -35,7 +35,7 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
             revert IBCHostInvalidModuleAddress(address(moduleAddress));
         }
         if (!moduleAddress.supportsInterface(type(IIBCModule).interfaceId)) {
-            revert IBCHostModuleDoesNotImplementIIBCModule(type(IIBCModule).interfaceId);
+            revert IBCHostModuleDoesNotSupportIIBCModule(type(IIBCModule).interfaceId);
         }
         claimPortCapability(portId, address(moduleAddress));
     }
