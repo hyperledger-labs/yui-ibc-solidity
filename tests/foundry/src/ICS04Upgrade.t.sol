@@ -9,10 +9,12 @@ import {LocalhostClientLib} from "../../../contracts/clients/09-localhost/Localh
 import {LocalhostHelper} from "../../../contracts/clients/09-localhost/LocalhostHelper.sol";
 import {IIBCChannelRecvPacket, IIBCChannelAcknowledgePacket} from "../../../contracts/core/04-channel/IIBCChannel.sol";
 import {IIBCChannelUpgradeBase} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
+import {IIBCHostErrors} from "../../../contracts/core/24-host/IIBCHostErrors.sol";
 import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradableMockApp.t.sol";
 import {ICS04UpgradeTestHelper} from "./helpers/ICS04UpgradeTestHelper.t.sol";
 import {ICS04PacketEventTestHelper} from "./helpers/ICS04PacketTestHelper.t.sol";
 import {IBCMockLib} from "../../../contracts/apps/mock/IBCMockLib.sol";
+import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
 contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper {
     using LocalhostHelper for TestableIBCHandler;
@@ -108,6 +110,20 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             ErrorReceipt.Data memory rc = getLastWriteErrorReceiptEvent(ibcHandler, vm.getRecordedLogs());
             assertEq(rc.sequence, 1, "sequence mismatch");
         }
+    }
+
+    function testUpgradeNotUpgradableModule() public {
+        string memory portId = "not-upgradable";
+        IIBCModule notUpgradableApp = new IBCMockApp(ibcHandler);
+        ibcHandler.bindPort(portId, notUpgradableApp);
+        (ChannelInfo memory channel0,) = createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED, portId, MOCK_APP_VERSION_1);
+        IIBCChannelUpgradeBase.MsgChannelUpgradeInit memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
+            portId: channel0.portId,
+            channelId: channel0.channelId,
+            proposedUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields
+        });
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostModuleDoesNotSupportIIBCModuleUpgrade.selector, address(notUpgradableApp)));
+        ibcHandler.channelUpgradeInit(msg_);
     }
 
     function testUpgradeOutOfSync() public {
@@ -1557,20 +1573,27 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         internal
         returns (ChannelInfo memory, ChannelInfo memory)
     {
+        return createMockAppLocalhostChannel(ordering, MOCK_APP_PORT, MOCK_APP_VERSION_1);
+    }
+
+    function createMockAppLocalhostChannel(Channel.Order ordering, string memory port, string memory version)
+        internal
+        returns (ChannelInfo memory, ChannelInfo memory)
+    {
         (string memory connectionId0, string memory connectionId1) = ibcHandler.createLocalhostConnection();
         (string memory channelId0, string memory channelId1) = ibcHandler.createLocalhostChannel(
             LocalhostHelper.MsgCreateChannel({
                 connectionId0: connectionId0,
                 connectionId1: connectionId1,
-                portId0: MOCK_APP_PORT,
-                portId1: MOCK_APP_PORT,
+                portId0: port,
+                portId1: port,
                 ordering: ordering,
-                version: MOCK_APP_VERSION_1
+                version: version
             })
         );
         return (
-            ChannelInfo({connectionId: connectionId0, portId: MOCK_APP_PORT, channelId: channelId0}),
-            ChannelInfo({connectionId: connectionId1, portId: MOCK_APP_PORT, channelId: channelId1})
+            ChannelInfo({connectionId: connectionId0, portId: port, channelId: channelId0}),
+            ChannelInfo({connectionId: connectionId1, portId: port, channelId: channelId1})
         );
     }
 
