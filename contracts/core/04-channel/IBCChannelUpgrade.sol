@@ -320,7 +320,6 @@ abstract contract IBCChannelUpgradeBase is
                 counterpartyChannel
             );
         }
-        // slither-disable-next-line reentrancy-no-eth
         verifyMembership(
             connection,
             proofs.proofHeight,
