@@ -11,6 +11,13 @@ contract IBCHost is IIBCHostErrors, IBCStore {
     bytes internal constant DEFAULT_COMMITMENT_PREFIX = bytes("ibc");
 
     /**
+     * @dev hostTimestamp returns the current timestamp(Unix time in nanoseconds) of the host chain.
+     */
+    function hostTimestamp() internal view virtual returns (uint64) {
+        return uint64(block.timestamp) * 1e9;
+    }
+
+    /**
      * @dev _getCommitmentPrefix returns the prefix of the commitment proof.
      */
     function _getCommitmentPrefix() internal view virtual returns (bytes memory) {

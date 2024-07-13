@@ -94,7 +94,7 @@ contract LocalhostClient is ILightClient, ILightClientErrors {
         } else if (height.revision_height > block.number) {
             revert InvalidHeightRevisionHeight();
         }
-        return uint64(block.timestamp);
+        return uint64(block.timestamp) * 1e9;
     }
 
     /**

@@ -133,8 +133,8 @@ contract IBCChannelPacketSendRecv is
         {
             revert IBCChannelTimeoutPacketHeight(block.number, msg_.packet.timeoutHeight.revision_height);
         }
-        if (msg_.packet.timeoutTimestamp != 0 && block.timestamp * 1e9 >= msg_.packet.timeoutTimestamp) {
-            revert IBCChannelTimeoutPacketTimestamp(block.timestamp * 1e9, msg_.packet.timeoutTimestamp);
+        if (msg_.packet.timeoutTimestamp != 0 && hostTimestamp() >= msg_.packet.timeoutTimestamp) {
+            revert IBCChannelTimeoutPacketTimestamp(hostTimestamp(), msg_.packet.timeoutTimestamp);
         }
 
         verifyPacketCommitment(

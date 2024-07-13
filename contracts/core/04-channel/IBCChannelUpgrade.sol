@@ -549,7 +549,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
         Timeout.Data calldata timeout = msg_.counterpartyUpgrade.timeout;
         if (
             (timeout.height.revision_height != 0 && block.number >= timeout.height.revision_height)
-                || (timeout.timestamp != 0 && block.timestamp >= timeout.timestamp)
+                || (timeout.timestamp != 0 && hostTimestamp() >= timeout.timestamp)
         ) {
             restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.Timeout);
             return false;
@@ -620,7 +620,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
         Timeout.Data calldata timeout = msg_.counterpartyUpgrade.timeout;
         if (
             (timeout.height.revision_height != 0 && block.number >= timeout.height.revision_height)
-                || (timeout.timestamp != 0 && block.timestamp >= timeout.timestamp)
+                || (timeout.timestamp != 0 && hostTimestamp() >= timeout.timestamp)
         ) {
             restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.Timeout);
             return false;
