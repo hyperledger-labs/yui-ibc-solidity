@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
+import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import {IBCClientLib} from "../02-client/IBCClientLib.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
@@ -27,16 +28,20 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
         clientRegistry[clientType] = address(client);
     }
 
-    function _bindPort(string calldata portId, IIBCModule moduleAddress) internal virtual {
+    function _bindPort(string calldata portId, IIBCModule module) internal virtual {
+        address moduleAddress = address(module);
         if (!validatePortIdentifier(bytes(portId))) {
             revert IBCHostInvalidPortIdentifier(portId);
         }
-        if (address(moduleAddress) == address(0) || address(moduleAddress) == address(this)) {
-            revert IBCHostInvalidModuleAddress(address(moduleAddress));
+        if (moduleAddress == address(0) || moduleAddress == address(this)) {
+            revert IBCHostInvalidModuleAddress(moduleAddress);
         }
-        if (!moduleAddress.supportsInterface(type(IIBCModule).interfaceId)) {
+        if (!ERC165Checker.supportsERC165(moduleAddress)) {
+            revert IBCHostModuleDoesNotSupportERC165();
+        }
+        if (!ERC165Checker.supportsERC165InterfaceUnchecked(moduleAddress, type(IIBCModule).interfaceId)) {
             revert IBCHostModuleDoesNotSupportIIBCModule(type(IIBCModule).interfaceId);
         }
-        claimPortCapability(portId, address(moduleAddress));
+        claimPortCapability(portId, moduleAddress);
     }
 }
