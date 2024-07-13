@@ -2,13 +2,13 @@
 pragma solidity ^0.8.20;
 
 import "./helpers/IBCTestHelper.t.sol";
-import {Vm} from "forge-std/Test.sol";
+import {Vm, console2} from "forge-std/Test.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Upgrade, UpgradeFields, Timeout} from "../../../contracts/proto/Channel.sol";
 import {LocalhostClientLib} from "../../../contracts/clients/09-localhost/LocalhostClient.sol";
 import {LocalhostHelper} from "../../../contracts/clients/09-localhost/LocalhostHelper.sol";
 import {IIBCChannelRecvPacket, IIBCChannelAcknowledgePacket} from "../../../contracts/core/04-channel/IIBCChannel.sol";
-import {IIBCChannelUpgrade, IIBCChannelUpgradeBase} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
+import {IIBCChannelUpgradeBase} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
 import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradableMockApp.t.sol";
 import {ICS04UpgradeTestHelper} from "./helpers/ICS04UpgradeTestHelper.t.sol";
 import {ICS04PacketEventTestHelper} from "./helpers/ICS04PacketTestHelper.t.sol";
@@ -412,8 +412,8 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
         Timeout.Data[3] memory timeouts = [
             Timeout.Data({height: H(block.number), timestamp: 0}),
-            Timeout.Data({height: H(0), timestamp: uint64(block.timestamp)}),
-            Timeout.Data({height: H(block.number), timestamp: uint64(block.timestamp)})
+            Timeout.Data({height: H(0), timestamp: getTimestamp(0)}),
+            Timeout.Data({height: H(block.number), timestamp: getTimestamp()})
         ];
         HandshakeCallbacks memory callbacks = emptyCallbacks();
         callbacks.openInitAndFlushing.callback = _testUpgradeTimeoutAbortAck;
@@ -457,8 +457,8 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
         Timeout.Data[3] memory timeouts = [
             Timeout.Data({height: H(block.number), timestamp: 0}),
-            Timeout.Data({height: H(0), timestamp: uint64(block.timestamp)}),
-            Timeout.Data({height: H(block.number), timestamp: uint64(block.timestamp)})
+            Timeout.Data({height: H(0), timestamp: getTimestamp()}),
+            Timeout.Data({height: H(block.number), timestamp: getTimestamp()})
         ];
         HandshakeCallbacks memory callbacks = emptyCallbacks();
         callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutAbortConfirm;
@@ -497,7 +497,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
     }
 
     function testUpgradeTimeoutUpgrade() public {
-        CallbacksTimeout[] memory cases = new CallbacksTimeout[](10);
+        CallbacksTimeout[] memory cases = new CallbacksTimeout[](16);
         for (uint256 i = 0; i < cases.length; i++) {
             cases[i].callbacks = emptyCallbacks();
         }
@@ -511,8 +511,8 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         i++;
 
         cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeSuccess;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: uint64(block.timestamp + 1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: uint64(block.timestamp + 1)});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
         i++;
 
         cases[i].callbacks.openInitAndFlushing.callback = _testUpgradeTimeoutUpgradeSuccess;
@@ -521,27 +521,44 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         i++;
 
+        cases[i].callbacks.openInitAndFlushing.callback = _testUpgradeTimeoutUpgradeSuccess;
+        cases[i].callbacks.openInitAndFlushing.reverse = true;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        i++;
+
         cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeSuccess;
         cases[i].callbacks.flushingAndComplete.reverse = true;
         cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         i++;
 
+        cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeSuccess;
+        cases[i].callbacks.flushingAndComplete.reverse = true;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        i++;
+
         // ------------------------------ Failure Cases ------------------------------ //
 
-        cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeFailNotReached;
+        cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeFailTimeoutHeightNotReached;
         cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         i++;
 
-        cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeFailNotReached;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: uint64(block.timestamp + 1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: uint64(block.timestamp + 1)});
+        cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeFailTimeoutTimestampNotReached;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
         i++;
 
         cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeFailReached;
         cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        i++;
+
+        cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeFailReached;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
         i++;
 
         cases[i].callbacks.openSucAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyUpgraded;
@@ -550,9 +567,20 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         i++;
 
+        cases[i].callbacks.openSucAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyUpgraded;
+        cases[i].callbacks.openSucAndComplete.reverse = true;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        i++;
+
         cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
         cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        i++;
+
+        cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
         i++;
 
         cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
@@ -561,10 +589,17 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
         i++;
 
+        cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
+        cases[i].callbacks.completeAndComplete.reverse = true;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        i++;
+
         require(i == cases.length, "invalid number of cases");
 
         for (uint256 i = 0; i < cases.length; i++) {
-            (uint256 height, uint256 timestamp) = (block.number, block.timestamp);
+            console2.log("case:", i);
+            (uint256 height, uint256 timestampSec) = (block.number, block.timestamp);
             (ChannelInfo memory channel0, ChannelInfo memory channel1) =
                 createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
             handshakeUpgradeWithCallbacks(
@@ -589,7 +624,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             );
             // restore the block height and timestamp
             vm.roll(height);
-            vm.warp(timestamp);
+            vm.warp(timestampSec);
         }
     }
 
@@ -1822,7 +1857,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             vm.roll(uint256(timeout.height.revision_height));
         }
         if (timeout.timestamp != 0) {
-            vm.warp(uint256(timeout.timestamp));
+            vm.warp(uint256(timeout.timestamp / 1e9));
         }
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
         handler.timeoutChannelUpgrade(
@@ -1848,7 +1883,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         return false;
     }
 
-    function _testUpgradeTimeoutUpgradeFailNotReached(
+    function _testUpgradeTimeoutUpgradeFailTimeoutHeightNotReached(
         IIBCHandler handler,
         ChannelInfo memory channel0,
         ChannelInfo memory channel1
@@ -1861,8 +1896,25 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             proofChannel: LocalhostClientLib.sentinelProof(),
             proofHeight: H(block.number)
         });
-        // IBCChannelUpgradeTimeoutHeightNotReached or IBCChannelUpgradeTimeoutTimestampNotReached
-        vm.expectRevert();
+        vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTimeoutHeightNotReached.selector);
+        handler.timeoutChannelUpgrade(msg_);
+        return true;
+    }
+
+    function _testUpgradeTimeoutUpgradeFailTimeoutTimestampNotReached(
+        IIBCHandler handler,
+        ChannelInfo memory channel0,
+        ChannelInfo memory channel1
+    ) internal returns (bool) {
+        (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
+        IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({
+            portId: channel0.portId,
+            channelId: channel0.channelId,
+            counterpartyChannel: counterpartyChannel,
+            proofChannel: LocalhostClientLib.sentinelProof(),
+            proofHeight: H(block.number)
+        });
+        vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTimeoutTimestampNotReached.selector);
         handler.timeoutChannelUpgrade(msg_);
         return true;
     }
@@ -1877,7 +1929,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             vm.roll(uint256(timeout.height.revision_height));
         }
         if (timeout.timestamp != 0) {
-            vm.warp(uint256(timeout.timestamp));
+            vm.warp(uint256(timeout.timestamp / 1e9));
         }
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
         IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({
@@ -1923,7 +1975,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             vm.roll(uint256(timeout.height.revision_height));
         }
         if (timeout.timestamp != 0) {
-            vm.warp(uint256(timeout.timestamp));
+            vm.warp(uint256(timeout.timestamp / 1e9));
         }
         (Channel.Data memory counterpartyChannel,) = handler.getChannel(channel1.portId, channel1.channelId);
         IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade memory msg_ = IIBCChannelUpgradeBase.MsgTimeoutChannelUpgrade({

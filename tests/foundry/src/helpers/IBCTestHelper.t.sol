@@ -44,6 +44,15 @@ abstract contract IBCTestHelper is Test {
         return H(0, revisionHeight);
     }
 
+    function getTimestamp() internal returns (uint64) {
+        return getTimestamp(0);
+    }
+
+    function getTimestamp(int256 offsetSecs) internal returns (uint64) {
+        assertTrue(int256(block.timestamp) + offsetSecs >= 0, "getTimestamp: negative timestamp");
+        return uint64(uint256((int256(block.timestamp) + offsetSecs) * 1e9));
+    }
+
     function roll(uint256 bn) internal {
         require(prevBlockNumber == 0, "roll: already rolled");
         prevBlockNumber = block.number;
