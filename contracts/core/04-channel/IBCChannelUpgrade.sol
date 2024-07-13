@@ -521,7 +521,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
             return false;
         }
 
-        IIBCModuleUpgrade module = unsafeLookupUpgradableModuleByPort(msg_.portId);
+        IIBCModuleUpgrade module = lookupUpgradableModuleByPortUnchecked(msg_.portId);
 
         if (channel.state == Channel.State.STATE_OPEN) {
             // prove counterparty and move our own state to flushing
@@ -630,7 +630,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
                 && msg_.counterpartyChannelState == Channel.State.STATE_FLUSHCOMPLETE
         ) {
             openUpgradeHandshake(msg_.portId, msg_.channelId);
-            unsafeLookupUpgradableModuleByPort(msg_.portId).onChanUpgradeOpen(
+            lookupUpgradableModuleByPortUnchecked(msg_.portId).onChanUpgradeOpen(
                 msg_.portId, msg_.channelId, channel.upgrade_sequence
             );
         }
@@ -699,7 +699,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
 
         // open callback must not return error since counterparty successfully upgraded
         // make application state changes based on new channel parameters
-        unsafeLookupUpgradableModuleByPort(msg_.portId).onChanUpgradeOpen(
+        lookupUpgradableModuleByPortUnchecked(msg_.portId).onChanUpgradeOpen(
             msg_.portId, msg_.channelId, channel.upgrade_sequence
         );
     }
@@ -720,7 +720,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
         // otherwise, we can only cancel if the counterparty wrote an
         // error receipt during the upgrade handshake
         if (
-            unsafeLookupUpgradableModuleByPort(msg_.portId).isAuthorizedUpgrader(
+            lookupUpgradableModuleByPortUnchecked(msg_.portId).isAuthorizedUpgrader(
                 msg_.portId, msg_.channelId, _msgSender()
             ) && channel.state != Channel.State.STATE_FLUSHCOMPLETE
         ) {

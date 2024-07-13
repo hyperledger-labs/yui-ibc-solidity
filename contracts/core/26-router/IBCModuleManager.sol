@@ -72,12 +72,12 @@ contract IBCModuleManager is IBCHost, Context {
     }
 
     /**
-     * @dev unsafeLookupUpgradableModuleByPort will return the IBCModule corresponding to the portID
+     * @dev lookupUpgradableModuleByPortUnchecked will return the IBCModule corresponding to the portID
      * It will revert if the module is not found
      *
      * Since the function does not check if the module supports the `IIBCModuleUpgrade` interface via ERC-165, it is unsafe but cheaper in gas cost than `lookupUpgradableModuleByPort`
      */
-    function unsafeLookupUpgradableModuleByPort(string calldata portId) internal view returns (IIBCModuleUpgrade) {
+    function lookupUpgradableModuleByPortUnchecked(string calldata portId) internal view returns (IIBCModuleUpgrade) {
         return IIBCModuleUpgrade(address(lookupModuleByPort(portId)));
     }
 
@@ -108,7 +108,7 @@ contract IBCModuleManager is IBCHost, Context {
                 return true;
             }
         }
-        return unsafeLookupUpgradableModuleByPort(portId).canTransitionToFlushComplete(
+        return lookupUpgradableModuleByPortUnchecked(portId).canTransitionToFlushComplete(
             portId, channelId, upgradeSequence, _msgSender()
         );
     }
