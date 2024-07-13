@@ -245,20 +245,22 @@ abstract contract IBCChannelUpgradeBase is
     function setCounterpartyUpgrade(string calldata portId, string calldata channelId, Upgrade.Data calldata upgrade)
         internal
     {
-        if (recvStartSequences[portId][channelId].prevSequence != 0) {
+        RecvStartSequence storage recvStartSequence = recvStartSequences[portId][channelId];
+        if (recvStartSequence.prevSequence != 0) {
             revertCounterpartyUpgrade(portId, channelId);
         }
-        recvStartSequences[portId][channelId].prevSequence = recvStartSequences[portId][channelId].sequence;
-        recvStartSequences[portId][channelId].sequence = upgrade.next_sequence_send;
+        recvStartSequence.prevSequence = recvStartSequence.sequence;
+        recvStartSequence.sequence = upgrade.next_sequence_send;
     }
 
     function revertCounterpartyUpgrade(string calldata portId, string calldata channelId) internal {
-        uint64 prevRecvStartSequence = recvStartSequences[portId][channelId].prevSequence;
+        RecvStartSequence storage recvStartSequence = recvStartSequences[portId][channelId];
+        uint64 prevRecvStartSequence = recvStartSequence.prevSequence;
         if (prevRecvStartSequence == 0) {
             return;
         }
-        recvStartSequences[portId][channelId].prevSequence = 0;
-        recvStartSequences[portId][channelId].sequence = prevRecvStartSequence;
+        recvStartSequence.prevSequence = 0;
+        recvStartSequence.sequence = prevRecvStartSequence;
     }
 
     function verifyMembership(
