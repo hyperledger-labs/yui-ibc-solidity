@@ -161,7 +161,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
                 counterpartyUpgradeSequence: 2,
-                proposedConnectionHops: new string[](0),
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel0.connectionId),
                 proofs: upgradeLocalhostProofs()
             });
             (bool ok, uint64 seq) = ibcHandler.channelUpgradeTry(msg_);
@@ -223,7 +223,43 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
                 counterpartyUpgradeSequence: 1,
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel0.connectionId),
+                proofs: upgradeLocalhostProofs()
+            });
+            vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeIncompatibleProposal.selector);
+            ibcHandler.channelUpgradeTry(msg_);
+        }
+        {
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
+                portId: channel0.portId,
+                channelId: channel0.channelId,
+                counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
+                counterpartyUpgradeSequence: 1,
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel1.connectionId),
+                proofs: upgradeLocalhostProofs()
+            });
+            vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTryProposedConnectionHopsMismatch.selector);
+            ibcHandler.channelUpgradeTry(msg_);
+        }
+        {
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
+                portId: channel0.portId,
+                channelId: channel0.channelId,
+                counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
+                counterpartyUpgradeSequence: 1,
                 proposedConnectionHops: new string[](0),
+                proofs: upgradeLocalhostProofs()
+            });
+            vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTryProposedConnectionHopsEmpty.selector);
+            ibcHandler.channelUpgradeTry(msg_);
+        }
+        {
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
+                portId: channel1.portId,
+                channelId: channel1.channelId,
+                counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
+                counterpartyUpgradeSequence: 1,
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel1.connectionId),
                 proofs: upgradeLocalhostProofs()
             });
             vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeIncompatibleProposal.selector);
@@ -235,10 +271,22 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel1.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
                 counterpartyUpgradeSequence: 1,
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel0.connectionId),
+                proofs: upgradeLocalhostProofs()
+            });
+            vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTryProposedConnectionHopsMismatch.selector);
+            ibcHandler.channelUpgradeTry(msg_);
+        }
+        {
+            IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
+                portId: channel1.portId,
+                channelId: channel1.channelId,
+                counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
+                counterpartyUpgradeSequence: 1,
                 proposedConnectionHops: new string[](0),
                 proofs: upgradeLocalhostProofs()
             });
-            vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeIncompatibleProposal.selector);
+            vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTryProposedConnectionHopsEmpty.selector);
             ibcHandler.channelUpgradeTry(msg_);
         }
 
@@ -265,7 +313,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
                 counterpartyUpgradeSequence: 1,
-                proposedConnectionHops: new string[](0),
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel0.connectionId),
                 proofs: upgradeLocalhostProofs()
             });
             vm.expectRevert(
@@ -283,7 +331,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel1.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
                 counterpartyUpgradeSequence: 2,
-                proposedConnectionHops: new string[](0),
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel1.connectionId),
                 proofs: upgradeLocalhostProofs()
             });
             vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeIncompatibleProposal.selector);
@@ -312,7 +360,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel0.channelId,
                 counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
                 counterpartyUpgradeSequence: 2,
-                proposedConnectionHops: new string[](0),
+                proposedConnectionHops: IBCChannelLib.buildConnectionHops(channel0.connectionId),
                 proofs: upgradeLocalhostProofs()
             })
         );
@@ -1210,12 +1258,6 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 proposedConnectionHops: IBCChannelLib.buildConnectionHops(proposals.p1.connectionId),
                 proofs: upgradeLocalhostProofs()
             });
-            if (flow.crossingHello) {
-                // If the upgrade already exists (i.e. crossing hello), `proposedConnectionHops` must be empty
-                vm.expectRevert();
-                ibcHandler.channelUpgradeTry(msg_);
-                msg_.proposedConnectionHops = new string[](0);
-            }
             (bool ok, uint64 seq) = ibcHandler.channelUpgradeTry(msg_);
             assertTrue(ok);
             assertEq(seq, upgradeSequence);
