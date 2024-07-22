@@ -6,7 +6,7 @@ This document describes a light client that validates Hyperledger Besu using IBF
 
 The light client is a client software that connects to full nodes to interact with the blockchain.[2][3]
 
-In general, full nodes needs to validate every block and every transaction, which requires a lot of resources. light client can be used as intermediaries with minimal trust in full nodes, enabling blockchain validation with relatively small resources. Examples of such light client are those of bitcoin, ethereum 2.0, and tendermint. Among them, tendermint's work on light client has greatly influenced us to design the IBFT 2.0 Light Client protocol.
+In general, full nodes need to validate every block and every transaction, which requires a lot of resources. Light clients can be used as intermediaries with minimal trust in full nodes, enabling blockchain validation with relatively small resources. Examples of such light clients are those of bitcoin, ethereum 2.0, and tendermint. Among them, tendermint's work on light client has greatly influenced us to design the IBFT 2.0 Light Client protocol.
 
 This document will first give an overview of the IBFT 2.0 protocol and then describe the IBFT 2.0 Light Client protocol.
 
@@ -16,7 +16,7 @@ IBFT 2.0 is Proof-of-Authority (PoA) Byzantine-Fault-Tolerant (BFT) blockchain c
 
 In IBFT 2.0 protocol, the total number of nodes, `n`, and the maximum number of byzantine nodes(`f(n)`) can be expressed as `f(n) = (n-1) / 3`
 
-There is a voting mechanism that allows nodes to add or remove validators from the valudator set. Up to one vote can be added per Block and will be applied if 1/2+ votes of the validator set are included in the block within the epoch. For more details on how voting works, please refer to [5].
+There is a voting mechanism that allows nodes to add or remove validators from the validator set. Up to one vote can be added per Block and will be applied if 1/2+ votes of the validator set are included in the block within the epoch. For more details on how voting works, please refer to [5].
 
 An overview of the consensus state transitions in IBFT 2.0 is shown below:
 
@@ -36,7 +36,7 @@ When using IBFT 2.0 in Besu, a result of consensus is stored in the extra data f
 
 The second element of the list is a list of each address in a validator set of this block, and the fifth is commit seals to this block by the validator set.
 
-Each blockchain node verifies the commit seals to validates the block according to Algorithm 1[1].
+Each blockchain node verifies the commit seals to validate the block according to Algorithm 1[1].
 
 ## Light Client protocol
 
@@ -48,13 +48,13 @@ The light client is assumed to be initialized based on a trusted source. In the 
 
 ### Trusting period
 
-In the IBFT 2.0 protocol, it is implicitly assumed that the nodes can trust the valiadtor set of each finalized block height.
+In the IBFT 2.0 protocol, it is implicitly assumed that the nodes can trust the validator set of each finalized block height.
 
 Therefore, asynchronous nodes somehow receive blocks from trusted nodes, validate them according to Algorithm.1 in [1], and add them to their own ledgers.
 
 In this paper, there is an implicit assumption that the validator set for each block is always trusted. However, we thought this assumption may be difficult to satisfy in some environments. e.g. an environment where changes to the validator set occur relatively frequently.
 
-For this purpose, the light client verification follows the IBFT 2.0 failure model with an additional assumption about a period of the validator set of height can be trusted. The assumption is follows:
+For this purpose, the light client verification follows the IBFT 2.0 failure model with an additional assumption about a period of the validator set of height can be trusted. The assumption is as follows:
 
 - The new block must be verified by the validator set of a block generated within time duration `T` before the current time.
 
@@ -75,7 +75,7 @@ Let the height of the trusted block be `n`, the height of the untrusted block be
 2. `B n+m` has 1/3 signatures of `V n`
 3. `B n+m` has 2/3+ signatures of `V n+m`
 
-1 has already been explained in [Trusting period]. Next, let's consider 2: under the assumption that the maximum byzantine number can be expressed as `f(n) = (n-1)/3`, ensure that there is at least one honest validator. Finally, in 3 it ensure that the finalized block of height `n+m` is valid.
+1 has already been explained in [Trusting period]. Next, let's consider 2: under the assumption that the maximum byzantine number can be expressed as `f(n) = (n-1)/3`, ensure that there is at least one honest validator. Finally, in 3 it ensures that the finalized block of height `n+m` is valid.
 
 ### Liveness analysis
 
@@ -93,7 +93,7 @@ If this equation holds, there will always be a block height with a validator set
 
 If the failure model of IBFT 2.0 is violated and there are more than `(n-1) / 3` failed nodes, multiple valid confirmed blocks may be generated.
 
-The light client may be able to detect such failures or attacks. This works will be done in the future.
+The light client may be able to detect such failures or attacks. This work will be done in the future.
 
 ## References
 
