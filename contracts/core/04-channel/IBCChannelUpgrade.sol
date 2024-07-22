@@ -445,10 +445,14 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
             // nextSequenceSend and timeout will be filled when we move to FLUSHING
             existingUpgrade.fields = upgradeFields;
         } else {
-            if (msg_.proposedConnectionHops.length != 0) {
-                revert IBCChannelUpgradeTryProposalMustEmptyIfExist();
+            if (msg_.proposedConnectionHops.length != 1) {
+                revert IBCChannelUpgradeTryProposedConnectionHopsEmpty();
             }
             upgradeFields = existingUpgrade.fields;
+            if (keccak256(bytes(upgradeFields.connection_hops[0])) != keccak256(bytes(msg_.proposedConnectionHops[0])))
+            {
+                revert IBCChannelUpgradeTryProposedConnectionHopsMismatch();
+            }
         }
 
         if (!isCompatibleUpgradeFields(upgradeFields, msg_.counterpartyUpgradeFields)) {
