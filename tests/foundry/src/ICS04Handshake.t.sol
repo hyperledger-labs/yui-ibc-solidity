@@ -4,6 +4,19 @@ pragma solidity ^0.8.20;
 import "../../../contracts/apps/mock/IBCMockApp.sol";
 import "./helpers/ICS03TestHelper.t.sol";
 import "./helpers/ICS04HandshakeTestHelper.t.sol";
+import {AppBase} from "../../../contracts/apps/commons/IBCAppBase.sol";
+import {IIBCHostErrors} from "../../../contracts/core/24-host/IIBCHostErrors.sol";
+
+contract DummyApp is AppBase {
+    address handler;
+    constructor(address _handler) {
+        handler = _handler;
+    }
+
+    function ibcAddress() public view override returns (address) {
+        return handler;
+    }
+}
 
 contract TestICS04Handshake is ICS03TestHelper, ICS04HandshakeMockClientTestHelper {
     TestableIBCHandler handler;
@@ -25,14 +38,31 @@ contract TestICS04Handshake is ICS03TestHelper, ICS04HandshakeMockClientTestHelp
     }
 
     function testBindPort() public {
+        assertNotEq(address(handler.getIBCModuleByPort("portidone")), address(0));
         vm.expectRevert();
+        handler.getIBCModuleByPort("portidtwo");
+
+        // must be failed if the port is already binded
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostPortCapabilityAlreadyClaimed.selector, "portidone"));
         handler.bindPort("portidone", mockApp);
-        vm.expectRevert();
-        handler.bindPort("portidone", IIBCModule(address(0x01)));
-        vm.expectRevert();
+        // must be failed if the module does not implement ERC-165
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostModuleDoesNotSupportERC165.selector));
+        handler.bindPort("portidtwo", IIBCModule(address(0x01)));
+        // must be failed the module does not support IIBCModule
+        address dummyApp = address(new DummyApp(address(handler)));
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostModuleDoesNotSupportIIBCModule.selector, type(IIBCModule).interfaceId));
+        handler.bindPort("portidtwo", IIBCModule(dummyApp));
+        // must be failed if the port is empty
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidPortIdentifier.selector, ""));
         handler.bindPort("", IIBCModule(address(0x01)));
-        vm.expectRevert();
-        handler.bindPort("portidone", IIBCModule(address(0)));
+        // must be failed if the module address is empty
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidModuleAddress.selector, address(0)));
+        handler.bindPort("portidtwo", IIBCModule(address(0)));
+        // must be failed if the module address is the host address
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidModuleAddress.selector, address(handler)));
+        handler.bindPort("portidtwo", IIBCModule(address(handler)));
+        // must be succeed if the module is valid
+        handler.bindPort("portidtwo", mockApp);
     }
 
     function testChanOpenInit() public {

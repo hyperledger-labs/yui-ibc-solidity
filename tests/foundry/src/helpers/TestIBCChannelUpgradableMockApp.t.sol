@@ -8,9 +8,15 @@ import {
 import {IIBCHandler} from "../../../../contracts/core/25-handler/IIBCHandler.sol";
 import {IBCMockApp} from "../../../../contracts/apps/mock/IBCMockApp.sol";
 import {IBCChannelUpgradableModuleBase} from "./IBCChannelUpgradableModule.sol";
+import {IBCAppBase} from "../../../../contracts/apps/commons/IBCAppBase.sol";
 
 contract TestIBCChannelUpgradableMockApp is IBCMockApp, IBCChannelUpgradableModuleBase {
     constructor(IIBCHandler ibcHandler_) IBCMockApp(ibcHandler_) {}
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IBCChannelUpgradableModuleBase, IBCAppBase) returns (bool) {
+        return
+            super.supportsInterface(interfaceId) || interfaceId == this.proposeAndInitUpgrade.selector;
+    }
 
     function proposeAndInitUpgrade(
         string calldata portId,

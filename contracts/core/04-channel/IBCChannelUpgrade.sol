@@ -14,6 +14,7 @@ import {
 } from "../04-channel/IIBCChannelUpgrade.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
+import {IIBCModuleUpgrade} from "../26-router/IIBCModuleUpgrade.sol";
 import {IBCChannelLib} from "./IBCChannelLib.sol";
 import {IIBCChannelUpgradeErrors} from "./IIBCChannelUpgradeErrors.sol";
 
@@ -84,12 +85,13 @@ abstract contract IBCChannelUpgradeBase is
      * it will store the nextSequenceSend and upgrade timeout in the upgrade state.
      */
     function startFlushUpgradeHandshake(
+        IIBCModuleUpgrade module,
         Channel.Data storage channel,
         Upgrade.Data storage upgrade,
         string calldata portId,
         string calldata channelId
     ) internal {
-        Timeout.Data memory upgradeTimeout = getUpgradeTimeout(portId, channelId);
+        Timeout.Data memory upgradeTimeout = module.getUpgradeTimeout(portId, channelId);
         if (
             !(
                 upgradeTimeout.height.revision_number > 0 || upgradeTimeout.height.revision_height > 0
@@ -200,22 +202,6 @@ abstract contract IBCChannelUpgradeBase is
             == keccak256(bytes(proposedConnection.counterparty.connection_id));
     }
 
-    function isAuthorizedUpgrader(string calldata portId, string calldata channelId, address msgSender)
-        internal
-        view
-        returns (bool)
-    {
-        return lookupUpgradableModuleByPort(portId).isAuthorizedUpgrader(portId, channelId, msgSender);
-    }
-
-    function getUpgradeTimeout(string calldata portId, string calldata channelId)
-        internal
-        view
-        returns (Timeout.Data memory)
-    {
-        return lookupUpgradableModuleByPort(portId).getUpgradeTimeout(portId, channelId);
-    }
-
     // --------------------- Private Functions --------------------- //
 
     function writeErrorReceipt(
@@ -259,20 +245,22 @@ abstract contract IBCChannelUpgradeBase is
     function setCounterpartyUpgrade(string calldata portId, string calldata channelId, Upgrade.Data calldata upgrade)
         internal
     {
-        if (recvStartSequences[portId][channelId].prevSequence != 0) {
+        RecvStartSequence storage recvStartSequence = recvStartSequences[portId][channelId];
+        if (recvStartSequence.prevSequence != 0) {
             revertCounterpartyUpgrade(portId, channelId);
         }
-        recvStartSequences[portId][channelId].prevSequence = recvStartSequences[portId][channelId].sequence;
-        recvStartSequences[portId][channelId].sequence = upgrade.next_sequence_send;
+        recvStartSequence.prevSequence = recvStartSequence.sequence;
+        recvStartSequence.sequence = upgrade.next_sequence_send;
     }
 
     function revertCounterpartyUpgrade(string calldata portId, string calldata channelId) internal {
-        uint64 prevRecvStartSequence = recvStartSequences[portId][channelId].prevSequence;
+        RecvStartSequence storage recvStartSequence = recvStartSequences[portId][channelId];
+        uint64 prevRecvStartSequence = recvStartSequence.prevSequence;
         if (prevRecvStartSequence == 0) {
             return;
         }
-        recvStartSequences[portId][channelId].prevSequence = 0;
-        recvStartSequences[portId][channelId].sequence = prevRecvStartSequence;
+        recvStartSequence.prevSequence = 0;
+        recvStartSequence.sequence = prevRecvStartSequence;
     }
 
     function verifyMembership(
@@ -334,7 +322,6 @@ abstract contract IBCChannelUpgradeBase is
                 counterpartyChannel
             );
         }
-        // slither-disable-next-line reentrancy-no-eth
         verifyMembership(
             connection,
             proofs.proofHeight,
@@ -358,7 +345,8 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
      * @dev See {IIBCChannelUpgrade-channelUpgradeInit}
      */
     function channelUpgradeInit(MsgChannelUpgradeInit calldata msg_) public override returns (uint64) {
-        if (!isAuthorizedUpgrader(msg_.portId, msg_.channelId, _msgSender())) {
+        IIBCModuleUpgrade module = lookupUpgradableModuleByPort(msg_.portId);
+        if (!module.isAuthorizedUpgrader(msg_.portId, msg_.channelId, _msgSender())) {
             revert IBCChannelUpgradeUnauthorizedChannelUpgrader(_msgSender());
         }
 
@@ -378,9 +366,8 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
         upgrade.fields.ordering = msg_.proposedUpgradeFields.ordering;
         upgrade.fields.connection_hops = new string[](1);
         upgrade.fields.connection_hops[0] = msg_.proposedUpgradeFields.connection_hops[0];
-        upgrade.fields.version = lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeInit(
-            msg_.portId, msg_.channelId, channel.upgrade_sequence, msg_.proposedUpgradeFields
-        );
+        upgrade.fields.version =
+            module.onChanUpgradeInit(msg_.portId, msg_.channelId, channel.upgrade_sequence, msg_.proposedUpgradeFields);
         updateUpgradeCommitment(msg_.portId, msg_.channelId, upgrade);
 
         emit ChannelUpgradeInit(msg_.portId, msg_.channelId, channel.upgrade_sequence, msg_.proposedUpgradeFields);
@@ -392,6 +379,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
      * @dev See {IIBCChannelUpgrade-channelUpgradeTry}
      */
     function channelUpgradeTry(MsgChannelUpgradeTry calldata msg_) public override returns (bool, uint64) {
+        IIBCModuleUpgrade module = lookupUpgradableModuleByPort(msg_.portId);
         // current channel must be OPEN (i.e. not in FLUSHING)
         Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
         if (channel.state != Channel.State.STATE_OPEN) {
@@ -482,12 +470,11 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
 
         // call startFlushUpgradeHandshake to move channel to FLUSHING, which will block
         // upgrade from progressing to OPEN until flush completes on both ends
-        startFlushUpgradeHandshake(channel, existingUpgrade, msg_.portId, msg_.channelId);
+        startFlushUpgradeHandshake(module, channel, existingUpgrade, msg_.portId, msg_.channelId);
         updateChannelCommitment(msg_.portId, msg_.channelId, channel);
 
-        existingUpgrade.fields.version = lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeTry(
-            msg_.portId, msg_.channelId, channel.upgrade_sequence, upgradeFields
-        );
+        existingUpgrade.fields.version =
+            module.onChanUpgradeTry(msg_.portId, msg_.channelId, channel.upgrade_sequence, upgradeFields);
         updateUpgradeCommitment(msg_.portId, msg_.channelId, existingUpgrade);
 
         emit ChannelUpgradeTry(
@@ -538,11 +525,13 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
             return false;
         }
 
+        IIBCModuleUpgrade module = lookupUpgradableModuleByPortUnchecked(msg_.portId);
+
         if (channel.state == Channel.State.STATE_OPEN) {
             // prove counterparty and move our own state to flushing
             // if we are already at flushing, then no state changes occur
             // upgrade is blocked on this channelEnd from progressing until flush completes on its end
-            startFlushUpgradeHandshake(channel, existingUpgrade, msg_.portId, msg_.channelId);
+            startFlushUpgradeHandshake(module, channel, existingUpgrade, msg_.portId, msg_.channelId);
             // NOTE: `upgrade` and `channel` are updated only when channel.state is OPEN
             updateChannelCommitment(msg_.portId, msg_.channelId, channel);
             updateUpgradeCommitment(msg_.portId, msg_.channelId, existingUpgrade);
@@ -570,7 +559,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
         // module can error on counterparty version
         // ACK should not change state to the new parameters yet
         // as that will happen on the onChanUpgradeOpen callback
-        try lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeAck(
+        try module.onChanUpgradeAck(
             msg_.portId, msg_.channelId, channel.upgrade_sequence, msg_.counterpartyUpgrade.fields.version
         ) {} catch {
             restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.AckCallbackFailed);
@@ -645,7 +634,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
                 && msg_.counterpartyChannelState == Channel.State.STATE_FLUSHCOMPLETE
         ) {
             openUpgradeHandshake(msg_.portId, msg_.channelId);
-            lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeOpen(
+            lookupUpgradableModuleByPortUnchecked(msg_.portId).onChanUpgradeOpen(
                 msg_.portId, msg_.channelId, channel.upgrade_sequence
             );
         }
@@ -714,7 +703,7 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
 
         // open callback must not return error since counterparty successfully upgraded
         // make application state changes based on new channel parameters
-        lookupUpgradableModuleByPort(msg_.portId).onChanUpgradeOpen(
+        lookupUpgradableModuleByPortUnchecked(msg_.portId).onChanUpgradeOpen(
             msg_.portId, msg_.channelId, channel.upgrade_sequence
         );
     }
@@ -735,8 +724,9 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
         // otherwise, we can only cancel if the counterparty wrote an
         // error receipt during the upgrade handshake
         if (
-            isAuthorizedUpgrader(msg_.portId, msg_.channelId, _msgSender())
-                && channel.state != Channel.State.STATE_FLUSHCOMPLETE
+            lookupUpgradableModuleByPortUnchecked(msg_.portId).isAuthorizedUpgrader(
+                msg_.portId, msg_.channelId, _msgSender()
+            ) && channel.state != Channel.State.STATE_FLUSHCOMPLETE
         ) {
             return restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.Cancel);
         }
