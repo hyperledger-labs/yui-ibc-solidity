@@ -23,7 +23,7 @@ lint:
 
 .PHONY: test
 test:
-	@forge snapshot -vvvv --gas-report --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+	@forge snapshot -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
 
 .PHONY: coverage
 coverage:
