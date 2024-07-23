@@ -2,24 +2,18 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../../contracts/core/02-client/IBCClient.sol";
-import "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
 import "../../../contracts/core/04-channel/IIBCChannel.sol";
-import "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
-import "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
-import "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
-import "../../../contracts/core/04-channel/IBCChannelUpgrade.sol";
-import "../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../contracts/clients/mock/MockClient.sol";
 import "../../../contracts/proto/MockClient.sol";
 import "../../../contracts/proto/Connection.sol";
 import "../../../contracts/proto/Channel.sol";
 import "../../../contracts/apps/mock/IBCMockApp.sol";
+import "../../../contracts/apps/mock/IBCMockLib.sol";
+import "./helpers/IBCTestHelper.t.sol";
 import "./helpers/TestableIBCHandler.t.sol";
 import "./helpers/IBCCommitmentTestHelper.sol";
 
-// TODO split setup code into other contracts
-contract IBCTest is Test {
+contract IBCBenchmarks is IBCTestHelper {
     using IBCHeight for Height.Data;
 
     TestableIBCHandler handler;
@@ -28,18 +22,9 @@ contract IBCTest is Test {
 
     string private constant MOCK_CLIENT_TYPE = "mock-client";
     string private constant MOCK_PORT_ID = "mock";
-    bytes32 private testPacketCommitmentProof;
 
     function setUp() public {
-        handler = new TestableIBCHandler(
-            new IBCClient(),
-            new IBCConnectionSelfStateNoValidation(),
-            new IBCChannelHandshake(),
-            new IBCChannelPacketSendRecv(),
-            new IBCChannelPacketTimeout(),
-            new IBCChannelUpgradeInitTryAck(),
-            new IBCChannelUpgradeConfirmTimeoutCancel()
-        );
+        handler = defaultIBCHandler();
 
         mockClient = new MockClient(address(handler));
         handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
@@ -49,6 +34,66 @@ contract IBCTest is Test {
         setUpChannel();
         setUpMockApp();
     }
+
+    // --------------- Benchmarks --------------- //
+
+    function testCreateMockClient() public {
+        createMockClient(1);
+    }
+
+    function testUpdateMockClientViaHandler() public {
+        updateMockClient(2);
+    }
+
+    function testUpdateMockClientDirectly() public {
+        updateLCMockClient(2);
+    }
+
+    function testSendPacket() public {
+        vm.pauseGasMetering();
+        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(this));
+        Packet memory packet = createPacket(0, 100);
+        vm.resumeGasMetering();
+        handler.sendPacket(
+            packet.sourcePort, packet.sourceChannel, packet.timeoutHeight, packet.timeoutTimestamp, packet.data
+        );
+    }
+
+    function testRecvPacket() public {
+        vm.pauseGasMetering();
+        Packet memory packet = createPacket(0, 100);
+        IIBCChannelRecvPacket.MsgPacketRecv memory msg_ = IIBCChannelRecvPacket.MsgPacketRecv({
+                packet: packet,
+                proof: abi.encodePacked(makeMockClientPacketCommitmentProof(
+                    createPacket(0, 100), Height.Data({revision_number: 0, revision_height: 1})
+                )),
+                proofHeight: Height.Data({revision_number: 0, revision_height: 1})
+            });
+        vm.resumeGasMetering();
+        handler.recvPacket(msg_);
+    }
+
+    function testAcknowledgePacket() public {
+        vm.pauseGasMetering();
+        Packet memory packet = createPacket(0, 100);
+        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(this));
+        handler.sendPacket(
+            packet.sourcePort, packet.sourceChannel, packet.timeoutHeight, packet.timeoutTimestamp, packet.data
+        );
+        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(mockApp));
+        IIBCChannelAcknowledgePacket.MsgPacketAcknowledgement memory msg_ = IIBCChannelAcknowledgePacket.MsgPacketAcknowledgement({
+                packet: packet,
+                acknowledgement: IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON,
+                proof: abi.encodePacked(makeMockClientAcknowledgePacketCommitmentProof(
+                    packet, IBCMockLib.SUCCESSFUL_ACKNOWLEDGEMENT_JSON, Height.Data({revision_number: 0, revision_height: 1})
+                )),
+                proofHeight: Height.Data({revision_number: 0, revision_height: 1})
+            });
+        vm.resumeGasMetering();
+        handler.acknowledgePacket(msg_);
+    }
+
+    // --------------- Internal Functions --------------- //
 
     function setUpMockClient() internal {
         createMockClient(1);
@@ -86,10 +131,6 @@ contract IBCTest is Test {
         handler.setNextSequenceSend(MOCK_PORT_ID, "channel-0", 1);
         handler.setNextSequenceRecv(MOCK_PORT_ID, "channel-0", 1);
         handler.setNextSequenceAck(MOCK_PORT_ID, "channel-0", 1);
-
-        testPacketCommitmentProof = makeMockClientPacketCommitmentProof(
-            createPacket(0, 100), Height.Data({revision_number: 0, revision_height: 1})
-        );
     }
 
     function setUpMockApp() internal {
@@ -98,85 +139,48 @@ contract IBCTest is Test {
         handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(mockApp));
     }
 
-    /* test cases */
-
-    function testToUint128(Height.Data memory height) public pure {
-        Height.Data memory actual = IBCHeight.fromUint128(IBCHeight.toUint128(height));
-        assert(height.eq(actual));
-    }
-
-    /* gas benchmarks */
-
-    function testBenchmarkCreateMockClient() public {
-        createMockClient(1);
-    }
-
-    function testBenchmarkUpdateMockClient() public {
-        updateMockClient(2);
-    }
-
-    function testBenchmarkLCUpdateMockClient() public {
-        updateLCMockClient(2);
-    }
-
-    function testBenchmarkSendPacket() public {
-        handler.setChannelCapability(MOCK_PORT_ID, "channel-0", address(this));
-        Packet memory packet = createPacket(0, 100);
-        handler.sendPacket(
-            packet.sourcePort, packet.sourceChannel, packet.timeoutHeight, packet.timeoutTimestamp, packet.data
-        );
-    }
-
-    function testBenchmarkRecvPacket() public {
-        Packet memory packet = createPacket(0, 100);
-        handler.recvPacket(
-            IIBCChannelRecvPacket.MsgPacketRecv({
-                packet: packet,
-                proof: abi.encodePacked(testPacketCommitmentProof),
-                proofHeight: Height.Data({revision_number: 0, revision_height: 1})
-            })
-        );
-    }
-
-    /* internal functions */
-
     function createMockClient(uint64 revisionHeight) internal {
-        handler.createClient(
-            IIBCClient.MsgCreateClient({
-                clientType: MOCK_CLIENT_TYPE,
-                protoClientState: wrapAnyMockClientState(
-                    IbcLightclientsMockV1ClientState.Data({
-                        latest_height: Height.Data({revision_number: 0, revision_height: revisionHeight})
-                    })
-                ),
-                protoConsensusState: wrapAnyMockConsensusState(
-                    IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp * 1e9)})
-                )
-            })
-        );
+        vm.pauseGasMetering();
+        IIBCClient.MsgCreateClient memory msg_ = IIBCClient.MsgCreateClient({
+            clientType: MOCK_CLIENT_TYPE,
+            protoClientState: wrapAnyMockClientState(
+                IbcLightclientsMockV1ClientState.Data({
+                    latest_height: Height.Data({revision_number: 0, revision_height: revisionHeight})
+                })
+            ),
+            protoConsensusState: wrapAnyMockConsensusState(
+                IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp * 1e9)})
+            )
+        });
+        vm.resumeGasMetering();
+        handler.createClient(msg_);
     }
 
     function updateMockClient(uint64 nextRevisionHeight) internal {
-        handler.updateClient(
-            IIBCClient.MsgUpdateClient({
-                clientId: "mock-client-0",
-                protoClientMessage: wrapAnyMockHeader(
-                    IbcLightclientsMockV1Header.Data({
-                        height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
-                        timestamp: uint64(block.timestamp * 1e9)
-                    })
-                )
-            })
-        );
+        vm.pauseGasMetering();
+        IIBCClient.MsgUpdateClient memory msg_ = IIBCClient.MsgUpdateClient({
+            clientId: "mock-client-0",
+            protoClientMessage: wrapAnyMockHeader(
+                IbcLightclientsMockV1Header.Data({
+                    height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
+                    timestamp: uint64(block.timestamp * 1e9)
+                })
+            )
+        });
+        vm.resumeGasMetering();
+        handler.updateClient(msg_);
     }
 
     function updateLCMockClient(uint64 nextRevisionHeight) internal {
+        vm.pauseGasMetering();
+        IbcLightclientsMockV1Header.Data memory header = IbcLightclientsMockV1Header.Data({
+            height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
+            timestamp: uint64(block.timestamp * 1e9)
+        });
+        vm.resumeGasMetering();
         mockClient.updateClient(
             "mock-client-0",
-            IbcLightclientsMockV1Header.Data({
-                height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
-                timestamp: uint64(block.timestamp * 1e9)
-            })
+            header
         );
     }
 
@@ -225,7 +229,7 @@ contract IBCTest is Test {
             sourceChannel: "channel-0",
             destinationPort: MOCK_PORT_ID,
             destinationChannel: "channel-0",
-            data: bytes("{\"amount\": \"100\"}"),
+            data: IBCMockLib.MOCK_PACKET_DATA,
             timeoutHeight: Height.Data({revision_number: revisionNumber, revision_height: revisionHeight}),
             timeoutTimestamp: 0
         });
@@ -251,6 +255,26 @@ contract IBCTest is Test {
                 sha256(
                     IBCCommitmentTestHelper.packetCommitmentPath(
                         packet.sourcePort, packet.sourceChannel, packet.sequence
+                    )
+                ),
+                sha256(abi.encodePacked(value))
+            )
+        );
+    }
+
+    function makeMockClientAcknowledgePacketCommitmentProof(Packet memory packet, bytes memory acknowledgement, Height.Data memory proofHeight)
+        internal
+        pure
+        returns (bytes32)
+    {
+        bytes32 value = sha256(acknowledgement);
+        return sha256(
+            abi.encodePacked(
+                proofHeight.toUint128(),
+                sha256("ibc"),
+                sha256(
+                    IBCCommitmentTestHelper.packetAcknowledgementCommitmentPath(
+                        packet.destinationPort, packet.destinationChannel, packet.sequence
                     )
                 ),
                 sha256(abi.encodePacked(value))

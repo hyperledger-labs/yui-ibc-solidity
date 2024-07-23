@@ -2,17 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../../contracts/core/02-client/IBCClient.sol";
 import "../../../contracts/core/02-client/IIBCClientErrors.sol";
-import "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
-import "../../../contracts/core/04-channel/IBCChannelHandshake.sol";
-import "../../../contracts/core/04-channel/IBCChannelPacketSendRecv.sol";
-import "../../../contracts/core/04-channel/IBCChannelPacketTimeout.sol";
 import "../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../contracts/proto/MockClient.sol";
-import "../../../contracts/proto/Connection.sol";
-import "../../../contracts/proto/Channel.sol";
-import "../../../contracts/apps/mock/IBCMockApp.sol";
 import "../../../contracts/clients/mock/MockClient.sol";
 import "./helpers/TestableIBCHandler.t.sol";
 import "./helpers/IBCTestHelper.t.sol";
@@ -20,6 +12,8 @@ import "./helpers/MockClientTestHelper.t.sol";
 import {IIBCHostErrors} from "../../../contracts/core/24-host/IIBCHostErrors.sol";
 
 contract TestICS02 is Test, MockClientTestHelper {
+    using IBCHeight for Height.Data;
+
     function testRegisterClient() public {
         TestableIBCHandler handler = defaultIBCHandler();
         MockClient mockClient = new MockClient(address(handler));
@@ -51,6 +45,11 @@ contract TestICS02 is Test, MockClientTestHelper {
 
         vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "mock-"));
         handler.registerClient("mock-", mockClient);
+    }
+
+    function testHeightToUint128(Height.Data memory height) public pure {
+        Height.Data memory actual = IBCHeight.fromUint128(IBCHeight.toUint128(height));
+        assert(height.eq(actual));
     }
 
     function testCreateClient() public {
