@@ -4,6 +4,7 @@ pragma solidity ^0.8.20;
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import {IBCClientLib} from "../02-client/IBCClientLib.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
+import {IBCHostLib} from "./IBCHostLib.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 import {IIBCModule} from "../26-router/IIBCModule.sol";
 import {IIBCHostConfigurator} from "./IIBCHostConfigurator.sol";
@@ -30,7 +31,7 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
 
     function _bindPort(string calldata portId, IIBCModule module) internal virtual {
         address moduleAddress = address(module);
-        if (!validatePortIdentifier(bytes(portId))) {
+        if (!IBCHostLib.validatePortIdentifier(bytes(portId))) {
             revert IBCHostInvalidPortIdentifier(portId);
         }
         if (moduleAddress == address(0) || moduleAddress == address(this)) {
