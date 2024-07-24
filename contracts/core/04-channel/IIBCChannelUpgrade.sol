@@ -5,6 +5,50 @@ import {Height} from "../../proto/Client.sol";
 import {Channel, Upgrade, UpgradeFields, ErrorReceipt, Timeout} from "../../proto/Channel.sol";
 
 interface IIBCChannelUpgradeBase {
+    // --------------------- Events --------------------- //
+
+    /// @notice emitted when channelUpgradeInit is successfully executed
+    event ChannelUpgradeInit(
+        string portId, string channelId, uint64 upgradeSequence, UpgradeFields.Data proposedUpgradeFields
+    );
+
+    /// @notice emitted when channelUpgradeTry is successfully executed
+    event ChannelUpgradeTry(
+        string portId,
+        string channelId,
+        uint64 upgradeSequence,
+        UpgradeFields.Data upgradeFields,
+        Timeout.Data timeout,
+        uint64 nextSequenceSend
+    );
+
+    /// @notice emitted when channelUpgradeAck is successfully executed
+    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE)
+    event ChannelUpgradeAck(
+        string portId,
+        string channelId,
+        uint64 upgradeSequence,
+        Channel.State channelState,
+        UpgradeFields.Data upgradeFields,
+        Timeout.Data timeout,
+        uint64 nextSequenceSend
+    );
+
+    /// @notice emitted when channelUpgradeConfirm is successfully executed
+    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE or OPEN)
+    event ChannelUpgradeConfirm(string portId, string channelId, uint64 upgradeSequence, Channel.State channelState);
+
+    /// @notice emitted when channelUpgradeOpen is successfully executed
+    event ChannelUpgradeOpen(string portId, string channelId, uint64 upgradeSequence);
+
+    /// @notice error when the upgrade attempt fails
+    /// @param portId port identifier
+    /// @param channelId channel identifier
+    /// @param upgradeSequence upgrade sequence
+    event WriteErrorReceipt(string portId, string channelId, uint64 upgradeSequence, string message);
+
+    // --------------------- Structs --------------------- //
+
     enum UpgradeHandshakeError {
         None,
         Overwritten,
@@ -75,44 +119,9 @@ interface IIBCChannelUpgradeBase {
         bytes proofUpgrade;
         Height.Data proofHeight;
     }
-
-    /// @notice error when the upgrade attempt fails
-    /// @param portId port identifier
-    /// @param channelId channel identifier
-    /// @param upgradeSequence upgrade sequence
-    event WriteErrorReceipt(string portId, string channelId, uint64 upgradeSequence, string message);
 }
 
 interface IIBCChannelUpgradeInitTryAck is IIBCChannelUpgradeBase {
-    // --------------------- Events --------------------- //
-
-    /// @notice emitted when channelUpgradeInit is successfully executed
-    event ChannelUpgradeInit(
-        string portId, string channelId, uint64 upgradeSequence, UpgradeFields.Data proposedUpgradeFields
-    );
-
-    /// @notice emitted when channelUpgradeTry is successfully executed
-    event ChannelUpgradeTry(
-        string portId,
-        string channelId,
-        uint64 upgradeSequence,
-        UpgradeFields.Data upgradeFields,
-        Timeout.Data timeout,
-        uint64 nextSequenceSend
-    );
-
-    /// @notice emitted when channelUpgradeAck is successfully executed
-    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE)
-    event ChannelUpgradeAck(
-        string portId,
-        string channelId,
-        uint64 upgradeSequence,
-        Channel.State channelState,
-        UpgradeFields.Data upgradeFields,
-        Timeout.Data timeout,
-        uint64 nextSequenceSend
-    );
-
     // --------------------- External Functions --------------------- //
 
     /**
@@ -147,15 +156,6 @@ interface IIBCChannelUpgradeInitTryAck is IIBCChannelUpgradeBase {
 }
 
 interface IIBCChannelUpgradeConfirmOpenTimeoutCancel is IIBCChannelUpgradeBase {
-    // --------------------- Events --------------------- //
-
-    /// @notice emitted when channelUpgradeConfirm is successfully executed
-    /// @param channelState post channel state (FLUSHING or FLUSHCOMPLETE or OPEN)
-    event ChannelUpgradeConfirm(string portId, string channelId, uint64 upgradeSequence, Channel.State channelState);
-
-    /// @notice emitted when channelUpgradeOpen is successfully executed
-    event ChannelUpgradeOpen(string portId, string channelId, uint64 upgradeSequence);
-
     // --------------------- External Functions --------------------- //
 
     /**

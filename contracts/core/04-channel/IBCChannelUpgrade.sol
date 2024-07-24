@@ -129,6 +129,7 @@ abstract contract IBCChannelUpgradeBase is
      * over to the agreed upon upgrade fields.
      * it will reset the channel state to OPEN.
      * it will delete auxiliary upgrade state.
+     * it will emit a `ChannelUpgradeOpen` event.
      * caller must do all relevant checks before calling this function.
      */
     function openUpgradeHandshake(string calldata portId, string calldata channelId) internal {
@@ -173,6 +174,8 @@ abstract contract IBCChannelUpgradeBase is
 
         updateChannelCommitment(portId, channelId, channel);
         deleteUpgradeCommitment(portId, channelId);
+
+        emit ChannelUpgradeOpen(portId, channelId, channel.upgrade_sequence);
     }
 
     function isCompatibleUpgradeFields(
@@ -699,7 +702,6 @@ contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCCha
 
         // move channel to OPEN and adopt upgrade parameters
         openUpgradeHandshake(msg_.portId, msg_.channelId);
-        emit ChannelUpgradeOpen(msg_.portId, msg_.channelId, channel.upgrade_sequence);
 
         // open callback must not return error since counterparty successfully upgraded
         // make application state changes based on new channel parameters
