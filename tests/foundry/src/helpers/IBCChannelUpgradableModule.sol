@@ -254,7 +254,7 @@ abstract contract IBCChannelUpgradableModuleBase is
         string calldata channelId,
         uint64,
         UpgradeFields.Data calldata proposedUpgradeFields
-    ) public view virtual override onlyIBC returns (string calldata version) {
+    ) public view virtual override onlyIBC returns (string memory version) {
         UpgradeProposal storage upgrade = upgradeProposals[portId][channelId];
         if (upgrade.fields.connection_hops.length == 0) {
             revert IBCChannelUpgradableModuleUpgradeNotFound();
@@ -273,7 +273,7 @@ abstract contract IBCChannelUpgradableModuleBase is
         string calldata channelId,
         uint64,
         UpgradeFields.Data calldata proposedUpgradeFields
-    ) public view virtual override onlyIBC returns (string calldata version) {
+    ) public view virtual override onlyIBC returns (string memory version) {
         UpgradeProposal storage upgrade = upgradeProposals[portId][channelId];
         if (upgrade.fields.connection_hops.length == 0) {
             revert IBCChannelUpgradableModuleUpgradeNotFound();

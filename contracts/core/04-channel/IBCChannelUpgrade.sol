@@ -614,6 +614,15 @@ contract IBCChannelUpgradeConfirmOpenTimeoutCancel is
             msg_.proofs
         );
 
+        Upgrade.Data storage existingUpgrade = upgrades[msg_.portId][msg_.channelId];
+        if (existingUpgrade.fields.ordering == Channel.Order.ORDER_NONE_UNSPECIFIED) {
+            revert IBCChannelUpgradeNoExistingUpgrade();
+        }
+        if (!isCompatibleUpgradeFields(existingUpgrade.fields, msg_.counterpartyUpgrade.fields)) {
+            restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.IncompatibleProposal);
+            return false;
+        }
+
         // counterparty-specified timeout must not have exceeded
         // if it has, then restore the channel and abort upgrade handshake
         Timeout.Data calldata timeout = msg_.counterpartyUpgrade.timeout;
