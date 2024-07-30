@@ -11,8 +11,10 @@ import {IIBCChannelRecvPacket, IIBCChannelAcknowledgePacket} from "../../../cont
 import {IIBCChannelUpgradeBase} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
 import {IIBCHostErrors} from "../../../contracts/core/24-host/IIBCHostErrors.sol";
 import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradableMockApp.t.sol";
+import {TestIBCChannelUpgradableMockAppInconsistentVersions} from "./helpers/TestIBCChannelUpgradableMockAppInconsistentVersions.t.sol";
 import {ICS04UpgradeTestHelper} from "./helpers/ICS04UpgradeTestHelper.t.sol";
 import {ICS04PacketEventTestHelper} from "./helpers/ICS04PacketTestHelper.t.sol";
+import {IIBCChannelUpgradableModule} from "./helpers/IBCChannelUpgradableModule.sol";
 import {IBCMockLib} from "../../../contracts/apps/mock/IBCMockLib.sol";
 import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
@@ -25,6 +27,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
     TestableIBCHandler ibcHandler;
     TestIBCChannelUpgradableMockApp mockApp;
+    TestIBCChannelUpgradableMockAppInconsistentVersions maliciousMockApp;
 
     struct ChannelInfo {
         string connectionId;
@@ -35,6 +38,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
     function setUp() public {
         ibcHandler = defaultIBCHandler();
         mockApp = new TestIBCChannelUpgradableMockApp(ibcHandler);
+        maliciousMockApp = new TestIBCChannelUpgradableMockAppInconsistentVersions(ibcHandler);
         ibcHandler.bindPort(MOCK_APP_PORT, mockApp);
         ibcHandler.registerLocalhostClient();
         ibcHandler.createLocalhostClient();
@@ -116,7 +120,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         string memory portId = "not-upgradable";
         IIBCModule notUpgradableApp = new IBCMockApp(ibcHandler);
         ibcHandler.bindPort(portId, notUpgradableApp);
-        (ChannelInfo memory channel0,) = createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED, portId, MOCK_APP_VERSION_1);
+        (ChannelInfo memory channel0,) = createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED, portId, portId, MOCK_APP_VERSION_1);
         IIBCChannelUpgradeBase.MsgChannelUpgradeInit memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
             portId: channel0.portId,
             channelId: channel0.channelId,
@@ -381,6 +385,42 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             })
         );
         assertTrue(ok);
+    }
+
+    function testCrossingHelloInconsistentVersions() public {
+        string memory maliciousPortId = "mockapp-malicious";
+        ibcHandler.bindPort(maliciousPortId, maliciousMockApp);
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) = crossingHelloFlushing(MOCK_APP_PORT, maliciousPortId);
+        {
+            Upgrade.Data memory counterpartyUpgrade = getCounterpartyUpgrade(channel1.portId, channel1.channelId);
+            counterpartyUpgrade.fields.version = string(abi.encodePacked(counterpartyUpgrade.fields.version, "-inconsistent"));
+            assertFalse(
+                ibcHandler.channelUpgradeConfirm(
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
+                        portId: channel0.portId,
+                        channelId: channel0.channelId,
+                        counterpartyChannelState: Channel.State.STATE_FLUSHING,
+                        counterpartyUpgrade: counterpartyUpgrade,
+                        proofs: upgradeLocalhostProofs()
+                    })
+                )
+            );
+        }
+        (channel0, channel1) = crossingHelloFlushing(MOCK_APP_PORT, maliciousPortId);
+        {
+            Upgrade.Data memory counterpartyUpgrade = getCounterpartyUpgrade(channel0.portId, channel0.channelId);
+            assertFalse(
+                ibcHandler.channelUpgradeConfirm(
+                    IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
+                        portId: channel1.portId,
+                        channelId: channel1.channelId,
+                        counterpartyChannelState: Channel.State.STATE_FLUSHING,
+                        counterpartyUpgrade: counterpartyUpgrade,
+                        proofs: upgradeLocalhostProofs()
+                    })
+                )
+            );
+        }
     }
 
     function testUpgradeNoChanges() public {
@@ -1207,7 +1247,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         }
         {
             // Init@channel0: OPEN -> OPEN(INIT)
-            mockApp.proposeUpgrade(
+            IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).proposeUpgrade(
                 channel0.portId,
                 channel0.channelId,
                 UpgradeFields.Data({
@@ -1222,7 +1262,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                     IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                         portId: channel0.portId,
                         channelId: channel0.channelId,
-                        proposedUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields
+                        proposedUpgradeFields: IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).getUpgradeProposal(channel0.portId, channel0.channelId).fields
                     })
                 ),
                 upgradeSequence
@@ -1239,7 +1279,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
         }
 
-        mockApp.proposeUpgrade(
+        IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel1.portId))).proposeUpgrade(
             channel1.portId,
             channel1.channelId,
             UpgradeFields.Data({
@@ -1257,7 +1297,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                     IIBCChannelUpgradeBase.MsgChannelUpgradeInit({
                         portId: channel1.portId,
                         channelId: channel1.channelId,
-                        proposedUpgradeFields: mockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields
+                        proposedUpgradeFields: IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel1.portId))).getUpgradeProposal(channel1.portId, channel1.channelId).fields
                     })
                 ),
                 upgradeSequence
@@ -1269,7 +1309,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             IIBCChannelUpgradeBase.MsgChannelUpgradeTry memory msg_ = IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
                 portId: channel1.portId,
                 channelId: channel1.channelId,
-                counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
+                counterpartyUpgradeFields: IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).getUpgradeProposal(channel0.portId, channel0.channelId).fields,
                 counterpartyUpgradeSequence: upgradeSequence,
                 proposedConnectionHops: IBCChannelLib.buildConnectionHops(proposals.p1.connectionId),
                 proofs: upgradeLocalhostProofs()
@@ -1315,9 +1355,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHING);
             assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
             assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
-            mockApp.allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+            IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
             assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
-            mockApp.allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
+            IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel1.portId))).allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
             assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
         }
         if (skipFlushCompleteAuthorization || flow.fastPath) {
@@ -1379,7 +1419,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHING);
 
             assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
-            mockApp.allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+            IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
             assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
             // Confirm@channel0: FLUSHING -> FLUSHCOMPLETE
             assertTrue(
@@ -1440,7 +1480,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHCOMPLETE);
 
             assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
-            mockApp.allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
+            IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel1.portId))).allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
             assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
             // Confirm@channel1: FLUSHING -> OPEN
             assertTrue(
@@ -1510,7 +1550,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 (Channel.Data memory channel1Data,) = ibcHandler.getChannel(channel1.portId, channel1.channelId);
                 // Confirm@channel1: FLUSHING -> FLUSHCOMPLETE
                 assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
-                mockApp.allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
+                IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel1.portId))).allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
                 assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
                 assertTrue(
                     ibcHandler.channelUpgradeConfirm(
@@ -1535,7 +1575,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 }
 
                 assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
-                mockApp.allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+                IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
                 assertTrue(ibcHandler.getCanTransitionToFlushComplete(channel0.portId, channel0.channelId));
                 mockCallVerifyChannelState(
                     address(LocalhostHelper.getLocalhostClient(ibcHandler)), channel1, channel1Data
@@ -1611,14 +1651,85 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         }
     }
 
+    function crossingHelloFlushing(string memory portId0, string memory portId1) public returns (ChannelInfo memory channel0, ChannelInfo memory channel1) {
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED, portId0, portId1, MOCK_APP_VERSION_1);
+
+        (string memory newConnectionId0, string memory newConnectionId1) =
+            ibcHandler.createLocalhostConnection();
+
+        assertEq(
+            mockApp.proposeAndInitUpgrade(
+                channel0.portId,
+                channel0.channelId,
+                UpgradeFields.Data({
+                    ordering: Channel.Order.ORDER_UNORDERED,
+                    connection_hops: IBCChannelLib.buildConnectionHops(newConnectionId0),
+                    version: MOCK_APP_VERSION_1
+                }),
+                Timeout.Data({height: H(10), timestamp: 0})
+            ),
+            1
+        );
+        assertEq(
+            maliciousMockApp.proposeAndInitUpgrade(
+                channel1.portId,
+                channel1.channelId,
+                UpgradeFields.Data({
+                    ordering: Channel.Order.ORDER_UNORDERED,
+                    connection_hops: IBCChannelLib.buildConnectionHops(newConnectionId1),
+                    version: MOCK_APP_VERSION_1
+                }),
+                Timeout.Data({height: H(10), timestamp: 0})
+            ),
+            1
+        );
+
+        (Channel.Data memory channel0Data,) = ibcHandler.getChannel(channel0.portId, channel0.channelId);
+        (Upgrade.Data memory upgrade0,) = ibcHandler.getChannelUpgrade(channel0.portId, channel0.channelId);
+        {
+            (bool ok,) = ibcHandler.channelUpgradeTry(
+                IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
+                    portId: channel0.portId,
+                    channelId: channel0.channelId,
+                    counterpartyUpgradeFields: maliciousMockApp.getUpgradeProposal(channel1.portId, channel1.channelId).fields,
+                    counterpartyUpgradeSequence: 1,
+                    proposedConnectionHops: IBCChannelLib.buildConnectionHops(newConnectionId0),
+                    proofs: upgradeLocalhostProofs()
+                })
+            );
+            assertTrue(ok);
+        }
+        {
+            mockCallVerifyChannelState(
+                address(LocalhostHelper.getLocalhostClient(ibcHandler)), channel0, channel0Data
+            );
+            mockCallVerifyChannelUpgrade(
+                address(LocalhostHelper.getLocalhostClient(ibcHandler)), channel0, upgrade0
+            );
+            (bool ok,) = ibcHandler.channelUpgradeTry(
+                IIBCChannelUpgradeBase.MsgChannelUpgradeTry({
+                    portId: channel1.portId,
+                    channelId: channel1.channelId,
+                    counterpartyUpgradeFields: mockApp.getUpgradeProposal(channel0.portId, channel0.channelId).fields,
+                    counterpartyUpgradeSequence: 1,
+                    proposedConnectionHops: IBCChannelLib.buildConnectionHops(newConnectionId1),
+                    proofs: upgradeLocalhostProofs()
+                })
+            );
+            assertTrue(ok);
+            vm.clearMockedCalls();
+        }
+        return (channel0, channel1);
+    }
+
     function createMockAppLocalhostChannel(Channel.Order ordering)
         internal
         returns (ChannelInfo memory, ChannelInfo memory)
     {
-        return createMockAppLocalhostChannel(ordering, MOCK_APP_PORT, MOCK_APP_VERSION_1);
+        return createMockAppLocalhostChannel(ordering, MOCK_APP_PORT, MOCK_APP_PORT, MOCK_APP_VERSION_1);
     }
 
-    function createMockAppLocalhostChannel(Channel.Order ordering, string memory port, string memory version)
+    function createMockAppLocalhostChannel(Channel.Order ordering, string memory portId0, string memory portId1, string memory version)
         internal
         returns (ChannelInfo memory, ChannelInfo memory)
     {
@@ -1627,15 +1738,15 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             LocalhostHelper.MsgCreateChannel({
                 connectionId0: connectionId0,
                 connectionId1: connectionId1,
-                portId0: port,
-                portId1: port,
+                portId0: portId0,
+                portId1: portId1,
                 ordering: ordering,
                 version: version
             })
         );
         return (
-            ChannelInfo({connectionId: connectionId0, portId: port, channelId: channelId0}),
-            ChannelInfo({connectionId: connectionId1, portId: port, channelId: channelId1})
+            ChannelInfo({connectionId: connectionId0, portId: portId0, channelId: channelId0}),
+            ChannelInfo({connectionId: connectionId1, portId: portId1, channelId: channelId1})
         );
     }
 
@@ -1654,9 +1765,10 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         view
         returns (Upgrade.Data memory)
     {
+        IIBCChannelUpgradableModule module = IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(portId)));
         return Upgrade.Data({
-            fields: mockApp.getUpgradeProposal(portId, channelId).fields,
-            timeout: mockApp.getUpgradeProposal(portId, channelId).timeout,
+            fields: module.getUpgradeProposal(portId, channelId).fields,
+            timeout: module.getUpgradeProposal(portId, channelId).timeout,
             next_sequence_send: ibcHandler.getNextSequenceSend(portId, channelId)
         });
     }
@@ -1694,6 +1806,28 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 bytes("ibc"),
                 IBCCommitment.channelPath(counterpartyChannelInfo.portId, counterpartyChannelInfo.channelId),
                 Channel.encode(counterpartyChannel)
+            ),
+            abi.encode(true)
+        );
+    }
+
+    function mockCallVerifyChannelUpgrade(
+        address client,
+        ChannelInfo memory counterpartyChannelInfo,
+        Upgrade.Data memory counterpartyUpgrade
+    ) internal {
+        vm.mockCall(
+            address(client),
+            abi.encodeWithSelector(
+                ILightClient.verifyMembership.selector,
+                LocalhostClientLib.CLIENT_ID,
+                H(block.number),
+                0,
+                0,
+                LocalhostClientLib.sentinelProof(),
+                bytes("ibc"),
+                IBCCommitment.channelUpgradePath(counterpartyChannelInfo.portId, counterpartyChannelInfo.channelId),
+                Upgrade.encode(counterpartyUpgrade)
             ),
             abi.encode(true)
         );
