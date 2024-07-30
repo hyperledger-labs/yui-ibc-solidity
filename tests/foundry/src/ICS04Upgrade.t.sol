@@ -14,7 +14,9 @@ import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradabl
 import {TestIBCChannelUpgradableMockAppInconsistentVersions} from "./helpers/TestIBCChannelUpgradableMockAppInconsistentVersions.t.sol";
 import {ICS04UpgradeTestHelper} from "./helpers/ICS04UpgradeTestHelper.t.sol";
 import {ICS04PacketEventTestHelper} from "./helpers/ICS04PacketTestHelper.t.sol";
-import {IIBCChannelUpgradableModule} from "./helpers/IBCChannelUpgradableModule.sol";
+import {
+    IIBCChannelUpgradableModule
+} from "../../../contracts/apps/commons/IBCChannelUpgradableModule.sol";
 import {IBCMockLib} from "../../../contracts/apps/mock/IBCMockLib.sol";
 import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
