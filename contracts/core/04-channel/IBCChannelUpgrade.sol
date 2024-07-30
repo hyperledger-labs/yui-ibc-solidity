@@ -583,7 +583,10 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
     }
 }
 
-contract IBCChannelUpgradeConfirmTimeoutCancel is IBCChannelUpgradeBase, IIBCChannelUpgradeConfirmOpenTimeoutCancel {
+contract IBCChannelUpgradeConfirmOpenTimeoutCancel is
+    IBCChannelUpgradeBase,
+    IIBCChannelUpgradeConfirmOpenTimeoutCancel
+{
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeConfirm}
      */

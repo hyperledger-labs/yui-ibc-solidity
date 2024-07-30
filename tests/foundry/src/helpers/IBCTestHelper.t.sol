@@ -30,7 +30,7 @@ abstract contract IBCTestHelper is Test {
             new IBCChannelPacketSendRecv(),
             new IBCChannelPacketTimeout(),
             new IBCChannelUpgradeInitTryAck(),
-            new IBCChannelUpgradeConfirmTimeoutCancel()
+            new IBCChannelUpgradeConfirmOpenTimeoutCancel()
         );
     }
 
