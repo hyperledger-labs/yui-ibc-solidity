@@ -8,7 +8,7 @@ import {LocalhostHelper} from "../../../contracts/clients/09-localhost/Localhost
 import {
     IIBCChannelUpgradableModule, IIBCChannelUpgradableModuleErrors
 } from "../../../contracts/apps/commons/IBCChannelUpgradableModule.sol";
-import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradableMockApp.t.sol";
+import {IBCChannelUpgradableMockApp} from "../../../contracts/apps/mock/IBCChannelUpgradableMockApp.sol";
 import {ICS04UpgradeTestHelper} from "./helpers/ICS04UpgradeTestHelper.t.sol";
 
 contract TestICS04UpgradeApp is ICS04UpgradeTestHelper {
@@ -19,7 +19,7 @@ contract TestICS04UpgradeApp is ICS04UpgradeTestHelper {
     string internal constant MOCK_APP_VERSION_2 = "mockapp-2";
 
     TestableIBCHandler ibcHandler;
-    TestIBCChannelUpgradableMockApp mockApp;
+    IBCChannelUpgradableMockApp mockApp;
 
     struct ChannelInfo {
         string connectionId;
@@ -29,7 +29,7 @@ contract TestICS04UpgradeApp is ICS04UpgradeTestHelper {
 
     function setUp() public {
         ibcHandler = defaultIBCHandler();
-        mockApp = new TestIBCChannelUpgradableMockApp(ibcHandler);
+        mockApp = new IBCChannelUpgradableMockApp(ibcHandler);
         ibcHandler.bindPort(MOCK_APP_PORT, mockApp);
         ibcHandler.registerLocalhostClient();
         ibcHandler.createLocalhostClient();

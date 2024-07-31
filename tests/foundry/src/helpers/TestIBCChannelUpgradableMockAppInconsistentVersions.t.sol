@@ -3,10 +3,10 @@ pragma solidity ^0.8.20;
 
 import {UpgradeFields} from "../../../../contracts/proto/Channel.sol";
 import {TestableIBCHandler} from "./TestableIBCHandler.t.sol";
-import {TestIBCChannelUpgradableMockApp} from "./TestIBCChannelUpgradableMockApp.t.sol";
+import {IBCChannelUpgradableMockApp} from "../../../../contracts/apps/mock/IBCChannelUpgradableMockApp.sol";
 
-contract TestIBCChannelUpgradableMockAppInconsistentVersions is TestIBCChannelUpgradableMockApp {
-    constructor(TestableIBCHandler _ibcHandler) TestIBCChannelUpgradableMockApp(_ibcHandler) {}
+contract TestIBCChannelUpgradableMockAppInconsistentVersions is IBCChannelUpgradableMockApp {
+    constructor(TestableIBCHandler _ibcHandler) IBCChannelUpgradableMockApp(_ibcHandler) {}
 
     function onChanUpgradeInit(
         string calldata portId,
