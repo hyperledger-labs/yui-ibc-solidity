@@ -1,23 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
-import {Upgrade, UpgradeFields, Timeout} from "../../../../contracts/proto/Channel.sol";
-import {
-    IIBCChannelUpgrade, IIBCChannelUpgradeBase
-} from "../../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
-import {IIBCHandler} from "../../../../contracts/core/25-handler/IIBCHandler.sol";
-import {IBCMockApp} from "../../../../contracts/apps/mock/IBCMockApp.sol";
-import {IBCChannelUpgradableModuleBase} from "./IBCChannelUpgradableModule.sol";
-import {IBCAppBase} from "../../../../contracts/apps/commons/IBCAppBase.sol";
+import {UpgradeFields, Timeout} from "../../proto/Channel.sol";
+import {IIBCChannelUpgradeBase} from "../../core/04-channel/IIBCChannelUpgrade.sol";
+import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
+import {IBCMockApp} from "./IBCMockApp.sol";
+import {IBCChannelUpgradableModuleBase} from "../commons/IBCChannelUpgradableModule.sol";
+import {IBCAppBase} from "../commons/IBCAppBase.sol";
 
-contract TestIBCChannelUpgradableMockApp is IBCMockApp, IBCChannelUpgradableModuleBase {
+contract IBCChannelUpgradableMockApp is IBCMockApp, IBCChannelUpgradableModuleBase {
     constructor(IIBCHandler ibcHandler_) IBCMockApp(ibcHandler_) {}
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(IBCChannelUpgradableModuleBase, IBCAppBase) returns (bool) {
-        return
-            super.supportsInterface(interfaceId) || interfaceId == this.proposeAndInitUpgrade.selector;
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(IBCChannelUpgradableModuleBase, IBCAppBase)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId) || interfaceId == this.proposeAndInitUpgrade.selector;
     }
 
+    /**
+     * @dev Propose upgrade and perform chanUpgradeInit.
+     */
     function proposeAndInitUpgrade(
         string calldata portId,
         string calldata channelId,

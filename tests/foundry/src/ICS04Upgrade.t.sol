@@ -9,12 +9,14 @@ import {LocalhostClientLib} from "../../../contracts/clients/09-localhost/Localh
 import {LocalhostHelper} from "../../../contracts/clients/09-localhost/LocalhostHelper.sol";
 import {IIBCChannelRecvPacket, IIBCChannelAcknowledgePacket} from "../../../contracts/core/04-channel/IIBCChannel.sol";
 import {IIBCChannelUpgradeBase} from "../../../contracts/core/04-channel/IIBCChannelUpgrade.sol";
+import {IBCChannelUpgradableMockApp} from "../../../contracts/apps/mock/IBCChannelUpgradableMockApp.sol";
 import {IIBCHostErrors} from "../../../contracts/core/24-host/IIBCHostErrors.sol";
-import {TestIBCChannelUpgradableMockApp} from "./helpers/TestIBCChannelUpgradableMockApp.t.sol";
 import {TestIBCChannelUpgradableMockAppInconsistentVersions} from "./helpers/TestIBCChannelUpgradableMockAppInconsistentVersions.t.sol";
 import {ICS04UpgradeTestHelper} from "./helpers/ICS04UpgradeTestHelper.t.sol";
 import {ICS04PacketEventTestHelper} from "./helpers/ICS04PacketTestHelper.t.sol";
-import {IIBCChannelUpgradableModule} from "./helpers/IBCChannelUpgradableModule.sol";
+import {
+    IIBCChannelUpgradableModule
+} from "../../../contracts/apps/commons/IBCChannelUpgradableModule.sol";
 import {IBCMockLib} from "../../../contracts/apps/mock/IBCMockLib.sol";
 import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
@@ -26,7 +28,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
     string internal constant MOCK_APP_VERSION_2 = "mockapp-2";
 
     TestableIBCHandler ibcHandler;
-    TestIBCChannelUpgradableMockApp mockApp;
+    IBCChannelUpgradableMockApp mockApp;
     TestIBCChannelUpgradableMockAppInconsistentVersions maliciousMockApp;
 
     struct ChannelInfo {
@@ -37,7 +39,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
 
     function setUp() public {
         ibcHandler = defaultIBCHandler();
-        mockApp = new TestIBCChannelUpgradableMockApp(ibcHandler);
+        mockApp = new IBCChannelUpgradableMockApp(ibcHandler);
         maliciousMockApp = new TestIBCChannelUpgradableMockAppInconsistentVersions(ibcHandler);
         ibcHandler.bindPort(MOCK_APP_PORT, mockApp);
         ibcHandler.registerLocalhostClient();
