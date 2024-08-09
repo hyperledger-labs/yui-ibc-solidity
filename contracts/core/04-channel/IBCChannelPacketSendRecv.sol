@@ -106,9 +106,8 @@ contract IBCChannelPacketSendRecv is
      */
     function recvPacket(MsgPacketRecv calldata msg_) public override {
         Channel.Data storage channel = channels[msg_.packet.destinationPort][msg_.packet.destinationChannel];
-        if (channel.state == Channel.State.STATE_OPEN) {} else if (
-            channel.state == Channel.State.STATE_FLUSHING || channel.state == Channel.State.STATE_FLUSHCOMPLETE
-        ) {
+        if (channel.state == Channel.State.STATE_OPEN) {}
+        else if (channel.state == Channel.State.STATE_FLUSHING || channel.state == Channel.State.STATE_FLUSHCOMPLETE) {
             RecvStartSequence storage rseq =
                 recvStartSequences[msg_.packet.destinationPort][msg_.packet.destinationChannel];
             // prevSequence=0 means the channel is not in the process of being upgraded or counterparty has not been upgraded yet

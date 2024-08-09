@@ -6,12 +6,29 @@ test = 'tests/foundry/src'
 gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 9_999_999
+via-ir = false
 
 [fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+number_underscore = "preserve"
+hex_underscore = "remove"
+single_line_statement_blocks = "preserve"
+override_spacing = false
+wrap_comments = false
 ignore = [
-  './contracts/proto/**/*.sol',
-  './tests/**/*.sol'
+    "./contracts/proto/**/*.sol",
+    "./tests/**/*.sol",
 ]
+contract_new_lines = false
+sort_imports = false
 
 [profile.no_optimization]
 optimizer = false
+
+[profile.ir]
+via-ir = true

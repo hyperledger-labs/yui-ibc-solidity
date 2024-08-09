@@ -111,7 +111,7 @@ contract IBCMockAppTest is IBCTestHelper, ICS04PacketEventTestHelper {
         for (uint256 i = 0; i < orders.length; i++) {
             (ChannelInfo memory channel0, ChannelInfo memory channel1) =
                 createMockAppChannel(orders[i], connId0, connId1);
-            Height.Data memory timeoutHeight = H(uint64(block.number + 1));
+            Height.Data memory timeoutHeight = H(uint64(getBlockNumber(1)));
             mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channel0.portId, channel0.channelId, timeoutHeight, 0);
             Packet memory packet =
                 getLastSentPacket(ibcHandler, channel0.portId, channel0.channelId, vm.getRecordedLogs());
@@ -187,7 +187,7 @@ contract IBCMockAppTest is IBCTestHelper, ICS04PacketEventTestHelper {
     function sendAndRelay(ChannelInfo memory ca, ChannelInfo memory cb, Channel.Order ordering, RelayCase memory rc)
         private
     {
-        uint64 sequence = mockApp.sendPacket(rc.packetData, ca.portId, ca.channelId, H(uint64(block.number + 1)), 0);
+        uint64 sequence = mockApp.sendPacket(rc.packetData, ca.portId, ca.channelId, H(uint64(getBlockNumber(1))), 0);
         Packet memory packet = getLastSentPacket(ibcHandler, ca.portId, ca.channelId, vm.getRecordedLogs());
         assertEq(packet.data, rc.packetData);
         ibcHandler.recvPacket(

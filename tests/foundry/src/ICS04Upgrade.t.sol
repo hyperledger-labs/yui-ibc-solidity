@@ -517,9 +517,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             createMockAppLocalhostChannel(Channel.Order.ORDER_ORDERED);
 
         Timeout.Data[3] memory timeouts = [
-            Timeout.Data({height: H(block.number), timestamp: 0}),
-            Timeout.Data({height: H(0), timestamp: getTimestamp(0)}),
-            Timeout.Data({height: H(block.number), timestamp: getTimestamp()})
+            Timeout.Data({height: H(getBlockNumber()), timestamp: 0}),
+            Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(0)}),
+            Timeout.Data({height: H(getBlockNumber()), timestamp: getBlockTimestampNano()})
         ];
         HandshakeCallbacks memory callbacks = emptyCallbacks();
         callbacks.openInitAndFlushing.callback = _testUpgradeTimeoutAbortAck;
@@ -562,9 +562,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
 
         Timeout.Data[3] memory timeouts = [
-            Timeout.Data({height: H(block.number), timestamp: 0}),
-            Timeout.Data({height: H(0), timestamp: getTimestamp()}),
-            Timeout.Data({height: H(block.number), timestamp: getTimestamp()})
+            Timeout.Data({height: H(getBlockNumber()), timestamp: 0}),
+            Timeout.Data({height: H(0), timestamp: getBlockTimestampNano()}),
+            Timeout.Data({height: H(getBlockNumber()), timestamp: getBlockTimestampNano()})
         ];
         HandshakeCallbacks memory callbacks = emptyCallbacks();
         callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutAbortConfirm;
@@ -612,100 +612,100 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         // ------------------------------ Success Cases ------------------------------ //
 
         cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeSuccess;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
         i++;
 
         cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeSuccess;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         cases[i].callbacks.openInitAndFlushing.callback = _testUpgradeTimeoutUpgradeSuccess;
         cases[i].callbacks.openInitAndFlushing.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
         i++;
 
         cases[i].callbacks.openInitAndFlushing.callback = _testUpgradeTimeoutUpgradeSuccess;
         cases[i].callbacks.openInitAndFlushing.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeSuccess;
         cases[i].callbacks.flushingAndComplete.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
         i++;
 
         cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeSuccess;
         cases[i].callbacks.flushingAndComplete.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         // ------------------------------ Failure Cases ------------------------------ //
 
         cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeFailTimeoutHeightNotReached;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
         i++;
 
         cases[i].callbacks.flushingAndFlushing.callback = _testUpgradeTimeoutUpgradeFailTimeoutTimestampNotReached;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeFailReached;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
         i++;
 
         cases[i].callbacks.flushingAndComplete.callback = _testUpgradeTimeoutUpgradeFailReached;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         cases[i].callbacks.openSucAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyUpgraded;
         cases[i].callbacks.openSucAndComplete.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
         i++;
 
         cases[i].callbacks.openSucAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyUpgraded;
         cases[i].callbacks.openSucAndComplete.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
         i++;
 
         cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        i++;
-
-        cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
-        cases[i].callbacks.completeAndComplete.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
-        cases[i].t1 = Timeout.Data({height: H(block.number + 1), timestamp: 0});
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
         cases[i].callbacks.completeAndComplete.reverse = true;
-        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
-        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getTimestamp(1)});
+        cases[i].t0 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        cases[i].t1 = Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0});
+        i++;
+
+        cases[i].callbacks.completeAndComplete.callback = _testUpgradeTimeoutUpgradeFailReachedAlreadyCompleted;
+        cases[i].callbacks.completeAndComplete.reverse = true;
+        cases[i].t0 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
+        cases[i].t1 = Timeout.Data({height: H(0), timestamp: getBlockTimestampNano(1)});
         i++;
 
         require(i == cases.length, "invalid number of cases");
 
         for (uint256 i = 0; i < cases.length; i++) {
             console2.log("case:", i);
-            (uint256 height, uint256 timestampSec) = (block.number, block.timestamp);
+            (uint256 height, uint256 timestampSec) = (getBlockNumber(), vm.getBlockTimestamp());
             (ChannelInfo memory channel0, ChannelInfo memory channel1) =
                 createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
             handshakeUpgradeWithCallbacks(
@@ -764,7 +764,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel1.channelId,
                 errorReceipt: emptyErrorReceipt(),
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ErrorReceipt.Data memory rc = getLastWriteErrorReceiptEvent(ibcHandler, vm.getRecordedLogs());
@@ -786,7 +786,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel0.channelId,
                 errorReceipt: rc,
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         vm.stopPrank();
@@ -886,7 +886,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: p0,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ibcHandler.acknowledgePacket(
@@ -894,14 +894,14 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 packet: p0,
                 acknowledgement: getLastWrittenAcknowledgement(handler, vm.getRecordedLogs()).acknowledgement,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ibcHandler.recvPacket(
             IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: p1,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ibcHandler.acknowledgePacket(
@@ -909,7 +909,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 packet: p1,
                 acknowledgement: getLastWrittenAcknowledgement(handler, vm.getRecordedLogs()).acknowledgement,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         return true;
@@ -944,7 +944,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: p0,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ibcHandler.acknowledgePacket(
@@ -952,7 +952,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 packet: p0,
                 acknowledgement: getLastWrittenAcknowledgement(handler, vm.getRecordedLogs()).acknowledgement,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         return true;
@@ -989,7 +989,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: p0,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ibcHandler.channelUpgradeOpen(
@@ -999,7 +999,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 counterpartyChannelState: Channel.State.STATE_OPEN,
                 counterpartyUpgradeSequence: 1,
                 proofChannel: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ensureChannelState(handler, channel1, Channel.State.STATE_OPEN);
@@ -1007,7 +1007,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             IIBCChannelRecvPacket.MsgPacketRecv({
                 packet: p0,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ibcHandler.acknowledgePacket(
@@ -1015,7 +1015,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 packet: p0,
                 acknowledgement: getLastWrittenAcknowledgement(handler, vm.getRecordedLogs()).acknowledgement,
                 proof: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         return false;
@@ -1197,13 +1197,13 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 order: order,
                 connectionId: channel0ConnectionId,
                 version: appVersion,
-                timeout: Timeout.Data({height: H(block.number + 1), timestamp: 0})
+                timeout: Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0})
             }),
             p1: UpgradeProposal({
                 order: order,
                 connectionId: channel1ConnectionId,
                 version: appVersion,
-                timeout: Timeout.Data({height: H(block.number + 1), timestamp: 0})
+                timeout: Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0})
             })
         });
     }
@@ -1398,7 +1398,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                     counterpartyChannelState: Channel.State.STATE_OPEN,
                     counterpartyUpgradeSequence: upgradeSequence,
                     proofChannel: LocalhostClientLib.sentinelProof(),
-                    proofHeight: H(block.number)
+                    proofHeight: H(getBlockNumber())
                 })
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_OPEN);
@@ -1459,7 +1459,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                     counterpartyChannelState: Channel.State.STATE_OPEN,
                     counterpartyUpgradeSequence: upgradeSequence,
                     proofChannel: LocalhostClientLib.sentinelProof(),
-                    proofHeight: H(block.number)
+                    proofHeight: H(getBlockNumber())
                 })
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_OPEN);
@@ -1506,7 +1506,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                     counterpartyChannelState: Channel.State.STATE_OPEN,
                     counterpartyUpgradeSequence: upgradeSequence,
                     proofChannel: LocalhostClientLib.sentinelProof(),
-                    proofHeight: H(block.number)
+                    proofHeight: H(getBlockNumber())
                 })
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_OPEN);
@@ -1612,7 +1612,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                     counterpartyChannelState: Channel.State.STATE_FLUSHCOMPLETE,
                     counterpartyUpgradeSequence: upgradeSequence,
                     proofChannel: LocalhostClientLib.sentinelProof(),
-                    proofHeight: H(block.number)
+                    proofHeight: H(getBlockNumber())
                 })
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_OPEN);
@@ -1636,7 +1636,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                         counterpartyChannelState: ch0.state,
                         counterpartyUpgradeSequence: ch0.upgrade_sequence,
                         proofChannel: LocalhostClientLib.sentinelProof(),
-                        proofHeight: H(block.number)
+                        proofHeight: H(getBlockNumber())
                     })
                 );
             }
@@ -1779,7 +1779,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         return IIBCChannelUpgradeBase.ChannelUpgradeProofs({
             proofChannel: LocalhostClientLib.sentinelProof(),
             proofUpgrade: LocalhostClientLib.sentinelProof(),
-            proofHeight: H(block.number)
+            proofHeight: H(getBlockNumber())
         });
     }
 
@@ -1801,7 +1801,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             abi.encodeWithSelector(
                 ILightClient.verifyMembership.selector,
                 LocalhostClientLib.CLIENT_ID,
-                H(block.number),
+                H(getBlockNumber()),
                 0,
                 0,
                 LocalhostClientLib.sentinelProof(),
@@ -1823,7 +1823,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             abi.encodeWithSelector(
                 ILightClient.verifyMembership.selector,
                 LocalhostClientLib.CLIENT_ID,
-                H(block.number),
+                H(getBlockNumber()),
                 0,
                 0,
                 LocalhostClientLib.sentinelProof(),
@@ -1856,7 +1856,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         private
         returns (uint64)
     {
-        uint64 sequence = mockApp.sendPacket(packetData, ca.portId, ca.channelId, H(uint64(block.number + 1)), 0);
+        uint64 sequence = mockApp.sendPacket(packetData, ca.portId, ca.channelId, H(uint64(getBlockNumber(1))), 0);
         if (phase == RelayPhase.None) {
             return sequence;
         }
@@ -1935,7 +1935,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: src.channelId,
                 errorReceipt: emptyErrorReceipt(),
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         return false;
@@ -1953,7 +1953,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: src.channelId,
                 errorReceipt: emptyErrorReceipt(),
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         ErrorReceipt.Data memory rc = getLastWriteErrorReceiptEvent(handler, vm.getRecordedLogs());
@@ -1963,7 +1963,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: dst.channelId,
                 errorReceipt: rc,
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         return false;
@@ -1977,7 +1977,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: src.channelId,
                 errorReceipt: emptyErrorReceipt(),
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         return false;
@@ -2008,7 +2008,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: dst.channelId,
                 errorReceipt: getLastWriteErrorReceiptEvent(ibcHandler, vm.getRecordedLogs()),
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         vm.stopPrank();
@@ -2041,7 +2041,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: src.channelId,
                 errorReceipt: getLastWriteErrorReceiptEvent(handler, vm.getRecordedLogs()),
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         vm.stopPrank();
@@ -2067,7 +2067,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel0.channelId,
                 counterpartyChannel: counterpartyChannel,
                 proofChannel: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         vm.startPrank(address(0x01));
@@ -2077,7 +2077,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 channelId: channel1.channelId,
                 errorReceipt: ErrorReceipt.Data({sequence: 1, message: "3"}),
                 proofUpgradeError: LocalhostClientLib.sentinelProof(),
-                proofHeight: H(block.number)
+                proofHeight: H(getBlockNumber())
             })
         );
         vm.stopPrank();
@@ -2095,7 +2095,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
             proofChannel: LocalhostClientLib.sentinelProof(),
-            proofHeight: H(block.number)
+            proofHeight: H(getBlockNumber())
         });
         vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTimeoutHeightNotReached.selector);
         handler.timeoutChannelUpgrade(msg_);
@@ -2113,7 +2113,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
             proofChannel: LocalhostClientLib.sentinelProof(),
-            proofHeight: H(block.number)
+            proofHeight: H(getBlockNumber())
         });
         vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeTimeoutTimestampNotReached.selector);
         handler.timeoutChannelUpgrade(msg_);
@@ -2138,7 +2138,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
             proofChannel: LocalhostClientLib.sentinelProof(),
-            proofHeight: H(block.number)
+            proofHeight: H(getBlockNumber())
         });
         vm.expectRevert();
         handler.timeoutChannelUpgrade(msg_);
@@ -2159,7 +2159,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
             proofChannel: LocalhostClientLib.sentinelProof(),
-            proofHeight: H(block.number)
+            proofHeight: H(getBlockNumber())
         });
         vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeCounterpartyAlreadyUpgraded.selector);
         handler.timeoutChannelUpgrade(msg_);
@@ -2184,7 +2184,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             channelId: channel0.channelId,
             counterpartyChannel: counterpartyChannel,
             proofChannel: LocalhostClientLib.sentinelProof(),
-            proofHeight: H(block.number)
+            proofHeight: H(getBlockNumber())
         });
         vm.expectRevert(IIBCChannelUpgradeErrors.IBCChannelUpgradeCounterpartyAlreadyFlushCompleted.selector);
         handler.timeoutChannelUpgrade(msg_);

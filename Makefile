@@ -1,37 +1,45 @@
-FORGE ?= forge
-SOLC_VERSION ?= 0.8.24
-ABIGEN ?= "docker run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
-DOCKER_COMPOSE ?= docker compose
-E2E_TEST_COMPOSE_FILE ?= ./chains/compose.yml
-TEST_BROADCAST_LOG_DIR ?= ./broadcast/Deploy.s.sol
-TEST_MNEMONIC ?= "math razor capable expose worth grape metal sunset metal sudden usage scheme"
+FOUNDRY_PROFILE=default
+FORGE=FOUNDRY_PROFILE=$(FOUNDRY_PROFILE) forge
+SOLC_VERSION=0.8.24
+DOCKER=docker
+ABIGEN="$(DOCKER) run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
+SOLHINT=npx solhint
+SLITHER=slither
+DOCKER_COMPOSE=$(DOCKER) compose
+E2E_TEST_COMPOSE_FILE=./chains/compose.yml
+TEST_BROADCAST_LOG_DIR=./broadcast/Deploy.s.sol
+TEST_MNEMONIC="math razor capable expose worth grape metal sunset metal sudden usage scheme"
 
 ######## Development ########
 
 .PHONY: build
 build:
-	@forge build --sizes --skip test --use solc:$(SOLC_VERSION)
+	$(FORGE) build --sizes --skip test --use solc:$(SOLC_VERSION)
 
 .PHONY: fmt
 fmt:
-	@$(FORGE) fmt $(FORGE_FMT_OPTS)
+	$(FORGE) fmt $(FORGE_FMT_OPTS)
 
 .PHONY: lint
 lint:
-	@npx solhint 'contracts/**/*.sol'
+	@$(SOLHINT) 'contracts/**/*.sol'
 	@$(MAKE) FORGE_FMT_OPTS=--check fmt
 
 .PHONY: test
 test:
-	@forge snapshot -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+	$(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+
+.PHONY: snapshot
+snapshot:
+	$(FORGE) snapshot -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
 
 .PHONY: coverage
 coverage:
-	@forge coverage --use solc:$(SOLC_VERSION)
+	$(FORGE) coverage --use solc:$(SOLC_VERSION)
 
 .PHONY: slither
 slither:
-	@slither .
+	@$(SLITHER) .
 
 ######## Protobuf ########
 
@@ -48,7 +56,7 @@ proto-go:
 ifndef SOLPB_DIR
 	$(error SOLPB_DIR is not specified)
 else
-	docker run \
+	$(DOCKER) run \
 		-v $(CURDIR):/workspace \
 		-v $(SOLPB_DIR):/solpb \
 		-e SOLPB_DIR=/solpb \

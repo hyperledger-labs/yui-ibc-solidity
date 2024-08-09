@@ -416,30 +416,30 @@ contract TestICS04Packet is
                 H(1)
             );
             mockApp.sendPacket(
-                IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(block.number + 1), 0
+                IBCMockLib.MOCK_PACKET_DATA, channelInfo.portId, channelInfo.channelId, H(getBlockNumber(1)), 0
             );
             Packet memory p0 =
                 getLastSentPacket(handler, channelInfo.portId, channelInfo.channelId, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
-                    msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
+                    msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber()));
                 vm.expectRevert(abi.encodeWithSelector(IIBCChannelErrors.IBCChannelTimeoutNotReached.selector));
                 handler.timeoutPacket(msg1);
             }
 
-            IIBCChannelPacketSendRecv.MsgPacketRecv memory msg_ = msgPacketRecv(p0, H(block.number));
-            vm.roll(block.number + 1);
+            IIBCChannelPacketSendRecv.MsgPacketRecv memory msg_ = msgPacketRecv(p0, H(getBlockNumber()));
+            vm.roll(getBlockNumber(1));
             vm.expectRevert(
                 abi.encodeWithSelector(
                     IIBCChannelErrors.IBCChannelTimeoutPacketHeight.selector,
-                    block.number,
+                    getBlockNumber(),
                     p0.timeoutHeight.revision_height
                 )
             );
             counterpartyHandler.recvPacket(msg_);
-            client.updateClient(clientId, mockClientHeader(uint64(block.number)));
+            client.updateClient(clientId, mockClientHeader(uint64(getBlockNumber())));
             // timeout on source chain
-            handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(block.number)));
+            handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber())));
             if (orders[i] == Channel.Order.ORDER_ORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_CLOSED);
             } else if (orders[i] == Channel.Order.ORDER_UNORDERED) {
@@ -452,7 +452,7 @@ contract TestICS04Packet is
     function testRecvPacketTimeoutTimestamp() public {
         vm.recordLogs();
         Channel.Order[2] memory orders = [Channel.Order.ORDER_ORDERED, Channel.Order.ORDER_UNORDERED];
-        assertEq(block.timestamp, 1);
+        assertEq(vm.getBlockTimestamp(), 1);
         for (uint256 i = 0; i < orders.length; i++) {
             (ChannelInfo memory channelInfo,) = handshakeChannel(
                 handler,
@@ -467,31 +467,31 @@ contract TestICS04Packet is
                 channelInfo.portId,
                 channelInfo.channelId,
                 H(0),
-                uint64(block.timestamp * 1e9 + 1)
+                uint64(getBlockTimestampNano() + 1)
             );
             Packet memory p0 =
                 getLastSentPacket(handler, channelInfo.portId, channelInfo.channelId, vm.getRecordedLogs());
             {
                 IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg1 =
-                    msgTimeoutPacket(channelInfo.ordering, p0, H(block.number));
+                    msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber()));
                 vm.expectRevert(abi.encodeWithSelector(IIBCChannelErrors.IBCChannelTimeoutNotReached.selector));
                 handler.timeoutPacket(msg1);
             }
 
-            IIBCChannelPacketSendRecv.MsgPacketRecv memory msg_ = msgPacketRecv(p0, H(block.number));
-            vm.warp(block.timestamp + 1);
-            vm.roll(block.number + 1);
+            IIBCChannelPacketSendRecv.MsgPacketRecv memory msg_ = msgPacketRecv(p0, H(getBlockNumber()));
+            vm.warp(vm.getBlockTimestamp() + 1);
+            vm.roll(getBlockNumber(1));
             vm.expectRevert(
                 abi.encodeWithSelector(
                     IIBCChannelErrors.IBCChannelTimeoutPacketTimestamp.selector,
-                    block.timestamp * 1e9,
+                    getBlockTimestampNano(),
                     p0.timeoutTimestamp
                 )
             );
             counterpartyHandler.recvPacket(msg_);
-            client.updateClient(clientId, mockClientHeader(uint64(block.number)));
+            client.updateClient(clientId, mockClientHeader(uint64(getBlockNumber())));
             // timeout on source chain
-            handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(block.number)));
+            handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber())));
             if (orders[i] == Channel.Order.ORDER_ORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_CLOSED);
             } else if (orders[i] == Channel.Order.ORDER_UNORDERED) {

@@ -44,18 +44,29 @@ abstract contract IBCTestHelper is Test {
         return H(0, revisionHeight);
     }
 
-    function getTimestamp() internal returns (uint64) {
-        return getTimestamp(0);
+    function getBlockNumber() internal view returns (uint256) {
+        return vm.getBlockNumber();
     }
 
-    function getTimestamp(int256 offsetSecs) internal returns (uint64) {
-        assertTrue(int256(block.timestamp) + offsetSecs >= 0, "getTimestamp: negative timestamp");
-        return uint64(uint256((int256(block.timestamp) + offsetSecs) * 1e9));
+    function getBlockNumber(int256 offset) internal view returns (uint256) {
+        uint256 blockNumber = vm.getBlockNumber();
+        require(int256(blockNumber) + offset >= 0, "getBlockNumber: negative block number");
+        return blockNumber + uint256(offset);
+    }
+
+    function getBlockTimestampNano() internal view returns (uint64) {
+        return getBlockTimestampNano(0);
+    }
+
+    function getBlockTimestampNano(int256 offsetSecs) internal view returns (uint64) {
+        uint256 timestamp = vm.getBlockTimestamp();
+        require(int256(timestamp) + offsetSecs >= 0, "getTimestamp: negative timestamp");
+        return uint64(uint256((int256(timestamp) + offsetSecs) * 1e9));
     }
 
     function roll(uint256 bn) internal {
         require(prevBlockNumber == 0, "roll: already rolled");
-        prevBlockNumber = block.number;
+        prevBlockNumber = vm.getBlockNumber();
         vm.roll(bn);
     }
 
@@ -67,7 +78,7 @@ abstract contract IBCTestHelper is Test {
 
     function warp(uint256 seconds_) internal {
         require(prevBlockTimestamp == 0, "warp: already warped");
-        prevBlockTimestamp = block.timestamp;
+        prevBlockTimestamp = vm.getBlockTimestamp();
         vm.warp(seconds_);
     }
 

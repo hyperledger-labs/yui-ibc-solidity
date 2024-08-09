@@ -26,6 +26,9 @@ jobs:
       with:
         version: nightly
 
+    - name: Show forge version
+      run: forge --version
+
     - name: Resolve dependencies
       run: npm install
 
@@ -46,6 +49,12 @@ jobs:
 
     - name: Run tests with minimal solidity version
       run: make SOLC_VERSION=${{ env.MINIMAL_SOLC_VERSION }} test
+
+    - name: Build via IR-pipeline
+      run: make FOUNDRY_PROFILE=ir build
+
+    - name: Run snapshot tests via IR-pipeline
+      run: make FOUNDRY_PROFILE=ir snapshot
 
   slither:
     name: Slither analysis

@@ -149,7 +149,7 @@ contract IBCBenchmarks is IBCTestHelper {
                 })
             ),
             protoConsensusState: wrapAnyMockConsensusState(
-                IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(block.timestamp * 1e9)})
+                IbcLightclientsMockV1ConsensusState.Data({timestamp: uint64(getBlockTimestampNano())})
             )
         });
         vm.resumeGasMetering();
@@ -163,7 +163,7 @@ contract IBCBenchmarks is IBCTestHelper {
             protoClientMessage: wrapAnyMockHeader(
                 IbcLightclientsMockV1Header.Data({
                     height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
-                    timestamp: uint64(block.timestamp * 1e9)
+                    timestamp: uint64(getBlockTimestampNano())
                 })
             )
         });
@@ -175,7 +175,7 @@ contract IBCBenchmarks is IBCTestHelper {
         vm.pauseGasMetering();
         IbcLightclientsMockV1Header.Data memory header = IbcLightclientsMockV1Header.Data({
             height: Height.Data({revision_number: 0, revision_height: nextRevisionHeight}),
-            timestamp: uint64(block.timestamp * 1e9)
+            timestamp: uint64(getBlockTimestampNano())
         });
         vm.resumeGasMetering();
         mockClient.updateClient(

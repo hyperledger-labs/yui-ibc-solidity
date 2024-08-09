@@ -59,7 +59,7 @@ abstract contract MockClientTestHelper is IBCTestHelper {
         return IIBCClient.MsgCreateClient({
             clientType: MOCK_CLIENT_TYPE,
             protoClientState: mockClientState(revisionNumber, revisionHeight),
-            protoConsensusState: mockConsensusState(uint64(block.timestamp * 1e9))
+            protoConsensusState: mockConsensusState(uint64(getBlockTimestampNano()))
         });
     }
 
@@ -80,7 +80,7 @@ abstract contract MockClientTestHelper is IBCTestHelper {
         returns (IbcLightclientsMockV1Header.Data memory)
     {
         return
-            IbcLightclientsMockV1Header.Data({height: H(nextRevisionHeight), timestamp: uint64(block.timestamp * 1e9)});
+            IbcLightclientsMockV1Header.Data({height: H(nextRevisionHeight), timestamp: uint64(getBlockTimestampNano())});
     }
 
     function genMockProof(Height.Data memory proofHeight, bytes memory prefix, bytes memory path, bytes memory value)
