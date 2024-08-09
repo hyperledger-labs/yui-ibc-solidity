@@ -20,17 +20,16 @@ library IBCHostLib {
         unchecked {
             for (uint256 i = 0; i < portIdLength; i++) {
                 uint256 c = uint256(uint8(portId[i]));
+                // return false if the character is not in one of the following categories:
+                // a-z
+                // 0-9
+                // A-Z
+                // ".", "_", "+", "-"
+                // "#", "[", "]", "<", ">"
                 if (
-                    // a-z
-                    !(c >= 0x61 && c <= 0x7A)
-                    // 0-9
-                    && !(c >= 0x30 && c <= 0x39)
-                    // A-Z
-                    && !(c >= 0x41 && c <= 0x5A)
-                    // ".", "_", "+", "-"
-                    && !(c == 0x2E || c == 0x5F || c == 0x2B || c == 0x2D)
-                    // "#", "[", "]", "<", ">"
-                    && !(c == 0x23 || c == 0x5B || c == 0x5D || c == 0x3C || c == 0x3E)
+                    !(c >= 0x61 && c <= 0x7A) && !(c >= 0x30 && c <= 0x39) && !(c >= 0x41 && c <= 0x5A)
+                        && !(c == 0x2E || c == 0x5F || c == 0x2B || c == 0x2D)
+                        && !(c == 0x23 || c == 0x5B || c == 0x5D || c == 0x3C || c == 0x3E)
                 ) {
                     return false;
                 }
