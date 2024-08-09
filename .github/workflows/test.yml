@@ -26,6 +26,9 @@ jobs:
       with:
         version: nightly
 
+    - name: Show forge version
+      run: forge --version
+
     - name: Resolve dependencies
       run: npm install
 
