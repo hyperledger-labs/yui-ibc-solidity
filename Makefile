@@ -1,6 +1,6 @@
-FORGE=forge
-SOLC_VERSION=0.8.24
 FOUNDRY_PROFILE=default
+FORGE=FOUNDRY_PROFILE=$(FOUNDRY_PROFILE) forge
+SOLC_VERSION=0.8.24
 DOCKER=docker
 ABIGEN="$(DOCKER) run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 SOLHINT=npx solhint
@@ -14,11 +14,11 @@ TEST_MNEMONIC="math razor capable expose worth grape metal sunset metal sudden u
 
 .PHONY: build
 build:
-	@$(FORGE) build --sizes --skip test --use solc:$(SOLC_VERSION)
+	$(FORGE) build --sizes --skip test --use solc:$(SOLC_VERSION)
 
 .PHONY: fmt
 fmt:
-	@$(FORGE) fmt $(FORGE_FMT_OPTS)
+	$(FORGE) fmt $(FORGE_FMT_OPTS)
 
 .PHONY: lint
 lint:
@@ -27,11 +27,15 @@ lint:
 
 .PHONY: test
 test:
-	@FOUNDRY_PROFILE=$(FOUNDRY_PROFILE) $(FORGE) snapshot -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+	$(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+
+.PHONY: snapshot
+snapshot:
+	$(FORGE) snapshot -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
 
 .PHONY: coverage
 coverage:
-	@$(FORGE) coverage --use solc:$(SOLC_VERSION)
+	$(FORGE) coverage --use solc:$(SOLC_VERSION)
 
 .PHONY: slither
 slither:
