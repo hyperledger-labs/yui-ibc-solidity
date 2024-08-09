@@ -273,7 +273,7 @@ abstract contract ICS03HandshakeMockClientTestHelper is ICS03HandshakeTestHelper
     }
 
     function getSelfConsensusState(Height.Data memory) internal view virtual override returns (bytes memory) {
-        return mockConsensusState(uint64(block.timestamp * 1e9));
+        return mockConsensusState(uint64(getBlockTimestampNano()));
     }
 
     function proveClientState(
