@@ -41,4 +41,8 @@ library IBCChannelLib {
             revert IIBCChannelErrors.IBCChannelUnknownChannelOrder(order);
         }
     }
+
+    function uint64ToBigEndianBytes(uint64 v) internal pure returns (bytes memory) {
+        return abi.encodePacked(bytes8(v));
+    }
 }

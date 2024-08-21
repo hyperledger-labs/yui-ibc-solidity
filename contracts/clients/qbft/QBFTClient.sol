@@ -71,7 +71,8 @@ contract QBFTClient is ILightClient, ILightClientErrors {
     bytes32 internal constant CONSENSUS_STATE_TYPE_URL_HASH =
         keccak256(abi.encodePacked("/ibc.lightclients.qbft.v1.ConsensusState"));
 
-    uint256 internal constant COMMITMENT_SLOT = 0;
+    // keccak256(abi.encode(uint256(keccak256("ibc.commitment")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 internal constant COMMITMENT_SLOT = 0x1ee222554989dda120e26ecacf756fe1235cd8d726706b57517715dde4f0c900;
     uint8 internal constant ACCOUNT_STORAGE_ROOT_INDEX = 2;
 
     address public immutable ibcHandler;

@@ -15,12 +15,16 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         return _getCommitmentPrefix();
     }
 
+    function getCommitmentsSlot() public pure override returns (bytes32) {
+        return COMMITMENT_STORAGE_LOCATION;
+    }
+
     function getCommitment(bytes32 hashedPath) public view override returns (bytes32) {
-        return commitments[hashedPath];
+        return getCommitments()[hashedPath];
     }
 
     function getExpectedTimePerBlock() public view override returns (uint64) {
-        return expectedTimePerBlock;
+        return getHostStorage().expectedTimePerBlock;
     }
 
     function getIBCModuleByPort(string calldata portId) public view override returns (IIBCModule) {
@@ -37,15 +41,15 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
     }
 
     function getClientByType(string calldata clientType) public view override returns (address) {
-        return clientRegistry[clientType];
+        return getHostStorage().clientRegistry[clientType];
     }
 
     function getClientType(string calldata clientId) public view override returns (string memory) {
-        return clientTypes[clientId];
+        return getClientStorage()[clientId].clientType;
     }
 
     function getClient(string calldata clientId) public view override returns (address) {
-        return clientImpls[clientId];
+        return getClientStorage()[clientId].clientImpl;
     }
 
     function getClientState(string calldata clientId) public view override returns (bytes memory, bool) {
@@ -67,7 +71,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         override
         returns (ConnectionEnd.Data memory, bool)
     {
-        ConnectionEnd.Data storage connection = connections[connectionId];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[connectionId].connection;
         return (connection, connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
@@ -77,7 +81,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         override
         returns (Channel.Data memory, bool)
     {
-        Channel.Data storage channel = channels[portId][channelId];
+        Channel.Data storage channel = getChannelStorage()[portId][channelId].channel;
         return (channel, channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED);
     }
 
@@ -87,7 +91,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         override
         returns (uint64)
     {
-        return nextSequenceSends[portId][channelId];
+        return getChannelStorage()[portId][channelId].nextSequenceSend;
     }
 
     function getNextSequenceRecv(string calldata portId, string calldata channelId)
@@ -96,7 +100,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         override
         returns (uint64)
     {
-        return nextSequenceRecvs[portId][channelId];
+        return getChannelStorage()[portId][channelId].nextSequenceRecv;
     }
 
     function getNextSequenceAck(string calldata portId, string calldata channelId)
@@ -105,7 +109,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         override
         returns (uint64)
     {
-        return nextSequenceAcks[portId][channelId];
+        return getChannelStorage()[portId][channelId].nextSequenceAck;
     }
 
     function getPacketReceipt(string calldata portId, string calldata channelId, uint64 sequence)
@@ -115,7 +119,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         returns (IBCChannelLib.PacketReceipt)
     {
         return IBCChannelLib.receiptCommitmentToReceipt(
-            commitments[IBCCommitment.packetReceiptCommitmentKeyCalldata(portId, channelId, sequence)]
+            getCommitments()[IBCCommitment.packetReceiptCommitmentKeyCalldata(portId, channelId, sequence)]
         );
     }
 
@@ -125,7 +129,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         override
         returns (Upgrade.Data memory, bool)
     {
-        Upgrade.Data storage upgrade = upgrades[portId][channelId];
+        Upgrade.Data storage upgrade = getChannelStorage()[portId][channelId].upgrade;
         return (upgrade, upgrade.fields.connection_hops.length != 0);
     }
 
@@ -135,7 +139,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         override
         returns (bool)
     {
-        Channel.Data storage channel = channels[portId][channelId];
+        Channel.Data storage channel = getChannelStorage()[portId][channelId].channel;
         if (channel.state != Channel.State.STATE_FLUSHING) {
             return false;
         }

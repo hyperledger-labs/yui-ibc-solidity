@@ -16,7 +16,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
     using IBCHeight for Height.Data;
 
     function timeoutPacket(MsgTimeoutPacket calldata msg_) external {
-        Channel.Data storage channel = channels[msg_.packet.sourcePort][msg_.packet.sourceChannel];
+        Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
         if (channel.state != Channel.State.STATE_OPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
@@ -30,8 +30,8 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         }
 
         // NOTE: we can assume here that the connection exists because the channel is open
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        ILightClient client = ILightClient(clientImpls[connection.client_id]);
+        ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
+        ILightClient client = ILightClient(getClientStorage()[connection.client_id].clientImpl);
 
         if (msg_.packet.timeoutHeight.isZero() || msg_.proofHeight.lt(msg_.packet.timeoutHeight)) {
             if (
@@ -43,7 +43,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         }
 
         {
-            bytes32 commitment = commitments[IBCCommitment.packetCommitmentKeyCalldata(
+            bytes32 commitment = getCommitments()[IBCCommitment.packetCommitmentKeyCalldata(
                 msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
             )];
             // NOTE: if false, this indicates that the timeoutPacket already been executed
@@ -86,7 +86,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     IBCCommitment.nextSequenceRecvCommitmentPath(
                         msg_.packet.destinationPort, msg_.packet.destinationChannel
                     ),
-                    uint64ToBigEndianBytes(msg_.nextSequenceRecv)
+                    IBCChannelLib.uint64ToBigEndianBytes(msg_.nextSequenceRecv)
                 )
             ) {
                 revert IBCChannelFailedVerifyNextSequenceRecv(
@@ -124,7 +124,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
             revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
 
-        delete commitments[IBCCommitment.packetCommitmentKeyCalldata(
+        delete getCommitments()[IBCCommitment.packetCommitmentKeyCalldata(
             msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
         )];
 
@@ -135,7 +135,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
     }
 
     function timeoutOnClose(MsgTimeoutOnClose calldata msg_) external {
-        Channel.Data storage channel = channels[msg_.packet.sourcePort][msg_.packet.sourceChannel];
+        Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
         if (channel.state != Channel.State.STATE_OPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
@@ -148,10 +148,10 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
             revert IBCChannelUnexpectedPacketDestination(msg_.packet.destinationPort, msg_.packet.destinationChannel);
         }
 
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
-        ILightClient client = ILightClient(clientImpls[connection.client_id]);
+        ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
+        ILightClient client = ILightClient(getClientStorage()[connection.client_id].clientImpl);
         {
-            bytes32 commitment = commitments[IBCCommitment.packetCommitmentKeyCalldata(
+            bytes32 commitment = getCommitments()[IBCCommitment.packetCommitmentKeyCalldata(
                 msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
             )];
             // NOTE: if false, this indicates that the timeoutPacket already been executed
@@ -229,7 +229,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     IBCCommitment.nextSequenceRecvCommitmentPath(
                         msg_.packet.destinationPort, msg_.packet.destinationChannel
                     ),
-                    uint64ToBigEndianBytes(msg_.nextSequenceRecv)
+                    IBCChannelLib.uint64ToBigEndianBytes(msg_.nextSequenceRecv)
                 )
             ) {
                 revert IBCChannelFailedVerifyNextSequenceRecv(
@@ -271,19 +271,17 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         emit TimeoutPacket(msg_.packet);
     }
 
-    // private functions
-
+    /**
+     * @dev calcBlockDelay calculates the block delay based on the expected time per block
+     */
     function calcBlockDelay(uint64 timeDelay) private view returns (uint64) {
+        HostStorage storage hostStorage = getHostStorage();
         if (timeDelay == 0) {
             return 0;
-        } else if (expectedTimePerBlock == 0) {
+        } else if (hostStorage.expectedTimePerBlock == 0) {
             return 0;
         } else {
-            return (timeDelay + expectedTimePerBlock - 1) / expectedTimePerBlock;
+            return (timeDelay + hostStorage.expectedTimePerBlock - 1) / hostStorage.expectedTimePerBlock;
         }
-    }
-
-    function uint64ToBigEndianBytes(uint64 v) private pure returns (bytes memory) {
-        return abi.encodePacked(bytes8(v));
     }
 }

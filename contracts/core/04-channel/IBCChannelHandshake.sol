@@ -33,7 +33,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         if (msg_.channel.connection_hops.length != 1) {
             revert IBCChannelInvalidConnectionHopsLength(msg_.channel.connection_hops.length);
         }
-        ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[msg_.channel.connection_hops[0]].connection;
         if (connection.versions.length != 1) {
             revert IBCChannelConnectionMultipleVersionsFound(
                 msg_.channel.connection_hops[0], connection.versions.length
@@ -92,7 +92,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         if (msg_.channel.connection_hops.length != 1) {
             revert IBCChannelInvalidConnectionHopsLength(msg_.channel.connection_hops.length);
         }
-        ConnectionEnd.Data storage connection = connections[msg_.channel.connection_hops[0]];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[msg_.channel.connection_hops[0]].connection;
         if (connection.state != ConnectionEnd.State.STATE_OPEN) {
             revert IBCChannelConnectionNotOpened(msg_.channel.connection_hops[0]);
         }
@@ -161,11 +161,11 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
      * @dev channelOpenAck is called by the handshake-originating module to acknowledge the acceptance of the initial request by the counterparty module on the other chain.
      */
     function channelOpenAck(IIBCChannelHandshake.MsgChannelOpenAck calldata msg_) public override {
-        Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
+        Channel.Data storage channel = getChannelStorage()[msg_.portId][msg_.channelId].channel;
         if (channel.state != Channel.State.STATE_INIT) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_TRYOPEN,
             ordering: channel.ordering,
@@ -200,11 +200,11 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
      * @dev channelOpenConfirm is called by the counterparty module to close their end of the channel, since the other end has been closed.
      */
     function channelOpenConfirm(IIBCChannelHandshake.MsgChannelOpenConfirm calldata msg_) public override {
-        Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
+        Channel.Data storage channel = getChannelStorage()[msg_.portId][msg_.channelId].channel;
         if (channel.state != Channel.State.STATE_TRYOPEN) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_OPEN,
             ordering: channel.ordering,
@@ -232,13 +232,13 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
      * @dev channelCloseInit is called by either module to close their end of the channel. Once closed, channels cannot be reopened.
      */
     function channelCloseInit(IIBCChannelHandshake.MsgChannelCloseInit calldata msg_) public override {
-        Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
+        Channel.Data storage channel = getChannelStorage()[msg_.portId][msg_.channelId].channel;
         if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelChannelNotFound(msg_.portId, msg_.channelId);
         } else if (channel.state == Channel.State.STATE_CLOSED) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
         if (connection.state != ConnectionEnd.State.STATE_OPEN) {
             revert IBCChannelConnectionNotOpened(channel.connection_hops[0]);
         }
@@ -254,14 +254,14 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
      * channel, since the other end has been closed.
      */
     function channelCloseConfirm(IIBCChannelHandshake.MsgChannelCloseConfirm calldata msg_) public override {
-        Channel.Data storage channel = channels[msg_.portId][msg_.channelId];
+        Channel.Data storage channel = getChannelStorage()[msg_.portId][msg_.channelId].channel;
         if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelChannelNotFound(msg_.portId, msg_.channelId);
         } else if (channel.state == Channel.State.STATE_CLOSED) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
-        ConnectionEnd.Data storage connection = connections[channel.connection_hops[0]];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
         if (connection.state != ConnectionEnd.State.STATE_OPEN) {
             revert IBCChannelConnectionNotOpened(channel.connection_hops[0]);
         }
@@ -303,7 +303,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         string[] calldata connectionHops,
         string memory version
     ) private {
-        Channel.Data storage channel = channels[portId][channelId];
+        Channel.Data storage channel = getChannelStorage()[portId][channelId].channel;
         channel.state = state;
         channel.ordering = order;
         channel.counterparty = counterparty;
@@ -316,17 +316,27 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
     }
 
     function initializeSequences(string memory portId, string memory channelId) internal {
-        nextSequenceSends[portId][channelId] = 1;
-        nextSequenceRecvs[portId][channelId] = 1;
-        nextSequenceAcks[portId][channelId] = 1;
-        recvStartSequences[portId][channelId].sequence = 1;
-        commitments[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
+        ChannelStorage storage channelStorage = getChannelStorage()[portId][channelId];
+
+        channelStorage.nextSequenceSend = 1;
+        channelStorage.nextSequenceRecv = 1;
+        channelStorage.nextSequenceAck = 1;
+        channelStorage.recvStartSequence.sequence = 1;
+        getCommitments()[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
             keccak256(abi.encodePacked((bytes8(uint64(1)))));
     }
 
     function updateChannelCommitment(string memory portId, string memory channelId) private {
-        commitments[IBCCommitment.channelCommitmentKey(portId, channelId)] =
-            keccak256(Channel.encode(channels[portId][channelId]));
+        getCommitments()[IBCCommitment.channelCommitmentKey(portId, channelId)] =
+            keccak256(Channel.encode(getChannelStorage()[portId][channelId].channel));
+    }
+
+    function generateChannelIdentifier() private returns (string memory) {
+        HostStorage storage hostStorage = getHostStorage();
+        string memory identifier =
+            string(abi.encodePacked("channel-", Strings.toString(hostStorage.nextChannelSequence)));
+        hostStorage.nextChannelSequence++;
+        return identifier;
     }
 
     function verifyChannelState(
@@ -358,15 +368,9 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         );
     }
 
-    function getCounterpartyHops(string memory connectionId) internal view returns (string[] memory hops) {
+    function getCounterpartyHops(string memory connectionId) private view returns (string[] memory hops) {
         hops = new string[](1);
-        hops[0] = connections[connectionId].counterparty.connection_id;
+        hops[0] = getConnectionStorage()[connectionId].connection.counterparty.connection_id;
         return hops;
-    }
-
-    function generateChannelIdentifier() private returns (string memory) {
-        string memory identifier = string(abi.encodePacked("channel-", Strings.toString(nextChannelSequence)));
-        nextChannelSequence++;
-        return identifier;
     }
 }

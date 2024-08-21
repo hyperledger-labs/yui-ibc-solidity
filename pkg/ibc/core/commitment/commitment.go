@@ -1,14 +1,24 @@
 package commitment
 
 import (
+	"encoding/hex"
+
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 	"github.com/ethereum/go-ethereum/crypto"
 	ibcclient "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/client"
 )
 
-// This value is determined by IBCHost.sol
-var ibcHostCommitmentSlot = [32]byte{} // uint256(0)
+var IBCCommitmentsSlot [32]byte
+
+func init() {
+	ibcCommitmentsSlotStr := "1ee222554989dda120e26ecacf756fe1235cd8d726706b57517715dde4f0c900"
+	bz, err := hex.DecodeString(ibcCommitmentsSlotStr)
+	if err != nil {
+		panic(err)
+	}
+	copy(IBCCommitmentsSlot[:], bz)
+}
 
 // Slot calculator
 
@@ -45,5 +55,5 @@ func NextSequenceRecvCommitmentSlot(portID, channelID string) string {
 }
 
 func CalculateCommitmentSlot(path []byte) string {
-	return crypto.Keccak256Hash(crypto.Keccak256Hash(path).Bytes(), ibcHostCommitmentSlot[:]).Hex()
+	return crypto.Keccak256Hash(crypto.Keccak256Hash(path).Bytes(), IBCCommitmentsSlot[:]).Hex()
 }

@@ -17,16 +17,18 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
      * @dev createClient creates a new client state and populates it with a given consensus state
      */
     function createClient(MsgCreateClient calldata msg_) external override returns (string memory clientId) {
-        address clientImpl = clientRegistry[msg_.clientType];
+        address clientImpl = getHostStorage().clientRegistry[msg_.clientType];
         if (clientImpl == address(0)) {
             revert IBCClientUnregisteredClientType(msg_.clientType);
         }
         clientId = generateClientIdentifier(msg_.clientType);
-        clientTypes[clientId] = msg_.clientType;
-        clientImpls[clientId] = clientImpl;
+        ClientStorage storage client = getClientStorage()[clientId];
+        client.clientType = msg_.clientType;
+        client.clientImpl = clientImpl;
         Height.Data memory height =
             ILightClient(clientImpl).initializeClient(clientId, msg_.protoClientState, msg_.protoConsensusState);
         // update commitments
+        mapping(bytes32 => bytes32) storage commitments = getCommitments();
         commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = keccak256(msg_.protoClientState);
         commitments[IBCCommitment.consensusStateCommitmentKey(clientId, height.revision_number, height.revision_height)]
         = keccak256(msg_.protoConsensusState);
@@ -83,6 +85,7 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
         if (!found) {
             revert IBCClientClientNotFound(clientId);
         }
+        mapping(bytes32 => bytes32) storage commitments = getCommitments();
         commitments[IBCCommitment.clientStateCommitmentKey(clientId)] = keccak256(clientState);
         for (uint256 i = 0; i < heights.length; i++) {
             (consensusState, found) = lc.getConsensusState(clientId, heights[i]);
@@ -102,9 +105,11 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
     /**
      * @dev generateClientIdentifier generates a new client identifier for a given client type
      */
-    function generateClientIdentifier(string calldata clientType) private returns (string memory) {
-        string memory identifier = string(abi.encodePacked(clientType, "-", Strings.toString(nextClientSequence)));
-        nextClientSequence++;
+    function generateClientIdentifier(string calldata clientType) internal returns (string memory) {
+        HostStorage storage hostStorage = getHostStorage();
+        string memory identifier =
+            string(abi.encodePacked(clientType, "-", Strings.toString(hostStorage.nextClientSequence)));
+        hostStorage.nextClientSequence++;
         return identifier;
     }
 }

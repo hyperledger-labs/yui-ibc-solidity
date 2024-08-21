@@ -10,6 +10,8 @@ import {IIBCModule} from "../26-router/IIBCModule.sol";
 interface IIBCQuerier {
     function getCommitmentPrefix() external view returns (bytes memory);
 
+    function getCommitmentsSlot() external pure returns (bytes32);
+
     function getCommitment(bytes32 hashedPath) external view returns (bytes32);
 
     function getExpectedTimePerBlock() external view returns (uint64);

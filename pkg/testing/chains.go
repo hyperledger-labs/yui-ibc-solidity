@@ -20,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	gethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 
@@ -206,6 +205,13 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 		IBCMockApp:    *ibcMockApp,
 	}
 
+	commitmentsSlot, err := ibcHandler.GetCommitmentsSlot(chain.CallOpts(context.TODO(), RelayerKeyIndex))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if commitment.IBCCommitmentsSlot != commitmentsSlot {
+		t.Fatalf("invalid commitments slot: expected=0x%x actual=0x%x", commitment.IBCCommitmentsSlot, commitmentsSlot)
+	}
 	lcAddr, err := ibcHandler.GetClientByType(chain.CallOpts(context.TODO(), RelayerKeyIndex), ibcclient.BesuQBFTClient)
 	if err != nil {
 		t.Fatal(err)
@@ -1099,7 +1105,7 @@ func (chain *Chain) EnsurePacketCommitmentExistence(
 	channelID string,
 	sequence uint64,
 ) error {
-	commitment, err := chain.IBCHandler.GetCommitment(chain.CallOpts(ctx, RelayerKeyIndex), crypto.Keccak256Hash(host.PacketCommitmentKey(portID, channelID, sequence)))
+	commitment, err := chain.IBCHandler.GetCommitment(chain.CallOpts(ctx, RelayerKeyIndex), gethcrypto.Keccak256Hash(host.PacketCommitmentKey(portID, channelID, sequence)))
 	if err != nil {
 		return err
 	}
