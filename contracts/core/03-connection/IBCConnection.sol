@@ -26,7 +26,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         returns (string memory)
     {
         string memory connectionId = generateConnectionIdentifier();
-        ConnectionEnd.Data storage connection = connections[connectionId];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[connectionId].connection;
         if (connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCConnectionAlreadyConnectionExists();
         }
@@ -71,7 +71,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         bytes memory selfConsensusState = getSelfConsensusState(msg_.consensusHeight, msg_.hostConsensusStateProof);
 
         string memory connectionId = generateConnectionIdentifier();
-        ConnectionEnd.Data storage connection = connections[connectionId];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[connectionId].connection;
         if (connection.state != ConnectionEnd.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCConnectionAlreadyConnectionExists();
         }
@@ -120,7 +120,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
      * to chain A (this code is executed on chain A).
      */
     function connectionOpenAck(IIBCConnection.MsgConnectionOpenAck calldata msg_) external override {
-        ConnectionEnd.Data storage connection = connections[msg_.connectionId];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[msg_.connectionId].connection;
         if (connection.state != ConnectionEnd.State.STATE_INIT) {
             revert IBCConnectionUnexpectedConnectionState(connection.state);
         }
@@ -169,7 +169,7 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
      * which the connection is open on both chains (this code is executed on chain B).
      */
     function connectionOpenConfirm(IIBCConnection.MsgConnectionOpenConfirm calldata msg_) external override {
-        ConnectionEnd.Data storage connection = connections[msg_.connectionId];
+        ConnectionEnd.Data storage connection = getConnectionStorage()[msg_.connectionId].connection;
         if (connection.state != ConnectionEnd.State.STATE_TRYOPEN) {
             revert IBCConnectionUnexpectedConnectionState(connection.state);
         }
@@ -194,12 +194,29 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
         updateConnectionCommitment(msg_.connectionId);
     }
 
-    function updateConnectionCommitment(string memory connectionId) private {
-        commitments[IBCCommitment.connectionCommitmentKey(connectionId)] =
-            keccak256(ConnectionEnd.encode(connections[connectionId]));
+    /**
+     * @dev getCompatibleVersions returns the supported versions of the host chain.
+     */
+    function getCompatibleVersions() public pure virtual returns (Version.Data[] memory) {
+        Version.Data[] memory versions = new Version.Data[](1);
+        versions[0] = IBCConnectionLib.defaultIBCVersion();
+        return versions;
     }
 
-    /* Verification functions */
+    // --------- Private Functions --------- //
+
+    function generateConnectionIdentifier() private returns (string memory) {
+        HostStorage storage hostStorage = getHostStorage();
+        string memory identifier =
+            string(abi.encodePacked("connection-", Strings.toString(hostStorage.nextConnectionSequence)));
+        hostStorage.nextConnectionSequence++;
+        return identifier;
+    }
+
+    function updateConnectionCommitment(string memory connectionId) private {
+        getCommitments()[IBCCommitment.connectionCommitmentKey(connectionId)] =
+            keccak256(ConnectionEnd.encode(getConnectionStorage()[connectionId].connection));
+    }
 
     function verifyClientState(
         ConnectionEnd.Data storage connection,
@@ -293,22 +310,5 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             proof,
             height
         );
-    }
-
-    /**
-     * @dev getCompatibleVersions returns the supported versions of the host chain.
-     */
-    function getCompatibleVersions() public pure virtual returns (Version.Data[] memory) {
-        Version.Data[] memory versions = new Version.Data[](1);
-        versions[0] = IBCConnectionLib.defaultIBCVersion();
-        return versions;
-    }
-
-    /* Internal functions */
-
-    function generateConnectionIdentifier() private returns (string memory) {
-        string memory identifier = string(abi.encodePacked("connection-", Strings.toString(nextConnectionSequence)));
-        nextConnectionSequence++;
-        return identifier;
     }
 }

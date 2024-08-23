@@ -15,20 +15,22 @@ contract IBCModuleManager is IBCHost, Context {
      * @dev claimPortCapability allows the IBC app module to claim a capability that core IBC passes to it
      */
     function claimPortCapability(string calldata portId, address addr) internal {
-        if (portCapabilities[portId] != address(0)) {
+        HostStorage storage hostStorage = getHostStorage();
+        if (hostStorage.portCapabilities[portId] != address(0)) {
             revert IBCHostPortCapabilityAlreadyClaimed(portId);
         }
-        portCapabilities[portId] = addr;
+        hostStorage.portCapabilities[portId] = addr;
     }
 
     /**
      * @dev claimChannelCapability allows the IBC app module to claim a capability that core IBC passes to it
      */
     function claimChannelCapability(string calldata portId, string memory channelId, address addr) internal {
-        if (channelCapabilities[portId][channelId] != address(0)) {
+        HostStorage storage hostStorage = getHostStorage();
+        if (hostStorage.channelCapabilities[portId][channelId] != address(0)) {
             revert IBCHostChannelCapabilityAlreadyClaimed(portId, channelId);
         }
-        channelCapabilities[portId][channelId] = addr;
+        hostStorage.channelCapabilities[portId][channelId] = addr;
     }
 
     /**
@@ -37,7 +39,7 @@ contract IBCModuleManager is IBCHost, Context {
      */
     function authenticateChannelCapability(string calldata portId, string calldata channelId) internal view {
         address msgSender = _msgSender();
-        if (channelCapabilities[portId][channelId] != msgSender) {
+        if (getHostStorage().channelCapabilities[portId][channelId] != msgSender) {
             revert IBCHostFailedAuthenticateChannelCapability(portId, channelId, msgSender);
         }
     }
@@ -47,7 +49,7 @@ contract IBCModuleManager is IBCHost, Context {
      * If the module is not found, it will revert
      */
     function lookupModuleByPort(string calldata portId) internal view virtual returns (IIBCModule) {
-        address module = portCapabilities[portId];
+        address module = getHostStorage().portCapabilities[portId];
         if (module == address(0)) {
             revert IBCHostModulePortNotFound(portId);
         }
@@ -64,7 +66,7 @@ contract IBCModuleManager is IBCHost, Context {
         virtual
         returns (IIBCModule)
     {
-        address module = channelCapabilities[portId][channelId];
+        address module = getHostStorage().channelCapabilities[portId][channelId];
         if (module == address(0)) {
             revert IBCHostModuleChannelNotFound(portId, channelId);
         }
@@ -104,7 +106,8 @@ contract IBCModuleManager is IBCHost, Context {
         uint64 upgradeSequence
     ) internal view virtual returns (bool) {
         if (ordering == Channel.Order.ORDER_ORDERED) {
-            if (nextSequenceSends[portId][channelId] == nextSequenceAcks[portId][channelId]) {
+            ChannelStorage storage channelStorage = getChannelStorage()[portId][channelId];
+            if (channelStorage.nextSequenceSend == channelStorage.nextSequenceAck) {
                 return true;
             }
         }

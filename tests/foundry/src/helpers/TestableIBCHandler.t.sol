@@ -3,8 +3,10 @@ pragma solidity ^0.8.20;
 
 import "../../../../contracts/proto/Connection.sol";
 import "../../../../contracts/proto/Channel.sol";
+import "../../../../contracts/core/03-connection/IBCConnectionLib.sol";
 import "../../../../contracts/core/04-channel/IIBCChannel.sol";
 import "../../../../contracts/core/04-channel/IBCChannelLib.sol";
+import "../../../../contracts/core/24-host/IBCHostLib.sol";
 import "../../../../contracts/core/24-host/IBCCommitment.sol";
 import "../../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 
@@ -30,56 +32,57 @@ contract TestableIBCHandler is OwnableIBCHandler {
     {}
 
     function setConnection(string memory connectionId, ConnectionEnd.Data memory connection) external {
-        connections[connectionId].client_id = connection.client_id;
-        connections[connectionId].state = connection.state;
-        connections[connectionId].delay_period = connection.delay_period;
-        delete connections[connectionId].versions;
+        ConnectionEnd.Data storage conn = getConnectionStorage()[connectionId].connection;
+        conn.client_id = connection.client_id;
+        conn.state = connection.state;
+        conn.delay_period = connection.delay_period;
+        delete conn.versions;
         for (uint8 i = 0; i < connection.versions.length; i++) {
-            connections[connectionId].versions.push(connection.versions[i]);
+            conn.versions.push(connection.versions[i]);
         }
-        connections[connectionId].counterparty = connection.counterparty;
-        commitments[keccak256(IBCCommitment.connectionPath(connectionId))] = keccak256(ConnectionEnd.encode(connection));
+        conn.counterparty = connection.counterparty;
+        getCommitments()[keccak256(IBCCommitment.connectionPath(connectionId))] = keccak256(ConnectionEnd.encode(connection));
     }
 
     function setChannel(string memory portId, string memory channelId, Channel.Data memory channel) external {
-        channels[portId][channelId] = channel;
-        commitments[keccak256(IBCCommitment.channelPath(portId, channelId))] = keccak256(Channel.encode(channel));
+        getChannelStorage()[portId][channelId].channel = channel;
+        getCommitments()[keccak256(IBCCommitment.channelPath(portId, channelId))] = keccak256(Channel.encode(channel));
     }
 
     function setNextSequenceSend(string calldata portId, string calldata channelId, uint64 sequence) external {
-        nextSequenceSends[portId][channelId] = sequence;
+        getChannelStorage()[portId][channelId].nextSequenceSend = sequence;
     }
 
     function setNextSequenceRecv(string calldata portId, string calldata channelId, uint64 sequence) external {
-        nextSequenceRecvs[portId][channelId] = sequence;
-        commitments[keccak256(IBCCommitment.nextSequenceRecvCommitmentPath(portId, channelId))] =
+        getChannelStorage()[portId][channelId].nextSequenceRecv = sequence;
+        getCommitments()[keccak256(IBCCommitment.nextSequenceRecvCommitmentPath(portId, channelId))] =
             keccak256(abi.encodePacked(sequence));
     }
 
     function setNextSequenceAck(string calldata portId, string calldata channelId, uint64 sequence) external {
-        nextSequenceAcks[portId][channelId] = sequence;
+        getChannelStorage()[portId][channelId].nextSequenceAck = sequence;
     }
 
     function setNextClientSequence(uint64 sequence) external {
-        nextClientSequence = sequence;
+        getHostStorage().nextClientSequence = sequence;
     }
 
     function setNextConnectionSequence(uint64 sequence) external {
-        nextConnectionSequence = sequence;
+        getHostStorage().nextConnectionSequence = sequence;
     }
 
     function setNextChannelSequence(uint64 sequence) external {
-        nextChannelSequence = sequence;
+        getHostStorage().nextChannelSequence = sequence;
     }
 
     function setPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence, bytes32 commitment)
         external
     {
-        commitments[IBCCommitment.packetCommitmentKeyCalldata(portId, channelId, sequence)] = commitment;
+        getCommitments()[IBCCommitment.packetCommitmentKeyCalldata(portId, channelId, sequence)] = commitment;
     }
 
     function setPacketCommitment(Packet calldata packet) external {
-        commitments[IBCCommitment.packetCommitmentKeyCalldata(packet.sourcePort, packet.sourceChannel, packet.sequence)]
+        getCommitments()[IBCCommitment.packetCommitmentKeyCalldata(packet.sourcePort, packet.sourceChannel, packet.sequence)]
         = keccak256(
             abi.encodePacked(
                 sha256(
@@ -95,7 +98,7 @@ contract TestableIBCHandler is OwnableIBCHandler {
     }
 
     function setChannelCapability(string calldata portId, string calldata channelId, address addr) external {
-        channelCapabilities[portId][channelId] = addr;
+        getHostStorage().channelCapabilities[portId][channelId] = addr;
     }
 
     function getPacketCommitment(string calldata portId, string calldata channelId, uint64 sequence)
@@ -112,7 +115,7 @@ contract TestableIBCHandler is OwnableIBCHandler {
         returns (bool)
     {
         return IBCChannelLib.receiptCommitmentToReceipt(
-            commitments[IBCCommitment.packetReceiptCommitmentKeyCalldata(
+            getCommitments()[IBCCommitment.packetReceiptCommitmentKeyCalldata(
                 destinationPortId, destinationChannelId, sequence
             )]
         ) == IBCChannelLib.PacketReceipt.SUCCESSFUL;

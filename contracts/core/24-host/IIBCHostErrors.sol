@@ -8,9 +8,6 @@ interface IIBCHostErrors {
     /// @param clientType client type
     error IBCHostClientTypeAlreadyExists(string clientType);
 
-    /// @param clientId the client identifier
-    error IBCHostClientNotFound(string clientId);
-
     /// @param portId port identifier
     error IBCHostInvalidPortIdentifier(string portId);
 

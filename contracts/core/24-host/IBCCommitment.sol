@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 library IBCCommitment {
-    // Commitment path generators that comply with https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#path-space
+    // Commitment paths comply with https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#path-space
 
     function clientStatePath(string memory clientId) internal pure returns (bytes memory) {
         return abi.encodePacked("clients/", clientId, "/clientState");

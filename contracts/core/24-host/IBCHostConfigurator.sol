@@ -14,19 +14,20 @@ import {IIBCHostConfigurator} from "./IIBCHostConfigurator.sol";
  */
 abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager {
     function _setExpectedTimePerBlock(uint64 expectedTimePerBlock_) internal virtual {
-        expectedTimePerBlock = expectedTimePerBlock_;
+        getHostStorage().expectedTimePerBlock = expectedTimePerBlock_;
     }
 
     function _registerClient(string calldata clientType, ILightClient client) internal virtual {
+        HostStorage storage hostStorage = getHostStorage();
         if (!IBCClientLib.validateClientType(bytes(clientType))) {
             revert IBCHostInvalidClientType(clientType);
-        } else if (address(clientRegistry[clientType]) != address(0)) {
+        } else if (address(hostStorage.clientRegistry[clientType]) != address(0)) {
             revert IBCHostClientTypeAlreadyExists(clientType);
         }
         if (address(client) == address(0) || address(client) == address(this)) {
             revert IBCHostInvalidLightClientAddress(address(client));
         }
-        clientRegistry[clientType] = address(client);
+        hostStorage.clientRegistry[clientType] = address(client);
     }
 
     function _bindPort(string calldata portId, IIBCModule module) internal virtual {
