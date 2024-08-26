@@ -31,12 +31,19 @@ abstract contract IBCClientConnectionChannelHandler is
     IIBCChannelPacketTimeout,
     IIBCChannelUpgrade
 {
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address internal immutable ibcClient;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address internal immutable ibcConnection;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address internal immutable ibcChannelHandshake;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address internal immutable ibcChannelPacketSendRecv;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address internal immutable ibcChannelPacketTimeout;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address internal immutable ibcChannelUpgradeInitTryAck;
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address internal immutable ibcChannelUpgradeConfirmOpenTimeoutCancel;
 
     /**
@@ -48,6 +55,7 @@ abstract contract IBCClientConnectionChannelHandler is
      * @param ibcChannelPacketTimeout_ is the address of a contract that implements `IIBCChannelPacketTimeout`.
      * @param ibcChannelUpgradeInitTryAck_ is the address of a contract that implements `IIBCChannelUpgradeInitTryAck`.
      * @param ibcChannelUpgradeConfirmOpenTimeoutCancel_ is the address of a contract that implements `IIBCChannelUpgradeConfirmOpenTimeoutCancel`.
+     * @custom:oz-upgrades-unsafe-allow constructor
      */
     constructor(
         IIBCClient ibcClient_,
@@ -84,6 +92,7 @@ abstract contract IBCClientConnectionChannelHandler is
     }
 
     function wrappedRouteUpdateClient(MsgUpdateClient calldata msg_) public returns (address, bytes4, bytes memory) {
+        /// @custom:oz-upgrades-unsafe-allow delegatecall
         (bool success, bytes memory returndata) =
             address(ibcClient).delegatecall(abi.encodeWithSelector(IIBCClient.routeUpdateClient.selector, msg_));
         if (!success) {

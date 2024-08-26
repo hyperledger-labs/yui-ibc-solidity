@@ -159,7 +159,13 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 	if err != nil {
 		t.Fatal(err)
 	}
-	ibcHandler, err := ibchandler.NewIbchandler(config.IBCHandlerAddress, client)
+	ibcHandlerAddr := config.GetIBCHandlerAddress()
+	if config.IsUpgradeable() {
+		t.Logf("IBCHandler %s is upgradeable", ibcHandlerAddr.Hex())
+	} else {
+		t.Logf("IBCHandler %s is not upgradeable", ibcHandlerAddr.Hex())
+	}
+	ibcHandler, err := ibchandler.NewIbchandler(ibcHandlerAddr, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,7 +309,7 @@ func (chain *Chain) GetLightClientInputData(counterparty *Chain, counterpartyCli
 	}
 	return chain.lc.GenerateInputData(
 		context.Background(),
-		chain.ContractConfig.IBCHandlerAddress,
+		chain.ContractConfig.GetIBCHandlerAddress(),
 		storageKeys,
 		height,
 	)
@@ -312,7 +318,7 @@ func (chain *Chain) GetLightClientInputData(counterparty *Chain, counterpartyCli
 func (chain *Chain) ConstructQBFTMsgCreateClient(counterparty *Chain) ibchandler.IIBCClientMsgCreateClient {
 	clientState := qbftclienttypes.ClientState{
 		ChainId:         counterparty.ChainIDU256(),
-		IbcStoreAddress: counterparty.ContractConfig.IBCHandlerAddress.Bytes(),
+		IbcStoreAddress: counterparty.ContractConfig.GetIBCHandlerAddress().Bytes(),
 		LatestHeight:    ibcclient.NewHeightFromBN(counterparty.LastHeader().Number),
 		TrustingPeriod:  DefaultTrustPeriod,
 		MaxClockDrift:   DefaultMaxClockDrift,
@@ -360,7 +366,7 @@ func (chain *Chain) UpdateLCInputData() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	for {
-		data, err := chain.lc.GenerateInputData(ctx, chain.ContractConfig.IBCHandlerAddress, nil, nil)
+		data, err := chain.lc.GenerateInputData(ctx, chain.ContractConfig.GetIBCHandlerAddress(), nil, nil)
 		if err != nil {
 			panic(err)
 		}
@@ -938,7 +944,7 @@ func (chain *Chain) getLastID(ctx context.Context, event abi.Event) (string, err
 	query := ethereum.FilterQuery{
 		FromBlock: chain.startBlockNumber,
 		Addresses: []common.Address{
-			chain.ContractConfig.IBCHandlerAddress,
+			chain.ContractConfig.GetIBCHandlerAddress(),
 		},
 		Topics: [][]common.Hash{{
 			event.ID,
@@ -987,7 +993,7 @@ func (chain *Chain) FindPacket(
 	query := ethereum.FilterQuery{
 		FromBlock: chain.startBlockNumber,
 		Addresses: []common.Address{
-			chain.ContractConfig.IBCHandlerAddress,
+			chain.ContractConfig.GetIBCHandlerAddress(),
 		},
 		Topics: [][]common.Hash{{
 			abiSendPacket.ID,
@@ -1030,7 +1036,7 @@ func (chain *Chain) FindAcknowledgement(
 	query := ethereum.FilterQuery{
 		FromBlock: chain.startBlockNumber,
 		Addresses: []common.Address{
-			chain.ContractConfig.IBCHandlerAddress,
+			chain.ContractConfig.GetIBCHandlerAddress(),
 		},
 		Topics: [][]common.Hash{{
 			abiWriteAcknowledgement.ID,

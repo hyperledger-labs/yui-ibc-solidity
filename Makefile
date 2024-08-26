@@ -9,12 +9,17 @@ DOCKER_COMPOSE=$(DOCKER) compose
 E2E_TEST_COMPOSE_FILE=./chains/compose.yml
 TEST_BROADCAST_LOG_DIR=./broadcast/Deploy.s.sol
 TEST_MNEMONIC="math razor capable expose worth grape metal sunset metal sudden usage scheme"
+TEST_UPGRADEABLE=false
 
 ######## Development ########
 
 .PHONY: build
 build:
 	$(FORGE) build --sizes --skip test --use solc:$(SOLC_VERSION)
+
+.PHONY: clean
+clean:
+	$(FORGE) clean
 
 .PHONY: fmt
 fmt:
@@ -27,7 +32,7 @@ lint:
 
 .PHONY: test
 test:
-	$(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) $(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
 
 .PHONY: snapshot
 snapshot:
@@ -88,9 +93,9 @@ network-qbft:
 
 .PHONY: deploy
 deploy:
-	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
-	TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: network-down
@@ -99,4 +104,4 @@ network-down:
 
 .PHONY: e2e-test
 e2e-test:
-	TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) TEST_MNEMONIC=$(TEST_MNEMONIC) TEST_BROADCAST_LOG_DIR=$(CURDIR)/$(TEST_BROADCAST_LOG_DIR) go test -v ./tests/e2e/... -count=1
