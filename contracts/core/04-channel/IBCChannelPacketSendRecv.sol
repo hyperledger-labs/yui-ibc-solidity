@@ -110,8 +110,9 @@ contract IBCChannelPacketSendRecv is
         ChannelStorage storage channelStorage =
             getChannelStorage()[msg_.packet.destinationPort][msg_.packet.destinationChannel];
         Channel.Data storage channel = channelStorage.channel;
-        if (channel.state == Channel.State.STATE_OPEN) {}
-        else if (channel.state == Channel.State.STATE_FLUSHING || channel.state == Channel.State.STATE_FLUSHCOMPLETE) {
+        if (channel.state == Channel.State.STATE_OPEN) {} else if (
+            channel.state == Channel.State.STATE_FLUSHING || channel.state == Channel.State.STATE_FLUSHCOMPLETE
+        ) {
             RecvStartSequence storage rseq = channelStorage.recvStartSequence;
             // prevSequence=0 means the channel is not in the process of being upgraded or counterparty has not been upgraded yet
             if (rseq.prevSequence != 0) {

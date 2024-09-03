@@ -7,7 +7,7 @@ import {Packet} from "../../core/04-channel/IIBCChannel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {IIBCModuleErrors} from "../../core/26-router/IIBCModuleErrors.sol";
 
-abstract contract AppBase is IERC165, Context, IIBCModuleErrors {
+abstract contract AppBase is Context, IERC165, IIBCModuleErrors {
     /**
      * @dev Throws if called by any account other than the IBC contract.
      */
