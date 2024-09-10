@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
+import {ILightClient} from "../02-client/ILightClient.sol";
 import {IIBCClient} from "../02-client/IIBCClient.sol";
 import {IIBCConnection} from "../03-connection/IIBCConnection.sol";
 import {
@@ -10,12 +11,14 @@ import {
     IIBCChannelUpgradeInitTryAck,
     IIBCChannelUpgradeConfirmOpenTimeoutCancel
 } from "../04-channel/IIBCChannelUpgrade.sol";
-import {IBCHostConfigurator} from "../24-host/IBCHostConfigurator.sol";
-import {IBCClientConnectionChannelHandler} from "./IBCClientConnectionChannelHandler.sol";
-import {IBCQuerier} from "./IBCQuerier.sol";
-import {IIBCHandler} from "./IIBCHandler.sol";
+import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IBCHandler} from "./IBCHandler.sol";
+import {Context} from "@openzeppelin/contracts/utils/Context.sol";
+import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-abstract contract IBCHandler is IBCHostConfigurator, IBCClientConnectionChannelHandler, IBCQuerier, IIBCHandler {
+contract OwnableUpgradeableIBCHandler is IBCHandler, UUPSUpgradeable, OwnableUpgradeable {
     /**
      * @dev The arguments of constructor must satisfy the followings:
      * @param ibcClient_ is the address of a contract that implements `IIBCClient`.
@@ -36,7 +39,7 @@ abstract contract IBCHandler is IBCHostConfigurator, IBCClientConnectionChannelH
         IIBCChannelUpgradeInitTryAck ibcChannelUpgradeInitTryAck_,
         IIBCChannelUpgradeConfirmOpenTimeoutCancel ibcChannelUpgradeConfirmOpenTimeoutCancel_
     )
-        IBCClientConnectionChannelHandler(
+        IBCHandler(
             ibcClient_,
             ibcConnection_,
             ibcChannelHandshake_,
@@ -46,4 +49,35 @@ abstract contract IBCHandler is IBCHostConfigurator, IBCClientConnectionChannelH
             ibcChannelUpgradeConfirmOpenTimeoutCancel_
         )
     {}
+
+    function initialize() public virtual initializer {
+        __UUPSUpgradeable_init();
+        __Ownable_init(msg.sender);
+    }
+
+    function registerClient(string calldata clientType, ILightClient client) public virtual onlyOwner {
+        super._registerClient(clientType, client);
+    }
+
+    function bindPort(string calldata portId, IIBCModule moduleAddress) public virtual onlyOwner {
+        super._bindPort(portId, moduleAddress);
+    }
+
+    function setExpectedTimePerBlock(uint64 expectedTimePerBlock_) public virtual onlyOwner {
+        super._setExpectedTimePerBlock(expectedTimePerBlock_);
+    }
+
+    function _msgSender() internal view virtual override(Context, ContextUpgradeable) returns (address) {
+        return ContextUpgradeable._msgSender();
+    }
+
+    function _msgData() internal view virtual override(Context, ContextUpgradeable) returns (bytes calldata) {
+        return ContextUpgradeable._msgData();
+    }
+
+    function _contextSuffixLength() internal view virtual override(Context, ContextUpgradeable) returns (uint256) {
+        return ContextUpgradeable._contextSuffixLength();
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal virtual override onlyOwner {}
 }

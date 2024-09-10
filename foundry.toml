@@ -7,6 +7,10 @@ gas_reports = ["*"]
 optimizer = true
 optimizer_runs = 9_999_999
 via-ir = false
+ffi = true
+ast = true
+build_info = true
+extra_output = ["storageLayout"]
 
 [fmt]
 line_length = 120

@@ -9,7 +9,8 @@ import (
 )
 
 type ContractConfig struct {
-	IBCHandlerAddress        common.Address
+	ibcHandlerAddress        common.Address
+	erc1967ProxyAddress      common.Address
 	ICS20TransferBankAddress common.Address
 	ICS20BankAddress         common.Address
 	ERC20TokenAddress        common.Address
@@ -18,8 +19,12 @@ type ContractConfig struct {
 
 func (cc *ContractConfig) Validate() error {
 	var zero common.Address
-	if cc.IBCHandlerAddress == zero {
-		return errors.New("IBCHandlerAddress is empty")
+	if cc.GetIBCHandlerAddress() == zero {
+		if cc.IsUpgradeable() {
+			return errors.New("ERC1967ProxyAddress is empty")
+		} else {
+			return errors.New("IBCHandlerAddress is empty")
+		}
 	} else if cc.ICS20TransferBankAddress == zero {
 		return errors.New("ICS20TransferBankAddress is empty")
 	} else if cc.ICS20BankAddress == zero {
@@ -31,6 +36,17 @@ func (cc *ContractConfig) Validate() error {
 	} else {
 		return nil
 	}
+}
+
+func (cc *ContractConfig) GetIBCHandlerAddress() common.Address {
+	if cc.IsUpgradeable() {
+		return cc.erc1967ProxyAddress
+	}
+	return cc.ibcHandlerAddress
+}
+
+func (cc *ContractConfig) IsUpgradeable() bool {
+	return os.Getenv("TEST_UPGRADEABLE") == "true"
 }
 
 type BroadcastLog struct {
@@ -60,7 +76,9 @@ func buildContractConfigFromBroadcastLog(path string) (*ContractConfig, error) {
 		}
 		switch tx.ContractName {
 		case "OwnableIBCHandler":
-			cc.IBCHandlerAddress = tx.ContractAddress
+			cc.ibcHandlerAddress = tx.ContractAddress
+		case "ERC1967Proxy":
+			cc.erc1967ProxyAddress = tx.ContractAddress
 		case "ICS20TransferBank":
 			cc.ICS20TransferBankAddress = tx.ContractAddress
 		case "ICS20Bank":

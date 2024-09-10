@@ -38,6 +38,9 @@ jobs:
     - name: Run tests
       run: make test
 
+    - name: Run upgradeable tests
+      run: make TEST_UPGRADEABLE=true clean test
+
     - name: Run coverage
       run: make coverage
 
@@ -104,3 +107,6 @@ jobs:
 
     - name: E2E test (QBFT)
       run: make e2e-test network-down
+
+    - name: E2E test with upgredable IBCHandler (QBFT)
+      run: make TEST_UPGRADEABLE=true clean network-qbft e2e-test network-down

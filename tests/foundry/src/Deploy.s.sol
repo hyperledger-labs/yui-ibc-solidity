@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
-import "forge-std/Script.sol";
+import {Script} from "forge-std/Script.sol";
+import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {Options} from "openzeppelin-foundry-upgrades/Options.sol";
+import {OwnableUpgradeableIBCHandler} from "../../../contracts/core/25-handler/OwnableUpgradeableIBCHandler.sol";
 import {IBCClient} from "../../../contracts/core/02-client/IBCClient.sol";
 import {IBCConnectionSelfStateNoValidation} from
     "../../../contracts/core/03-connection/IBCConnectionSelfStateNoValidation.sol";
@@ -30,9 +33,10 @@ contract DeployScript is Script {
             vm.deriveKey(vm.envString("TEST_MNEMONIC"), uint32(vm.envOr("TEST_MNEMONIC_INDEX", uint32(0))));
         vm.startBroadcast(privateKey);
 
-        // deploy core contracts
-        IIBCHandler handler = IIBCHandler(
-            new OwnableIBCHandler(
+        IIBCHandler handler;
+        if (vm.envOr("TEST_UPGRADEABLE", false)) {
+            Options memory opts;
+            opts.constructorData = abi.encode(
                 new IBCClient(),
                 new IBCConnectionSelfStateNoValidation(),
                 new IBCChannelHandshake(),
@@ -40,8 +44,26 @@ contract DeployScript is Script {
                 new IBCChannelPacketTimeout(),
                 new IBCChannelUpgradeInitTryAck(),
                 new IBCChannelUpgradeConfirmOpenTimeoutCancel()
-            )
-        );
+            );
+            address proxy = Upgrades.deployUUPSProxy(
+                "OwnableUpgradeableIBCHandler.sol",
+                abi.encodePacked(OwnableUpgradeableIBCHandler.initialize.selector),
+                opts
+            );
+            handler = IIBCHandler(proxy);
+        } else {
+            handler = IIBCHandler(
+                new OwnableIBCHandler(
+                    new IBCClient(),
+                    new IBCConnectionSelfStateNoValidation(),
+                    new IBCChannelHandshake(),
+                    new IBCChannelPacketSendRecv(),
+                    new IBCChannelPacketTimeout(),
+                    new IBCChannelUpgradeInitTryAck(),
+                    new IBCChannelUpgradeConfirmOpenTimeoutCancel()
+                )
+            );
+        }
 
         // deploy ics20 contract
         ICS20Bank bank = new ICS20Bank();

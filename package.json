@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "description": "IBC in Solidity",
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.1"
+    "@openzeppelin/contracts": "^5.0.1",
+    "@openzeppelin/contracts-upgradeable": "^5.0.1"
   },
   "devDependencies": {
-    "solhint": "^5.0.0"
+    "solhint": "^5.0.0",
+    "@openzeppelin/upgrades-core": "^1.32.3"
   },
   "author": "Jun Kimura",
   "license": "Apache-2.0"
