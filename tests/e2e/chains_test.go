@@ -67,29 +67,28 @@ func (suite *ChainTestSuite) TestICS20() {
 
 	/// Tests for Transfer module ///
 
-	beforeBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ERC20::Transfer")(
+		chainA.ERC20.Transfer(chainA.TxOpts(ctx, deployerA), chainA.Address(aliceA), big.NewInt(100)),
+	))
+	beforeBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.Address(aliceA))
 	suite.Require().NoError(err)
 	suite.Require().NoError(
-		coordinator.ApproveAndDepositToken(ctx, chainA, deployerA, 100, aliceA),
+		coordinator.Approve(ctx, chainA, aliceA, 100),
 	)
 
 	baseDenom := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
 
 	// try to transfer the token to chainB
-	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::SendTransfer")(
-		chainA.ICS20Transfer.SendTransfer(
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20Transfer::DepositSendTransfer")(
+		chainA.ICS20Transfer.DepositSendTransfer(
 			chainA.TxOpts(ctx, aliceA),
-			baseDenom,
+			chainA.ContractConfig.ERC20TokenAddress,
 			big.NewInt(100),
 			addressToHexString(chainB.CallOpts(ctx, bobB).From),
 			chanA.PortID, chanA.ID,
 			uint64(chainB.LastHeader().Number.Int64())+1000,
 		),
 	))
-	// ensure that escrow has correct balance
-	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.ContractConfig.ICS20TransferBankAddress, baseDenom)
-	suite.Require().NoError(err)
-	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
 
 	suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB, false))
 
@@ -114,12 +113,12 @@ func (suite *ChainTestSuite) TestICS20() {
 
 	// ensure that chainB has correct balance
 	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, baseDenom)
-	balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bobB).From, expectedDenom)
+	balance, err := chainB.ICS20Transfer.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bobB).From, expectedDenom)
 	suite.Require().NoError(err)
 	suite.Require().Equal(int64(100), balance.Int64())
 
 	// try to transfer the token to chainA
-	suite.Require().NoError(chainB.WaitIfNoError(ctx, "ICS20::SendTransfer")(
+	suite.Require().NoError(chainB.WaitIfNoError(ctx, "ICS20Transfer::SendTransfer")(
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
 			expectedDenom,
@@ -152,7 +151,7 @@ func (suite *ChainTestSuite) TestICS20() {
 	})
 
 	{
-		suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::SendTransfer")(
+		suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20Transfer::SendTransfer")(
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
 				baseDenom,
@@ -178,16 +177,16 @@ func (suite *ChainTestSuite) TestICS20() {
 	}
 
 	// withdraw tokens from the bank
-	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::Withdraw")(
-		chainA.ICS20Bank.Withdraw(
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20Transfer::Withdraw")(
+		chainA.ICS20Transfer.Withdraw(
 			chainA.TxOpts(ctx, aliceA),
+			chainA.Address(aliceA),
 			chainA.ContractConfig.ERC20TokenAddress,
 			big.NewInt(100),
-			chainA.CallOpts(ctx, deployerA).From,
 		)))
 
 	// ensure that token balance equals original value
-	afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.CallOpts(ctx, deployerA).From)
+	afterBalanceA, err := chainA.ERC20.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.Address(aliceA))
 	suite.Require().NoError(err)
 	suite.Require().Equal(beforeBalanceA.Int64(), afterBalanceA.Int64())
 }
@@ -322,8 +321,11 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 
 	/// Tests for Transfer module ///
 
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ERC20::Transfer")(
+		chainA.ERC20.Transfer(chainA.TxOpts(ctx, deployerA), chainA.Address(aliceA), big.NewInt(100)),
+	))
 	suite.Require().NoError(
-		coordinator.ApproveAndDepositToken(ctx, chainA, deployerA, 100, aliceA),
+		coordinator.Approve(ctx, chainA, aliceA, 100),
 	)
 
 	baseDenom := strings.ToLower(chainA.ContractConfig.ERC20TokenAddress.String())
@@ -334,10 +336,10 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	suite.Require().NoError(chainB.SetExpectedTimePerBlock(ctx, deployerB, 0))
 
 	// try to transfer the token to chainB
-	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20::SendTransfer")(
-		chainA.ICS20Transfer.SendTransfer(
+	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20Transfer::SendTransfer")(
+		chainA.ICS20Transfer.DepositSendTransfer(
 			chainA.TxOpts(ctx, aliceA),
-			baseDenom,
+			chainA.ContractConfig.ERC20TokenAddress,
 			big.NewInt(100),
 			addressToHexString(chainB.CallOpts(ctx, bobB).From),
 			chanA.PortID, chanA.ID,
@@ -347,17 +349,12 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	delayStartTimeForRecv := time.Now()
 	suite.Require().NoError(coordinator.UpdateClient(ctx, chainB, chainA, clientB, false))
 
-	// ensure that escrow has correct balance
-	escrowBalance, err := chainA.ICS20Bank.BalanceOf(chainA.CallOpts(ctx, relayer), chainA.ContractConfig.ICS20TransferBankAddress, baseDenom)
-	suite.Require().NoError(err)
-	suite.Require().GreaterOrEqual(escrowBalance.Int64(), int64(100))
-
 	// relay the packet
 	coordinator.RelayLastSentPacketWithDelay(ctx, chainA, chainB, chanA, chanB, 1, 1, delayStartTimeForRecv)
 
 	// ensure that chainB has correct balance
 	expectedDenom := fmt.Sprintf("%v/%v/%v", chanB.PortID, chanB.ID, baseDenom)
-	balance, err := chainB.ICS20Bank.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bobB).From, expectedDenom)
+	balance, err := chainB.ICS20Transfer.BalanceOf(chainB.CallOpts(ctx, relayer), chainB.CallOpts(ctx, bobB).From, expectedDenom)
 	suite.Require().NoError(err)
 	suite.Require().Equal(int64(100), balance.Int64())
 

@@ -372,4 +372,33 @@ library ICS20Lib {
     function equal(bytes memory a, bytes memory b) internal pure returns (bool) {
         return keccak256(a) == keccak256(b);
     }
+
+    /**
+     * @dev denomPrefix returns the prefix of the denomination.
+     */
+    function denomPrefix(string memory port, string memory channel) internal pure returns (bytes memory) {
+        return abi.encodePacked(port, "/", channel, "/");
+    }
+
+    /**
+     * @dev denom returns the denomination string.
+     */
+    function denom(string memory port, string memory channel, address tokenContract)
+        internal
+        pure
+        returns (string memory)
+    {
+        return denom(port, channel, addressToHexString(tokenContract));
+    }
+
+    /**
+     * @dev denom returns the denomination string.
+     */
+    function denom(string memory port, string memory channel, string memory baseDenom)
+        internal
+        pure
+        returns (string memory)
+    {
+        return string(abi.encodePacked(denomPrefix(port, channel), baseDenom));
+    }
 }

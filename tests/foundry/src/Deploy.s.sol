@@ -19,8 +19,7 @@ import {IIBCHandler} from "../../../contracts/core/25-handler/IIBCHandler.sol";
 import {OwnableIBCHandler} from "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 import {MockClient} from "../../../contracts/clients/mock/MockClient.sol";
 import {QBFTClient} from "../../../contracts/clients/qbft/QBFTClient.sol";
-import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
-import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
+import {ICS20Transfer} from "../../../contracts/apps/20-transfer/ICS20Transfer.sol";
 import {ERC20Token} from "../../../contracts/apps/20-transfer/ERC20Token.sol";
 import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
@@ -66,10 +65,8 @@ contract DeployScript is Script {
         }
 
         // deploy ics20 contract
-        ICS20Bank bank = new ICS20Bank();
-        ICS20TransferBank transferBank = new ICS20TransferBank(handler, bank);
-        bank.setOperator(address(transferBank));
-        handler.bindPort("transfer", transferBank);
+        ICS20Transfer transfer = new ICS20Transfer(handler);
+        handler.bindPort("transfer", transfer);
 
         // deploy mock app contract
         IBCMockApp mockApp = new IBCMockApp(handler);

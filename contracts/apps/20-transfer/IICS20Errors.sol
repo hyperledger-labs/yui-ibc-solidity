@@ -2,16 +2,8 @@
 pragma solidity ^0.8.20;
 
 interface IICS20Errors {
-    /// @param channelId Channel identifier
-    error ICS20EscrowAddressNotFound(string channelId);
     /// @param version Version string
     error ICS20UnexpectedVersion(string version);
-    /// @param sender Address of the sender
-    error ICS20BankNotAdminRole(address sender);
-    /// @param sender Address of the sender
-    error ICS20BankNotMintRole(address sender);
-    /// @param sender Address of the sender
-    error ICS20BankNotBurnRole(address sender);
     /// @param tokenContract Address of the token contract
     error ICS20InvalidTokenContract(address tokenContract);
     /// @param tokenContract Address of the token contract
@@ -29,8 +21,6 @@ interface IICS20Errors {
     /// @param balance Current balance for the interacting account
     /// @param needed Minimum amount required to perform a transfer
     error ICS20InsufficientBalance(address sender, uint256 balance, uint256 needed);
-    /// @param sender Address whose tokens are being transferred
-    error ICS20InvalidSender(address sender);
     /// @param receiver Address to which tokens are being transferred
     error ICS20InvalidReceiver(address receiver);
     /// @param sender Address of the sender
@@ -59,4 +49,9 @@ interface IICS20Errors {
     /// @param start start index
     /// @param end end index
     error ICS20BytesSliceOutOfBounds(uint256 length, uint256 start, uint256 end);
+    /// @param escrow Address of the escrow contract
+    /// @param sender Address of the sender
+    /// @param denom Denomination of the tokens
+    /// @param amount Amount of tokens
+    error ICS20FailedRefund(address escrow, address sender, string denom, uint256 amount);
 }
