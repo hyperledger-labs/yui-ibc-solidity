@@ -106,6 +106,18 @@ contract TestICS20 is Test {
         // This should not revert if the input is not a valid hex string.
         ICS20LibTestHelper.hexStringToAddress(any);
     }
+
+    function testParseUint256String() public {
+        bytes memory maxAmountStr = bytes("115792089237316195423570985008687907853269984665640564039457584007913129639935\"");
+        (uint256 amount, uint256 pos) = ICS20LibTestHelper.parseUint256String(maxAmountStr, 0);
+        assertEq(amount, 115792089237316195423570985008687907853269984665640564039457584007913129639935);
+        assertEq(pos, maxAmountStr.length);
+
+        bytes memory minAmountStr = bytes("1\"");
+        (amount, pos) = ICS20LibTestHelper.parseUint256String(minAmountStr, 0);
+        assertEq(amount, 1);
+        assertEq(pos, minAmountStr.length);
+    }
 }
 
 library ICS20LibTestHelper {
@@ -127,5 +139,9 @@ library ICS20LibTestHelper {
 
     function isEscapedJSONString(string calldata s) public pure returns (bool) {
         return ICS20Lib.isEscapedJSONString(s);
+    }
+
+    function parseUint256String(bytes calldata bz, uint256 pos) public pure returns (uint256, uint256) {
+        return ICS20Lib.parseUint256String(bz, pos);
     }
 }
