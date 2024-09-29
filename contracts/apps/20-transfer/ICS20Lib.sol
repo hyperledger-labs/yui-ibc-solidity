@@ -20,16 +20,16 @@ library ICS20Lib {
     bytes internal constant FAILED_ACKNOWLEDGEMENT_JSON = bytes('{"error":"failed"}');
     bytes32 internal constant KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON = keccak256(SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
 
-    uint256 private constant CHAR_DOUBLE_QUOTE = 0x22;
-    uint256 private constant CHAR_SLASH = 0x2f;
+    uint256 private constant CHAR_DOUBLE_QUOTE = 0x22; // '"'
+    uint256 private constant CHAR_SLASH = 0x2f; // "/"
     uint256 private constant CHAR_BACKSLASH = 0x5c;
-    uint256 private constant CHAR_F = 0x66;
-    uint256 private constant CHAR_R = 0x72;
-    uint256 private constant CHAR_N = 0x6e;
-    uint256 private constant CHAR_B = 0x62;
-    uint256 private constant CHAR_T = 0x74;
-    uint256 private constant CHAR_CLOSING_BRACE = 0x7d;
-    uint256 private constant CHAR_M = 0x6d;
+    uint256 private constant CHAR_F = 0x66; // "f"
+    uint256 private constant CHAR_R = 0x72; // "r"
+    uint256 private constant CHAR_N = 0x6e; // "n"
+    uint256 private constant CHAR_B = 0x62; // "b"
+    uint256 private constant CHAR_T = 0x74; // "t"
+    uint256 private constant CHAR_CLOSING_BRACE = 0x7d; // "}"
+    uint256 private constant CHAR_M = 0x6d; // "m"
 
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";
 
@@ -47,6 +47,11 @@ library ICS20Lib {
 
     /**
      * @dev marshalJSON marshals PacketData into JSON bytes with escaping.
+     * @param escapedDenom is the denom string escaped.
+     * @param amount is the amount field.
+     * @param escapedSender is the sender string escaped.
+     * @param escapedReceiver is the receiver string escaped.
+     * @param escapedMemo is the memo string escaped.
      */
     function marshalJSON(
         string memory escapedDenom,
@@ -72,6 +77,10 @@ library ICS20Lib {
 
     /**
      * @dev marshalJSON marshals PacketData into JSON bytes with escaping.
+     * @param escapedDenom is the denom string escaped.
+     * @param amount is the amount field.
+     * @param escapedSender is the sender string escaped.
+     * @param escapedReceiver is the receiver string escaped.
      */
     function marshalJSON(
         string memory escapedDenom,
@@ -94,12 +103,16 @@ library ICS20Lib {
 
     /**
      * @dev unmarshalJSON unmarshals JSON bytes into PacketData.
+     * @param bz the JSON bytes to unmarshal. It must be either of the following JSON formats. It is assumed that string fields are escaped.
+     * 1. {"amount":"<uint256>","denom":"<string>","memo":"<string>","receiver":"<string>","sender":"<string>"}
+     * 2. {"amount":"<uint256>","denom":"<string>","receiver":"<string>","sender":"<string>"}
      */
     function unmarshalJSON(bytes calldata bz) internal pure returns (PacketData memory) {
         PacketData memory pd;
         uint256 pos = 0;
 
         unchecked {
+            // SAFETY: `pos` never overflow because it is always less than `bz.length`.
             if (bytes32(bz[pos:pos + 11]) != bytes32('{"amount":"')) {
                 revert IICS20Errors.ICS20JSONUnexpectedBytes(pos, bytes32('{"amount":"'), bytes32(bz[pos:pos + 11]));
             }
@@ -135,35 +148,51 @@ library ICS20Lib {
     }
 
     /**
-     * @dev parseUint256String parses `bz` from a position `pos` to produce a uint256.
+     * @dev parseUint256String parses `bz` from a position `pos` to produce a uint256 value.
+     * The parse will stop parsing when it encounters a non-digit character.
+     * @param bz the byte array to parse.
+     * @param pos the position to start parsing.
+     * @return ret the parsed uint256 value.
+     * @return pos the new position after parsing.
      */
     function parseUint256String(bytes calldata bz, uint256 pos) internal pure returns (uint256, uint256) {
         uint256 ret = 0;
-        unchecked {
-            for (; pos < bz.length; pos++) {
-                uint256 c = uint256(uint8(bz[pos]));
-                if (c < 48 || c > 57) {
-                    break;
-                }
+        uint256 bzLen = bz.length;
+        for (; pos < bzLen; pos++) {
+            uint256 c = uint256(uint8(bz[pos]));
+            if (c < 48 || c > 57) {
+                break;
+            }
+            unchecked {
+                // SAFETY: we assume that the amount is uint256, so `ret` never overflows.
                 ret = ret * 10 + (c - 48);
             }
-            if (pos >= bz.length || uint256(uint8(bz[pos])) != CHAR_DOUBLE_QUOTE) {
-                revert IICS20Errors.ICS20JSONStringClosingDoubleQuoteNotFound(pos, bz[pos]);
-            }
+        }
+        if (uint256(uint8(bz[pos])) != CHAR_DOUBLE_QUOTE) {
+            revert IICS20Errors.ICS20JSONStringClosingDoubleQuoteNotFound(pos, bz[pos]);
+        }
+        unchecked {
+            // SAFETY: `pos` is always less than `bz.length`.
             return (ret, pos + 1);
         }
     }
 
     /**
      * @dev parseString parses `bz` from a position `pos` to produce a string.
+     * @param bz the byte array to parse.
+     * @param pos the position to start parsing.
+     * @return parsedStr the parsed string.
+     * @return position the new position after parsing.
      */
     function parseString(bytes calldata bz, uint256 pos) internal pure returns (string memory, uint256) {
+        uint256 bzLen = bz.length;
         unchecked {
-            for (uint256 i = pos; i < bz.length; i++) {
+            // SAFETY: i + 1 <= bzLen <= type(uint256).max
+            for (uint256 i = pos; i < bzLen; i++) {
                 uint256 c = uint256(uint8(bz[i]));
                 if (c == CHAR_DOUBLE_QUOTE) {
                     return (string(bz[pos:i]), i + 1);
-                } else if (c == CHAR_BACKSLASH && i + 1 < bz.length) {
+                } else if (c == CHAR_BACKSLASH && i + 1 < bzLen) {
                     i++;
                     c = uint256(uint8(bz[i]));
                     if (
@@ -178,14 +207,19 @@ library ICS20Lib {
         revert IICS20Errors.ICS20JSONStringUnclosed(bz, pos);
     }
 
+    /**
+     * @dev isEscapedJSONString checks if a string is escaped JSON.
+     */
     function isEscapedJSONString(string calldata s) internal pure returns (bool) {
         bytes memory bz = bytes(s);
-        unchecked {
-            for (uint256 i = 0; i < bz.length; i++) {
+        uint256 bzLen = bz.length;
+        for (uint256 i = 0; i < bzLen; i++) {
+            unchecked {
                 uint256 c = uint256(uint8(bz[i]));
                 if (c == CHAR_DOUBLE_QUOTE) {
                     return false;
-                } else if (c == CHAR_BACKSLASH && i + 1 < bz.length) {
+                } else if (c == CHAR_BACKSLASH && i + 1 < bzLen) {
+                    // SAFETY: i + 1 <= bzLen <= type(uint256).max
                     i++;
                     c = uint256(uint8(bz[i]));
                     if (
@@ -200,13 +234,16 @@ library ICS20Lib {
         return true;
     }
 
+    /**
+     * @dev isEscapeNeededString checks if a given string needs to be escaped.
+     * @param bz the byte array to check.
+     */
     function isEscapeNeededString(bytes memory bz) internal pure returns (bool) {
-        unchecked {
-            for (uint256 i = 0; i < bz.length; i++) {
-                uint256 c = uint256(uint8(bz[i]));
-                if (c == CHAR_DOUBLE_QUOTE) {
-                    return true;
-                }
+        uint256 bzLen = bz.length;
+        for (uint256 i = 0; i < bzLen; i++) {
+            uint256 c = uint256(uint8(bz[i]));
+            if (c == CHAR_DOUBLE_QUOTE) {
+                return true;
             }
         }
         return false;
@@ -214,6 +251,8 @@ library ICS20Lib {
 
     /**
      * @dev addressToHexString converts an address to a hex string.
+     * @param addr the address to convert.
+     * @return the hex string.
      */
     function addressToHexString(address addr) internal pure returns (string memory) {
         uint256 localValue = uint256(uint160(addr));
@@ -221,8 +260,9 @@ library ICS20Lib {
         buffer[0] = "0";
         buffer[1] = "x";
         unchecked {
-            for (int256 i = 41; i >= 2; --i) {
-                buffer[uint256(i)] = HEX_DIGITS[localValue & 0xf];
+            // SAFETY: `i` is always greater than or equal to 1.
+            for (uint256 i = 41; i >= 2; --i) {
+                buffer[i] = HEX_DIGITS[localValue & 0xf];
                 localValue >>= 4;
             }
         }
@@ -231,6 +271,8 @@ library ICS20Lib {
 
     /**
      * @dev hexStringToAddress converts a hex string to an address.
+     * @param addrHexString the hex string to convert. It must be 42 characters long and start with "0x".
+     * @return the address and a boolean indicating whether the conversion was successful.
      */
     function hexStringToAddress(string memory addrHexString) internal pure returns (address, bool) {
         bytes memory addrBytes = bytes(addrHexString);
@@ -240,9 +282,10 @@ library ICS20Lib {
             return (address(0), false);
         }
         uint256 addr = 0;
-        unchecked {
-            for (uint256 i = 2; i < 42; i++) {
-                uint256 c = uint256(uint8(addrBytes[i]));
+        for (uint256 i = 2; i < 42; i++) {
+            uint256 c = uint256(uint8(addrBytes[i]));
+            unchecked {
+                // SAFETY: we assume that the address is a valid ethereum addrress, so `addr` never overflows.
                 if (c >= 48 && c <= 57) {
                     addr = addr * 16 + (c - 48);
                 } else if (c >= 97 && c <= 102) {

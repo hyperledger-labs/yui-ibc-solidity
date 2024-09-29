@@ -340,6 +340,7 @@ abstract contract IBCChannelUpgradeBase is
     function toString(UpgradeHandshakeError err) internal pure returns (string memory) {
         bytes memory result = new bytes(1);
         unchecked {
+            // SAFETY: `err` is always less than or equal to 6, so overflow never occurs
             result[0] = bytes1(uint8(err) + 48);
         }
         return string(result);
@@ -434,6 +435,7 @@ contract IBCChannelUpgradeInitTryAck is IBCChannelUpgradeBase, IIBCChannelUpgrad
             // and abort their out-of-sync upgrade without aborting our own since
             // the error receipt sequence is lower than ours and higher than the counterparty.
             unchecked {
+                // SAFETY: `msg_.counterpartyUpgradeSequence` is always greater than 0, so underflow never occurs
                 writeErrorReceipt(
                     msg_.portId, msg_.channelId, expectedUpgradeSequence - 1, UpgradeHandshakeError.OutOfSync
                 );

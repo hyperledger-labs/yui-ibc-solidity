@@ -41,6 +41,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank, IICS20Errors {
             revert ICS20InsufficientBalance(from, fromBalance, amount);
         }
         unchecked {
+            // SAFETY: balance is checked above
             _balances[denom][from] = fromBalance - amount;
         }
         _balances[denom][to] += amount;
@@ -94,6 +95,7 @@ contract ICS20Bank is Context, AccessControl, IICS20Bank, IICS20Errors {
             revert ICS20InsufficientBalance(account, accountBalance, amount);
         }
         unchecked {
+            // SAFETY: balance is checked above
             _balances[denom][account] = accountBalance - amount;
         }
     }
