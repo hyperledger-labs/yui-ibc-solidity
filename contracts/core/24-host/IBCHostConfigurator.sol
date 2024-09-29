@@ -6,7 +6,7 @@ import {IBCClientLib} from "../02-client/IBCClientLib.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCHostLib} from "./IBCHostLib.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
-import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IIBCModule, IIBCModuleInitializer} from "../26-router/IIBCModule.sol";
 import {IIBCHostConfigurator} from "./IIBCHostConfigurator.sol";
 
 /**
@@ -30,7 +30,7 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
         hostStorage.clientRegistry[clientType] = address(client);
     }
 
-    function _bindPort(string calldata portId, IIBCModule module) internal virtual {
+    function _bindPort(string calldata portId, IIBCModuleInitializer module) internal virtual {
         address moduleAddress = address(module);
         if (!IBCHostLib.validatePortIdentifier(bytes(portId))) {
             revert IBCHostInvalidPortIdentifier(portId);
@@ -41,8 +41,17 @@ abstract contract IBCHostConfigurator is IIBCHostConfigurator, IBCModuleManager 
         if (!ERC165Checker.supportsERC165(moduleAddress)) {
             revert IBCHostModuleDoesNotSupportERC165();
         }
-        if (!ERC165Checker.supportsERC165InterfaceUnchecked(moduleAddress, type(IIBCModule).interfaceId)) {
-            revert IBCHostModuleDoesNotSupportIIBCModule(type(IIBCModule).interfaceId);
+        if (
+            !(
+                ERC165Checker.supportsERC165InterfaceUnchecked(moduleAddress, type(IIBCModule).interfaceId)
+                    || ERC165Checker.supportsERC165InterfaceUnchecked(
+                        moduleAddress, type(IIBCModuleInitializer).interfaceId
+                    )
+            )
+        ) {
+            revert IBCHostModuleDoesNotSupportIIBCModuleInitializer(
+                moduleAddress, type(IIBCModuleInitializer).interfaceId
+            );
         }
         claimPortCapability(portId, moduleAddress);
     }

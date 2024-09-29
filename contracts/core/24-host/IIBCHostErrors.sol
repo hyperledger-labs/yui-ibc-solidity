@@ -26,8 +26,13 @@ interface IIBCHostErrors {
 
     error IBCHostModuleDoesNotSupportERC165();
 
+    /// @param module module contract address
     /// @param interfaceId expected interface identifier
-    error IBCHostModuleDoesNotSupportIIBCModule(bytes4 interfaceId);
+    error IBCHostModuleDoesNotSupportIIBCModule(address module, bytes4 interfaceId);
+
+    /// @param module module contract address
+    /// @param interfaceId expected interface identifier
+    error IBCHostModuleDoesNotSupportIIBCModuleInitializer(address module, bytes4 interfaceId);
 
     /// @param module module contract address
     error IBCHostModuleDoesNotSupportIIBCModuleUpgrade(address module);

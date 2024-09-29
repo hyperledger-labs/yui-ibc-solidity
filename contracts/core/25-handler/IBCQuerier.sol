@@ -6,7 +6,7 @@ import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel, Upgrade} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
-import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IIBCModule, IIBCModuleInitializer} from "../26-router/IIBCModule.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 import {IIBCQuerier} from "./IIBCQuerier.sol";
 
@@ -27,7 +27,7 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         return getHostStorage().expectedTimePerBlock;
     }
 
-    function getIBCModuleByPort(string calldata portId) public view override returns (IIBCModule) {
+    function getIBCModuleByPort(string calldata portId) public view override returns (IIBCModuleInitializer) {
         return lookupModuleByPort(portId);
     }
 

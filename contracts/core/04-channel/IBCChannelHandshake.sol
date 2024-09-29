@@ -10,7 +10,7 @@ import {IBCConnectionLib} from "../03-connection/IBCConnectionLib.sol";
 import {IIBCChannelHandshake} from "../04-channel/IIBCChannel.sol";
 import {IIBCChannelErrors} from "../04-channel/IIBCChannelErrors.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
-import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IIBCModuleInitializer, IIBCModule} from "../26-router/IIBCModule.sol";
 import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 import {IBCChannelLib} from "./IBCChannelLib.sol";
 
@@ -57,9 +57,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         initializeSequences(msg_.portId, channelId);
         emit GeneratedChannelIdentifier(channelId);
 
-        IIBCModule module = lookupModuleByPort(msg_.portId);
-        string memory version = module.onChanOpenInit(
-            IIBCModule.MsgOnChanOpenInit({
+        (address module, string memory version) = lookupModuleByPort(msg_.portId).onChanOpenInit(
+            IIBCModuleInitializer.MsgOnChanOpenInit({
                 order: msg_.channel.ordering,
                 connectionHops: msg_.channel.connection_hops,
                 portId: msg_.portId,
@@ -68,7 +67,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
                 version: msg_.channel.version
             })
         );
-        claimChannelCapability(msg_.portId, channelId, address(module));
+        claimChannelCapability(msg_.portId, channelId, module);
         writeChannel(
             msg_.portId,
             channelId,
@@ -133,9 +132,8 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         initializeSequences(msg_.portId, channelId);
         emit GeneratedChannelIdentifier(channelId);
 
-        IIBCModule module = lookupModuleByPort(msg_.portId);
-        string memory version = module.onChanOpenTry(
-            IIBCModule.MsgOnChanOpenTry({
+        (address module, string memory version) = lookupModuleByPort(msg_.portId).onChanOpenTry(
+            IIBCModuleInitializer.MsgOnChanOpenTry({
                 order: msg_.channel.ordering,
                 connectionHops: msg_.channel.connection_hops,
                 portId: msg_.portId,
@@ -144,7 +142,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
                 counterpartyVersion: msg_.counterpartyVersion
             })
         );
-        claimChannelCapability(msg_.portId, channelId, address(module));
+        claimChannelCapability(msg_.portId, channelId, module);
         writeChannel(
             msg_.portId,
             channelId,
@@ -187,7 +185,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         channel.version = msg_.counterpartyVersion;
         channel.counterparty.channel_id = msg_.counterpartyChannelId;
         updateChannelCommitment(msg_.portId, msg_.channelId);
-        lookupModuleByPort(msg_.portId).onChanOpenAck(
+        lookupModuleByChannel(msg_.portId, msg_.channelId).onChanOpenAck(
             IIBCModule.MsgOnChanOpenAck({
                 portId: msg_.portId,
                 channelId: msg_.channelId,
@@ -223,7 +221,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         );
         channel.state = Channel.State.STATE_OPEN;
         updateChannelCommitment(msg_.portId, msg_.channelId);
-        lookupModuleByPort(msg_.portId).onChanOpenConfirm(
+        lookupModuleByChannel(msg_.portId, msg_.channelId).onChanOpenConfirm(
             IIBCModule.MsgOnChanOpenConfirm({portId: msg_.portId, channelId: msg_.channelId})
         );
     }
@@ -244,7 +242,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         }
         channel.state = Channel.State.STATE_CLOSED;
         updateChannelCommitment(msg_.portId, msg_.channelId);
-        lookupModuleByPort(msg_.portId).onChanCloseInit(
+        lookupModuleByChannel(msg_.portId, msg_.channelId).onChanCloseInit(
             IIBCModule.MsgOnChanCloseInit({portId: msg_.portId, channelId: msg_.channelId})
         );
     }
@@ -284,7 +282,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         );
         channel.state = Channel.State.STATE_CLOSED;
         updateChannelCommitment(msg_.portId, msg_.channelId);
-        lookupModuleByPort(msg_.portId).onChanCloseConfirm(
+        lookupModuleByChannel(msg_.portId, msg_.channelId).onChanCloseConfirm(
             IIBCModule.MsgOnChanCloseConfirm({portId: msg_.portId, channelId: msg_.channelId})
         );
     }

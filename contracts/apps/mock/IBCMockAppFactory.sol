@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.20;
 
+import {ShortString, ShortStrings} from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Height} from "../../proto/Client.sol";
 import {IBCAppBase} from "../commons/IBCAppBase.sol";
@@ -9,15 +10,16 @@ import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
 import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
 import {IBCMockLib} from "./IBCMockLib.sol";
 import {IIBCMockErrors} from "./IIBCMockErrors.sol";
+import {IBCAppInitializerBase} from "../commons/IBCAppBase.sol";
 
-contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
+contract IBCMockAppFactory is IIBCMockErrors, IBCAppInitializerBase {
     string public constant MOCKAPP_VERSION = "mockapp-1";
 
     IIBCHandler immutable ibcHandler;
 
-    bool public closeChannelAllowed = true;
+    mapping(string channelId => IBCMockApp2) internal apps;
 
-    constructor(IIBCHandler ibcHandler_) Ownable(msg.sender) {
+    constructor(IIBCHandler ibcHandler_) {
         ibcHandler = ibcHandler_;
     }
 
@@ -25,21 +27,71 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
         return address(ibcHandler);
     }
 
-    function sendPacket(
-        bytes memory message,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        Height.Data calldata timeoutHeight,
-        uint64 timeoutTimestamp
-    ) external returns (uint64) {
-        return ibcHandler.sendPacket(sourcePort, sourceChannel, timeoutHeight, timeoutTimestamp, message);
+    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata msg_)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (address, string memory)
+    {
+        if (bytes(msg_.version).length != 0 && keccak256(bytes(msg_.version)) != keccak256(bytes(MOCKAPP_VERSION))) {
+            revert IBCMockUnexpectedVersion(msg_.version, MOCKAPP_VERSION);
+        }
+        apps[msg_.channelId] = new IBCMockApp2(ibcHandler, msg_.portId, msg_.channelId);
+        return (address(apps[msg_.channelId]), MOCKAPP_VERSION);
     }
 
-    function writeAcknowledgement(string calldata destinationPort, string calldata destinationChannel, uint64 sequence)
+    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata msg_)
         external
+        virtual
+        override
+        onlyIBC
+        returns (address, string memory)
     {
+        if (keccak256(bytes(msg_.counterpartyVersion)) != keccak256(bytes(MOCKAPP_VERSION))) {
+            revert IBCMockUnexpectedVersion(msg_.counterpartyVersion, MOCKAPP_VERSION);
+        }
+        apps[msg_.channelId] = new IBCMockApp2(ibcHandler, msg_.portId, msg_.channelId);
+        return (address(apps[msg_.channelId]), MOCKAPP_VERSION);
+    }
+
+    function lookupApp(string calldata channelId) external view returns (IBCMockApp2) {
+        return apps[channelId];
+    }
+}
+
+contract IBCMockApp2 is IBCAppBase, IIBCMockErrors, Ownable {
+    using ShortStrings for string;
+    using ShortStrings for ShortString;
+
+    string public constant MOCKAPP_VERSION = "mockapp-1";
+
+    IIBCHandler immutable ibcHandler;
+    ShortString immutable port;
+    ShortString immutable channel;
+
+    bool public closeChannelAllowed = true;
+
+    constructor(IIBCHandler ibcHandler_, string memory port_, string memory channel_) Ownable(msg.sender) {
+        ibcHandler = ibcHandler_;
+        port = port_.toShortString();
+        channel = channel_.toShortString();
+    }
+
+    function ibcAddress() public view virtual override returns (address) {
+        return address(ibcHandler);
+    }
+
+    function sendPacket(bytes memory message, Height.Data calldata timeoutHeight, uint64 timeoutTimestamp)
+        external
+        returns (uint64)
+    {
+        return ibcHandler.sendPacket(port.toString(), channel.toString(), timeoutHeight, timeoutTimestamp, message);
+    }
+
+    function writeAcknowledgement(uint64 sequence) external {
         ibcHandler.writeAcknowledgement(
-            destinationPort, destinationChannel, sequence, IBCMockLib.SUCCESSFUL_ASYNC_ACKNOWLEDGEMENT_JSON
+            port.toString(), channel.toString(), sequence, IBCMockLib.SUCCESSFUL_ASYNC_ACKNOWLEDGEMENT_JSON
         );
     }
 
@@ -89,32 +141,6 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
         }
     }
 
-    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata msg_)
-        external
-        virtual
-        override
-        onlyIBC
-        returns (address, string memory)
-    {
-        if (bytes(msg_.version).length != 0 && keccak256(bytes(msg_.version)) != keccak256(bytes(MOCKAPP_VERSION))) {
-            revert IBCMockUnexpectedVersion(msg_.version, MOCKAPP_VERSION);
-        }
-        return (address(this), MOCKAPP_VERSION);
-    }
-
-    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata msg_)
-        external
-        virtual
-        override
-        onlyIBC
-        returns (address, string memory)
-    {
-        if (keccak256(bytes(msg_.counterpartyVersion)) != keccak256(bytes(MOCKAPP_VERSION))) {
-            revert IBCMockUnexpectedVersion(msg_.counterpartyVersion, MOCKAPP_VERSION);
-        }
-        return (address(this), MOCKAPP_VERSION);
-    }
-
     function onChanCloseInit(IIBCModule.MsgOnChanCloseInit calldata msg_) external virtual override onlyIBC {
         if (!closeChannelAllowed) {
             revert IBCModuleChannelCloseNotAllowed(msg_.portId, msg_.channelId);
@@ -131,6 +157,26 @@ contract IBCMockApp is IBCAppBase, IIBCMockErrors, Ownable {
         if (!closeChannelAllowed) {
             revert IBCModuleChannelCloseNotAllowed(packet.sourcePort, packet.sourceChannel);
         }
+    }
+
+    function onChanOpenInit(IIBCModule.MsgOnChanOpenInit calldata)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (address, string memory)
+    {
+        revert("not supported");
+    }
+
+    function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata)
+        external
+        virtual
+        override
+        onlyIBC
+        returns (address, string memory)
+    {
+        revert("not supported");
     }
 
     function equals(bytes calldata a, bytes memory b) internal pure returns (bool) {

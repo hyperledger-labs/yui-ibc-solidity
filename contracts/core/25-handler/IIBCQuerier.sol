@@ -5,7 +5,7 @@ import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel, Upgrade} from "../../proto/Channel.sol";
 import {IBCChannelLib} from "../04-channel/IBCChannelLib.sol";
-import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IIBCModule, IIBCModuleInitializer} from "../26-router/IIBCModule.sol";
 
 interface IIBCQuerier {
     function getCommitmentPrefix() external view returns (bytes memory);
@@ -16,7 +16,7 @@ interface IIBCQuerier {
 
     function getExpectedTimePerBlock() external view returns (uint64);
 
-    function getIBCModuleByPort(string calldata portId) external view returns (IIBCModule);
+    function getIBCModuleByPort(string calldata portId) external view returns (IIBCModuleInitializer);
 
     function getIBCModuleByChannel(string calldata portId, string calldata channelId)
         external

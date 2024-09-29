@@ -76,7 +76,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
         virtual
         override
         onlyIBC
-        returns (string memory)
+        returns (address, string memory)
     {
         if (msg_.order != Channel.Order.ORDER_UNORDERED) {
             revert IBCModuleChannelOrderNotAllowed(msg_.portId, msg_.channelId, msg_.order);
@@ -86,7 +86,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
             revert ICS20UnexpectedVersion(msg_.version);
         }
         channelEscrowAddresses[msg_.channelId] = address(this);
-        return ICS20_VERSION;
+        return (address(this), ICS20_VERSION);
     }
 
     function onChanOpenTry(IIBCModule.MsgOnChanOpenTry calldata msg_)
@@ -94,7 +94,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
         virtual
         override
         onlyIBC
-        returns (string memory)
+        returns (address, string memory)
     {
         if (msg_.order != Channel.Order.ORDER_UNORDERED) {
             revert IBCModuleChannelOrderNotAllowed(msg_.portId, msg_.channelId, msg_.order);
@@ -103,7 +103,7 @@ abstract contract ICS20Transfer is IBCAppBase, IICS20Errors {
             revert ICS20UnexpectedVersion(msg_.counterpartyVersion);
         }
         channelEscrowAddresses[msg_.channelId] = address(this);
-        return ICS20_VERSION;
+        return (address(this), ICS20_VERSION);
     }
 
     function onChanOpenAck(IIBCModule.MsgOnChanOpenAck calldata msg_) external virtual override onlyIBC {
