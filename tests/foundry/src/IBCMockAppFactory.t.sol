@@ -36,7 +36,11 @@ contract IBCMockAppFactoryTest is IBCTestHelper, ICS04PacketEventTestHelper {
     function testHandshake() public {
         Channel.Order[2] memory orders = [Channel.Order.ORDER_UNORDERED, Channel.Order.ORDER_ORDERED];
         for (uint256 i = 0; i < orders.length; i++) {
-            createMockAppChannel(orders[i]);
+            (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppChannel(orders[i]);
+            assertEq(address(ibcHandler.getIBCModuleByPort(channel0.portId)), address(mockAppFactory));
+            assertEq(address(ibcHandler.getIBCModuleByChannel(channel0.portId, channel0.channelId)), address(mockAppFactory.lookupApp(channel0.channelId)));
+            assertEq(address(ibcHandler.getIBCModuleByPort(channel1.portId)), address(mockAppFactory));
+            assertEq(address(ibcHandler.getIBCModuleByChannel(channel1.portId, channel1.channelId)), address(mockAppFactory.lookupApp(channel1.channelId)));
         }
     }
 
