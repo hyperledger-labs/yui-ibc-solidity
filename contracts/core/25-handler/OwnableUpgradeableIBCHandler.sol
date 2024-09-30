@@ -11,7 +11,7 @@ import {
     IIBCChannelUpgradeInitTryAck,
     IIBCChannelUpgradeConfirmOpenTimeoutCancel
 } from "../04-channel/IIBCChannelUpgrade.sol";
-import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IIBCModuleInitializer} from "../26-router/IIBCModule.sol";
 import {IBCHandler} from "./IBCHandler.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {ContextUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
@@ -59,7 +59,7 @@ contract OwnableUpgradeableIBCHandler is IBCHandler, UUPSUpgradeable, OwnableUpg
         super._registerClient(clientType, client);
     }
 
-    function bindPort(string calldata portId, IIBCModule moduleAddress) public virtual onlyOwner {
+    function bindPort(string calldata portId, IIBCModuleInitializer moduleAddress) public virtual onlyOwner {
         super._bindPort(portId, moduleAddress);
     }
 

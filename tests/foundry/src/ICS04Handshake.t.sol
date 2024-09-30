@@ -50,7 +50,7 @@ contract TestICS04Handshake is ICS03TestHelper, ICS04HandshakeMockClientTestHelp
         handler.bindPort("portidtwo", IIBCModule(address(0x01)));
         // must be failed the module does not support IIBCModule
         address dummyApp = address(new DummyApp(address(handler)));
-        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostModuleDoesNotSupportIIBCModule.selector, type(IIBCModule).interfaceId));
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostModuleDoesNotSupportIIBCModuleInitializer.selector, dummyApp, type(IIBCModuleInitializer).interfaceId));
         handler.bindPort("portidtwo", IIBCModule(dummyApp));
         // must be failed if the port is empty
         vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidPortIdentifier.selector, ""));

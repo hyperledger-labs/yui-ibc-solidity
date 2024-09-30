@@ -11,6 +11,7 @@ import {IIBCChannelUpgrade} from "../04-channel/IIBCChannelUpgrade.sol";
 import {IIBCChannelUpgradeErrors} from "../04-channel/IIBCChannelUpgradeErrors.sol";
 import {IIBCHostConfigurator} from "../24-host/IIBCHostConfigurator.sol";
 import {IIBCHostErrors} from "../24-host/IIBCHostErrors.sol";
+import {IIBCModuleManager} from "../26-router/IIBCModuleManager.sol";
 import {IIBCQuerier} from "./IIBCQuerier.sol";
 
 /**
@@ -28,5 +29,6 @@ interface IIBCHandler is
     IIBCChannelUpgradeErrors,
     IIBCHostConfigurator,
     IIBCHostErrors,
+    IIBCModuleManager,
     IIBCQuerier
 {}

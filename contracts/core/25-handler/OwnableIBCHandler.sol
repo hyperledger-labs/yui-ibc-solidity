@@ -12,7 +12,7 @@ import {
     IIBCChannelUpgradeConfirmOpenTimeoutCancel
 } from "../04-channel/IIBCChannelUpgrade.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IIBCModuleInitializer} from "../26-router/IIBCModule.sol";
 import {IBCHandler} from "./IBCHandler.sol";
 
 /**
@@ -54,7 +54,7 @@ contract OwnableIBCHandler is IBCHandler, Ownable {
         super._registerClient(clientType, client);
     }
 
-    function bindPort(string calldata portId, IIBCModule moduleAddress) public onlyOwner {
+    function bindPort(string calldata portId, IIBCModuleInitializer moduleAddress) public onlyOwner {
         super._bindPort(portId, moduleAddress);
     }
 

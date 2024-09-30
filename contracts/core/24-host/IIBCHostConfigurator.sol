@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ILightClient} from "../02-client/ILightClient.sol";
-import {IIBCModule} from "../26-router/IIBCModule.sol";
+import {IIBCModuleInitializer} from "../26-router/IIBCModule.sol";
 
 interface IIBCHostConfigurator {
     /**
@@ -24,7 +24,7 @@ interface IIBCHostConfigurator {
      * @dev bindPort binds to an unallocated port, failing if the port has already been allocated.
      * Typically this function should be called by an authority like an IBC contract owner or govenance.
      * The authority should verify the light client contract is a valid implementation as follows:
-     * - The contract implements IIBCModule
+     * - The contract implements IIBCModuleInitializer
      */
-    function bindPort(string calldata portId, IIBCModule moduleAddress) external;
+    function bindPort(string calldata portId, IIBCModuleInitializer moduleAddress) external;
 }

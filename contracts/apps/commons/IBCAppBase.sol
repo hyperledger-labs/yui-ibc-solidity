@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {Context} from "@openzeppelin/contracts/utils/Context.sol";
 import {Packet} from "../../core/04-channel/IIBCChannel.sol";
-import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
+import {IIBCModule, IIBCModuleInitializer} from "../../core/26-router/IIBCModule.sol";
 import {IIBCModuleErrors} from "../../core/26-router/IIBCModuleErrors.sol";
 
 abstract contract AppBase is Context, IERC165, IIBCModuleErrors {
@@ -41,6 +41,17 @@ abstract contract AppBase is Context, IERC165, IIBCModuleErrors {
     }
 }
 
+abstract contract IBCAppInitializerBase is AppBase, IIBCModuleInitializer {
+    /**
+     * @dev See {IERC165-supportsInterface}
+     *
+     * NOTE: This must return true if the `interfaceId` is equal to the `IIBCModule` interface.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, AppBase) returns (bool) {
+        return interfaceId == type(IIBCModuleInitializer).interfaceId || super.supportsInterface(interfaceId);
+    }
+}
+
 /**
  * @dev Base contract of the IBC App protocol
  */
@@ -55,8 +66,10 @@ abstract contract IBCAppBase is AppBase, IIBCModule {
         virtual
         override
         onlyIBC
-        returns (string memory)
-    {}
+        returns (address, string memory)
+    {
+        return (address(this), "");
+    }
 
     /**
      * @dev See {IIBCModule-onChanOpenTry}
@@ -68,8 +81,10 @@ abstract contract IBCAppBase is AppBase, IIBCModule {
         virtual
         override
         onlyIBC
-        returns (string memory)
-    {}
+        returns (address, string memory)
+    {
+        return (address(this), "");
+    }
 
     /**
      * @dev See {IIBCModule-onChanOpenAck}
