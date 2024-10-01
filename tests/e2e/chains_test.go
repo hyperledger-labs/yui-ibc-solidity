@@ -14,6 +14,7 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/chains"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/client"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transfer"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
 	ibctesting "github.com/hyperledger-labs/yui-ibc-solidity/pkg/testing"
 	"github.com/stretchr/testify/suite"
@@ -82,11 +83,11 @@ func (suite *ChainTestSuite) TestICS20() {
 	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20Transfer::DepositSendTransfer")(
 		chainA.ICS20Transfer.DepositSendTransfer(
 			chainA.TxOpts(ctx, aliceA),
+			chanA.ID,
 			chainA.ContractConfig.ERC20TokenAddress,
 			big.NewInt(100),
 			addressToHexString(chainB.CallOpts(ctx, bobB).From),
-			chanA.PortID, chanA.ID,
-			uint64(chainB.LastHeader().Number.Int64())+1000,
+			packetTimeout(uint64(chainB.LastHeader().Number.Int64())+1000),
 		),
 	))
 
@@ -121,12 +122,11 @@ func (suite *ChainTestSuite) TestICS20() {
 	suite.Require().NoError(chainB.WaitIfNoError(ctx, "ICS20Transfer::SendTransfer")(
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
+			chanB.ID,
 			expectedDenom,
 			big.NewInt(100),
 			addressToHexString(chainA.CallOpts(ctx, aliceA).From),
-			chanB.PortID,
-			chanB.ID,
-			uint64(chainA.LastHeader().Number.Int64())+1000,
+			packetTimeout(uint64(chainA.LastHeader().Number.Int64())+1000),
 		),
 	))
 	suite.Require().NoError(coordinator.UpdateClient(ctx, chainA, chainB, clientA, false))
@@ -154,11 +154,11 @@ func (suite *ChainTestSuite) TestICS20() {
 		suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20Transfer::SendTransfer")(
 			chainA.ICS20Transfer.SendTransfer(
 				chainA.TxOpts(ctx, aliceA),
+				chanA.ID,
 				baseDenom,
 				big.NewInt(50),
 				addressToHexString(chainB.CallOpts(ctx, bobB).From),
-				chanA.PortID, chanA.ID,
-				uint64(chainB.LastHeader().Number.Int64())+1,
+				packetTimeout(uint64(chainB.LastHeader().Number.Int64())+1),
 			),
 		))
 		transferPacket, err := chainA.GetLastSentPacket(ctx, chanA.PortID, chanA.ID)
@@ -339,11 +339,11 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	suite.Require().NoError(chainA.WaitIfNoError(ctx, "ICS20Transfer::SendTransfer")(
 		chainA.ICS20Transfer.DepositSendTransfer(
 			chainA.TxOpts(ctx, aliceA),
+			chanA.ID,
 			chainA.ContractConfig.ERC20TokenAddress,
 			big.NewInt(100),
 			addressToHexString(chainB.CallOpts(ctx, bobB).From),
-			chanA.PortID, chanA.ID,
-			uint64(chainB.LastHeader().Number.Int64())+1000,
+			packetTimeout(uint64(chainB.LastHeader().Number.Int64())+1000),
 		),
 	))
 	delayStartTimeForRecv := time.Now()
@@ -372,12 +372,11 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 	suite.Require().NoError(chainB.WaitIfNoError(ctx, "ICS20::SendTransfer")(
 		chainB.ICS20Transfer.SendTransfer(
 			chainB.TxOpts(ctx, bobB),
+			chanB.ID,
 			expectedDenom,
 			big.NewInt(100),
 			addressToHexString(chainA.CallOpts(ctx, aliceA).From),
-			chanB.PortID,
-			chanB.ID,
-			uint64(chainA.LastHeader().Number.Int64())+1000,
+			packetTimeout(uint64(chainA.LastHeader().Number.Int64())+1000),
 		),
 	))
 	delayStartTimeForRecv = time.Now()
@@ -390,6 +389,15 @@ func (suite *ChainTestSuite) TestPacketRelayWithDelay() {
 
 func addressToHexString(addr common.Address) string {
 	return strings.ToLower(addr.String())
+}
+
+func packetTimeout(height uint64) ics20transfer.ICS20LibTimeout {
+	return ics20transfer.ICS20LibTimeout{
+		Height: ics20transfer.HeightData{
+			RevisionNumber: 0,
+			RevisionHeight: height,
+		},
+	}
 }
 
 func TestChainTestSuite(t *testing.T) {

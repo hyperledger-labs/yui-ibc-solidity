@@ -2,51 +2,57 @@
 pragma solidity ^0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ShortString, ShortStrings} from "@openzeppelin/contracts/utils/ShortStrings.sol";
 import {IBCAppBase} from "../commons/IBCAppBase.sol";
 import {Packet} from "../../core/04-channel/IIBCChannel.sol";
 import {IIBCModule} from "../../core/26-router/IIBCModule.sol";
-import {Height} from "../../proto/Client.sol";
 import {Channel} from "../../proto/Channel.sol";
 import {ICS20Lib} from "./ICS20Lib.sol";
 import {IICS20Errors} from "./IICS20Errors.sol";
 import {IIBCHandler} from "../../core/25-handler/IIBCHandler.sol";
 
 contract ICS20Transfer is IBCAppBase, IICS20Errors {
-    string public constant ICS20_VERSION = "ics20-1";
+    using ShortStrings for string;
+    using ShortStrings for ShortString;
 
-    // mapping from denomination to account balances
-    mapping(string denom => mapping(address account => uint256 balance)) internal _balances;
+    /// @dev ICS20 version
+    string public constant ICS20_VERSION = "ics20-1";
 
     /// @dev IIBCHandler instance
     IIBCHandler internal immutable ibcHandler;
+    /// @dev port identifier
+    ShortString internal immutable port;
+
+    /// @dev balance mapping for the token
+    mapping(string denom => mapping(address account => uint256 balance)) internal _balances;
 
     /// @param ibcHandler_ IIBCHandler instance
-    constructor(IIBCHandler ibcHandler_) {
+    /// @param port_ port identifier
+    constructor(IIBCHandler ibcHandler_, string memory port_) {
         ibcHandler = ibcHandler_;
+        port = port_.toShortString();
     }
 
     // ------------------------------ Public Functions ------------------------------ //
 
     /**
      * @dev sendTransfer sends a transfer packet to the destination chain.
+     * @param sourceChannel source channel of the packet
      * @param denom denomination of the token. It can assume the denom string is escaped or not required to be escaped.
      * @param amount amount of the token
-     * @param receiver receiver address on the destination chain
-     * @param sourcePort source port of the packet
-     * @param sourceChannel source channel of the packet
-     * @param timeoutHeight timeout height of the packet
+     * @param receiver receiver address on the destination chain. This must be a valid address format per destination chain.
      */
     function sendTransfer(
+        string calldata sourceChannel,
         string calldata denom,
         uint256 amount,
         string calldata receiver,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        uint64 timeoutHeight
+        ICS20Lib.Timeout calldata timeout
     ) external returns (uint64) {
         if (!ICS20Lib.isEscapedJSONString(receiver)) {
             revert ICS20InvalidReceiverAddress(receiver);
         }
+        string memory sourcePort = port.toString();
         bytes memory denomPrefix = ICS20Lib.denomPrefix(sourcePort, sourceChannel);
         bytes memory denomBytes = bytes(denom);
         if (
@@ -62,28 +68,24 @@ contract ICS20Transfer is IBCAppBase, IICS20Errors {
             _burnVoucher(_msgSender(), denom, amount);
         }
         bytes memory packetData = ICS20Lib.marshalJSON(denom, amount, encodeAddress(_msgSender()), receiver);
-        return ibcHandler.sendPacket(
-            sourcePort, sourceChannel, Height.Data({revision_number: 0, revision_height: timeoutHeight}), 0, packetData
-        );
+        return ibcHandler.sendPacket(sourcePort, sourceChannel, timeout.height, timeout.timestampNanos, packetData);
     }
 
     /**
      * @dev depositSendTransfer sends a transfer packet to the destination chain after depositing the token.
+     * @param sourceChannel source channel of the packet
      * @param tokenContract address of the token contract
      * @param amount amount of the token
-     * @param receiver receiver address on the destination chain
-     * @param sourcePort source port of the packet
-     * @param sourceChannel source channel of the packet
-     * @param timeoutHeight timeout height of the packet
+     * @param receiver receiver address on the destination chain. This must be a valid address format per destination chain.
      */
     function depositSendTransfer(
+        string calldata sourceChannel,
         address tokenContract,
         uint256 amount,
         string calldata receiver,
-        string calldata sourcePort,
-        string calldata sourceChannel,
-        uint64 timeoutHeight
+        ICS20Lib.Timeout calldata timeout
     ) external returns (uint64) {
+        string memory sourcePort = port.toString();
         if (!ICS20Lib.isEscapedJSONString(receiver)) {
             revert ICS20InvalidReceiverAddress(receiver);
         }
@@ -97,42 +99,40 @@ contract ICS20Transfer is IBCAppBase, IICS20Errors {
         _mintVoucher(getVoucherEscrow(sourceChannel), tokenContract, amount);
         bytes memory packetData =
             ICS20Lib.marshalJSON(ICS20Lib.addressToHexString(tokenContract), amount, encodeAddress(sender), receiver);
-        return ibcHandler.sendPacket(
-            sourcePort, sourceChannel, Height.Data({revision_number: 0, revision_height: timeoutHeight}), 0, packetData
-        );
+        return ibcHandler.sendPacket(sourcePort, sourceChannel, timeout.height, timeout.timestampNanos, packetData);
     }
 
     /**
      * @dev deposit deposits the ERC20 token to the contract.
+     * @param to address to deposit the token
      * @param tokenContract address of the token contract
      * @param amount amount of the token
-     * @param to address to deposit the token
      */
     function deposit(address to, address tokenContract, uint256 amount) public {
         if (tokenContract == address(0)) {
             revert ICS20InvalidTokenContract(tokenContract);
         }
-        address from = _msgSender();
-        if (!IERC20(tokenContract).transferFrom(from, address(this), amount)) {
-            revert ICS20FailedERC20Transfer(tokenContract, from, address(this), amount);
+        address sender = _msgSender();
+        if (!IERC20(tokenContract).transferFrom(sender, address(this), amount)) {
+            revert ICS20FailedERC20Transfer(tokenContract, sender, address(this), amount);
         }
         _mintVoucher(to, tokenContract, amount);
     }
 
     /**
      * @dev withdraw withdraws the ERC20 token from the contract.
+     * @param to address to withdraw the token
      * @param tokenContract address of the token contract
      * @param amount amount of the token
-     * @param to address to withdraw the token
      */
     function withdraw(address to, address tokenContract, uint256 amount) public {
         if (tokenContract == address(0)) {
             revert ICS20InvalidTokenContract(tokenContract);
         }
-        address from = _msgSender();
-        _burnVoucher(from, ICS20Lib.addressToHexString(tokenContract), amount);
+        address sender = _msgSender();
+        _burnVoucher(sender, ICS20Lib.addressToHexString(tokenContract), amount);
         if (!IERC20(tokenContract).transfer(to, amount)) {
-            revert ICS20FailedERC20TransferFrom(tokenContract, from, address(this), to, amount);
+            revert ICS20FailedERC20TransferFrom(tokenContract, sender, address(this), to, amount);
         }
     }
 
@@ -171,6 +171,7 @@ contract ICS20Transfer is IBCAppBase, IICS20Errors {
     /**
      * @dev getVoucherEscrow returns the voucher escrow address for the given channel.
      * @param channelId channel identifier
+     * @return voucher escrow address
      */
     function getVoucherEscrow(string calldata channelId) public view virtual returns (address) {
         return address(uint160(uint256(keccak256(abi.encode(address(this), channelId)))));
@@ -266,6 +267,9 @@ contract ICS20Transfer is IBCAppBase, IICS20Errors {
         onlyIBC
         returns (address, string memory)
     {
+        if (!_equal(msg_.portId.toShortString(), port)) {
+            revert ICS20UnexpectedPort(msg_.portId, port.toString());
+        }
         if (msg_.order != Channel.Order.ORDER_UNORDERED) {
             revert IBCModuleChannelOrderNotAllowed(msg_.portId, msg_.channelId, msg_.order);
         }
@@ -286,6 +290,9 @@ contract ICS20Transfer is IBCAppBase, IICS20Errors {
         onlyIBC
         returns (address, string memory)
     {
+        if (!_equal(msg_.portId.toShortString(), port)) {
+            revert ICS20UnexpectedPort(msg_.portId, port.toString());
+        }
         if (msg_.order != Channel.Order.ORDER_UNORDERED) {
             revert IBCModuleChannelOrderNotAllowed(msg_.portId, msg_.channelId, msg_.order);
         }
@@ -422,5 +429,12 @@ contract ICS20Transfer is IBCAppBase, IICS20Errors {
      */
     function _decodeReceiver(string memory receiver) internal pure virtual returns (address, bool) {
         return ICS20Lib.hexStringToAddress(receiver);
+    }
+
+    /**
+     * @dev _equal compares two ShortString values.
+     */
+    function _equal(ShortString a, ShortString b) internal pure returns (bool) {
+        return ShortString.unwrap(a) == ShortString.unwrap(b);
     }
 }

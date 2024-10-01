@@ -35,7 +35,7 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
         token = new ERC20Token("test", "test", 1000000);
 
         ibcHandler = defaultIBCHandler();
-        transferApp = new ICS20Transfer(ibcHandler);
+        transferApp = new ICS20Transfer(ibcHandler, ICS20_APP_PORT);
         ibcHandler.bindPort(ICS20_APP_PORT, transferApp);
         ibcHandler.registerLocalhostClient();
         ibcHandler.createLocalhostClient();
@@ -55,12 +55,11 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
             vm.startPrank(alice);
             assertTrue(token.approve(address(transferApp), 1000));
             transferApp.depositSendTransfer(
+                channel0.channelId,
                 address(token),
                 1000,
                 ICS20Lib.addressToHexString(bob),
-                channel0.portId,
-                channel0.channelId,
-                2
+                ICS20Lib.timeout(0, 2)
             );
             vm.stopPrank();
             assertEq(token.balanceOf(address(transferApp)), 1000);
@@ -73,12 +72,11 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
         {
             vm.prank(bob);
             transferApp.sendTransfer(
+                channel1.channelId,
                 denom1,
                 700,
                 ICS20Lib.addressToHexString(alice),
-                channel1.portId,
-                channel1.channelId,
-                2
+                ICS20Lib.timeout(0, 2)
             );
             assertEq(transferApp.balanceOf(bob, denom1), 300);
             Packet memory packet = relayLastSentPacket(channel1.portId, channel1.channelId);
@@ -94,12 +92,11 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
         {
             vm.prank(bob);
             transferApp.sendTransfer(
+                channel2.channelId,
                 denom1,
                 200,
                 ICS20Lib.addressToHexString(charlie),
-                channel2.portId,
-                channel2.channelId,
-                2
+                ICS20Lib.timeout(0, 2)
             );
             assertEq(transferApp.balanceOf(bob, denom1), 100);
             Packet memory packet = relayLastSentPacket(channel2.portId, channel2.channelId);
@@ -110,12 +107,11 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
         {
             vm.prank(charlie);
             transferApp.sendTransfer(
+                channel3.channelId,
                 denom2,
                 100,
                 ICS20Lib.addressToHexString(bob),
-                channel3.portId,
-                channel3.channelId,
-                2
+                ICS20Lib.timeout(0, 2)
             );
             assertEq(transferApp.balanceOf(charlie, denom2), 100);
             relayLastWrittenAcknowledgement(relayLastSentPacket(channel3.portId, channel3.channelId));
@@ -123,12 +119,11 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
 
             vm.prank(charlie);
             transferApp.sendTransfer(
+                channel1.channelId,
                 denom2,
                 100,
                 ICS20Lib.addressToHexString(alice),
-                channel1.portId,
-                channel1.channelId,
-                2
+                ICS20Lib.timeout(0, 2)
             );
             assertEq(transferApp.balanceOf(charlie, denom2), 0);
             relayLastWrittenAcknowledgement(relayLastSentPacket(channel1.portId, channel1.channelId));
@@ -139,12 +134,11 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
         {
             vm.prank(bob);
             transferApp.sendTransfer(
+                channel1.channelId,
                 denom1,
                 100,
                 ICS20Lib.addressToHexString(alice),
-                channel1.portId,
-                channel1.channelId,
-                2
+                ICS20Lib.timeout(0, 2)
             );
             assertEq(transferApp.balanceOf(bob, denom1), 100);
             Packet memory packet = relayLastSentPacket(channel1.portId, channel1.channelId);
@@ -212,7 +206,8 @@ contract TestICS20Transfer is IBCTestHelper, ICS04PacketEventTestHelper {
         transferApp.withdraw(bob, address(token), 800);
         assertEq(token.balanceOf(bob), 800);
 
-        assertEq(transferApp.balanceOf(alice, ICS20Lib.addressToHexString(address(token))), 0);
+        string memory denom = ICS20Lib.addressToHexString(address(token));
+        assertEq(transferApp.balanceOf(alice, denom), 0);
     }
 
     function createTransferChannel() internal returns (ChannelInfo memory, ChannelInfo memory) {

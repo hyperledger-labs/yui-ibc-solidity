@@ -4,6 +4,9 @@ pragma solidity ^0.8.20;
 interface IICS20Errors {
     /// @param version Version string
     error ICS20UnexpectedVersion(string version);
+    /// @param actual port
+    /// @param expected port
+    error ICS20UnexpectedPort(string actual, string expected);
     /// @param tokenContract Address of the token contract
     error ICS20InvalidTokenContract(address tokenContract);
     /// @param tokenContract Address of the token contract

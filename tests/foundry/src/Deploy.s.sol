@@ -26,6 +26,8 @@ import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 contract DeployScript is Script {
     string private constant MOCK_CLIENT_TYPE = "mock-client";
     string private constant QBFT_CLIENT_TYPE = "hb-qbft";
+    string private constant ICS20_TRANSFER_PORT = "transfer";
+    string private constant MOCK_PORT = "mock";
 
     function run() external {
         uint256 privateKey =
@@ -65,12 +67,12 @@ contract DeployScript is Script {
         }
 
         // deploy ics20 contract
-        ICS20Transfer transfer = new ICS20Transfer(handler);
-        handler.bindPort("transfer", transfer);
+        ICS20Transfer transfer = new ICS20Transfer(handler, ICS20_TRANSFER_PORT);
+        handler.bindPort(ICS20_TRANSFER_PORT, transfer);
 
         // deploy mock app contract
         IBCMockApp mockApp = new IBCMockApp(handler);
-        handler.bindPort("mock", mockApp);
+        handler.bindPort(MOCK_PORT, mockApp);
 
         // deploy client contracts
         MockClient mockClient = new MockClient(address(handler));

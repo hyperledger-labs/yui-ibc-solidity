@@ -2,20 +2,10 @@
 pragma solidity ^0.8.20;
 
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {Height} from "../../proto/Client.sol";
 import {IICS20Errors} from "./IICS20Errors.sol";
 
 library ICS20Lib {
-    /**
-     * @dev PacketData is defined in [ICS-20](https://github.com/cosmos/ibc/tree/main/spec/app/ics-020-fungible-token-transfer).
-     */
-    struct PacketData {
-        string denom;
-        string sender;
-        string receiver;
-        uint256 amount;
-        string memo;
-    }
-
     bytes internal constant SUCCESSFUL_ACKNOWLEDGEMENT_JSON = bytes('{"result":"AQ=="}');
     bytes internal constant FAILED_ACKNOWLEDGEMENT_JSON = bytes('{"error":"failed"}');
     bytes32 internal constant KECCAK256_SUCCESSFUL_ACKNOWLEDGEMENT_JSON = keccak256(SUCCESSFUL_ACKNOWLEDGEMENT_JSON);
@@ -32,6 +22,25 @@ library ICS20Lib {
     uint256 private constant CHAR_M = 0x6d; // "m"
 
     bytes16 private constant HEX_DIGITS = "0123456789abcdef";
+
+    /**
+     * @dev PacketData is defined in [ICS-20](https://github.com/cosmos/ibc/tree/main/spec/app/ics-020-fungible-token-transfer).
+     */
+    struct PacketData {
+        string denom;
+        string sender;
+        string receiver;
+        uint256 amount;
+        string memo;
+    }
+
+    /**
+     * @dev Either `height` or `timestampNanos` must be set.
+     */
+    struct Timeout {
+        Height.Data height;
+        uint64 timestampNanos;
+    }
 
     /**
      * @dev marshalUnsafeJSON marshals PacketData into JSON bytes without escaping.
@@ -145,6 +154,23 @@ library ICS20Lib {
         }
 
         return pd;
+    }
+
+    /**
+     * @dev timeout returns a Timeout struct with the given height.
+     */
+    function timeout(uint64 revisionNumber, uint64 revisionHeight) internal pure returns (Timeout memory) {
+        return Timeout({
+            height: Height.Data({revision_number: revisionNumber, revision_height: revisionHeight}),
+            timestampNanos: 0
+        });
+    }
+
+    /**
+     * @dev timeout returns a Timeout struct with the given timestamp.
+     */
+    function timeout(uint64 timestampNanos) internal pure returns (Timeout memory) {
+        return Timeout({height: Height.Data({revision_number: 0, revision_height: 0}), timestampNanos: timestampNanos});
     }
 
     /**
