@@ -28,8 +28,7 @@ import (
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/erc20"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibchandler"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ibcmockapp"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20bank"
-	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transferbank"
+	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/ics20transfer"
 	"github.com/hyperledger-labs/yui-ibc-solidity/pkg/contract/qbftclient"
 	qbftclienttypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/clients/qbft"
 	channeltypes "github.com/hyperledger-labs/yui-ibc-solidity/pkg/ibc/core/channel"
@@ -84,11 +83,7 @@ func init() {
 	abiGeneratedConnectionIdentifier = abiIBCHandler.Events["GeneratedConnectionIdentifier"]
 	abiGeneratedChannelIdentifier = abiIBCHandler.Events["GeneratedChannelIdentifier"]
 
-	abiICS20Bank, err := abi.JSON(strings.NewReader(ics20bank.Ics20bankABI))
-	if err != nil {
-		panic(err)
-	}
-	abiICS20TransferBank, err := abi.JSON(strings.NewReader(ics20transferbank.Ics20transferbankABI))
+	abiICS20Transfer, err := abi.JSON(strings.NewReader(ics20transfer.Ics20transferABI))
 	if err != nil {
 		panic(err)
 	}
@@ -98,8 +93,7 @@ func init() {
 	}
 	IBCErrorsRepository = client.NewErrorsRepository()
 	addErrorsToRepository(abiIBCHandler.Errors, IBCErrorsRepository)
-	addErrorsToRepository(abiICS20Bank.Errors, IBCErrorsRepository)
-	addErrorsToRepository(abiICS20TransferBank.Errors, IBCErrorsRepository)
+	addErrorsToRepository(abiICS20Transfer.Errors, IBCErrorsRepository)
 	addErrorsToRepository(abiQBFTClient.Errors, IBCErrorsRepository)
 }
 
@@ -130,8 +124,7 @@ type Chain struct {
 
 	// App Modules
 	ERC20         erc20.Erc20
-	ICS20Transfer ics20transferbank.Ics20transferbank
-	ICS20Bank     ics20bank.Ics20bank
+	ICS20Transfer ics20transfer.Ics20transfer
 	IBCMockApp    ibcmockapp.Ibcmockapp
 
 	// Input data for light client
@@ -177,11 +170,7 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 	if err != nil {
 		t.Fatal(err)
 	}
-	ics20transfer, err := ics20transferbank.NewIcs20transferbank(config.ICS20TransferBankAddress, client)
-	if err != nil {
-		t.Fatal(err)
-	}
-	ics20bank, err := ics20bank.NewIcs20bank(config.ICS20BankAddress, client)
+	ics20transfer, err := ics20transfer.NewIcs20transfer(config.ICS20TransferAddress, client)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +196,6 @@ func NewChain(t *testing.T, client *client.ETHClient, lc *LightClient, isAutoMin
 
 		ERC20:         *erc20_,
 		ICS20Transfer: *ics20transfer,
-		ICS20Bank:     *ics20bank,
 		IBCMockApp:    *ibcMockApp,
 	}
 
@@ -248,6 +236,10 @@ func (chain *Chain) CallOpts(ctx context.Context, index uint32) *bind.CallOpts {
 		From:    opts.From,
 		Context: opts.Context,
 	}
+}
+
+func (chain *Chain) Address(index uint32) common.Address {
+	return gethcrypto.PubkeyToAddress(chain.prvKey(index).PublicKey)
 }
 
 func (chain *Chain) prvKey(index uint32) *ecdsa.PrivateKey {
@@ -1076,7 +1068,7 @@ func (chain *Chain) AdvanceBlockNumber(
 		} else {
 			// execute a meaningless transaction to increase the block height
 			err := chain.WaitIfNoError(ctx, "ERC20::Approve")(
-				chain.ERC20.Approve(chain.TxOpts(ctx, RelayerKeyIndex), chain.ContractConfig.ICS20BankAddress, big.NewInt(0)),
+				chain.ERC20.Approve(chain.TxOpts(ctx, RelayerKeyIndex), chain.ContractConfig.ICS20TransferAddress, big.NewInt(0)),
 			)
 			if err != nil {
 				return err

@@ -23,8 +23,7 @@ function main() {
   local srcs=(
     "IBCHandler"
     "ERC20"
-    "ICS20TransferBank"
-    "ICS20Bank"
+    "ICS20Transfer"
     "QBFTClient"
     "MockClient"
     "IBCMockApp"

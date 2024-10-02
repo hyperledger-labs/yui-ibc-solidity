@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import "forge-std/Test.sol";
-import "../../../contracts/apps/20-transfer/ICS20Lib.sol";
+import {Test} from "forge-std/Test.sol";
+import {ICS20Lib} from "../../../contracts/apps/20-transfer/ICS20Lib.sol";
 
-contract TestICS20 is Test {
+contract TestICS20Lib is Test {
     function setUp() public {}
 
     function testMarshaling() public {
