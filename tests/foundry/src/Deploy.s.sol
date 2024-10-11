@@ -19,14 +19,15 @@ import {IIBCHandler} from "../../../contracts/core/25-handler/IIBCHandler.sol";
 import {OwnableIBCHandler} from "../../../contracts/core/25-handler/OwnableIBCHandler.sol";
 import {MockClient} from "../../../contracts/clients/mock/MockClient.sol";
 import {QBFTClient} from "../../../contracts/clients/qbft/QBFTClient.sol";
-import {ICS20Bank} from "../../../contracts/apps/20-transfer/ICS20Bank.sol";
-import {ICS20TransferBank} from "../../../contracts/apps/20-transfer/ICS20TransferBank.sol";
+import {ICS20Transfer} from "../../../contracts/apps/20-transfer/ICS20Transfer.sol";
 import {ERC20Token} from "../../../contracts/apps/20-transfer/ERC20Token.sol";
 import {IBCMockApp} from "../../../contracts/apps/mock/IBCMockApp.sol";
 
 contract DeployScript is Script {
     string private constant MOCK_CLIENT_TYPE = "mock-client";
     string private constant QBFT_CLIENT_TYPE = "hb-qbft";
+    string private constant ICS20_TRANSFER_PORT = "transfer";
+    string private constant MOCK_PORT = "mock";
 
     function run() external {
         uint256 privateKey =
@@ -66,14 +67,12 @@ contract DeployScript is Script {
         }
 
         // deploy ics20 contract
-        ICS20Bank bank = new ICS20Bank();
-        ICS20TransferBank transferBank = new ICS20TransferBank(handler, bank);
-        bank.setOperator(address(transferBank));
-        handler.bindPort("transfer", transferBank);
+        ICS20Transfer transfer = new ICS20Transfer(handler, ICS20_TRANSFER_PORT);
+        handler.bindPort(ICS20_TRANSFER_PORT, transfer);
 
         // deploy mock app contract
         IBCMockApp mockApp = new IBCMockApp(handler);
-        handler.bindPort("mock", mockApp);
+        handler.bindPort(MOCK_PORT, mockApp);
 
         // deploy client contracts
         MockClient mockClient = new MockClient(address(handler));

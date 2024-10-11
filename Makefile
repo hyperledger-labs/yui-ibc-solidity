@@ -32,11 +32,11 @@ lint:
 
 .PHONY: test
 test:
-	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) $(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) $(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION)
 
 .PHONY: snapshot
 snapshot:
-	$(FORGE) snapshot -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) $(FORGE_SNAPSHOT_OPTION)
+	$(FORGE) snapshot -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION)
 
 .PHONY: coverage
 coverage:
