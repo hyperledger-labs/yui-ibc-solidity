@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {ConnectionEnd} from "../../proto/Connection.sol";
-import {Channel, Upgrade} from "../../proto/Channel.sol";
+import {Channel, Upgrade, Timeout} from "../../proto/Channel.sol";
 
 abstract contract IBCStore {
     // keccak256(abi.encode(uint256(keccak256("ibc.commitment")) - 1)) & ~bytes32(uint256(0xff))
@@ -63,6 +63,7 @@ abstract contract IBCStore {
         uint64 nextSequenceRecv;
         uint64 nextSequenceAck;
         Upgrade.Data upgrade;
+        Timeout.Data counterpartyUpgradeTimeout;
         uint64 latestErrorReceiptSequence;
         RecvStartSequence recvStartSequence;
         uint64 ackStartSequence;

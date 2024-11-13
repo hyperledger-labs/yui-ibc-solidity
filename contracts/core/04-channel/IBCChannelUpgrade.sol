@@ -254,10 +254,11 @@ abstract contract IBCChannelUpgradeBase is
     function setCounterpartyUpgrade(ChannelStorage storage channelStorage, Upgrade.Data calldata upgrade) internal {
         RecvStartSequence storage recvStartSequence = channelStorage.recvStartSequence;
         if (recvStartSequence.prevSequence != 0) {
-            revertCounterpartyUpgrade(channelStorage.recvStartSequence);
+            revertCounterpartyUpgrade(recvStartSequence);
         }
         recvStartSequence.prevSequence = recvStartSequence.sequence;
         recvStartSequence.sequence = upgrade.next_sequence_send;
+        channelStorage.counterpartyUpgradeTimeout = upgrade.timeout;
     }
 
     function revertCounterpartyUpgrade(RecvStartSequence storage recvStartSequence) internal {
