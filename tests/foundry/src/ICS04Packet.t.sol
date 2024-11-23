@@ -439,11 +439,15 @@ contract TestICS04Packet is
             counterpartyHandler.recvPacket(msg_);
             client.updateClient(clientId, mockClientHeader(uint64(getBlockNumber())));
             // timeout on source chain
+            (Channel.Data memory c,) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
             handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber())));
             if (orders[i] == Channel.Order.ORDER_ORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_CLOSED);
+                c.state = Channel.State.STATE_CLOSED;
+                ensureChannelCommitment(handler, channelInfo, c);
             } else if (orders[i] == Channel.Order.ORDER_UNORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_OPEN);
+                ensureChannelCommitment(handler, channelInfo, c);
             }
             assertEq(handler.getPacketCommitment(channelInfo.portId, channelInfo.channelId, p0.sequence), bytes32(0));
         }
@@ -491,11 +495,15 @@ contract TestICS04Packet is
             counterpartyHandler.recvPacket(msg_);
             client.updateClient(clientId, mockClientHeader(uint64(getBlockNumber())));
             // timeout on source chain
+            (Channel.Data memory c,) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
             handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber())));
             if (orders[i] == Channel.Order.ORDER_ORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_CLOSED);
+                c.state = Channel.State.STATE_CLOSED;
+                ensureChannelCommitment(handler, channelInfo, c);
             } else if (orders[i] == Channel.Order.ORDER_UNORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_OPEN);
+                ensureChannelCommitment(handler, channelInfo, c);
             }
             assertEq(handler.getPacketCommitment(channelInfo.portId, channelInfo.channelId, p0.sequence), bytes32(0));
         }
