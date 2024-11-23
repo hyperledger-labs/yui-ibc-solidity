@@ -1,6 +1,7 @@
 FOUNDRY_PROFILE=default
 FORGE=FOUNDRY_PROFILE=$(FOUNDRY_PROFILE) forge
 SOLC_VERSION=0.8.24
+EVM_VERSION=paris
 DOCKER=docker
 ABIGEN="$(DOCKER) run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 SOLHINT=npx solhint
@@ -93,9 +94,9 @@ network-qbft:
 
 .PHONY: deploy
 deploy:
-	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --evm-version ${EVM_VERSION} --fork-url http://127.0.0.1:8645 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
-	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) TEST_MNEMONIC=$(TEST_MNEMONIC) $(FORGE) script --legacy --batch-size 5 --use solc:${SOLC_VERSION} --evm-version ${EVM_VERSION} --fork-url http://127.0.0.1:8745 --broadcast \
 		./tests/foundry/src/Deploy.s.sol
 
 .PHONY: network-down
