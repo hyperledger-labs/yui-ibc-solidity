@@ -100,6 +100,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                 );
             }
             channel.state = Channel.State.STATE_CLOSED;
+            updateChannelCommitment(msg_.packet.sourcePort, msg_.packet.sourceChannel);
         } else if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
             bytes memory path = IBCCommitment.packetReceiptCommitmentPathCalldata(
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
@@ -283,5 +284,13 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         } else {
             return (timeDelay + hostStorage.expectedTimePerBlock - 1) / hostStorage.expectedTimePerBlock;
         }
+    }
+
+    /**
+     * @dev updateChannelCommitment updates the channel commitment for the given port and channel
+     */
+    function updateChannelCommitment(string memory portId, string memory channelId) private {
+        getCommitments()[IBCCommitment.channelCommitmentKey(portId, channelId)] =
+            keccak256(Channel.encode(getChannelStorage()[portId][channelId].channel));
     }
 }
