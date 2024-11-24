@@ -36,7 +36,6 @@ abstract contract IBCChannelUpgradeBase is IBCModuleManager, IIBCChannelUpgradeB
 
         delete channelStorage.upgrade;
         revertCounterpartyUpgrade(channelStorage);
-        delete channelStorage.counterpartyUpgradeTimeout;
 
         deleteUpgradeCommitment(portId, channelId);
         updateChannelCommitment(portId, channelId, channel);
