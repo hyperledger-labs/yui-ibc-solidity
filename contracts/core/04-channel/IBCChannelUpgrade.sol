@@ -35,9 +35,10 @@ abstract contract IBCChannelUpgradeBase is IBCModuleManager, IIBCChannelUpgradeB
         channel.state = Channel.State.STATE_OPEN;
 
         delete channelStorage.upgrade;
-        deleteUpgradeCommitment(portId, channelId);
-        revertCounterpartyUpgrade(channelStorage.recvStartSequence);
+        revertCounterpartyUpgrade(channelStorage);
+        delete channelStorage.counterpartyUpgradeTimeout;
 
+        deleteUpgradeCommitment(portId, channelId);
         updateChannelCommitment(portId, channelId, channel);
         writeErrorReceipt(portId, channelId, channel.upgrade_sequence, err);
     }
@@ -81,13 +82,15 @@ abstract contract IBCChannelUpgradeBase is IBCModuleManager, IIBCChannelUpgradeB
         getCommitments()[IBCCommitment.channelUpgradeCommitmentKey(portId, channelId)] = commitment;
     }
 
-    function revertCounterpartyUpgrade(RecvStartSequence storage recvStartSequence) internal {
+    function revertCounterpartyUpgrade(ChannelStorage storage channelStorage) internal {
+        RecvStartSequence storage recvStartSequence = channelStorage.recvStartSequence;
         uint64 prevRecvStartSequence = recvStartSequence.prevSequence;
         if (prevRecvStartSequence == 0) {
             return;
         }
         recvStartSequence.prevSequence = 0;
         recvStartSequence.sequence = prevRecvStartSequence;
+        delete channelStorage.counterpartyUpgradeTimeout;
     }
 
     function toString(UpgradeHandshakeError err) internal pure returns (string memory) {
@@ -135,10 +138,11 @@ abstract contract IBCChannelUpgradeCommon is IBCChannelUpgradeBase {
     function setCounterpartyUpgrade(ChannelStorage storage channelStorage, Upgrade.Data calldata upgrade) internal {
         RecvStartSequence storage recvStartSequence = channelStorage.recvStartSequence;
         if (recvStartSequence.prevSequence != 0) {
-            revertCounterpartyUpgrade(recvStartSequence);
+            revertCounterpartyUpgrade(channelStorage);
         }
         recvStartSequence.prevSequence = recvStartSequence.sequence;
         recvStartSequence.sequence = upgrade.next_sequence_send;
+        channelStorage.counterpartyUpgradeTimeout = upgrade.timeout;
     }
 
     function verifyMembership(
@@ -230,7 +234,7 @@ contract IBCChannelUpgradeInitTryAck is
         Upgrade.Data storage upgrade = channelStorage.upgrade;
         if (upgrade.fields.ordering != Channel.Order.ORDER_NONE_UNSPECIFIED) {
             delete channelStorage.upgrade;
-            revertCounterpartyUpgrade(channelStorage.recvStartSequence);
+            revertCounterpartyUpgrade(channelStorage);
             // NOTE: we do not delete the upgrade commitment here since the new upgrade will overwrite the old one
             writeErrorReceipt(msg_.portId, msg_.channelId, channel.upgrade_sequence, UpgradeHandshakeError.Overwritten);
         }
