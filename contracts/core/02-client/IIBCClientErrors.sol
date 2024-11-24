@@ -20,4 +20,9 @@ interface IIBCClientErrors {
     /// @param selector the function selector
     /// @param args the calldata
     error IBCClientFailedUpdateClient(bytes4 selector, bytes args);
+
+    /// @param commitmentKey the commitment key
+    /// @param commitment the commitment
+    /// @param prev the previous commitment
+    error IBCClientInconsistentConsensusStateCommitment(bytes32 commitmentKey, bytes32 commitment, bytes32 prev);
 }

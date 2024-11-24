@@ -126,6 +126,24 @@ contract TestICS02 is Test, MockClientTestHelper {
             );
             prevClientStateCommitment = commitment;
         }
+        {
+            // update with the same height should not revert
+            handler.updateClient(msgUpdateMockClient(clientId, 3));
+            bytes32 prevConsensusStateCommitment = keccak256(mockConsensusState(getBlockTimestampNano()));
+            // update with the same height and different consensus state should revert
+            uint256 prev = vm.getBlockTimestamp();
+            vm.warp(prev + 1);
+            bytes32 newConsensusStateCommitment = keccak256(mockConsensusState(getBlockTimestampNano()));
+            IIBCClient.MsgUpdateClient memory msg_ = msgUpdateMockClient(clientId, 3);
+            vm.expectRevert(abi.encodeWithSelector(
+                IIBCClientErrors.IBCClientInconsistentConsensusStateCommitment.selector,
+                IBCCommitment.consensusStateCommitmentKey(clientId, 0, 3),
+                newConsensusStateCommitment,
+                prevConsensusStateCommitment
+            ));
+            handler.updateClient(msg_);
+            vm.warp(prev);
+        }
     }
 
     function testInvalidUpdateClient() public {
