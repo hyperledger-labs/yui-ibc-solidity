@@ -266,6 +266,11 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         } else {
             revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
+
+        delete getCommitments()[IBCCommitment.packetCommitmentKeyCalldata(
+            msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
+        )];
+
         lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onTimeoutPacket(
             msg_.packet, _msgSender()
         );

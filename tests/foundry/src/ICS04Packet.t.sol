@@ -450,6 +450,10 @@ contract TestICS04Packet is
                 ensureChannelCommitment(handler, channelInfo, c);
             }
             assertEq(handler.getPacketCommitment(channelInfo.portId, channelInfo.channelId, p0.sequence), bytes32(0));
+            // same packet timeout must be failed
+            IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg2_ = msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber()));
+            vm.expectRevert();
+            handler.timeoutPacket(msg2_);
         }
     }
 
@@ -506,6 +510,10 @@ contract TestICS04Packet is
                 ensureChannelCommitment(handler, channelInfo, c);
             }
             assertEq(handler.getPacketCommitment(channelInfo.portId, channelInfo.channelId, p0.sequence), bytes32(0));
+            // same packet timeout must be failed
+            IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg2_ = msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber()));
+            vm.expectRevert();
+            handler.timeoutPacket(msg2_);
         }
     }
 
@@ -534,6 +542,10 @@ contract TestICS04Packet is
             }
             counterpartyHandler.channelCloseInit(msgChannelCloseInit(counterpartyChannelInfo));
             handler.timeoutOnClose(msgTimeoutOnClose(counterpartyHandler, orders[i], p0, H(1)));
+            // same packet timeout must be failed
+            IIBCChannelPacketTimeout.MsgTimeoutOnClose memory msg_ = msgTimeoutOnClose(counterpartyHandler, orders[i], p0, H(1));
+            vm.expectRevert();
+            handler.timeoutOnClose(msg_);
         }
     }
 
