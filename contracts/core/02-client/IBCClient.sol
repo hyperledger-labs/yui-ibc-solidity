@@ -7,6 +7,7 @@ import {Height} from "../../proto/Client.sol";
 import {IBCHost} from "../24-host/IBCHost.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IIBCClient} from "../02-client/IIBCClient.sol";
+import {IBCClientLib} from "../02-client/IBCClientLib.sol";
 import {IIBCClientErrors} from "../02-client/IIBCClientErrors.sol";
 
 /**
@@ -116,6 +117,9 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
         HostStorage storage hostStorage = getHostStorage();
         string memory identifier =
             string(abi.encodePacked(clientType, "-", Strings.toString(hostStorage.nextClientSequence)));
+        if (!IBCClientLib.validateClientId(bytes(identifier))) {
+            revert IBCClientInvalidClientId(identifier);
+        }
         hostStorage.nextClientSequence++;
         return identifier;
     }
