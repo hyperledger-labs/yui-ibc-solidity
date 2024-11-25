@@ -1,7 +1,7 @@
 FOUNDRY_PROFILE=default
 FORGE=FOUNDRY_PROFILE=$(FOUNDRY_PROFILE) forge
 SOLC_VERSION=0.8.24
-EVM_VERSION=paris
+EVM_VERSION=cancun
 DOCKER=docker
 ABIGEN="$(DOCKER) run -v .:/workspace -w /workspace -it ethereum/client-go:alltools-v1.11.6 abigen"
 SOLHINT=npx solhint
@@ -16,7 +16,7 @@ TEST_UPGRADEABLE=false
 
 .PHONY: build
 build:
-	$(FORGE) build --sizes --skip test --use solc:$(SOLC_VERSION)
+	$(FORGE) build --sizes --skip test --use solc:$(SOLC_VERSION) --evm-version $(EVM_VERSION)
 
 .PHONY: clean
 clean:
@@ -33,7 +33,7 @@ lint:
 
 .PHONY: test
 test:
-	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) $(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION)
+	TEST_UPGRADEABLE=$(TEST_UPGRADEABLE) $(FORGE) test -vvvv --gas-report --isolate --use solc:$(SOLC_VERSION) --evm-version $(EVM_VERSION)
 
 .PHONY: snapshot
 snapshot:
