@@ -18,7 +18,9 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
     function timeoutPacket(MsgTimeoutPacket calldata msg_) external {
         Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
         if (channel.state != Channel.State.STATE_OPEN) {
-            revert IBCChannelUnexpectedChannelState(channel.state);
+            if (channel.state != Channel.State.STATE_FLUSHING) {
+                revert IBCChannelUnexpectedChannelState(channel.state);
+            }
         }
 
         if (keccak256(bytes(msg_.packet.destinationPort)) != keccak256(bytes(channel.counterparty.port_id))) {
@@ -138,7 +140,9 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
     function timeoutOnClose(MsgTimeoutOnClose calldata msg_) external {
         Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
         if (channel.state != Channel.State.STATE_OPEN) {
-            revert IBCChannelUnexpectedChannelState(channel.state);
+            if (channel.state != Channel.State.STATE_FLUSHING) {
+                revert IBCChannelUnexpectedChannelState(channel.state);
+            }
         }
 
         if (keccak256(bytes(msg_.packet.destinationPort)) != keccak256(bytes(channel.counterparty.port_id))) {
