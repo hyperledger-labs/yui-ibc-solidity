@@ -324,6 +324,9 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         channelStorage.nextSequenceRecv = 1;
         channelStorage.nextSequenceAck = 1;
         channelStorage.recvStartSequence.sequence = 1;
+
+        // Differ from the ICS-004 spec, we only store the commitment of the next sequence recv.
+        // This is because, in the current spec, the next sequence send and ack are not needed for the verification on the counterparty chain.
         getCommitments()[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
             keccak256(abi.encodePacked((bytes8(uint64(1)))));
     }
