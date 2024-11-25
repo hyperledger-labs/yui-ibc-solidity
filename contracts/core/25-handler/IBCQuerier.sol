@@ -15,6 +15,10 @@ contract IBCQuerier is IBCModuleManager, IIBCQuerier {
         return _getCommitmentPrefix();
     }
 
+    function getRevisionNumber() public view override returns (uint64) {
+        return _getRevisionNumber();
+    }
+
     function getCommitmentsSlot() public pure override returns (bytes32) {
         return COMMITMENT_STORAGE_LOCATION;
     }
