@@ -43,6 +43,10 @@ abstract contract IBCConnection is IBCHost, IBCSelfStateValidator, IIBCConnectio
             }
             connection.versions.push(msg_.version);
         } else {
+            // if the version features are empty, the version identifier should also be empty
+            if (bytes(msg_.version.identifier).length > 0) {
+                revert IBCConnectionVersionIdentifierNotEmpty();
+            }
             IBCConnectionLib.setSupportedVersions(getCompatibleVersions(), connection.versions);
         }
 
