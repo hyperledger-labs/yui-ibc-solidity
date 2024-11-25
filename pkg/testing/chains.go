@@ -1232,7 +1232,7 @@ func (chain *Chain) WaitForReceiptAndGet(ctx context.Context, tx *gethtypes.Tran
 func (chain *Chain) WaitIfNoError(ctx context.Context, txName string) func(tx *gethtypes.Transaction, err error) error {
 	return func(tx *gethtypes.Transaction, err error) error {
 		if err != nil {
-			return fmt.Errorf("failed to call transaction: tx=%v err='%v'", txName, err)
+			return fmt.Errorf("failed to call transaction: tx=%v txPayload=%#v err='%v'", txName, tx, err)
 		}
 		return chain.WaitForReceiptAndGet(ctx, tx, txName)
 	}
@@ -1290,6 +1290,8 @@ func makeGenTxOpts(chainID *big.Int, prv *ecdsa.PrivateKey) func(ctx context.Con
 			// Set non-zero value to avoid call `estimateGas`
 			// This allows we can extract the revert reason from the transaction receipt if the transaction fails.
 			GasLimit: 6382056,
+			// Use legacy tx
+			GasPrice: big.NewInt(0),
 			Signer: func(address common.Address, tx *gethtypes.Transaction) (*gethtypes.Transaction, error) {
 				if address != addr {
 					return nil, errors.New("not authorized to sign this account")
