@@ -17,6 +17,8 @@ interface IIBCHostConfigurator {
      * The authority should verify the light client contract is a valid implementation as follows:
      * - The contract implements ILightClient
      * - To avoid reentrancy attack, the contract never performs `call` to the IBC contract directly or indirectly in the `verifyMembership` and the `verifyNonMembership`
+     * - `routerUpdateClient` function returns the correct selector and arguments for updating the client
+     *   - This is important because a malicious client can make arbitrary function calls to the IBC contract through `updateClient()`.
      */
     function registerClient(string calldata clientType, ILightClient client) external;
 
