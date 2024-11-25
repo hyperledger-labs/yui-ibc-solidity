@@ -18,6 +18,8 @@ interface IIBCConnectionErrors {
 
     error IBCConnectionIBCVersionNotSupported();
 
+    error IBCConnectionVersionIdentifierNotEmpty();
+
     error IBCConnectionInvalidSelfClientState();
 
     error IBCConnectionInvalidHostConsensusStateProof();
