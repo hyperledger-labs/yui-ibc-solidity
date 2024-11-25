@@ -18,7 +18,7 @@ contract TestICS02 is Test, MockClientTestHelper {
         TestableIBCHandler handler = defaultIBCHandler();
         MockClient mockClient = new MockClient(address(handler));
         handler.registerClient(MOCK_CLIENT_TYPE, mockClient);
-        handler.registerClient("test", mockClient);
+        handler.registerClient("testtes", mockClient);
     }
 
     function testRegisterClientDuplicatedClientType() public {
@@ -37,14 +37,22 @@ contract TestICS02 is Test, MockClientTestHelper {
         handler.registerClient(MOCK_CLIENT_TYPE, ILightClient(address(0)));
 
         MockClient mockClient = new MockClient(address(handler));
+
+        // empty client type
         vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, ""));
         handler.registerClient("", mockClient);
 
-        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "-mock"));
-        handler.registerClient("-mock", mockClient);
+        // too short client type
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "testte"));
+        handler.registerClient("testte", mockClient);
 
-        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "mock-"));
-        handler.registerClient("mock-", mockClient);
+        // first character is not a letter
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "-mocktest"));
+        handler.registerClient("-mocktest", mockClient);
+
+        // last character is not a letter or number
+        vm.expectRevert(abi.encodeWithSelector(IIBCHostErrors.IBCHostInvalidClientType.selector, "mocktest-"));
+        handler.registerClient("mocktest-", mockClient);
     }
 
     function testHeightToUint128(Height.Data memory height) public pure {
