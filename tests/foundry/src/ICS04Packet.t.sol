@@ -432,8 +432,8 @@ contract TestICS04Packet is
             vm.expectRevert(
                 abi.encodeWithSelector(
                     IIBCChannelErrors.IBCChannelTimeoutPacketHeight.selector,
-                    getBlockNumber(),
-                    p0.timeoutHeight.revision_height
+                    H(getBlockNumber()),
+                    p0.timeoutHeight
                 )
             );
             counterpartyHandler.recvPacket(msg_);

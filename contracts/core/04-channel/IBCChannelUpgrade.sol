@@ -5,6 +5,7 @@ import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
 import {Channel, ChannelCounterparty, Upgrade, UpgradeFields, ErrorReceipt, Timeout} from "../../proto/Channel.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
+import {IBCHeight} from "../02-client/IBCHeight.sol";
 import {IBCConnectionLib} from "../03-connection/IBCConnectionLib.sol";
 import {IIBCConnectionErrors} from "../03-connection/IIBCConnectionErrors.sol";
 import {IIBCChannelErrors} from "./IIBCChannelErrors.sol";
@@ -220,6 +221,8 @@ contract IBCChannelUpgradeInitTryAck is
     IIBCConnectionErrors,
     IIBCChannelErrors
 {
+    using IBCHeight for Height.Data;
+
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeInit}
      */
@@ -422,9 +425,9 @@ contract IBCChannelUpgradeInitTryAck is
 
         // counterparty-specified timeout must not have exceeded
         // if it has, then restore the channel and abort upgrade handshake
-        Timeout.Data calldata timeout = msg_.counterpartyUpgrade.timeout;
+        Timeout.Data memory timeout = msg_.counterpartyUpgrade.timeout;
         if (
-            (timeout.height.revision_height != 0 && block.number >= timeout.height.revision_height)
+            (!timeout.height.isZero() && hostHeight().gte(timeout.height))
                 || (timeout.timestamp != 0 && hostTimestamp() >= timeout.timestamp)
         ) {
             restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.Timeout);
@@ -548,6 +551,8 @@ contract IBCChannelUpgradeConfirmOpenTimeoutCancel is
     IBCChannelUpgradeCommon,
     IIBCChannelUpgradeConfirmOpenTimeoutCancel
 {
+    using IBCHeight for Height.Data;
+
     /**
      * @dev See {IIBCChannelUpgrade-channelUpgradeConfirm}
      */
@@ -587,9 +592,9 @@ contract IBCChannelUpgradeConfirmOpenTimeoutCancel is
 
         // counterparty-specified timeout must not have exceeded
         // if it has, then restore the channel and abort upgrade handshake
-        Timeout.Data calldata timeout = msg_.counterpartyUpgrade.timeout;
+        Timeout.Data memory timeout = msg_.counterpartyUpgrade.timeout;
         if (
-            (timeout.height.revision_height != 0 && block.number >= timeout.height.revision_height)
+            (!timeout.height.isZero() && hostHeight().gte(timeout.height))
                 || (timeout.timestamp != 0 && hostTimestamp() >= timeout.timestamp)
         ) {
             restoreChannel(msg_.portId, msg_.channelId, UpgradeHandshakeError.Timeout);
@@ -765,10 +770,7 @@ contract IBCChannelUpgradeConfirmOpenTimeoutCancel is
         // Either timeoutHeight or timeoutTimestamp must be defined.
         // if timeoutHeight is defined and proof is from before
         // timeout height then abort transaction
-        if (
-            upgrade.timeout.height.revision_height != 0
-                && msg_.proofHeight.revision_height < upgrade.timeout.height.revision_height
-        ) {
+        if (!upgrade.timeout.height.isZero() && msg_.proofHeight.lt(upgrade.timeout.height)) {
             revert IBCChannelUpgradeTimeoutHeightNotReached();
         }
         // if timeoutTimestamp is defined then the consensus time
