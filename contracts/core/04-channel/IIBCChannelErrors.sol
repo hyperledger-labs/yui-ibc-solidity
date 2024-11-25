@@ -71,9 +71,9 @@ interface IIBCChannelErrors {
 
     error IBCChannelAckAlreadyProcessedInPreviousUpgrade(uint64 sequence, uint64 ackStartSequence);
 
-    /// @param currentBlockNumber current block number
+    /// @param currentHeight current height
     /// @param timeoutHeight packet timeout height
-    error IBCChannelTimeoutPacketHeight(uint256 currentBlockNumber, uint64 timeoutHeight);
+    error IBCChannelTimeoutPacketHeight(Height.Data currentHeight, Height.Data timeoutHeight);
 
     /// @param currentTimestamp current timestamp
     /// @param timeoutTimestamp packet timeout timestamp
