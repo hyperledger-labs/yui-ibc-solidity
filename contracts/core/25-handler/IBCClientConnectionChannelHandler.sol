@@ -66,6 +66,14 @@ abstract contract IBCClientConnectionChannelHandler is
         IIBCChannelUpgradeInitTryAck ibcChannelUpgradeInitTryAck_,
         IIBCChannelUpgradeConfirmOpenTimeoutCancel ibcChannelUpgradeConfirmOpenTimeoutCancel_
     ) {
+        if (
+            address(ibcClient_) == address(0) || address(ibcConnection_) == address(0)
+                || address(ibcChannelHandshake_) == address(0) || address(ibcChannelPacketSendRecv_) == address(0)
+                || address(ibcChannelPacketTimeout_) == address(0) || address(ibcChannelUpgradeInitTryAck_) == address(0)
+                || address(ibcChannelUpgradeConfirmOpenTimeoutCancel_) == address(0)
+        ) {
+            revert("invalid address");
+        }
         ibcClient = address(ibcClient_);
         ibcConnection = address(ibcConnection_);
         ibcChannelHandshake = address(ibcChannelHandshake_);
