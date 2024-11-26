@@ -17,7 +17,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
 
     function timeoutPacket(MsgTimeoutPacket calldata msg_) external {
         Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
-        if (channel.state != Channel.State.STATE_OPEN) {
+        if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
@@ -137,7 +137,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
 
     function timeoutOnClose(MsgTimeoutOnClose calldata msg_) external {
         Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
-        if (channel.state != Channel.State.STATE_OPEN) {
+        if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
