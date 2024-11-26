@@ -2,7 +2,8 @@
   "genesis": {
     "config": {
       "chainId": 3018,
-      "muirglacierblock": 0,
+      "cancunTime": 0,
+      "zeroBaseFee": true,
       "qbft": {
         "blockperiodseconds": 1,
         "epochlength": 30000,
