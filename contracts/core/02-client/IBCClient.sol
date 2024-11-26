@@ -95,10 +95,17 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
             bytes32 key = IBCCommitment.consensusStateCommitmentKey(
                 clientId, heights[i].revision_number, heights[i].revision_height
             );
-            if (commitments[key] != bytes32(0)) {
-                continue;
+            bytes32 commitment = keccak256(consensusState);
+            bytes32 prev = commitments[key];
+            if (prev != bytes32(0) && commitment != prev) {
+                // Revert if the new commitment is inconsistent with the previous one.
+                // This case may indicate misbehavior of either the LightClient or the target chain.
+                // Since the definition and specification of misbehavior are defined for each LightClient,
+                // if a relayer detects this error, it is recommended to submit an evidence of misbehaviour to the LightClient accordingly.
+                // (e.g., via the updateClient function).
+                revert IBCClientInconsistentConsensusStateCommitment(key, commitment, prev);
             }
-            commitments[key] = keccak256(consensusState);
+            commitments[key] = commitment;
         }
     }
 

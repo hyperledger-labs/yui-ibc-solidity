@@ -33,6 +33,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         if (msg_.channel.connection_hops.length != 1) {
             revert IBCChannelInvalidConnectionHopsLength(msg_.channel.connection_hops.length);
         }
+        // optimistic channel handshakes are allowed, so we can skip checking if the connection state is OPEN here.
         ConnectionEnd.Data storage connection = getConnectionStorage()[msg_.channel.connection_hops[0]].connection;
         if (connection.versions.length != 1) {
             revert IBCChannelConnectionMultipleVersionsFound(
@@ -164,6 +165,9 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
         ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
+        if (connection.state != ConnectionEnd.State.STATE_OPEN) {
+            revert IBCChannelConnectionNotOpened(channel.connection_hops[0]);
+        }
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_TRYOPEN,
             ordering: channel.ordering,

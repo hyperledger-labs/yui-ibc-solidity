@@ -23,6 +23,11 @@ abstract contract ICS04TestHelper is IBCTestHelper {
         assertTrue(ok);
         assertTrue(channel_.state == state);
     }
+
+    function ensureChannelCommitment(IIBCHandler handler, ChannelInfo memory channelInfo, Channel.Data memory channel) internal {
+        bytes32 commitment = handler.getCommitment(IBCCommitment.channelCommitmentKey(channelInfo.portId, channelInfo.channelId));
+        assertEq(commitment, keccak256(Channel.encode(channel)));
+    }
 }
 
 abstract contract ICS04HandshakeTestHelper is ICS04TestHelper {
