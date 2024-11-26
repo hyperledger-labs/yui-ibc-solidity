@@ -199,7 +199,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
     }
 
     /**
-     * @dev channelOpenConfirm is called by the counterparty module to close their end of the channel, since the other end has been closed.
+     * @dev channelOpenConfirm is called by the counterparty module to acknowledge the acknowledgement of the handshake-originating module on the other chain and finish the channel opening handshake.
      */
     function channelOpenConfirm(IIBCChannelHandshake.MsgChannelOpenConfirm calldata msg_) public override {
         Channel.Data storage channel = getChannelStorage()[msg_.portId][msg_.channelId].channel;
