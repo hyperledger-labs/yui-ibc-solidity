@@ -861,8 +861,8 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         callbacks.flushingAndFlushing.callback = _testUpgradeRelaySuccessAtFlushing;
         (ChannelInfo memory channel0, ChannelInfo memory channel1) =
             createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
-        mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
-        mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
+        mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channel0.portId, channel0.channelId, H(uint64(getBlockNumber(1))), 0);
+        mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channel1.portId, channel1.channelId, H(uint64(getBlockNumber(1))), 0);
         handshakeUpgradeWithCallbacks(
             channel0,
             channel1,
@@ -921,7 +921,7 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         callbacks.flushingAndComplete.callback = _testUpgradeRelaySuccessAtCounterpartyFlushComplete;
         (ChannelInfo memory channel0, ChannelInfo memory channel1) =
             createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
-        mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
+        mockApp.sendPacket(IBCMockLib.MOCK_PACKET_DATA, channel0.portId, channel0.channelId, H(uint64(getBlockNumber(1))), 0);
         handshakeUpgradeWithCallbacks(
             channel0,
             channel1,
@@ -980,14 +980,13 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         ChannelInfo memory channel0,
         ChannelInfo memory channel1
     ) internal returns (bool) {
-        uint64 seq = mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
-        Packet memory p0 = getLastSentPacket(handler, channel0.portId, channel0.channelId, vm.getRecordedLogs());
+        MockAppRelayResult memory result = mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
         vm.expectRevert(
-            abi.encodeWithSelector(IIBCChannelErrors.IBCChannelCannotRecvNextUpgradePacket.selector, seq, uint64(1))
+            abi.encodeWithSelector(IIBCChannelErrors.IBCChannelCannotRecvNextUpgradePacket.selector, result.packet.sequence, uint64(1))
         );
         handler.recvPacket(
             IIBCChannelRecvPacket.MsgPacketRecv({
-                packet: p0,
+                packet: result.packet,
                 proof: LocalhostClientLib.sentinelProof(),
                 proofHeight: H(getBlockNumber())
             })
@@ -1005,19 +1004,235 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         ensureChannelState(handler, channel1, Channel.State.STATE_OPEN);
         handler.recvPacket(
             IIBCChannelRecvPacket.MsgPacketRecv({
-                packet: p0,
+                packet: result.packet,
                 proof: LocalhostClientLib.sentinelProof(),
                 proofHeight: H(getBlockNumber())
             })
         );
         ibcHandler.acknowledgePacket(
             IIBCChannelAcknowledgePacket.MsgPacketAcknowledgement({
-                packet: p0,
+                packet: result.packet,
                 acknowledgement: getLastWrittenAcknowledgement(handler, vm.getRecordedLogs()).acknowledgement,
                 proof: LocalhostClientLib.sentinelProof(),
                 proofHeight: H(getBlockNumber())
             })
         );
+        return false;
+    }
+
+    function testFlushCompletePacketAcknowledgementOrdered() public {
+        vm.recordLogs();
+        HandshakeCallbacks memory callbacks = emptyCallbacks();
+        callbacks.flushingAndComplete.callback = _breakCallback;
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) =
+            createMockAppLocalhostChannel(Channel.Order.ORDER_ORDERED);
+
+        MockAppRelayResult memory res1 = mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.RecvPacket);
+        handshakeUpgradeWithCallbacks(
+            channel0,
+            channel1,
+            validProposals(
+                Channel.Order.ORDER_ORDERED, channel0.connectionId, channel1.connectionId, MOCK_APP_VERSION_2
+            ),
+            HandshakeFlow(false, false),
+            callbacks
+        );
+        ensureChannelState(ibcHandler, channel1, Channel.State.STATE_FLUSHING);
+        ibcHandler.channelUpgradeConfirm(
+            IIBCChannelUpgradeBase.MsgChannelUpgradeConfirm({
+                portId: channel1.portId,
+                channelId: channel1.channelId,
+                counterpartyChannelState: Channel.State.STATE_FLUSHCOMPLETE,
+                counterpartyUpgrade: getCounterpartyUpgrade(channel0.portId, channel0.channelId),
+                proofs: upgradeLocalhostProofs()
+            })
+        );
+        ensureChannelState(ibcHandler, channel1, Channel.State.STATE_FLUSHING);
+        ibcHandler.acknowledgePacket(
+            IIBCChannelAcknowledgePacket.MsgPacketAcknowledgement({
+                packet: res1.packet,
+                acknowledgement: res1.ack,
+                proof: LocalhostClientLib.sentinelProof(),
+                proofHeight: H(getBlockNumber())
+            })
+        );
+        ensureChannelState(ibcHandler, channel1, Channel.State.STATE_FLUSHCOMPLETE);
+    }
+
+    function testFlushCompletePacketAcknowledgementUnordered() public {
+        vm.recordLogs();
+        HandshakeCallbacks memory callbacks = emptyCallbacks();
+        callbacks.flushingAndComplete.callback = _breakCallback;
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) =
+            createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
+
+        MockAppRelayResult memory res0 = mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.RecvPacket);
+        uint64 upgradeSequence = handshakeUpgradeWithCallbacks(
+            channel0,
+            channel1,
+            validProposals(
+                Channel.Order.ORDER_UNORDERED, channel0.connectionId, channel1.connectionId, MOCK_APP_VERSION_2
+            ),
+            HandshakeFlow(false, false),
+            callbacks
+        );
+        ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHING);
+        IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+        ibcHandler.acknowledgePacket(
+            IIBCChannelAcknowledgePacket.MsgPacketAcknowledgement({
+                packet: res0.packet,
+                acknowledgement: res0.ack,
+                proof: LocalhostClientLib.sentinelProof(),
+                proofHeight: H(getBlockNumber())
+            })
+        );
+        ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHCOMPLETE);
+    }
+
+    function testFlushingClosePacketTimeoutOrdered() public {
+        vm.recordLogs();
+        HandshakeCallbacks memory callbacks = emptyCallbacks();
+        callbacks.flushingAndComplete.callback = _breakCallback;
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) =
+            createMockAppLocalhostChannel(Channel.Order.ORDER_ORDERED);
+
+        MockAppRelayResult memory res1 = mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
+        handshakeUpgradeWithCallbacks(
+            channel0,
+            channel1,
+            validProposals(
+                Channel.Order.ORDER_ORDERED, channel0.connectionId, channel1.connectionId, MOCK_APP_VERSION_2,
+                Timeout.Data({height: H(10), timestamp: 0}),
+                Timeout.Data({height: H(10), timestamp: 0})
+            ),
+            HandshakeFlow(false, false),
+            callbacks
+        );
+        vm.roll(getBlockNumber() + 1);
+        ibcHandler.timeoutPacket(
+            IIBCChannelPacketTimeout.MsgTimeoutPacket({
+                packet: res1.packet,
+                proof: LocalhostClientLib.sentinelProof(),
+                proofHeight: H(getBlockNumber()),
+                nextSequenceRecv: 1
+            })
+        );
+        ensureChannelState(ibcHandler, channel1, Channel.State.STATE_CLOSED);
+        (, bool found) = ibcHandler.getChannelUpgrade(channel1.portId, channel1.channelId);
+        assertFalse(found);
+        assertEq(ibcHandler.getCommitment(IBCCommitment.channelUpgradeCommitmentKey(channel1.portId, channel1.channelId)), bytes32(0));
+    }
+
+    function testFlushCompletePacketTimeoutUnordered() public {
+        vm.recordLogs();
+        HandshakeCallbacks memory callbacks = emptyCallbacks();
+        callbacks.flushingAndComplete.callback = _breakCallback;
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) =
+            createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
+
+        MockAppRelayResult memory res0 = mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
+        uint64 upgradeSequence = handshakeUpgradeWithCallbacks(
+            channel0,
+            channel1,
+            validProposals(
+                Channel.Order.ORDER_UNORDERED, channel0.connectionId, channel1.connectionId, MOCK_APP_VERSION_2,
+                Timeout.Data({height: H(10), timestamp: 0}),
+                Timeout.Data({height: H(10), timestamp: 0})
+            ),
+            HandshakeFlow(false, false),
+            callbacks
+        );
+        vm.roll(getBlockNumber() + 1);
+        ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHING);
+        IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel0.portId))).allowTransitionToFlushComplete(channel0.portId, channel0.channelId, upgradeSequence);
+        ibcHandler.timeoutPacket(
+            IIBCChannelPacketTimeout.MsgTimeoutPacket({
+                packet: res0.packet,
+                proof: LocalhostClientLib.sentinelProof(),
+                proofHeight: H(getBlockNumber()),
+                nextSequenceRecv: 0
+            })
+        );
+        ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHCOMPLETE);
+        (, bool found) = ibcHandler.getChannelUpgrade(channel1.portId, channel1.channelId);
+        assertTrue(found);
+    }
+
+    function testFlushingClosedCounterpartyUpgradeTimeoutOrdered() public {
+        vm.recordLogs();
+        HandshakeCallbacks memory callbacks = emptyCallbacks();
+        callbacks.flushingAndComplete.callback = _breakCallback;
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) =
+            createMockAppLocalhostChannel(Channel.Order.ORDER_ORDERED);
+
+        MockAppRelayResult memory res1 = mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
+        handshakeUpgradeWithCallbacks(
+            channel0,
+            channel1,
+            validProposals(
+                Channel.Order.ORDER_ORDERED, channel0.connectionId, channel1.connectionId, MOCK_APP_VERSION_2,
+                Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0}),
+                Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0})
+            ),
+            HandshakeFlow(false, false),
+            callbacks
+        );
+        ensureChannelState(ibcHandler, channel1, Channel.State.STATE_FLUSHING);
+        vm.roll(getBlockNumber() + 1);
+        ibcHandler.timeoutPacket(
+            IIBCChannelPacketTimeout.MsgTimeoutPacket({
+                packet: res1.packet,
+                proof: LocalhostClientLib.sentinelProof(),
+                proofHeight: H(getBlockNumber()),
+                nextSequenceRecv: 1
+            })
+        );
+        ensureChannelState(ibcHandler, channel1, Channel.State.STATE_CLOSED);
+        (, bool found) = ibcHandler.getChannelUpgrade(channel1.portId, channel1.channelId);
+        assertFalse(found);
+        assertEq(ibcHandler.getCommitment(IBCCommitment.channelUpgradeCommitmentKey(channel1.portId, channel1.channelId)), bytes32(0));
+    }
+
+    function testFlushingRestoreCounterpartyUpgradeTimeoutUnordered() public {
+        vm.recordLogs();
+        HandshakeCallbacks memory callbacks = emptyCallbacks();
+        callbacks.flushingAndComplete.callback = _breakCallback;
+        (ChannelInfo memory channel0, ChannelInfo memory channel1) =
+            createMockAppLocalhostChannel(Channel.Order.ORDER_UNORDERED);
+
+        MockAppRelayResult memory res0 = mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None);
+        handshakeUpgradeWithCallbacks(
+            channel0,
+            channel1,
+            validProposals(
+                Channel.Order.ORDER_UNORDERED, channel0.connectionId, channel1.connectionId, MOCK_APP_VERSION_2,
+                Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0}),
+                Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0})
+            ),
+            HandshakeFlow(false, false),
+            callbacks
+        );
+        vm.roll(getBlockNumber() + 1);
+        ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHING);
+        ibcHandler.timeoutPacket(
+            IIBCChannelPacketTimeout.MsgTimeoutPacket({
+                packet: res0.packet,
+                proof: LocalhostClientLib.sentinelProof(),
+                proofHeight: H(getBlockNumber()),
+                nextSequenceRecv: 0
+            })
+        );
+        ensureChannelState(ibcHandler, channel0, Channel.State.STATE_OPEN);
+        (, bool found) = ibcHandler.getChannelUpgrade(channel0.portId, channel0.channelId);
+        assertFalse(found);
+        assertEq(ibcHandler.getCommitment(IBCCommitment.channelUpgradeCommitmentKey(channel0.portId, channel0.channelId)), bytes32(0));
+    }
+
+    function _breakCallback(
+        IIBCHandler,
+        ChannelInfo memory,
+        ChannelInfo memory
+    ) internal returns (bool) {
         return false;
     }
 
@@ -1040,9 +1255,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             {
                 (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(orders[i]);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 2);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 2);
                 handshakeUpgrade(
                     channel0,
                     channel1,
@@ -1056,9 +1271,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             {
                 (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(orders[i]);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None), 2);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None).packet.sequence, 2);
                 handshakeUpgrade(
                     channel0,
                     channel1,
@@ -1072,9 +1287,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             {
                 (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(orders[i]);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.RecvPacket), 2);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.RecvPacket).packet.sequence, 2);
                 handshakeUpgrade(
                     channel0,
                     channel1,
@@ -1108,8 +1323,8 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             {
                 (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(orders[i]);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
                 handshakeUpgrade(
                     channel0,
                     channel1,
@@ -1123,9 +1338,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             {
                 (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(orders[i]);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 2);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 2);
                 handshakeUpgrade(
                     channel0,
                     channel1,
@@ -1139,9 +1354,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             {
                 (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(orders[i]);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None), 2);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.None).packet.sequence, 2);
                 handshakeUpgrade(
                     channel0,
                     channel1,
@@ -1155,9 +1370,9 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             }
             {
                 (ChannelInfo memory channel0, ChannelInfo memory channel1) = createMockAppLocalhostChannel(orders[i]);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket), 1);
-                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.RecvPacket), 2);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel1, channel0, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.AckPacket).packet.sequence, 1);
+                assertEq(mockAppRelay(channel0, channel1, IBCMockLib.MOCK_PACKET_DATA, RelayPhase.RecvPacket).packet.sequence, 2);
                 handshakeUpgrade(
                     channel0,
                     channel1,
@@ -1204,6 +1419,30 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 connectionId: channel1ConnectionId,
                 version: appVersion,
                 timeout: Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0})
+            })
+        });
+    }
+
+    function validProposals(
+        Channel.Order order,
+        string memory channel0ConnectionId,
+        string memory channel1ConnectionId,
+        string memory appVersion,
+        Timeout.Data memory timeout0,
+        Timeout.Data memory timeout1
+    ) internal view returns (UpgradeProposals memory) {
+        return UpgradeProposals({
+            p0: UpgradeProposal({
+                order: order,
+                connectionId: channel0ConnectionId,
+                version: appVersion,
+                timeout: timeout0
+            }),
+            p1: UpgradeProposal({
+                order: order,
+                connectionId: channel1ConnectionId,
+                version: appVersion,
+                timeout: timeout1
             })
         });
     }
@@ -1437,6 +1676,16 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHCOMPLETE);
 
+            if (!callbacks.flushingAndComplete.reverse) {
+                if (!callbacks.flushingAndComplete.callback(ibcHandler, channel1, channel0)) {
+                    return upgradeSequence;
+                }
+            } else {
+                if (!callbacks.flushingAndComplete.callback(ibcHandler, channel0, channel1)) {
+                    return upgradeSequence;
+                }
+            }
+
             // Confirm@channel1: FLUSHING -> OPEN
             assertTrue(
                 ibcHandler.channelUpgradeConfirm(
@@ -1480,6 +1729,16 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
                 )
             );
             ensureChannelState(ibcHandler, channel0, Channel.State.STATE_FLUSHCOMPLETE);
+
+            if (!callbacks.flushingAndComplete.reverse) {
+                if (!callbacks.flushingAndComplete.callback(ibcHandler, channel1, channel0)) {
+                    return upgradeSequence;
+                }
+            } else {
+                if (!callbacks.flushingAndComplete.callback(ibcHandler, channel0, channel1)) {
+                    return upgradeSequence;
+                }
+            }
 
             assertFalse(ibcHandler.getCanTransitionToFlushComplete(channel1.portId, channel1.channelId));
             IIBCChannelUpgradableModule(address(ibcHandler.getIBCModuleByPort(channel1.portId))).allowTransitionToFlushComplete(channel1.portId, channel1.channelId, upgradeSequence);
@@ -1852,44 +2111,56 @@ contract TestICS04Upgrade is ICS04UpgradeTestHelper, ICS04PacketEventTestHelper 
         AckPacket
     }
 
+    struct MockAppRelayResult {
+        Packet packet;
+        bytes ack;
+    }
+
     function mockAppRelay(ChannelInfo memory ca, ChannelInfo memory cb, bytes memory packetData, RelayPhase phase)
         private
-        returns (uint64)
+        returns (MockAppRelayResult memory result)
     {
-        uint64 sequence = mockApp.sendPacket(packetData, ca.portId, ca.channelId, H(uint64(getBlockNumber(1))), 0);
+        return mockAppRelay(ca, cb, packetData, phase, Timeout.Data({height: H(getBlockNumber(1)), timestamp: 0}));
+    }
+
+    function mockAppRelay(ChannelInfo memory ca, ChannelInfo memory cb, bytes memory packetData, RelayPhase phase, Timeout.Data memory timeout)
+        private
+        returns (MockAppRelayResult memory result)
+    {
+        uint64 sequence = mockApp.sendPacket(packetData, ca.portId, ca.channelId, timeout.height, timeout.timestamp);
+        result.packet = getLastSentPacket(ibcHandler, ca.portId, ca.channelId, vm.getRecordedLogs());
         if (phase == RelayPhase.None) {
-            return sequence;
+            return result;
         }
-        Packet memory packet = getLastSentPacket(ibcHandler, ca.portId, ca.channelId, vm.getRecordedLogs());
         ibcHandler.recvPacket(
             IIBCChannelRecvPacket.MsgPacketRecv({
-                packet: packet,
+                packet: result.packet,
                 proof: LocalhostClientLib.sentinelProof(),
                 proofHeight: Height.nil()
             })
         );
         Vm.Log[] memory logs = vm.getRecordedLogs();
-        assertEq(abi.encode(packet), abi.encode(getLastRecvPacket(ibcHandler, logs)));
+        assertEq(abi.encode(result.packet), abi.encode(getLastRecvPacket(ibcHandler, logs)));
         if (keccak256(packetData) == keccak256(IBCMockLib.MOCK_ASYNC_PACKET_DATA)) {
             mockApp.writeAcknowledgement(cb.portId, cb.channelId, sequence);
             logs = vm.getRecordedLogs();
         }
-        if (phase == RelayPhase.RecvPacket) {
-            return sequence;
-        }
         WriteAcknolwedgement memory ack = getLastWrittenAcknowledgement(ibcHandler, logs);
         assertEq(ack.sequence, sequence);
-
+        result.ack = ack.acknowledgement;
+        if (phase == RelayPhase.RecvPacket) {
+            return result;
+        }
         ibcHandler.acknowledgePacket(
             IIBCChannelAcknowledgePacket.MsgPacketAcknowledgement({
-                packet: packet,
+                packet: result.packet,
                 acknowledgement: ack.acknowledgement,
                 proof: LocalhostClientLib.sentinelProof(),
                 proofHeight: Height.nil()
             })
         );
         assertTrue(ibcHandler.getPacketCommitment(ca.portId, ca.channelId, sequence) == bytes32(0));
-        return sequence;
+        return result;
     }
 
     // ------------------------------ Handshake Callbacks ------------------------------ //

@@ -3,12 +3,12 @@ pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
-import {Channel} from "../../proto/Channel.sol";
+import {Channel, Timeout} from "../../proto/Channel.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IIBCClientErrors} from "../02-client/IIBCClientErrors.sol";
 import {IBCHeight} from "../02-client/IBCHeight.sol";
+import {IBCChannelUpgradeBase} from "./IBCChannelUpgrade.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
-import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 import {IBCChannelLib} from "./IBCChannelLib.sol";
 import {IIBCChannelPacketSendRecv} from "./IIBCChannel.sol";
 import {IIBCChannelErrors} from "./IIBCChannelErrors.sol";
@@ -17,7 +17,7 @@ import {IIBCChannelErrors} from "./IIBCChannelErrors.sol";
  * @dev IBCChannelPacketSendRecv is a contract that implements [ICS-4](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channel-and-packet-semantics).
  */
 contract IBCChannelPacketSendRecv is
-    IBCModuleManager,
+    IBCChannelUpgradeBase,
     IIBCChannelPacketSendRecv,
     IIBCChannelErrors,
     IIBCClientErrors
@@ -276,6 +276,26 @@ contract IBCChannelPacketSendRecv is
         }
 
         delete commitments[packetCommitmentKey];
+
+        if (channel.state == Channel.State.STATE_FLUSHING) {
+            Timeout.Data memory timeout = channelStorage.counterpartyUpgradeTimeout;
+            if (!timeout.height.isZero() || timeout.timestamp != 0) {
+                if (
+                    !timeout.height.isZero() && hostHeight().gte(timeout.height)
+                        || timeout.timestamp != 0 && hostTimestamp() >= timeout.timestamp
+                ) {
+                    restoreChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel, UpgradeHandshakeError.Timeout);
+                } else if (
+                    canTransitionToFlushComplete(
+                        channel.ordering, msg_.packet.sourcePort, msg_.packet.sourceChannel, channel.upgrade_sequence
+                    )
+                ) {
+                    channel.state = Channel.State.STATE_FLUSHCOMPLETE;
+                    updateChannelCommitment(msg_.packet.sourcePort, msg_.packet.sourceChannel, channel);
+                }
+            }
+        }
+
         emit AcknowledgePacket(msg_.packet, msg_.acknowledgement);
         lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onAcknowledgementPacket(
             msg_.packet, msg_.acknowledgement, _msgSender()
