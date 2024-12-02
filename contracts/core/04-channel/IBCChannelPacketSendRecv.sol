@@ -132,9 +132,8 @@ contract IBCChannelPacketSendRecv is
             revert IBCChannelUnexpectedPacketSource(msg_.packet.sourcePort, msg_.packet.sourceChannel);
         }
 
-        if (msg_.packet.timeoutHeight.revision_height != 0 && block.number >= msg_.packet.timeoutHeight.revision_height)
-        {
-            revert IBCChannelTimeoutPacketHeight(block.number, msg_.packet.timeoutHeight.revision_height);
+        if (!msg_.packet.timeoutHeight.isZero() && hostHeight().gte(msg_.packet.timeoutHeight)) {
+            revert IBCChannelTimeoutPacketHeight(hostHeight(), msg_.packet.timeoutHeight);
         }
         if (msg_.packet.timeoutTimestamp != 0 && hostTimestamp() >= msg_.packet.timeoutTimestamp) {
             revert IBCChannelTimeoutPacketTimestamp(hostTimestamp(), msg_.packet.timeoutTimestamp);
