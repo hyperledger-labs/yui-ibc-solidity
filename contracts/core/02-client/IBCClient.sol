@@ -42,6 +42,8 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
      */
     function updateClient(MsgUpdateClient calldata msg_) external override {
         (address lc, bytes4 selector, bytes memory args) = routeUpdateClient(msg_);
+        // NOTE: We assume that the client contract was correctly validated by the authority at registration via `registerClient` function.
+        //       For details, see the `registerClient` function in the IBCHostConfigurator.
         (bool success, bytes memory returndata) = lc.call(abi.encodePacked(selector, args));
         if (!success) {
             if (returndata.length > 0) {
@@ -62,6 +64,9 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
     /**
      * @dev routeUpdateClient returns the LC contract address and the calldata to the receiving function of the client message.
      *      Light client contract may encode a client message as other encoding scheme(e.g. ethereum ABI)
+     *      WARNING: If the caller is an EOA like a relayer, the caller must validate the return values with the allow list of the contract functions before calling the LC contract with the data.
+     *               This validation is always required because even if the caller trusts the IBC contract, a malicious RPC provider can return arbitrary data to the caller.
+     *      Check ADR-001 for details.
      */
     function routeUpdateClient(MsgUpdateClient calldata msg_)
         public
@@ -70,6 +75,7 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
         returns (address, bytes4, bytes memory)
     {
         ILightClient lc = checkAndGetClient(msg_.clientId);
+        // NOTE: The `lc.routeUpdateClient` function must be validated by the authority at registration via `registerClient` function.
         (bytes4 functionId, bytes memory args) = lc.routeUpdateClient(msg_.clientId, msg_.protoClientMessage);
         return (address(lc), functionId, args);
     }
