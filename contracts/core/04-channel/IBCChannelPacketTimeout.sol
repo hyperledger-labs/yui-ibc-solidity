@@ -302,7 +302,7 @@ contract IBCChannelPacketTimeout is IBCChannelUpgradeBase, IIBCChannelPacketTime
         lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onTimeoutPacket(
             msg_.packet, _msgSender()
         );
-        emit TimeoutPacket(msg_.packet);
+        emit TimeoutOnClose(msg_.packet);
     }
 
     /**

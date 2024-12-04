@@ -240,6 +240,8 @@ interface IIBCChannelPacketTimeout {
 
     /// @notice event emitted upon timeout of a packet
     event TimeoutPacket(Packet packet);
+    /// @notice event emitted upon timeout of a packet due to the counterparty's channel being closed
+    event TimeoutOnClose(Packet packet);
 
     // --------------------- Functions --------------------- //
 

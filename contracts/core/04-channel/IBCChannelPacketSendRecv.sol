@@ -175,7 +175,12 @@ contract IBCChannelPacketSendRecv is
             commitments[commitmentKey] = IBCChannelLib.PACKET_RECEIPT_SUCCESSFUL_KECCAK256;
         } else if (channel.ordering == Channel.Order.ORDER_ORDERED) {
             if (channelStorage.nextSequenceRecv != msg_.packet.sequence) {
-                revert IBCChannelUnexpectedNextSequenceRecv(channelStorage.nextSequenceRecv);
+                revert IBCChannelUnexpectedNextSequenceRecv(
+                    msg_.packet.destinationPort,
+                    msg_.packet.destinationChannel,
+                    msg_.packet.sequence,
+                    channelStorage.nextSequenceRecv
+                );
             }
             channelStorage.nextSequenceRecv++;
             getCommitments()[IBCCommitment.nextSequenceRecvCommitmentKeyCalldata(
