@@ -4,6 +4,9 @@ pragma solidity ^0.8.20;
 import {Height} from "../../proto/Client.sol";
 
 interface IIBCClientErrors {
+    /// @param clientId the client identifier
+    error IBCClientInvalidClientId(string clientId);
+
     /// @param clientType the client type
     error IBCClientUnregisteredClientType(string clientType);
 
