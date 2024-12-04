@@ -84,8 +84,13 @@ interface IIBCChannelErrors {
     /// @param sequence packet sequence
     error IBCChannelPacketReceiptAlreadyExists(string destinationPort, string destinationChannel, uint64 sequence);
 
+    /// @param destinationPort destination port
+    /// @param destinationChannel destination channel
     /// @param expected expected sequence
-    error IBCChannelUnexpectedNextSequenceRecv(uint64 expected);
+    /// @param sequence packet sequence
+    error IBCChannelUnexpectedNextSequenceRecv(
+        string destinationPort, string destinationChannel, uint64 sequence, uint64 expected
+    );
 
     /// @param portId port identifier
     /// @param channelId channel identifier
