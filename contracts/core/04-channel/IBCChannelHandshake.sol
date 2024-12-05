@@ -55,6 +55,10 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         }
 
         string memory channelId = generateChannelIdentifier();
+        ChannelStorage storage channelStorage = getChannelStorage()[msg_.portId][channelId];
+        if (channelStorage.channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCChannelAlreadyChannelExists();
+        }
         initializeSequences(msg_.portId, channelId);
         emit GeneratedChannelIdentifier(channelId);
 
@@ -130,6 +134,10 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         );
 
         string memory channelId = generateChannelIdentifier();
+        ChannelStorage storage channelStorage = getChannelStorage()[msg_.portId][channelId];
+        if (channelStorage.channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCChannelAlreadyChannelExists();
+        }
         initializeSequences(msg_.portId, channelId);
         emit GeneratedChannelIdentifier(channelId);
 

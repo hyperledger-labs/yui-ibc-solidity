@@ -5,6 +5,8 @@ import {Height} from "../../proto/Client.sol";
 import {Channel} from "../../proto/Channel.sol";
 
 interface IIBCChannelErrors {
+    error IBCChannelAlreadyChannelExists();
+
     /// @param state channel state
     error IBCChannelUnexpectedChannelState(Channel.State state);
 
