@@ -432,20 +432,28 @@ contract TestICS04Packet is
             vm.expectRevert(
                 abi.encodeWithSelector(
                     IIBCChannelErrors.IBCChannelTimeoutPacketHeight.selector,
-                    getBlockNumber(),
-                    p0.timeoutHeight.revision_height
+                    H(getBlockNumber()),
+                    p0.timeoutHeight
                 )
             );
             counterpartyHandler.recvPacket(msg_);
             client.updateClient(clientId, mockClientHeader(uint64(getBlockNumber())));
             // timeout on source chain
+            (Channel.Data memory c,) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
             handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber())));
             if (orders[i] == Channel.Order.ORDER_ORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_CLOSED);
+                c.state = Channel.State.STATE_CLOSED;
+                ensureChannelCommitment(handler, channelInfo, c);
             } else if (orders[i] == Channel.Order.ORDER_UNORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_OPEN);
+                ensureChannelCommitment(handler, channelInfo, c);
             }
             assertEq(handler.getPacketCommitment(channelInfo.portId, channelInfo.channelId, p0.sequence), bytes32(0));
+            // same packet timeout must be failed
+            IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg2_ = msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber()));
+            vm.expectRevert();
+            handler.timeoutPacket(msg2_);
         }
     }
 
@@ -491,13 +499,21 @@ contract TestICS04Packet is
             counterpartyHandler.recvPacket(msg_);
             client.updateClient(clientId, mockClientHeader(uint64(getBlockNumber())));
             // timeout on source chain
+            (Channel.Data memory c,) = handler.getChannel(channelInfo.portId, channelInfo.channelId);
             handler.timeoutPacket(msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber())));
             if (orders[i] == Channel.Order.ORDER_ORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_CLOSED);
+                c.state = Channel.State.STATE_CLOSED;
+                ensureChannelCommitment(handler, channelInfo, c);
             } else if (orders[i] == Channel.Order.ORDER_UNORDERED) {
                 ensureChannelState(handler, channelInfo, Channel.State.STATE_OPEN);
+                ensureChannelCommitment(handler, channelInfo, c);
             }
             assertEq(handler.getPacketCommitment(channelInfo.portId, channelInfo.channelId, p0.sequence), bytes32(0));
+            // same packet timeout must be failed
+            IIBCChannelPacketTimeout.MsgTimeoutPacket memory msg2_ = msgTimeoutPacket(channelInfo.ordering, p0, H(getBlockNumber()));
+            vm.expectRevert();
+            handler.timeoutPacket(msg2_);
         }
     }
 
@@ -526,6 +542,10 @@ contract TestICS04Packet is
             }
             counterpartyHandler.channelCloseInit(msgChannelCloseInit(counterpartyChannelInfo));
             handler.timeoutOnClose(msgTimeoutOnClose(counterpartyHandler, orders[i], p0, H(1)));
+            // same packet timeout must be failed
+            IIBCChannelPacketTimeout.MsgTimeoutOnClose memory msg_ = msgTimeoutOnClose(counterpartyHandler, orders[i], p0, H(1));
+            vm.expectRevert();
+            handler.timeoutOnClose(msg_);
         }
     }
 

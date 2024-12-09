@@ -5,6 +5,8 @@ import {Height} from "../../proto/Client.sol";
 import {Channel} from "../../proto/Channel.sol";
 
 interface IIBCChannelErrors {
+    error IBCChannelAlreadyChannelExists();
+
     /// @param state channel state
     error IBCChannelUnexpectedChannelState(Channel.State state);
 
@@ -71,9 +73,9 @@ interface IIBCChannelErrors {
 
     error IBCChannelAckAlreadyProcessedInPreviousUpgrade(uint64 sequence, uint64 ackStartSequence);
 
-    /// @param currentBlockNumber current block number
+    /// @param currentHeight current height
     /// @param timeoutHeight packet timeout height
-    error IBCChannelTimeoutPacketHeight(uint256 currentBlockNumber, uint64 timeoutHeight);
+    error IBCChannelTimeoutPacketHeight(Height.Data currentHeight, Height.Data timeoutHeight);
 
     /// @param currentTimestamp current timestamp
     /// @param timeoutTimestamp packet timeout timestamp
@@ -84,8 +86,13 @@ interface IIBCChannelErrors {
     /// @param sequence packet sequence
     error IBCChannelPacketReceiptAlreadyExists(string destinationPort, string destinationChannel, uint64 sequence);
 
+    /// @param destinationPort destination port
+    /// @param destinationChannel destination channel
     /// @param expected expected sequence
-    error IBCChannelUnexpectedNextSequenceRecv(uint64 expected);
+    /// @param sequence packet sequence
+    error IBCChannelUnexpectedNextSequenceRecv(
+        string destinationPort, string destinationChannel, uint64 sequence, uint64 expected
+    );
 
     /// @param portId port identifier
     /// @param channelId channel identifier

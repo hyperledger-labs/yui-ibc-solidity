@@ -4,6 +4,9 @@ pragma solidity ^0.8.20;
 import {Height} from "../../proto/Client.sol";
 
 interface IIBCClientErrors {
+    /// @param clientId the client identifier
+    error IBCClientInvalidClientId(string clientId);
+
     /// @param clientType the client type
     error IBCClientUnregisteredClientType(string clientType);
 
@@ -20,4 +23,9 @@ interface IIBCClientErrors {
     /// @param selector the function selector
     /// @param args the calldata
     error IBCClientFailedUpdateClient(bytes4 selector, bytes args);
+
+    /// @param commitmentKey the commitment key
+    /// @param commitment the commitment
+    /// @param prev the previous commitment
+    error IBCClientInconsistentConsensusStateCommitment(bytes32 commitmentKey, bytes32 commitment, bytes32 prev);
 }

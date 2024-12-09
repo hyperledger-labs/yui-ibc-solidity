@@ -33,6 +33,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         if (msg_.channel.connection_hops.length != 1) {
             revert IBCChannelInvalidConnectionHopsLength(msg_.channel.connection_hops.length);
         }
+        // optimistic channel handshakes are allowed, so we can skip checking if the connection state is OPEN here.
         ConnectionEnd.Data storage connection = getConnectionStorage()[msg_.channel.connection_hops[0]].connection;
         if (connection.versions.length != 1) {
             revert IBCChannelConnectionMultipleVersionsFound(
@@ -54,6 +55,10 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         }
 
         string memory channelId = generateChannelIdentifier();
+        ChannelStorage storage channelStorage = getChannelStorage()[msg_.portId][channelId];
+        if (channelStorage.channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCChannelAlreadyChannelExists();
+        }
         initializeSequences(msg_.portId, channelId);
         emit GeneratedChannelIdentifier(channelId);
 
@@ -129,6 +134,10 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         );
 
         string memory channelId = generateChannelIdentifier();
+        ChannelStorage storage channelStorage = getChannelStorage()[msg_.portId][channelId];
+        if (channelStorage.channel.state != Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
+            revert IBCChannelAlreadyChannelExists();
+        }
         initializeSequences(msg_.portId, channelId);
         emit GeneratedChannelIdentifier(channelId);
 
@@ -164,6 +173,9 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
         ConnectionEnd.Data storage connection = getConnectionStorage()[channel.connection_hops[0]].connection;
+        if (connection.state != ConnectionEnd.State.STATE_OPEN) {
+            revert IBCChannelConnectionNotOpened(channel.connection_hops[0]);
+        }
         Channel.Data memory expectedChannel = Channel.Data({
             state: Channel.State.STATE_TRYOPEN,
             ordering: channel.ordering,
@@ -195,7 +207,7 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
     }
 
     /**
-     * @dev channelOpenConfirm is called by the counterparty module to close their end of the channel, since the other end has been closed.
+     * @dev channelOpenConfirm is called by the counterparty module to acknowledge the acknowledgement of the handshake-originating module on the other chain and finish the channel opening handshake.
      */
     function channelOpenConfirm(IIBCChannelHandshake.MsgChannelOpenConfirm calldata msg_) public override {
         Channel.Data storage channel = getChannelStorage()[msg_.portId][msg_.channelId].channel;
@@ -320,6 +332,9 @@ contract IBCChannelHandshake is IBCModuleManager, IIBCChannelHandshake, IIBCChan
         channelStorage.nextSequenceRecv = 1;
         channelStorage.nextSequenceAck = 1;
         channelStorage.recvStartSequence.sequence = 1;
+
+        // Differ from the ICS-004 spec, we only store the commitment of the next sequence recv.
+        // This is because, in the current spec, the next sequence send and ack are not needed for the verification on the counterparty chain.
         getCommitments()[IBCCommitment.nextSequenceRecvCommitmentKey(portId, channelId)] =
             keccak256(abi.encodePacked((bytes8(uint64(1)))));
     }

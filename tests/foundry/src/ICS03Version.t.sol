@@ -12,6 +12,9 @@ contract TestICS03Version is ICS03TestHelper {
         version = Version.Data({identifier: "1", features: new string[](1)});
         version.features[0] = "ORDER_DAG";
         assertFalse(IBCConnectionLib.isSupportedVersion(versions, version));
+        version = getConnectionVersions()[0];
+        version.identifier = "";
+        assertFalse(IBCConnectionLib.isSupportedVersion(versions, version));
     }
 
     function testFindSupportedVersion() public {

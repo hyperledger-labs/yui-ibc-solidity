@@ -21,7 +21,7 @@ contract IBCModuleManager is Context, IBCHost, IIBCModuleManager {
         if (hostStorage.portCapabilities[portId] != address(0)) {
             revert IBCHostPortCapabilityAlreadyClaimed(portId);
         }
-        if (module == address(0)) {
+        if (module == address(0) || module == address(this)) {
             revert IBCHostInvalidModuleAddress(module);
         }
         if (!ERC165Checker.supportsERC165(module)) {

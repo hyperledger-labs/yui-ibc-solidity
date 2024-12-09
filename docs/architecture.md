@@ -43,6 +43,29 @@ The `IBCHandler` is the main contract that has a storage and receives function c
 
 Each contract inherits the [`IBCStore`](../contracts/core/24-host/IBCStore.sol) contract, which defines the common storage layout, and calls from the `IBCHandler` to each contract are performed using `delegatecall`. This approach allows the contracts to share common state between each other.
 
+## Main deviations from IBC spec
+
+Acknowledgements: We would like to acknowledge the Quantstamp audit team for pointing out these deviations.
+
+The following are the main deviations from the IBC spec. Further details can be found in the audit report.
+
+### authenticateCapability Function
+
+Audit Report Comment:
+> This function does not exist in the ibc-solidity implementation as a single function, as described in the ICS specs. Instead, the owner of the `IBCHandler` contract will invoke `bindPort()` to assign module addresses to given ports in the provable store of the `IBCHandler`. Throughout connection and channel handshakes, capabilities are authenticated through functions such as `IBCModuleManager.lookupModuleByPort()` and `lookupModuleByChannel()`, which verify that a non-zero address is mapped at the port or channel. Module callback functions, such as `onRecvPacket()`, will only be invoked on the module addresses assigned by the admin.
+
+### Packet Reception
+
+Audit Report Comment:
+> Specs allow a packet to be received more than once, with just an identical event emitted. However, in the implementation, a packet cannot be received more than once; the transaction will revert.
+
+We believe that this deviation is acceptable because the relayer can detect duplicated packet relay errors through the results of `estimateGas` or `debug_traceTransaction` and thereby avoid further relay.
+
+### Unsupported Features
+
+Audit Report Comment:
+> Overall, we note that ibc-solidity does not support multi-hop connections or for the `ORDERED_ALLOW_TIMEOUT` channel ordering mechanism,as described in the ICS-Specs. Therefore, all logic associated with that is not present in the ibc-solidity implementation.
+
 ## Store and Commitment
 
 In IBC, two types of stores are defined: `provableStore` and `privateStore`. The following are the requirements for each store:

@@ -3,21 +3,22 @@ pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
 import {ConnectionEnd} from "../../proto/Connection.sol";
-import {Channel, ChannelCounterparty} from "../../proto/Channel.sol";
+import {Channel, ChannelCounterparty, Timeout} from "../../proto/Channel.sol";
 import {ILightClient} from "../02-client/ILightClient.sol";
 import {IBCHeight} from "../02-client/IBCHeight.sol";
 import {IBCChannelLib} from "./IBCChannelLib.sol";
+import {IBCChannelUpgradeBase} from "./IBCChannelUpgrade.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
-import {IBCModuleManager} from "../26-router/IBCModuleManager.sol";
 import {IIBCChannelPacketTimeout} from "./IIBCChannel.sol";
 import {IIBCChannelErrors} from "./IIBCChannelErrors.sol";
 
-contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, IIBCChannelErrors {
+contract IBCChannelPacketTimeout is IBCChannelUpgradeBase, IIBCChannelPacketTimeout, IIBCChannelErrors {
     using IBCHeight for Height.Data;
 
     function timeoutPacket(MsgTimeoutPacket calldata msg_) external {
-        Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
-        if (channel.state != Channel.State.STATE_OPEN) {
+        ChannelStorage storage channelStorage = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel];
+        Channel.Data storage channel = channelStorage.channel;
+        if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
@@ -99,7 +100,6 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
                     msg_.proofHeight
                 );
             }
-            channel.state = Channel.State.STATE_CLOSED;
         } else if (channel.ordering == Channel.Order.ORDER_UNORDERED) {
             bytes memory path = IBCCommitment.packetReceiptCommitmentPathCalldata(
                 msg_.packet.destinationPort, msg_.packet.destinationChannel, msg_.packet.sequence
@@ -128,6 +128,35 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
             msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
         )];
 
+        if (channel.state == Channel.State.STATE_FLUSHING) {
+            Timeout.Data memory timeout = channelStorage.counterpartyUpgradeTimeout;
+            if (!timeout.height.isZero() || timeout.timestamp != 0) {
+                if (
+                    !timeout.height.isZero() && hostHeight().gte(timeout.height)
+                        || timeout.timestamp != 0 && hostTimestamp() >= timeout.timestamp
+                ) {
+                    restoreChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel, UpgradeHandshakeError.Timeout);
+                } else if (
+                    canTransitionToFlushComplete(
+                        channel.ordering, msg_.packet.sourcePort, msg_.packet.sourceChannel, channel.upgrade_sequence
+                    )
+                ) {
+                    channel.state = Channel.State.STATE_FLUSHCOMPLETE;
+                    updateChannelCommitment(msg_.packet.sourcePort, msg_.packet.sourceChannel, channel);
+                }
+            }
+        }
+
+        if (channel.ordering == Channel.Order.ORDER_ORDERED) {
+            if (channel.state == Channel.State.STATE_FLUSHING) {
+                delete channelStorage.upgrade;
+                deleteUpgradeCommitment(msg_.packet.sourcePort, msg_.packet.sourceChannel);
+                revertCounterpartyUpgrade(channelStorage);
+            }
+            channel.state = Channel.State.STATE_CLOSED;
+            updateChannelCommitment(msg_.packet.sourcePort, msg_.packet.sourceChannel, channel);
+        }
+
         lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onTimeoutPacket(
             msg_.packet, _msgSender()
         );
@@ -136,7 +165,7 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
 
     function timeoutOnClose(MsgTimeoutOnClose calldata msg_) external {
         Channel.Data storage channel = getChannelStorage()[msg_.packet.sourcePort][msg_.packet.sourceChannel].channel;
-        if (channel.state != Channel.State.STATE_OPEN) {
+        if (channel.state == Channel.State.STATE_UNINITIALIZED_UNSPECIFIED) {
             revert IBCChannelUnexpectedChannelState(channel.state);
         }
 
@@ -265,10 +294,15 @@ contract IBCChannelPacketTimeout is IBCModuleManager, IIBCChannelPacketTimeout, 
         } else {
             revert IBCChannelUnknownChannelOrder(channel.ordering);
         }
+
+        delete getCommitments()[IBCCommitment.packetCommitmentKeyCalldata(
+            msg_.packet.sourcePort, msg_.packet.sourceChannel, msg_.packet.sequence
+        )];
+
         lookupModuleByChannel(msg_.packet.sourcePort, msg_.packet.sourceChannel).onTimeoutPacket(
             msg_.packet, _msgSender()
         );
-        emit TimeoutPacket(msg_.packet);
+        emit TimeoutOnClose(msg_.packet);
     }
 
     /**

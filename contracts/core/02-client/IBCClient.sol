@@ -7,6 +7,7 @@ import {Height} from "../../proto/Client.sol";
 import {IBCHost} from "../24-host/IBCHost.sol";
 import {IBCCommitment} from "../24-host/IBCCommitment.sol";
 import {IIBCClient} from "../02-client/IIBCClient.sol";
+import {IBCClientLib} from "../02-client/IBCClientLib.sol";
 import {IIBCClientErrors} from "../02-client/IIBCClientErrors.sol";
 
 /**
@@ -41,6 +42,8 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
      */
     function updateClient(MsgUpdateClient calldata msg_) external override {
         (address lc, bytes4 selector, bytes memory args) = routeUpdateClient(msg_);
+        // NOTE: We assume that the client contract was correctly validated by the authority at registration via `registerClient` function.
+        //       For details, see the `registerClient` function in the IBCHostConfigurator.
         (bool success, bytes memory returndata) = lc.call(abi.encodePacked(selector, args));
         if (!success) {
             if (returndata.length > 0) {
@@ -61,6 +64,9 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
     /**
      * @dev routeUpdateClient returns the LC contract address and the calldata to the receiving function of the client message.
      *      Light client contract may encode a client message as other encoding scheme(e.g. ethereum ABI)
+     *      WARNING: If the caller is an EOA like a relayer, the caller must validate the return values with the allow list of the contract functions before calling the LC contract with the data.
+     *               This validation is always required because even if the caller trusts the IBC contract, a malicious RPC provider can return arbitrary data to the caller.
+     *      Check ADR-001 for details.
      */
     function routeUpdateClient(MsgUpdateClient calldata msg_)
         public
@@ -69,6 +75,7 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
         returns (address, bytes4, bytes memory)
     {
         ILightClient lc = checkAndGetClient(msg_.clientId);
+        // NOTE: The `lc.routeUpdateClient` function must be validated by the authority at registration via `registerClient` function.
         (bytes4 functionId, bytes memory args) = lc.routeUpdateClient(msg_.clientId, msg_.protoClientMessage);
         return (address(lc), functionId, args);
     }
@@ -95,10 +102,17 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
             bytes32 key = IBCCommitment.consensusStateCommitmentKey(
                 clientId, heights[i].revision_number, heights[i].revision_height
             );
-            if (commitments[key] != bytes32(0)) {
-                continue;
+            bytes32 commitment = keccak256(consensusState);
+            bytes32 prev = commitments[key];
+            if (prev != bytes32(0) && commitment != prev) {
+                // Revert if the new commitment is inconsistent with the previous one.
+                // This case may indicate misbehavior of either the LightClient or the target chain.
+                // Since the definition and specification of misbehavior are defined for each LightClient,
+                // if a relayer detects this error, it is recommended to submit an evidence of misbehaviour to the LightClient accordingly.
+                // (e.g., via the updateClient function).
+                revert IBCClientInconsistentConsensusStateCommitment(key, commitment, prev);
             }
-            commitments[key] = keccak256(consensusState);
+            commitments[key] = commitment;
         }
     }
 
@@ -109,6 +123,9 @@ contract IBCClient is IBCHost, IIBCClient, IIBCClientErrors {
         HostStorage storage hostStorage = getHostStorage();
         string memory identifier =
             string(abi.encodePacked(clientType, "-", Strings.toString(hostStorage.nextClientSequence)));
+        if (!IBCClientLib.validateClientId(bytes(identifier))) {
+            revert IBCClientInvalidClientId(identifier);
+        }
         hostStorage.nextClientSequence++;
         return identifier;
     }

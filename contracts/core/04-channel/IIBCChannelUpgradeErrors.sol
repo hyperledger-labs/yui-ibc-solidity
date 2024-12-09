@@ -3,9 +3,8 @@ pragma solidity ^0.8.20;
 
 import {Height} from "../../proto/Client.sol";
 import {Channel} from "../../proto/Channel.sol";
-import {IIBCChannelErrors} from "./IIBCChannelErrors.sol";
 
-interface IIBCChannelUpgradeErrors is IIBCChannelErrors {
+interface IIBCChannelUpgradeErrors {
     error IBCChannelUpgradeNoChanges();
 
     error IBCChannelUpgradeInvalidUpgradeFields();
