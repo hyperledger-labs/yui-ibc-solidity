@@ -30,6 +30,30 @@ contract IBCChannelPacketSendRecv is
      * @dev sendPacket is called by a module in order to send an IBC packet on a channel.
      * The packet sequence generated for the packet to be sent is returned. An error
      * is returned if one occurs. Also, `timeoutTimestamp` is given in nanoseconds since unix epoch.
+     *
+     * **Developer Warning: Mitigating DoS Attack Vectors in Packet Relay**
+     *
+     * Module contract developers using `sendPacket()` must ensure that there are no potential DoS attack vectors related to packet relay.
+     * This is particularly critical for channels with an ORDERED ordering type, as packets that cannot be received on the destination chain (dst chain) will eventually timeout,
+     * leading to the channel being closed. Such scenarios can cause serious problems for module users.
+     * The following cases highlight potential scenarios where this vulnerability could occur. These have the common characteristic that the transaction for sending a packet on the source chain (src chain) is processable,
+     * but the transaction for receiving the packet on the destination chain is not. If the module is applicable to these, in particular developers must carefully design the size of packet data and the gas consumption of packet send and receive operations for their module contracts.
+     *
+     * Potential Attack Vectors:
+     *
+     * 1. Large Packet Data Size
+     *
+     * Packet data must not result in a recvPacket transaction that exceeds the processing limits of the destination chain. This can happen in cases such as:
+     *
+     * - Different block gas limits between the src and dst chains: An attacker could send a large packet that can be processed on the src chain but exceeds the gas limit on the dst chain,
+     *    leading to an out-of-gas error and causing the packet to timeout. The larger the difference in block gas limits between the chains, the easier it becomes to exploit this vulnerability.
+     * - Exceeding the maximum transaction size on the dst chain node: Blockchain nodes typically specify a maximum transaction size for inclusion in the mempool (e.g., 128KB in Geth).
+     *   This size restriction can often be exploited at a lower cost than exceeding the block gas limit, making it a critical consideration.
+     *
+     * 2. Imbalanced Gas Used Between Packet Sending and Receiving Logic
+     *
+     * If the gas used for sending a packet on the src chain is within its block gas limit, but the gas required for processing `recvPacket()` on the dst chain exceeds its gas limit, the `recvPacket()` transaction will fail due to an out-of-gas error.
+     *
      */
     function sendPacket(
         string calldata sourcePort,
