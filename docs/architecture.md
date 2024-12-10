@@ -193,11 +193,11 @@ The packet sending flow using the app(i.e., `EchoApp`) is the following:
 1. src chain: send a packet containing "hello" as data qith `sendMessage` of the `EchoApp`.
 2. dst chain:
 	- The relayer submits the packet from 1 with `recvPacket` of the `IBCHandler`.
-	- The `IBCHandler` ensure that the packet commitment is valid and calls `onRecvPacket` of the `EchoApp`.
+	- The `IBCHandler` ensures that the packet commitment is valid and calls `onRecvPacket` of the `EchoApp`.
 	- `onRecvPacket` returns the received packet data as acknowledgement data
 3. src chain:
 	- The relayer submits the 1. packet and 2. acknowledgement
-	- The `IBCHandler` ensure that the acknowledgement commitment is valid and calls `onAcknowledgementPacket` of the `EchoApp`.
+	- The `IBCHandler` ensures that the acknowledgement commitment is valid and calls `onAcknowledgementPacket` of the `EchoApp`.
 	- In `onAcknowledgementPacket`, ensure that acknowledgement data matches the send message("hello")
 
 Also, an App can define callback functions for state transitions in the channel handshake. See [IIBCModule interface](../contracts/core/26-router/IIBCModule.sol) for more details.
